@@ -3,7 +3,8 @@
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
-enum{
+enum
+{
 	p_sensorWidth,
     p_sensorHeight,
     p_focalLength,
@@ -11,7 +12,8 @@ enum{
     p_focalDistance
 };
 
-struct MyCameraData{
+struct MyCameraData
+{
 	float fov;
 	float tan_fov;
 	float sensorWidth;
@@ -25,7 +27,8 @@ struct MyCameraData{
 
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, AtVector2 *lens) {
+inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
+{
     float phi, r;
 
     // switch coordinate space from [0, 1] to [-1, 1]
@@ -47,7 +50,8 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens) {
 
 
 
-node_parameters{
+node_parameters
+{
     AiParameterFlt("sensorWidth", 3.6); // 35mm film
     AiParameterFlt("sensorHeight", 2.4); // 35 mm film
     AiParameterFlt("focalLength", 3.5); // in cm
@@ -56,13 +60,15 @@ node_parameters{
 }
 
 
-node_initialize{
+node_initialize
+{
 	AiCameraInitialize(node);
 	AiNodeSetLocalData(node, new MyCameraData());
 }
 
 
-node_update{
+node_update
+{
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 
 	data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
@@ -122,16 +128,7 @@ camera_create_ray
 
 camera_reverse_ray
 {
-	const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-
-	/*
-	// Note: we ignore distortion to compute the screen projection
-	// compute projection factor: avoid divide by zero and flips when crossing the camera plane
-	float coeff = 1 / AiMax(fabsf(Po.z * data->tan_fov), 1e-3f);
-	Ps.x = Po.x * coeff;
-	Ps.y = Po.y * coeff;
-	return true;
-	*/
+	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 	return false;
 }
 

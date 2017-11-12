@@ -1,4 +1,5 @@
-(c) Johannes Hanika
+// (c) Johannes Hanika
+
 void camera_set_focus(camera_t *c, float dist){
     c->focus = dist;
 
