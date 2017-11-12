@@ -2,7 +2,7 @@
 
 // read in lens data
 	//if(argc > 1) strncpy(lensfilename, argv[1], 512);
-	lensfilename = c++string.c_str();
+	lensfilename = AtString.c_str();
 
 	// normalize lensname
 	lens_canonicalize_name(lensfilename, lens_name);
