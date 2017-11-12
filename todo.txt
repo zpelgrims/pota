@@ -1,0 +1,5 @@
+- Figure out the ray_reverse function, why is this needed?
+
+- How to use blue noise dithered sampler? Are the camera samples already of that kind? Does it break the blue noise pattern when I tranform the unit square into the unit disk using concentric mapping?
+
+- Add polynomial optics code
