@@ -3,8 +3,7 @@
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
-enum
-{
+enum{
 	p_sensorWidth,
     p_sensorHeight,
     p_focalLength,
@@ -12,8 +11,7 @@ enum
     p_focalDistance
 };
 
-struct MyCameraData
-{
+struct MyCameraData{
 	float fov;
 	float tan_fov;
 	float sensorWidth;
@@ -49,8 +47,7 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens) {
 
 
 
-node_parameters
-{
+node_parameters{
     AiParameterFlt("sensorWidth", 3.6); // 35mm film
     AiParameterFlt("sensorHeight", 2.4); // 35 mm film
     AiParameterFlt("focalLength", 3.5); // in cm
@@ -58,16 +55,15 @@ node_parameters
     AiParameterFlt("focalDistance", 100.0);
 }
 
-node_initialize
-{
+
+node_initialize{
 	AiCameraInitialize(node);
 	AiNodeSetLocalData(node, new MyCameraData());
 }
 
-node_update
-{
+
+node_update{
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-	//data->tan_fov = tanf(AiNodeGetFlt(node, "fov") * AI_DTOR / 2);
 
 	data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
 	data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
