@@ -3,4 +3,5 @@
 *.png
 *.dylib
 
-/polynomialOptics
+/polynomialOptics/*
+!/polynomialOptics/render/

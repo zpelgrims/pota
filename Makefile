@@ -7,7 +7,12 @@ CXXFLAGS=-Wall -O3 -shared -fPIC -I${ARNOLD_PATH}/include
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 
 HEADERS=\
-polynomialOptics/render/lens.h \
+polynomialOptics/render/lens.h\
+polynomialOptics/render/init.h\
+polynomialOptics/render/pt_evaluate.h\
+polynomialOptics/render/pt_sample_aperture.h\
+polynomialOptics/src/raytrace.h
+
 
 .PHONY=all clean
 

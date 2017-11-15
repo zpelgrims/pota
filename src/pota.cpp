@@ -25,6 +25,7 @@ struct MyCameraData
 	float fStop;
 	float focalDistance;
 	float apertureRadius;
+	float sensorShift;
 };
 
 
@@ -33,6 +34,7 @@ struct MyCameraData
 inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
 {
     float phi, r;
+
 
     // switch coordinate space from [0, 1] to [-1, 1]
     float a = 2.0 * ox - 1.0;
@@ -53,12 +55,13 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
 
 
 // returns sensor offset in mm
-float camera_set_focus(float dist){
+float camera_set_focus(float dist, float aperture_radius){
 
-    const float dm2mm = 100.0f;
+	// NOTE: what are my units? if it is cm then this should be 10..
+    const float dm2mm = 100.0f; //default is 100.0 (dmtomm)
 
     // camera space vector to v1:
-    const float target[3] = { 0.0, 0.0, dm2mm * dist };
+    const float target[3] = { 0.0, 0.0, dist }; //dist*dm2mm
 
     // initialize 5d light fields
     float sensor[5] = {0.0f}, out[5] = {0.0f};
@@ -72,7 +75,6 @@ float camera_set_focus(float dist){
     // just point through center of aperture
     float aperture[2] = {0.0f, 0.0f};
 
-    const float aperture_radius = camera_aperture_radius(c);
     const int S = 4;
 
     // trace a couple of adjoint rays from there to the sensor and
@@ -99,27 +101,28 @@ float camera_set_focus(float dist){
 
     // the focus plane/sensor offset:
     // negative because of reverse direction
-    if(off == off){ // check NaN cases
-      const float limit = 45.0f; // why this hard limit?
-      if(off > limit){
-          return limit;
-      } else if(off < -limit){
-          return -limit;
-      } else {
-          return offset; // in mm
-      }
+    if(offset == offset){ // check NaN cases
+		const float limit = 45.0f; // why this hard limit? Where does it come from?
+		if(offset > limit){
+			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
+          	return limit;
+		} else if(offset < -limit){
+			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f > %f", offset, -limit);
+        	return -limit;
+		} else {
+			return offset; // in mm
+		}
     }
 }
 
 
-
 node_parameters
 {
-    AiParameterFlt("sensorWidth", 3.6); // 35mm film
-    AiParameterFlt("sensorHeight", 2.4); // 35 mm film
-    AiParameterFlt("focalLength", 3.5); // in cm
+    AiParameterFlt("sensorWidth", 36.0); // 35mm film
+    AiParameterFlt("sensorHeight", 24.0); // 35 mm film
+    AiParameterFlt("focalLength", 14.0); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focalDistance", 100.0);
+    AiParameterFlt("focalDistance", 10000.0); // 100cm in mm
 }
 
 
@@ -140,12 +143,25 @@ node_update
 	data->fStop = AiNodeGetFlt(node, "fStop");
 	data->focalDistance = AiNodeGetFlt(node, "focalDistance");
 
-    data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focalLength))); // in radians
-    data->tan_fov = tanf(data->fov / 2.0f);
+    //data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focalLength))); // in radians
+    //data->tan_fov = tanf(data->fov / 2.0f);
     data->apertureRadius = (data->focalLength) / (2.0f * data->fStop);
 
-    AiMsgInfo("[POTA] fov: %f", data->fov);
 
+    AiMsgInfo("[POTA] lens_length: %s", lens_name);
+    AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", lens_outer_pupil_radius);
+    AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", lens_inner_pupil_radius);
+    AiMsgInfo("[POTA] lens_length: %f", lens_length);
+	AiMsgInfo("[POTA] lens_focal_length: %f", lens_focal_length);
+	AiMsgInfo("[POTA] lens_aperture_pos: %f", lens_aperture_pos);
+	AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", lens_aperture_housing_radius);
+	AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", lens_outer_pupil_curvature_radius);
+	AiMsgInfo("[POTA] lens_focal_length: %f", lens_focal_length);
+	AiMsgInfo("[POTA] lens_field_of_view: %f", lens_field_of_view);
+	AiMsgInfo("[POTA] --------------------------------------");
+
+	data->sensorShift = camera_set_focus(data->focalDistance, lens_inner_pupil_radius);
+	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focalDistance, data->sensorShift);
 
 	AiCameraUpdate(node, false);
 }
@@ -160,32 +176,70 @@ camera_create_ray
 {
 	const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 
+  // polynomial optics
 
-	// create point on lens
-    AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
+    // need to generate a random lambda, or start 550mm and then see the shift?
+    // transmittance is probably just a multiplier on the wavelength
+    float lambda = .550f;
+    float in[5] = {0.0f};
+    float out[5] = {0.0f};
 
-    // calculate direction vector from origin to point on lens
-    output.dir = AiV3Normalize(p - output.origin);
+    // set sensor coords
+    // this shit is probably wrong as fuck
+    in[0] = input.sx * (data->sensorWidth * 0.5);
+    in[1] = input.sy * (data->sensorWidth * 0.5);
+    //in[0] = input.sx * tanf(data->fov);
+    //in[1] = input.sy * tanf(data->fov);
+    // do I not need to set the origin.z? Or should i translate the sensor later on?
 
-    // either get uniformly distributed points on the unit disk or bokeh image
-    AtVector2 lens(0.0, 0.0);
+
+    // sample a point on the lens, supply the -1 to 1 random coordinates?
+    // ideally use the supplied function: lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
+    // but for now concentric mapping will do
+    AtVector2 lens(0.0f, 0.0f);
     concentricDiskSample(input.lensx, input.lensy, &lens);
 
-    // scale points in [-1, 1] domain to actual aperture radius
-    lens *= data->apertureRadius;
+    // think i should be scaling by the sensor radius
+    //lens *= lens_inner_pupil_radius; //replace this for radius calculated using fstop, for now the aperture is fully open
+    //out[0] = lens.x;
+    //out[1] = lens.y;
+   	out[0] = lens.x * 0.05; //tmp
+    out[1] = lens.y * 0.05; //tmp
 
-    // new origin is these points on the lens
-    output.origin.x = lens.x;
-    output.origin.y = lens.y;
-    output.origin.z = 0.0;
+    // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
+	// wavelength, such that the path through the lens system will be valid, i.e.
+	// lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
+	// in: point on sensor. out: point on aperture.
+	lens_pt_sample_aperture(in, out, data->focalDistance);
 
-    // Compute point on plane of focus, intersection on z axis
-    float intersection = std::abs(data->focalDistance / output.dir.z);
-    AtVector focusPoint = output.dir * intersection;
-    output.dir = AiV3Normalize(focusPoint - output.origin);
+	// evaluates from sensor (in) to outer pupil (out).
+	// input arrays are 5d [x,y,dx,dy,lambda] where dx and dy are the direction in
+	// two-plane parametrization (that is the third component of the direction would be 1.0).
+	// units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
+	// returns the transmittance computed from the polynomial.
+    float transmittance = lens_evaluate(in, out);
 
-    // now looking down -Z
-    output.dir.z *= -1.0;
+    // converts sphere/sphere coords to camera coords
+    float inpos[2] = {in[0], in[1]};
+    float indir[2] = {in[2], in[3]};
+    float outpos[2] = {out[0], out[1]};
+    float outdir[2] = {out[2], out[3]};
+
+    // HOW TO QUERY sphereCenter??
+    // lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad);
+    lens_sphereToCs(inpos, indir, outpos, outdir, 0.0f, lens_outer_pupil_curvature_radius); // 0.0f could also be -lens_outer_pupil_curvature_radius
+    
+    output.origin.x = outpos[0];
+    output.origin.y = outpos[1];
+    output.origin.z = data->sensorShift; // not sure if this should be done here
+
+    output.dir.x = outdir[0];
+    output.dir.y = outdir[1];
+    output.dir.z = -1.0f; // NOT SURE IF CORRECT
+
+    // convert wavelength shift into rgb shift
+    output.weight = 1.0f;
+
 }
 
 
