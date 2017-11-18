@@ -1,7 +1,7 @@
 options
 {
- xres 1024
- yres 1024
+ xres 512
+ yres 512
  AA_samples 4
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -10,7 +10,7 @@ options
 pota
 {
  name pota
- position 0 15 100
+ position 0 30 200
  look_at 0 -0.2 0
  up 0 1 0
 }
@@ -33,19 +33,19 @@ sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  -15 0 0 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  -75 0 0 0
 }
  
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
   0 0 0 0
 }
  
@@ -53,70 +53,70 @@ sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  15 0 0 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  75 0 0 0
 }
 
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  0 0 -15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  0 0 -75 0
 }
 
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  0 0 15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  0 0 75 0
 }
 
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  15 0 15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  75 0 75 0
 }
 
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  15 0 -15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  75 0 -75 0
 }
  
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  -15 0 15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  -75 0 75 0
 }
 
 sphere
 {
  shader mystd
  matrix
-  10 0 0 0
-  0 10 0 0
-  0 0 10 0
-  -15 0 -15 0
+  50 0 0 0
+  0 50 0 0
+  0 0 50 0
+  -75 0 -75 0
 }
 
 standard_surface

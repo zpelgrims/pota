@@ -11,7 +11,8 @@ polynomialOptics/render/lens.h\
 polynomialOptics/render/init.h\
 polynomialOptics/render/pt_evaluate.h\
 polynomialOptics/render/pt_sample_aperture.h\
-polynomialOptics/src/raytrace.h
+polynomialOptics/render/pt_evaluate_aperture.h\
+polynomialOptics/render/lt_sample_aperture.h
 
 
 .PHONY=all clean

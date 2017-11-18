@@ -1,8 +1,26 @@
 #pragma once
 
 #include <math.h>
-#include <algorithm>    // std::fmax
-#include "../src/raytrace.h"
+
+
+static inline float raytrace_dot(const float *u, const float *v)
+{
+  return ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2]);
+}
+
+static inline void raytrace_cross(float *r, const float *u, const float *v)
+{
+  r[0] = u[1]*v[2]-u[2]*v[1];
+  r[1] = u[2]*v[0]-u[0]*v[2];
+  r[2] = u[0]*v[1]-u[1]*v[0];
+}
+
+static inline void raytrace_normalise(float *v)
+{
+  const float ilen = 1.0f/sqrtf(raytrace_dot(v,v));
+  for(int k=0;k<3;k++) v[k] *= ilen;
+}
+
 
 
 static inline float dotproduct(float *u, float *v)
@@ -25,6 +43,16 @@ static inline float MAX(float a, float b)
   return a>b?a:b;
 }
 
+static inline void common_sincosf(float phi, float* sin, float* cos)
+{
+#ifdef __APPLE__
+  *sin = sinf(phi);
+  *cos = cosf(phi);
+#else
+  sincosf(phi, sin, cos);
+#endif
+}
+
 
 
 // helper function for dumped polynomials to compute integer powers of x:
@@ -45,9 +73,9 @@ static inline void lens_sphereToCs(const float *inpos, const float *indir, float
   {
     inpos[0]/sphereRad,
     inpos[1]/sphereRad,
-    sqrtf(fmax(0, sphereRad*sphereRad-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(sphereRad)
+    sqrtf(MAX(0, sphereRad*sphereRad-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(sphereRad)
   };
-  const float tempDir[3] = {indir[0], indir[1], sqrtf(fmax(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
+  const float tempDir[3] = {indir[0], indir[1], sqrtf(MAX(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
 
   float ex[3] = {normal[2], 0, -normal[0]};
   normalise(ex);
@@ -96,13 +124,15 @@ static inline float lens_evaluate(const float *in, float *out)
 {
   __attribute__ ((unused)) const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
 #include "pt_evaluate.h"
-  out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
+  out[0] = out_x;
+  out[1] = out_y;
+  out[2] = out_dx;
+  out[3] = out_dy;
 
-
-  return fmax(0.0f, out_transmittance);
+  return MAX(0.0f, out_transmittance);
 }
 
-/*
+
 // evaluates from the sensor (in) to the aperture (out) only
 // returns the transmittance.
 static inline float lens_evaluate_aperture(const float *in, float *out)
@@ -110,9 +140,12 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
   __attribute__ ((unused)) const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
 #include "pt_evaluate_aperture.h"
   out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
-  return fmax(0.0f, out_transmittance);
+  return MAX(0.0f, out_transmittance);
 }
-*/
+
+
+
+// what unit should "dist" be in? mm, or dm?
 
 // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
 // wavelength, such that the path through the lens system will be valid, i.e.
@@ -122,10 +155,19 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist)
 {
   __attribute__ ((unused)) float out_x = out[0], out_y = out[1], out_dx = out[2], out_dy = out[3], out_transmittance = 1.0f;
   __attribute__ ((unused)) float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+
 #include "pt_sample_aperture.h"
+
   // directions may have changed, copy all to be sure.
-  out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
-  in[0] = x; in[1] = y; in[2] = dx; in[3] = dy;
+  out[0] = out_x;
+  out[1] = out_y;
+  out[2] = out_dx;
+  out[3] = out_dy;
+
+  in[0] = x;
+  in[1] = y;
+  in[2] = dx;
+  in[3] = dy;
 }
 
 // solves for a sensor position give a scene point and an aperture point
@@ -142,7 +184,7 @@ static inline float lens_lt_sample_aperture(
   float x = 0, y = 0, dx = 0, dy = 0;
 #include "lt_sample_aperture.h"
   sensor[0] = x; sensor[1] = y; sensor[2] = dx; sensor[3] = dy; sensor[4] = lambda;
-  return fmax(0.0f, out[4]);
+  return MAX(0.0f, out[4]);
 
 }
 
@@ -244,10 +286,6 @@ static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, 
   *y = radius * (b * p1[0] + c * p2[0]);
 }
 */
-inline void sincosf(float theta, float *_sin, float *_cos) {
-    *_sin = sinf(theta);
-    *_cos = cosf(theta);
-}
 
 static inline int lens_clip_aperture(const float x, const float y, const float radius, const int blades)
 { 
@@ -258,8 +296,7 @@ static inline int lens_clip_aperture(const float x, const float y, const float r
   for(int b=1;b<blades+1;b++)
   {      
     float tmpx, tmpy;
-    //common_sincosf(2.0f*(float)M_PI/blades * b, &tmpy, &tmpx);
-    sincosf(2.0f*(float)M_PI/blades * b, &tmpy, &tmpx);
+    common_sincosf(2.0f*(float)M_PI/blades * b, &tmpy, &tmpx);
     tmpx *= radius;
     tmpy *= radius;
     const float normalx = xx + tmpx;
