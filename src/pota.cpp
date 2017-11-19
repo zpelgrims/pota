@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string.h>
 #include <algorithm>
+#include "../polynomialOptics/render/lens.h"
+
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
@@ -51,10 +53,6 @@ static const char* LensModelNames[] =
     "double_gauss",
     NULL
 };
-
-
-// need to write some default value as the lens name for it to be included
-#include "../polynomialOptics/render/lens.h"
 
 
 
@@ -144,7 +142,7 @@ float camera_set_focus(float dist, float aperture_radius){
 			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f > %f", offset, -limit);
         	return -limit;
 		} else {
-			AiMsgInfo("[POTA] sensor offset inside of limits: %f > %f", offset, offset);
+			AiMsgInfo("[POTA] sensor offset inside of limits: %f", offset);
 			return offset; // in mm
 		}
     }
@@ -158,7 +156,7 @@ node_parameters
     AiParameterFlt("sensorHeight", 24.0); // 35 mm film
     AiParameterFlt("focalLength", 7.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focusDistance", .2); // 200cm in mm
+    AiParameterFlt("focusDistance", .1); // in mm?
 
 }
 
@@ -276,12 +274,12 @@ camera_create_ray
     AtVector2 lens(0.0f, 0.0f);
     concentricDiskSample(input.lensx, input.lensy, &lens);
 
-    //lens = (lens*2.0f) - 0.5f; // transform to -1 to 1 coords?
+    //lens *= lens_inner_pupil_radius/30.0; //replace this for radius calculated using fstop, for now the aperture is fully open
+    out[0] = lens.x * lens_inner_pupil_radius/30.0 - in[0]/30.0; //replace with distance to sensor.. but what is that? distance is relative to?
+    out[1] = lens.y * lens_inner_pupil_radius/30.0 - in[1]/30.0;
 
-    // think i should be scaling by the sensor radius
-    lens *= lens_inner_pupil_radius; //replace this for radius calculated using fstop, for now the aperture is fully open
-    out[0] = lens.x;
-    out[1] = lens.y;
+    in[0] += data->sensorShift * out[0]; // who do i have to do this?
+    in[1] += data->sensorShift * out[1];
 
 
 
@@ -292,7 +290,7 @@ camera_create_ray
 	// lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
 	// in: point on sensor. out: point on aperture.
 	//lens_pt_sample_aperture(in, out, data->focusDistance);
-	lens_pt_sample_aperture(in, out, data->focusDistance);
+	//lens_pt_sample_aperture(in, out, data->focusDistance);
 	if(data->counter == countlimit){
 		std::cout << "lens_pt_sample_aperture" << std::endl;
 		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
@@ -358,15 +356,21 @@ camera_create_ray
 		std::cout << std::endl;
 	}
 
+	AtVector dir(in[0], in[1], 1.0);
+	dir = AiV3Normalize(dir);
+
+	dir.x += outdir[0];
+	dir.y += outdir[1];
+
+	dir = AiV3Normalize(dir);
 
 
     output.origin.x = outpos[0];
     output.origin.y = outpos[1];
-    //output.origin.z = data->sensorShift; // not sure if this should be done 
     output.origin.z = 0.0; // not sure if this should be done here
 
-    output.dir.x = outdir[0];
-    output.dir.y = outdir[1];
+    output.dir.x = dir.x;
+    output.dir.y = dir.y;
     output.dir.z = -1.0f; // NOT SURE IF CORRECT
 
     // convert wavelength shift into rgb shift
