@@ -274,23 +274,24 @@ camera_create_ray
     AtVector2 lens(0.0f, 0.0f);
     concentricDiskSample(input.lensx, input.lensy, &lens);
 
+    //get direction
     //lens *= lens_inner_pupil_radius/30.0; //replace this for radius calculated using fstop, for now the aperture is fully open
     out[0] = lens.x * lens_inner_pupil_radius/30.0 - in[0]/30.0; //replace with distance to sensor.. but what is that? distance is relative to?
     out[1] = lens.y * lens_inner_pupil_radius/30.0 - in[1]/30.0;
 
+
+    //shift sensor to focus point
     in[0] += data->sensorShift * out[0]; // who do i have to do this?
-    in[1] += data->sensorShift * out[1];
+    in[1] += data->sensorShift * out[1]; // who do i have to do this?
 
 
 
     // I BELIEVE ITS LENS_PT_SAMPLE_APERTURE THAT IS FUCKING THINGS UP
 
     // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
-	// wavelength, such that the path through the lens system will be valid, i.e.
-	// lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
-	// in: point on sensor. out: point on aperture.
+	// wavelength, such that the path through the lens system will be valid
 	//lens_pt_sample_aperture(in, out, data->focusDistance);
-	//lens_pt_sample_aperture(in, out, data->focusDistance);
+
 	if(data->counter == countlimit){
 		std::cout << "lens_pt_sample_aperture" << std::endl;
 		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
@@ -303,14 +304,6 @@ camera_create_ray
 		std::cout << "\tout[4](lambda): " << out[4] << std::endl;
 	}
 
-	/*
-	lens_evaluate_aperture(in, out);
-	if(data->counter == countlimit){
-		std::cout << "AFTER LENS_EVALUATE_APERTURE" << std::endl;
-		std::cout << "in[0]: " << in[0] << ", in[1]: " << in[1] << ", in[2]: " << in[2] << ", in[3]: " << in[3] << ", in[4]: " << in[4] << std::endl;
-		std::cout << "out[0]: " << out[0] << ", out[1]: " << out[1] << ", out[2]: " << out[2] << ", out[3]: " << out[3] << ", out[4]: " << out[4] << std::endl;
-	}*/
-
 
 
 	// evaluates from sensor (in) to outer pupil (out).
@@ -319,7 +312,6 @@ camera_create_ray
 	// units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
 	// returns the transmittance computed from the polynomial.
 
-	//returns negative values, hence clipped to 0.. Why? Up to values like -155161..
     float transmittance = lens_evaluate(in, out);
 	if(data->counter == countlimit){
 		std::cout << "lens_evaluate" << std::endl;
@@ -344,7 +336,7 @@ camera_create_ray
 
     // HOW TO QUERY sphereCenter?? maybe it's just -lens_outer_pupil_curvature_radius
     // lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad);
-    lens_sphereToCs(inpos, indir, outpos, outdir, 0.0f, lens_outer_pupil_curvature_radius); // 0.0f could also be -lens_outer_pupil_curvature_radius
+    lens_sphereToCs(inpos, indir, outpos, outdir, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius); // 0.0f could also be -lens_outer_pupil_curvature_radius
 	if(data->counter == countlimit){
 		std::cout << "lens_sphereToCs" << std::endl;
 		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
