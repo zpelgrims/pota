@@ -156,7 +156,7 @@ node_parameters
     AiParameterFlt("sensorHeight", 24.0); // 35 mm film
     AiParameterFlt("focalLength", 7.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focusDistance", .1); // in mm?
+    AiParameterFlt("focusDistance", 1000.0); // in mm?
 
 }
 
@@ -191,8 +191,6 @@ node_update
 	data->focusDistance = AiNodeGetFlt(node, "focusDistance");
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 
-    //data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focalLength))); // in radians
-    //data->tan_fov = tanf(data->fov / 2.0f);
     //data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
 	data->apertureRadius = lens_inner_pupil_radius;
 
@@ -218,106 +216,66 @@ camera_create_ray
 
   // polynomial optics
 
-    // need to generate a random lambda, or start 550nm and then see the shift?
-    // transmittance is probably just a multiplier on the wavelength
+    // CHROMATIC ABERRATION STRATEGY
+    // if none: trace 1 ray at .55f
+    // if some: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
     float lambda = 0.55f; // 550 nanometers
-    float in[5] = {0.0f};
-    float out[5] = {0.0f};
-    in[4] = lambda;
 
-    // set sensor coords
-    // might be wrong
-    in[0] = input.sx * (data->sensorWidth * 0.5f);
-    in[1] = input.sy * (data->sensorHeight * 0.5f);
+    float sensor[5] = {0.0f};
+    float aperture[5] = {0.0f};
+    float out[5] = {0.0f};
+    sensor[4] = lambda;
+
+    // set sensor coords, might be wrong
+    sensor[0] = input.sx * (data->sensorWidth * 0.5f);
+    sensor[1] = input.sy * (data->sensorHeight * 0.5f);
 
     if(data->counter == countlimit){
     	std:: cout << "input.sx, input.sy: " << input.sx << ", " << input.sy << std::endl;
-		std::cout << "in[0, 1]: " << in[0] << ", " << in[1] << std::endl;
+		std::cout << "sensor[0, 1]: " << sensor[0] << ", " << sensor[1] << std::endl;
 	}
 
-    /*
-	const float xres = 36.0;
-	const float yres = 24.0;
 
-	AtVector2 s(input.sx/xres, input.sy/yres);
+    AtVector2 unit_disk(0.0f, 0.0f);
+    concentricDiskSample(input.lensx, input.lensy, &unit_disk);
 
-	float diagonal = std::sqrt(xres*xres + yres*yres);
-	float aspect = (float)yres / (float)xres;
-	float x = std::sqrt(diagonal * diagonal / (1 + aspect * aspect));
-	float y = aspect * x;
-
-	AtVector2 physicalExtend1(-x/2, -y/2);
-	AtVector2 physicalExtend2(x/2, y/2);
-	AtVector2 pMin(fmin(physicalExtend1.x, physicalExtend2.x), fmin(physicalExtend1.y, physicalExtend2.y));
-	AtVector2 pMax(fmax(physicalExtend1.x, physicalExtend2.x), fmax(physicalExtend1.y, physicalExtend2.y));
-
-	AtVector2 pFilm2(Lerp(s.x, pMin.x, pMax.x), Lerp(s.y, pMin.y, pMax.y));
-	AtVector pFilm(-pFilm2.x, pFilm2.y, 0);
-
-	in[0] = pFilm.x;
-	in[1] = pFilm.y;
-
-	if(data->counter == countlimit){
-		std::cout << "pFilm.x: " << pFilm.x << ", pFilm.y: " << pFilm.y << std::endl;
-	}*/
-	
-	
-
-    //in[0] = input.sx * tanf(data->fov);
-    //in[1] = input.sy * tanf(data->fov);
-    // do I not need to set the origin.z? Or should i translate the sensor later on?
+    aperture[0] = unit_disk.x * lens_aperture_housing_radius;
+    aperture[1] = unit_disk.y * lens_aperture_housing_radius;
 
 
-    // sample a point on the lens, supply the -1 to 1 random coordinates?
-    // ideally use the supplied function: lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
-    // but for now concentric mapping will do
-    AtVector2 lens(0.0f, 0.0f);
-    concentricDiskSample(input.lensx, input.lensy, &lens);
+    lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
 
-    //get direction
-    //lens *= lens_inner_pupil_radius/30.0; //replace this for radius calculated using fstop, for now the aperture is fully open
-    out[0] = lens.x * lens_inner_pupil_radius/30.0 - in[0]/30.0; //replace with distance to sensor.. but what is that? distance is relative to?
-    out[1] = lens.y * lens_inner_pupil_radius/30.0 - in[1]/30.0;
+    // move to beginning of polynomial
+	sensor[0] += sensor[2] * data->sensorShift;
+	sensor[1] += sensor[3] * data->sensorShift;
 
-
-    //shift sensor to focus point
-    in[0] += data->sensorShift * out[0]; // who do i have to do this?
-    in[1] += data->sensorShift * out[1]; // who do i have to do this?
-
-
-
-    // I BELIEVE ITS LENS_PT_SAMPLE_APERTURE THAT IS FUCKING THINGS UP
-
-    // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
-	// wavelength, such that the path through the lens system will be valid
-	//lens_pt_sample_aperture(in, out, data->focusDistance);
 
 	if(data->counter == countlimit){
 		std::cout << "lens_pt_sample_aperture" << std::endl;
-		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
-		std::cout << "\tin[2, 3](dir): " << in[2] << ", " << in[3] << std::endl;
-		std::cout << "\tin[4](lambda): " << in[4] << std::endl;
+		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
+		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
+		std::cout << "\tsensor[4](lambda): " << sensor[4] << std::endl;
 
 		std::cout << std::endl;
-		std::cout << "\tout[0, 1] (pos): " << out[0] << ", " << out[1] << std::endl;
-		std::cout << "\tout[2, 3](dir): " << out[2] << ", " << out[3] << std::endl;
-		std::cout << "\tout[4](lambda): " << out[4] << std::endl;
+		std::cout << "\tout[0, 1] (pos): " << aperture[0] << ", " << aperture[1] << std::endl;
+		std::cout << "\tout[2, 3](dir): " << aperture[2] << ", " << aperture[3] << std::endl;
+		std::cout << "\tout[4](lambda): " << aperture[4] << std::endl;
 	}
 
 
 
-	// evaluates from sensor (in) to outer pupil (out).
+	// evaluates from sensor (sensor) to outer pupil (out).
 	// input arrays are 5d [x,y,dx,dy,lambda] where dx and dy are the direction in
 	// two-plane parametrization (that is the third component of the direction would be 1.0).
 	// units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
 	// returns the transmittance computed from the polynomial.
 
-    float transmittance = lens_evaluate(in, out);
+    float transmittance = lens_evaluate(sensor, out);
 	if(data->counter == countlimit){
 		std::cout << "lens_evaluate" << std::endl;
-		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
-		std::cout << "\tin[2, 3](dir): " << in[2] << ", " << in[3] << std::endl;
-		std::cout << "\tin[4](lambda): " << in[4] << std::endl;
+		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
+		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
+		std::cout << "\tsensor[4](lambda): " << sensor[4] << std::endl;
 
 		std::cout << std::endl;
 		std::cout << "\tout[0, 1] (pos): " << out[0] << ", " << out[1] << std::endl;
@@ -328,45 +286,62 @@ camera_create_ray
 		std::cout << "\ttransmittance: " << transmittance << std::endl;
 	}
 
+
+	if(transmittance <= 0.0f){
+		output.weight = 0.0f;
+	}
+
+	// crop out by outgoing pupil and crop at inward facing pupil:
+	const float px = sensor[0] + sensor[2] * lens_focal_length;
+	const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+
+	if((out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) ||
+	   (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius))
+	{
+		output.weight = 0.0f;
+	}
+
+
+
     // converts sphere/sphere coords to camera coords
-    float inpos[2] = {in[0], in[1]};
-    float indir[2] = {in[2], in[3]};
-    float outpos[2] = {out[0], out[1]};
-    float outdir[2] = {out[2], out[3]};
+    //float inpos[2] = {in[0], in[1]};
+    //float indir[2] = {in[2], in[3]};
+    //float outpos[2] = {out[0], out[1]};
+    //float outdir[2] = {out[2], out[3]};
+
+
+	// convert out[4] to camera space:
+	float camera_space_pos[3];
+	float camera_space_omega[3];
+	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
+
+
 
     // HOW TO QUERY sphereCenter?? maybe it's just -lens_outer_pupil_curvature_radius
-    // lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad);
-    lens_sphereToCs(inpos, indir, outpos, outdir, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius); // 0.0f could also be -lens_outer_pupil_curvature_radius
-	if(data->counter == countlimit){
+    if(data->counter == countlimit){
 		std::cout << "lens_sphereToCs" << std::endl;
-		std::cout << "\tin[0, 1](pos): " << in[0] << ", " << in[1] << std::endl;
-		std::cout << "\tin[2, 3](dir): " << in[2] << ", " << in[3] << std::endl;
-
+		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
+		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
 		std::cout << std::endl;
-		std::cout << "\toutpos[0, 1]: " << outpos[0] << ", " << outpos[1] << std::endl;
-		std::cout << "\toutdir[0, 1]: " << outdir[0] << ", " << outdir[1] << std::endl;
+		std::cout << "\toutpos[0, 1, 2]: " << camera_space_pos[0] << ", " << camera_space_pos[1] << camera_space_pos[2] << std::endl;
+		std::cout << "\toutdir[0, 1, 2]: " << camera_space_omega[0] << ", " << camera_space_omega[1] << camera_space_omega[2] << std::endl;
 		std::cout << std::endl;
 	}
 
-	AtVector dir(in[0], in[1], 1.0);
-	dir = AiV3Normalize(dir);
-
-	dir.x += outdir[0];
-	dir.y += outdir[1];
-
-	dir = AiV3Normalize(dir);
 
 
-    output.origin.x = outpos[0];
-    output.origin.y = outpos[1];
-    output.origin.z = 0.0; // not sure if this should be done here
+    output.origin.x = camera_space_pos[0];
+    output.origin.y = camera_space_pos[1];
+    output.origin.z = camera_space_pos[2];
 
-    output.dir.x = dir.x;
-    output.dir.y = dir.y;
-    output.dir.z = -1.0f; // NOT SURE IF CORRECT
+    output.dir.x = camera_space_omega[0];
+    output.dir.y = camera_space_omega[1];
+    output.dir.z = camera_space_omega[2];
+
+    output.dir *= -1.0;
 
     // convert wavelength shift into rgb shift
-    output.weight = 1.0f;
+    output.weight *= 1.0f;
 
 
     

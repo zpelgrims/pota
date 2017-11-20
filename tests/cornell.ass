@@ -159,7 +159,7 @@ quad_light
   vertices 4 1 POINT -5 30 5   -5 30 0.0  5 30 0.0   5 30 5
   color 1.0 1.0 1.0
   intensity 1
-  exposure 11
+  exposure 13
   samples 2
   normalize on
 }
