@@ -13,8 +13,9 @@ pota
   position 0 0 100
   look_at 0 0 0
   up 0 1 0
-  fov 45
+  fov 105
   focusDistance 1000
+  sensor_shift_manual 0.0
 }
 
 standard_surface

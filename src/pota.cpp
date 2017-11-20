@@ -15,7 +15,8 @@ enum
     p_sensorHeight,
     p_focalLength,
     p_fStop,
-    p_focusDistance
+    p_focusDistance,
+    p_sensor_shift_manual
 };
 
 
@@ -41,6 +42,7 @@ struct MyCameraData
 	float sensorShift;
 	int counter;
     LensModel lensModel;
+    float sensor_shift_manual;
 
 };
 
@@ -139,7 +141,7 @@ float camera_set_focus(float dist, float aperture_radius){
 			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
           	return limit;
 		} else if(offset < -limit){
-			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f > %f", offset, -limit);
+			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
         	return -limit;
 		} else {
 			AiMsgInfo("[POTA] sensor offset inside of limits: %f", offset);
@@ -156,7 +158,8 @@ node_parameters
     AiParameterFlt("sensorHeight", 24.0); // 35 mm film
     AiParameterFlt("focalLength", 7.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focusDistance", 1000.0); // in mm?
+    AiParameterFlt("focusDistance", 1000.0); // in mm
+    AiParameterFlt("sensor_shift_manual", 0.0f);
 
 }
 
@@ -196,6 +199,8 @@ node_update
 
 	data->sensorShift = camera_set_focus(data->focusDistance, lens_inner_pupil_radius);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focusDistance, data->sensorShift);
+
+	data->sensor_shift_manual = AiNodeGetFlt(node, "sensor_shift_manual");
 
 	AiCameraUpdate(node, false);
 }
@@ -243,11 +248,11 @@ camera_create_ray
     aperture[1] = unit_disk.y * lens_aperture_housing_radius;
 
 
-    lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
+    lens_pt_sample_aperture(sensor, aperture, data->sensor_shift_manual);
 
     // move to beginning of polynomial
-	sensor[0] += sensor[2] * data->sensorShift;
-	sensor[1] += sensor[3] * data->sensorShift;
+	sensor[0] += sensor[2] * data->sensor_shift_manual;
+	sensor[1] += sensor[3] * data->sensor_shift_manual;
 
 
 	if(data->counter == countlimit){
@@ -262,13 +267,6 @@ camera_create_ray
 		std::cout << "\tout[4](lambda): " << aperture[4] << std::endl;
 	}
 
-
-
-	// evaluates from sensor (sensor) to outer pupil (out).
-	// input arrays are 5d [x,y,dx,dy,lambda] where dx and dy are the direction in
-	// two-plane parametrization (that is the third component of the direction would be 1.0).
-	// units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
-	// returns the transmittance computed from the polynomial.
 
     float transmittance = lens_evaluate(sensor, out);
 	if(data->counter == countlimit){
@@ -286,7 +284,7 @@ camera_create_ray
 		std::cout << "\ttransmittance: " << transmittance << std::endl;
 	}
 
-
+	
 	if(transmittance <= 0.0f){
 		output.weight = 0.0f;
 	}
@@ -300,33 +298,61 @@ camera_create_ray
 	{
 		output.weight = 0.0f;
 	}
-
-
-
-    // converts sphere/sphere coords to camera coords
-    //float inpos[2] = {in[0], in[1]};
-    //float indir[2] = {in[2], in[3]};
-    //float outpos[2] = {out[0], out[1]};
-    //float outdir[2] = {out[2], out[3]};
-
+	
 
 	// convert out[4] to camera space:
 	float camera_space_pos[3];
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
 
-
-
-    // HOW TO QUERY sphereCenter?? maybe it's just -lens_outer_pupil_curvature_radius
     if(data->counter == countlimit){
 		std::cout << "lens_sphereToCs" << std::endl;
 		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
 		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
 		std::cout << std::endl;
-		std::cout << "\toutpos[0, 1, 2]: " << camera_space_pos[0] << ", " << camera_space_pos[1] << camera_space_pos[2] << std::endl;
-		std::cout << "\toutdir[0, 1, 2]: " << camera_space_omega[0] << ", " << camera_space_omega[1] << camera_space_omega[2] << std::endl;
+		std::cout << "\toutpos[0, 1, 2]: " << camera_space_pos[0] << ", " << camera_space_pos[1] << ", " << camera_space_pos[2] << std::endl;
+		std::cout << "\toutdir[0, 1, 2]: " << camera_space_omega[0] << ", " << camera_space_omega[1] << ", " << camera_space_omega[2] << std::endl;
 		std::cout << std::endl;
 	}
+
+
+	/* NOT NEEDED FOR ARNOLD, GOOD INFO THO
+	//now let's go world space:
+
+	//initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
+
+	  view_cam_init_frame(p, &p->v[0].hit);
+	  for(int k=0;k<3;k++)
+	  {
+
+	//this is the world space position of the outgoing ray:
+	    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
+	                        + camera_space_pos[1] * p->v[0].hit.b[k] 
+	                        + camera_space_pos[2] * p->v[0].hit.n[k];
+
+	//this is the world space direction of the outgoing ray:
+	    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
+	                       + camera_space_omega[1] * p->v[0].hit.b[k]
+	                       + camera_space_omega[2] * p->v[0].hit.n[k];
+	  }
+
+	//now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
+	  const float R = lens_outer_pupil_curvature_radius;
+	  // recompute full frame:
+	  float n[3] = {0.0f};
+	  for(int k=0;k<3;k++)
+	    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
+	            + p->v[0].hit.b[k] * out[1]/R 
+	            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
+
+	  for(int k=0;k<3;k++) 
+	    p->v[0].hit.n[k] = n[k];
+
+	  // also clip to valid pixel range.
+	  if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
+	     p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
+	    return 0.0f;
+	*/
 
 
 
@@ -337,8 +363,7 @@ camera_create_ray
     output.dir.x = camera_space_omega[0];
     output.dir.y = camera_space_omega[1];
     output.dir.z = camera_space_omega[2];
-
-    output.dir *= -1.0;
+    output.dir *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
 
     // convert wavelength shift into rgb shift
     output.weight *= 1.0f;
