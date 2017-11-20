@@ -2,11 +2,39 @@
 #include <iostream>
 #include <string.h>
 #include <algorithm>
+
+
+#include <string>
+#include <cstring>
+#include <fstream>
+#include <sstream>
+
 #include "../polynomialOptics/render/lens.h"
+
+#define DRAW_DIRECTORY = "/Users/zeno/pota/tests/";
+
+#ifdef _DRAW
+#  define DRAW_ONLY(block) block
+#else
+#  define DRAW_ONLY(block)
+#endif
 
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
+
+
+
+struct drawData{
+    std::ofstream myfile;
+    bool draw;
+    int counter;
+
+    drawData()
+        : draw(false), counter(0){
+    }
+};
+
 
 enum
 {
@@ -43,6 +71,9 @@ struct MyCameraData
 	int counter;
     LensModel lensModel;
     float sensor_shift_manual;
+
+
+    drawData draw;
 
 };
 
@@ -117,7 +148,8 @@ float camera_set_focus(float dist, float aperture_radius){
       for(int k=0; k<2; k++){
 
         // reset aperture
-        aperture[0] = aperture[1] = 0.0f;
+        aperture[0] = 0.0f;
+        aperture[1] = 0.0f;
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
@@ -160,7 +192,6 @@ node_parameters
     AiParameterFlt("fStop", 1.4);
     AiParameterFlt("focusDistance", 1000.0); // in mm
     AiParameterFlt("sensor_shift_manual", 0.0f);
-
 }
 
 
@@ -168,12 +199,28 @@ node_initialize
 {
 	AiCameraInitialize(node);
 	AiNodeSetLocalData(node, new MyCameraData());
+
+
+    DRAW_ONLY(AiMsgInfo("[ZOIC] ---- IMAGE DRAWING ENABLED @ COMPILE TIME ----"));
 }
 
 
 node_update
-{
+{	
+
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+
+
+    drawData &dd = data->draw;
+	DRAW_ONLY({
+        // create file to transfer data to python drawing module
+        dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
+    })
+
+    DRAW_ONLY({
+        dd.myfile << "RAYS{";
+    })
+
 
 	AiMsgInfo("[POTA] lens_length: %s", lens_name);
     AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", lens_outer_pupil_radius);
@@ -207,14 +254,44 @@ node_update
 
 node_finish
 {
+
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+    drawData &dd = data->draw;
+
+    DRAW_ONLY({
+        AiMsgInfo("%-40s %12d", "[ZOIC] Rays to be drawn", ld.drawRays);
+
+        dd.myfile << "}";
+        dd.myfile.close();
+
+        // execute python drawing
+        std::string command = "python " + DRAW_SCRIPTS_DIR + "draw.py";
+        system(command.c_str());
+
+        AiMsgInfo("[ZOIC] Drawing finished");
+    })
+
 	delete data;
 }
 
 camera_create_ray
 {
+	
+
+
 	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+
+	drawData &dd = data->draw;
+
+    DRAW_ONLY({
+        // draw counters
+        if (dd.counter == 100000){
+            dd.draw = true;
+            dd.counter = 0;
+    	}
+    })
+
 
 	int countlimit = 500000;
 	++data->counter;
@@ -222,8 +299,8 @@ camera_create_ray
   // polynomial optics
 
     // CHROMATIC ABERRATION STRATEGY
-    // if none: trace 1 ray at .55f
-    // if some: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
+    // no:  trace 1 ray at .55f
+    // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
     float lambda = 0.55f; // 550 nanometers
 
     float sensor[5] = {0.0f};
@@ -231,28 +308,28 @@ camera_create_ray
     float out[5] = {0.0f};
     sensor[4] = lambda;
 
-    // set sensor coords, might be wrong
+    // set sensor position coords
     sensor[0] = input.sx * (data->sensorWidth * 0.5f);
-    sensor[1] = input.sy * (data->sensorHeight * 0.5f);
+    sensor[1] = input.sy * (data->sensorWidth * 0.5f);
 
-    if(data->counter == countlimit){
-    	std:: cout << "input.sx, input.sy: " << input.sx << ", " << input.sy << std::endl;
-		std::cout << "sensor[0, 1]: " << sensor[0] << ", " << sensor[1] << std::endl;
-	}
+    // for visual debugging, tmp!
+    sensor[0] = 0.0f;
+    sensor[1] = 0.0f;
 
-
+    // transform unit square to unit disk
     AtVector2 unit_disk(0.0f, 0.0f);
     concentricDiskSample(input.lensx, input.lensy, &unit_disk);
 
-    aperture[0] = unit_disk.x * lens_aperture_housing_radius;
-    aperture[1] = unit_disk.y * lens_aperture_housing_radius;
+    // scale unit disk by aperture radius
+    aperture[0] = unit_disk.x * 0.5;// * lens_aperture_housing_radius;
+    aperture[1] = unit_disk.y * 0.5;// * lens_aperture_housing_radius;
 
 
-    lens_pt_sample_aperture(sensor, aperture, data->sensor_shift_manual);
+    lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
 
     // move to beginning of polynomial
-	sensor[0] += sensor[2] * data->sensor_shift_manual;
-	sensor[1] += sensor[3] * data->sensor_shift_manual;
+	sensor[0] += sensor[2] * data->sensorShift;
+	sensor[1] += sensor[3] * data->sensorShift;
 
 
 	if(data->counter == countlimit){
@@ -300,7 +377,7 @@ camera_create_ray
 	}
 	
 
-	// convert out[4] to camera space:
+	// convert from sphere/sphere to camera coords
 	float camera_space_pos[3];
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
@@ -316,42 +393,40 @@ camera_create_ray
 	}
 
 
-	/* NOT NEEDED FOR ARNOLD, GOOD INFO THO
+	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH
 	//now let's go world space:
-
 	//initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
-	  view_cam_init_frame(p, &p->v[0].hit);
-	  for(int k=0;k<3;k++)
-	  {
-
-	//this is the world space position of the outgoing ray:
+	view_cam_init_frame(p, &p->v[0].hit);
+	
+	for(int k=0;k<3;k++)
+	{
+		//this is the world space position of the outgoing ray:
 	    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
 	                        + camera_space_pos[1] * p->v[0].hit.b[k] 
 	                        + camera_space_pos[2] * p->v[0].hit.n[k];
 
-	//this is the world space direction of the outgoing ray:
+		//this is the world space direction of the outgoing ray:
 	    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
 	                       + camera_space_omega[1] * p->v[0].hit.b[k]
 	                       + camera_space_omega[2] * p->v[0].hit.n[k];
-	  }
+	}
 
 	//now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
-	  const float R = lens_outer_pupil_curvature_radius;
-	  // recompute full frame:
-	  float n[3] = {0.0f};
-	  for(int k=0;k<3;k++)
+	const float R = lens_outer_pupil_curvature_radius;
+	// recompute full frame:
+	float n[3] = {0.0f};
+	for(int k=0;k<3;k++)
 	    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
 	            + p->v[0].hit.b[k] * out[1]/R 
 	            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
 
-	  for(int k=0;k<3;k++) 
-	    p->v[0].hit.n[k] = n[k];
+	for(int k=0;k<3;k++) p->v[0].hit.n[k] = n[k];
 
-	  // also clip to valid pixel range.
-	  if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
-	     p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
-	    return 0.0f;
+	// also clip to valid pixel range.
+	if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
+		p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
+		return 0.0f;
 	*/
 
 
@@ -393,7 +468,9 @@ camera_create_ray
         
         break;
     }
-}
+
+    DRAW_ONLY(++dd.counter;)
+} 
 
 
 camera_reverse_ray

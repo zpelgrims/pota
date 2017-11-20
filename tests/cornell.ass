@@ -2,7 +2,7 @@ options
 {
  xres 1024
  yres 1024
- AA_samples 3
+ AA_samples 6
  GI_diffuse_depth 1
  GI_specular_depth 1
 }
@@ -10,11 +10,11 @@ options
 pota
 {
   name persp
-  position 0 0 100
+  position 0 0 300
   look_at 0 0 0
   up 0 1 0
   fov 105
-  focusDistance 1000
+  focusDistance 3000
   sensor_shift_manual 0.0
 }
 
@@ -61,7 +61,7 @@ standard_surface
 {
   name pimp
   specular 1
-  base .5
+  base .1
 }
 
 polymesh
@@ -131,6 +131,13 @@ sphere
  shader pimp
  radius 10
  center -15 -15 -5
+}
+
+sphere
+{
+  shader pimp
+  radius 2
+  center 0 0 0
 }
 
 sphere
