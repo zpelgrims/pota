@@ -4,16 +4,27 @@
 #include <algorithm>
 
 
+
+#include <cstdint>
 #include <string>
 #include <cstring>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include "../polynomialOptics/render/lens.h"
 
-#define DRAW_DIRECTORY = "/Users/zeno/pota/tests/";
 
-#ifdef _DRAW
+#define CACTUS 1
+#ifdef CACTUS
+#  define WORK_ONLY(block) block
+std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
+#else
+#  define WORK_ONLY(block)
+#endif
+
+#define DRAW 1
+#ifdef DRAW
 #  define DRAW_ONLY(block) block
 #else
 #  define DRAW_ONLY(block)
@@ -215,9 +226,6 @@ node_update
 	DRAW_ONLY({
         // create file to transfer data to python drawing module
         dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
-    })
-
-    DRAW_ONLY({
         dd.myfile << "RAYS{";
     })
 
@@ -259,13 +267,15 @@ node_finish
     drawData &dd = data->draw;
 
     DRAW_ONLY({
-        AiMsgInfo("%-40s %12d", "[ZOIC] Rays to be drawn", ld.drawRays);
+    	dd.myfile << "}";
+	})
 
-        dd.myfile << "}";
+    DRAW_ONLY({
+        AiMsgInfo("%-40s %12d", "[ZOIC] Rays to be drawn");
         dd.myfile.close();
 
         // execute python drawing
-        std::string command = "python " + DRAW_SCRIPTS_DIR + "draw.py";
+        std::string command = "python " + DRAW_DIRECTORY + "draw.py";
         system(command.c_str());
 
         AiMsgInfo("[ZOIC] Drawing finished");
@@ -440,6 +450,18 @@ camera_create_ray
     output.dir.z = camera_space_omega[2];
     output.dir *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
 
+
+    DRAW_ONLY({
+        if (dd.draw){
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.x << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.y << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.z << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.x * 100000.0 << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.y * 100000.0 << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.z * 100000.0 << " ";
+        }
+    })
+
     // convert wavelength shift into rgb shift
     output.weight *= 1.0f;
 
@@ -469,6 +491,8 @@ camera_create_ray
         break;
     }
 
+
+	DRAW_ONLY(dd.draw = false;)
     DRAW_ONLY(++dd.counter;)
 } 
 
