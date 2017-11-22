@@ -250,9 +250,9 @@ node_update
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 
     //data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
-	data->apertureRadius = lens_inner_pupil_radius;
+	data->apertureRadius = lens_aperture_housing_radius;
 
-	data->sensorShift = camera_set_focus(data->focusDistance, lens_inner_pupil_radius);
+	data->sensorShift = camera_set_focus(data->focusDistance, lens_aperture_housing_radius);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focusDistance, data->sensorShift);
 
 	data->sensor_shift_manual = AiNodeGetFlt(node, "sensor_shift_manual");
@@ -274,10 +274,6 @@ node_finish
         AiMsgInfo("%-40s %12d", "[ZOIC] Rays to be drawn");
         dd.myfile.close();
 
-        // execute python drawing
-        std::string command = "python " + DRAW_DIRECTORY + "draw.py";
-        system(command.c_str());
-
         AiMsgInfo("[ZOIC] Drawing finished");
     })
 
@@ -296,7 +292,7 @@ camera_create_ray
 
     DRAW_ONLY({
         // draw counters
-        if (dd.counter == 100000){
+        if (dd.counter == 10000){
             dd.draw = true;
             dd.counter = 0;
     	}
@@ -331,47 +327,19 @@ camera_create_ray
     concentricDiskSample(input.lensx, input.lensy, &unit_disk);
 
     // scale unit disk by aperture radius
-    aperture[0] = unit_disk.x * 0.5;// * lens_aperture_housing_radius;
-    aperture[1] = unit_disk.y * 0.5;// * lens_aperture_housing_radius;
+    aperture[0] = unit_disk.x * lens_aperture_housing_radius;
+    aperture[1] = unit_disk.y * lens_aperture_housing_radius;
 
 
     lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
 
     // move to beginning of polynomial
-	sensor[0] += sensor[2] * data->sensorShift;
-	sensor[1] += sensor[3] * data->sensorShift;
-
-
-	if(data->counter == countlimit){
-		std::cout << "lens_pt_sample_aperture" << std::endl;
-		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
-		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
-		std::cout << "\tsensor[4](lambda): " << sensor[4] << std::endl;
-
-		std::cout << std::endl;
-		std::cout << "\tout[0, 1] (pos): " << aperture[0] << ", " << aperture[1] << std::endl;
-		std::cout << "\tout[2, 3](dir): " << aperture[2] << ", " << aperture[3] << std::endl;
-		std::cout << "\tout[4](lambda): " << aperture[4] << std::endl;
-	}
+	sensor[0] += sensor[2] * data->sensorShift; //sensor.pos.x = sensor.dir.x * sensorshift
+	sensor[1] += sensor[3] * data->sensorShift; //sensor.pos.y = sensor.dir.y * sensorshift
 
 
     float transmittance = lens_evaluate(sensor, out);
-	if(data->counter == countlimit){
-		std::cout << "lens_evaluate" << std::endl;
-		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
-		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
-		std::cout << "\tsensor[4](lambda): " << sensor[4] << std::endl;
 
-		std::cout << std::endl;
-		std::cout << "\tout[0, 1] (pos): " << out[0] << ", " << out[1] << std::endl;
-		std::cout << "\tout[2, 3](dir): " << out[2] << ", " << out[3] << std::endl;
-		std::cout << "\tout[4](lambda): " << out[4] << std::endl;
-
-		std::cout << std::endl;
-		std::cout << "\ttransmittance: " << transmittance << std::endl;
-	}
-
-	
 	if(transmittance <= 0.0f){
 		output.weight = 0.0f;
 	}
@@ -445,20 +413,22 @@ camera_create_ray
     output.origin.y = camera_space_pos[1];
     output.origin.z = camera_space_pos[2];
 
-    output.dir.x = camera_space_omega[0];
-    output.dir.y = camera_space_omega[1];
-    output.dir.z = camera_space_omega[2];
+    output.dir.x = output.origin.x + camera_space_omega[0];
+    output.dir.y = output.origin.y + camera_space_omega[1];
+    output.dir.z = output.origin.z + camera_space_omega[2];
+    
+	output.origin *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
     output.dir *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
 
 
     DRAW_ONLY({
         if (dd.draw){
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.x << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.y << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.z << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.x * 100000.0 << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.y * 100000.0 << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.z * 100000.0 << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.origin.x << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.origin.y << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.origin.z << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.dir.x * 2000.0 << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.dir.y * 2000.0 << " ";
+            dd.myfile << std::fixed << std::setprecision(5) << output.dir.z * 2000.0 << " ";
         }
     })
 

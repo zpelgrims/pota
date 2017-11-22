@@ -7,10 +7,10 @@ print "####### INITIALIZING PYTHON IMAGE DRAWING #######"
 SIZE = (4500, 750)
 AAS = 4
 LINEWIDTH = 10
-TRANSLATEX = 2800 * AAS
+TRANSLATEX = 4000 * AAS
 TRANSLATEY = (SIZE[1] * AAS) / 2
 PADDING = 10 * AAS
-SCALE = 85
+SCALE = 2.2
 font = ImageFont.truetype('/Users/zeno/Library/Fonts/Inconsolata.otf', 16 * AAS)
 WHITE = (255, 255, 255)
 RED = (int(0.9 * 255), int(0.4 * 255), int(0.5 * 255))
@@ -21,7 +21,7 @@ GREY = (150, 150, 150)
 DARKGREY = (120, 120, 120)
 
 
-FOCUSDISTANCE = 100
+FOCUSDISTANCE = 1500 #150cm
  
  
 # DATA VARS
@@ -53,16 +53,34 @@ d.line([-5000 + TRANSLATEX, 0 + TRANSLATEY, 15000 + TRANSLATEX, 0 + TRANSLATEY],
 d.line([0 + TRANSLATEX, 9999 + TRANSLATEY, 0 + TRANSLATEX, -9999 + TRANSLATEY],  DARKGREY, 5)
 d.text([0 + TRANSLATEX + PADDING, 0 + TRANSLATEY + PADDING + 1000], "(0, 0)", DARKGREY, font)
 d.text([0 + TRANSLATEX + PADDING, 0 + TRANSLATEY + PADDING + 1100], "ORIGIN", DARKGREY, font)
- 
-# TEMPORARY FOCUS LINE, REMOVE!
-d.line([(200 * AAS * SCALE + TRANSLATEX, 9999 * AAS * SCALE + TRANSLATEY), (200 * AAS * SCALE + TRANSLATEX, - 9999 * AAS * SCALE + TRANSLATEY)], ORANGE, 1)
+
+
+for count in range(-100, 100):
+    units = 50
+    xpos = count*units
+    d.line([xpos * AAS * SCALE + TRANSLATEX, 
+            10 * AAS * SCALE + TRANSLATEY, 
+            xpos * AAS * SCALE + TRANSLATEX, 
+            -10 * AAS * SCALE + TRANSLATEY],
+            DARKGREY, 5)
+    
+    d.text([
+        (xpos * AAS) * SCALE + TRANSLATEX + PADDING, 
+        0 + TRANSLATEY + PADDING], 
+        str(xpos), ORANGE, font)
+
  
 
 # RAYS
 print "PYTHON: ---- Drawing rays"
 for count in range (0, len(RAYSLIST) / 6):
-    d.line([RAYSLIST[(count * 6)] * AAS * SCALE + TRANSLATEX, RAYSLIST[(count * 6) + 1] * AAS * SCALE + TRANSLATEY, RAYSLIST[(count * 6) + 2] * AAS * SCALE + TRANSLATEX,  (RAYSLIST[(count * 6) + 3] * AAS * SCALE) + TRANSLATEY], WHITE, 1)
- 
+    d.line([
+        RAYSLIST[(count * 6) + 2]                              * AAS * SCALE + TRANSLATEX,     #z pos component of rays
+        RAYSLIST[(count * 6) + 1]                              * AAS * SCALE + TRANSLATEY,     #y pos component of rays
+       (RAYSLIST[(count * 6) + 2] + RAYSLIST[(count * 6) + 5]) * AAS * SCALE + TRANSLATEX,     #z dir component of rays
+       (RAYSLIST[(count * 6) + 1] + RAYSLIST[(count * 6) + 4]) * AAS * SCALE + TRANSLATEY],    #y dir component of rays
+        WHITE, 
+        1)
 
 # FOCUS DISTANCE
 print "PYTHON: ---- Drawing focus line"

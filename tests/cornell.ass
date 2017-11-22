@@ -10,11 +10,11 @@ options
 pota
 {
   name persp
-  position 0 0 300
+  position 0 0 100
   look_at 0 0 0
   up 0 1 0
   fov 105
-  focusDistance 3000
+  focusDistance 1000
   sensor_shift_manual 0.0
 }
 
