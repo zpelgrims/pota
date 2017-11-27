@@ -10,12 +10,12 @@ options
 pota
 {
   name persp
-  position 0 0 100
+  position 0 0 350
   look_at 0 0 0
   up 0 1 0
   fov 105
-  focusDistance 1000
-  sensor_shift_manual 0.0
+  focusDistance 3500
+  sensor_shift_manual 5
 }
 
 standard_surface
@@ -70,7 +70,7 @@ polymesh
   nsides 1 1 BYTE 4
   vidxs 4 1 LONG 0 1 2 3
   nidxs 4 1 LONG 0 0 0 0
-  vlist 12 1 FLOAT -30.0 -30.0 120.0   -30.0 30.0 120.0   -30.0 30.0 -30.0  -30.0 -30.0 -30.0
+  vlist 12 1 FLOAT -50.0 -50.0 120.0   -50.0 50.0 120.0   -50.0 50.0 -50.0  -50.0 -50.0 -50.0
   nlist 3 1 FLOAT 1.0 0 0 
   shader left_srf
 }
@@ -81,7 +81,7 @@ polymesh
   nsides 1 1 BYTE 4
   vidxs 4 1 LONG 0 1 2 3
   nidxs 4 1 LONG 0 0 0 0
-  vlist 12 1 FLOAT 30.0 -30.0 120.0   30.0 30.0 120.0   30.0 30.0 -30.0  30.0 -30.0 -30.0
+  vlist 12 1 FLOAT 50.0 -50.0 120.0   50.0 50.0 120.0   50.0 50.0 -50.0  50.0 -50.0 -50.0
   nlist 3 1 FLOAT -1.0 0 0 
   shader right_srf
 }
@@ -92,7 +92,7 @@ polymesh
   nsides 1 1 BYTE 4
   vidxs 4 1 LONG 0 1 2 3
   nidxs 4 1 LONG 0 0 0 0
-  vlist 12 1 FLOAT -30.0 30.0 120.0   30.0 30.0 120.0   30.0 30.0 -30.0  -30.0 30.0 -30.0
+  vlist 12 1 FLOAT -50.0 30.0 120.0   50.0 30.0 120.0   50.0 30.0 -30.0  -50.0 30.0 -30.0
   nlist 3 1 FLOAT 0.0 -1 0 
   shader top_srf
 }
@@ -103,7 +103,7 @@ polymesh
   nsides 1 1 BYTE 4
   vidxs 4 1 LONG 0 1 2 3
   nidxs 4 1 LONG 0 0 0 0
-  vlist 12 1 FLOAT -30.0 -30.0 120.0   30.0 -30.0 120.0   30.0 -30.0 -30.0  -30.0 -30.0 -30.0
+  vlist 12 1 FLOAT -50.0 -30.0 120.0   50.0 -30.0 120.0   50.0 -30.0 -30.0  -50.0 -30.0 -30.0
   nlist 3 1 FLOAT 0.0 1 0 
   shader bottom_srf
 }
@@ -120,7 +120,7 @@ polymesh
   vidxs 4 1 UINT 0 1 3 2
   nidxs 4 1 UINT 0 1 2 3
   uvidxs 4 1 UINT 0 1 3 2
-  vlist 4 1 VECTOR -40 -32 -30 40 -32 -30 -40 32 -30 40 32 -30
+  vlist 4 1 VECTOR -50 -32 -30 50 -32 -30 -50 32 -30 50 32 -30
   nlist 4 1 VECTOR 0 0 1 0 0 1 0 0 1 0 0 1
   uvlist 4 1 VECTOR2 0 0 1 0 0 1 1 1
   shader back_srf
@@ -129,8 +129,8 @@ polymesh
 sphere
 {
  shader pimp
- radius 10
- center -15 -15 -5
+ radius 15
+ center -15 -15 -15
 }
 
 sphere
@@ -143,15 +143,15 @@ sphere
 sphere
 {
  shader pimp
- radius 10
- center 0 -15 10
+ radius 15
+ center 0 -15 30
 }
 
 sphere
 {
  shader pimp
- radius 10
- center 15 -15 25
+ radius 15
+ center 15 -15 100
 }
 
 image
@@ -164,7 +164,7 @@ image
 quad_light
 {
   name arealight
-  vertices 4 1 POINT -5 30 5   -5 30 0.0  5 30 0.0   5 30 5
+  vertices 4 1 POINT -5 30 20   -5 30 0.0  5 30 0.0   5 30 20
   color 1.0 1.0 1.0
   intensity 1
   exposure 13

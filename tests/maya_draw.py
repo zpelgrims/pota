@@ -14,13 +14,13 @@ dataFile.close()
 
 for count in range(0, (len(point_list)/6)):
     cmds.curve(p=[
-        (point_list[count * 6],
-         point_list[count * 6 + 1],
+        (point_list[count * 6] * 20,
+         point_list[count * 6 + 1] * 20,
          point_list[count * 6 + 2]),
          
-        (point_list[count * 6 + 3],
-         point_list[count * 6 + 4],
-         point_list[count * 6 + 5])],
+        ((point_list[count * 6] + (point_list[count * 6 + 3] * 5000)) * 20,
+         (point_list[count * 6 + 1] + (point_list[count * 6 + 4] * 5000)) * 20,
+         point_list[count * 6 + 2] + (point_list[count * 6 + 5] * 5000))],
          
          d=1)
 

@@ -188,7 +188,7 @@ static inline float lens_lt_sample_aperture(
 
 }
 
-/*
+
 // jacobian of polynomial mapping sensor to outer pupil. in[]: sensor point/direction/lambda.
 static inline void lens_evaluate_jacobian(const float *in, float *J)
 {
@@ -266,6 +266,7 @@ static inline float lens_aperture_area(const float radius, const int blades)
   return blades * tri;
 }
 
+
 static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
 {
   const int tri = (int)(r1*blades);
@@ -285,7 +286,7 @@ static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, 
   *x = radius * (b * p1[1] + c * p2[1]);
   *y = radius * (b * p1[0] + c * p2[0]);
 }
-*/
+
 
 static inline int lens_clip_aperture(const float x, const float y, const float radius, const int blades)
 { 

@@ -12,6 +12,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <cstdlib>
+
 #include "../polynomialOptics/render/lens.h"
 
 
@@ -52,7 +54,6 @@ enum
 	p_lensModel,
 	p_sensorWidth,
     p_sensorHeight,
-    p_focalLength,
     p_fStop,
     p_focusDistance,
     p_sensor_shift_manual
@@ -74,7 +75,6 @@ struct MyCameraData
 	float tan_fov;
 	float sensorWidth;
 	float sensorHeight;
-	float focalLength;
 	float fStop;
 	float focusDistance;
 	float apertureRadius;
@@ -82,6 +82,11 @@ struct MyCameraData
 	int counter;
     LensModel lensModel;
     float sensor_shift_manual;
+
+    float max_intersection_distance;
+    float min_intersection_distance;
+    long double average_intersection_distance;
+    int average_intersection_distance_cnt;
 
 
     drawData draw;
@@ -97,6 +102,15 @@ static const char* LensModelNames[] =
     "double_gauss",
     NULL
 };
+
+
+// xorshift fast random number generator
+inline uint32_t xor128(void){
+    static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
+    uint32_t t = x ^ (x << 11);
+    x = y; y = z; z = w;
+    return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
+}
 
 
 
@@ -129,21 +143,30 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
 }
 
 
+
+// line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
+AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
+    AtVector coord(100.0, 0.0, 100.0);
+    AtVector planeNormal(0.0, 1.0, 0.0);
+    rayDirection = AiV3Normalize(rayDirection);
+    coord = AiV3Normalize(coord);
+    return rayOrigin + (rayDirection * (AiV3Dot(coord, planeNormal) - AiV3Dot(planeNormal, rayOrigin)) / AiV3Dot(planeNormal, rayDirection));
+}
+
+
+
 // returns sensor offset in mm
 float camera_set_focus(float dist, float aperture_radius){
 
-	// NOTE: what are my units? if it is cm then this should be 10..
-    //const float dm2mm = 100.0f; //default is 100.0 (dmtomm)
-
     // camera space vector to v1:
-    // const float target[3] = { 0.0, 0.0, dist*dm2mm }; //dist*dm2mm
-    const float target[3] = { 0.0, 0.0, dist}; //dist*dm2mm
+    const float target[3] = { 0.0, 0.0, dist};
 
     // initialize 5d light fields
-    float sensor[5] = {0.0f}, out[5] = {0.0f};
+    float sensor[5] = {0.0f};
+    float out[5] = {0.0f};
 
     // set wavelength
-    sensor[4] = .5f;
+    sensor[4] = .55f;
 
     float offset = 0.0f;
     int cnt = 0;
@@ -164,10 +187,11 @@ float camera_set_focus(float dist, float aperture_radius){
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, .5f);
+        lens_lt_sample_aperture(target, aperture, sensor, out, .55f);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
+            AiMsgInfo("[POTA] raytraced sensor shift: %f", sensor[k]/sensor[2+k]);
             cnt ++;
         }
       }
@@ -199,9 +223,8 @@ node_parameters
     AiParameterEnum("lensModel", double_gauss, LensModelNames);
     AiParameterFlt("sensorWidth", 36.0); // 35mm film
     AiParameterFlt("sensorHeight", 24.0); // 35 mm film
-    AiParameterFlt("focalLength", 7.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focusDistance", 1000.0); // in mm
+    AiParameterFlt("focusDistance", 1500.0); // in mm
     AiParameterFlt("sensor_shift_manual", 0.0f);
 }
 
@@ -210,9 +233,6 @@ node_initialize
 {
 	AiCameraInitialize(node);
 	AiNodeSetLocalData(node, new MyCameraData());
-
-
-    DRAW_ONLY(AiMsgInfo("[ZOIC] ---- IMAGE DRAWING ENABLED @ COMPILE TIME ----"));
 }
 
 
@@ -244,18 +264,20 @@ node_update
 
 	data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
 	data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
-	data->focalLength = AiNodeGetFlt(node, "focalLength");
 	data->fStop = AiNodeGetFlt(node, "fStop");
 	data->focusDistance = AiNodeGetFlt(node, "focusDistance");
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 
-    //data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
-	data->apertureRadius = lens_aperture_housing_radius;
+    // data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
+	// data->apertureRadius = lens_aperture_housing_radius;
 
 	data->sensorShift = camera_set_focus(data->focusDistance, lens_aperture_housing_radius);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focusDistance, data->sensorShift);
 
 	data->sensor_shift_manual = AiNodeGetFlt(node, "sensor_shift_manual");
+
+	data->min_intersection_distance = 999999.0;
+	data->max_intersection_distance = -999999.0;
 
 	AiCameraUpdate(node, false);
 }
@@ -266,15 +288,18 @@ node_finish
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
     drawData &dd = data->draw;
 
+    float average_intersection_distance_normalized = data->average_intersection_distance / (float)data->average_intersection_distance_cnt;
+
+    std::cout << "average_intersection_distance: " << data->average_intersection_distance << std::endl;
+    std::cout << "average_intersection_distance_cnt: " << data->average_intersection_distance_cnt << std::endl;
+    std::cout << "average_intersection_distance_normalized: " << average_intersection_distance_normalized << std::endl;
+
+    std::cout << "max_intersection_distance: " << data->max_intersection_distance << std::endl;
+    std::cout << "min_intersection_distance: " << data->min_intersection_distance << std::endl;
+
     DRAW_ONLY({
     	dd.myfile << "}";
-	})
-
-    DRAW_ONLY({
-        AiMsgInfo("%-40s %12d", "[ZOIC] Rays to be drawn");
         dd.myfile.close();
-
-        AiMsgInfo("[ZOIC] Drawing finished");
     })
 
 	delete data;
@@ -282,17 +307,13 @@ node_finish
 
 camera_create_ray
 {
-	
-
-
 	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 
 	drawData &dd = data->draw;
 
     DRAW_ONLY({
-        // draw counters
-        if (dd.counter == 10000){
+        if (dd.counter == 50000){
             dd.draw = true;
             dd.counter = 0;
     	}
@@ -318,18 +339,27 @@ camera_create_ray
     sensor[0] = input.sx * (data->sensorWidth * 0.5f);
     sensor[1] = input.sy * (data->sensorWidth * 0.5f);
 
+    if(data->counter == countlimit){
+
+    }
+
     // for visual debugging, tmp!
     sensor[0] = 0.0f;
     sensor[1] = 0.0f;
 
+    /*
     // transform unit square to unit disk
     AtVector2 unit_disk(0.0f, 0.0f);
     concentricDiskSample(input.lensx, input.lensy, &unit_disk);
-
-    // scale unit disk by aperture radius
     aperture[0] = unit_disk.x * lens_aperture_housing_radius;
     aperture[1] = unit_disk.y * lens_aperture_housing_radius;
+	*/
 
+    // xor128 is just a fast random number generator, you're probably familiar
+    lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, lens_aperture_housing_radius, 6);
+    
+    //aperture[0] *= 0.0; // for testing, creates image without dof
+    //aperture[1] *= 0.0; // for testing, creates image without dof
 
     lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
 
@@ -339,7 +369,6 @@ camera_create_ray
 
 
     float transmittance = lens_evaluate(sensor, out);
-
 	if(transmittance <= 0.0f){
 		output.weight = 0.0f;
 	}
@@ -413,27 +442,51 @@ camera_create_ray
     output.origin.y = camera_space_pos[1];
     output.origin.z = camera_space_pos[2];
 
-    output.dir.x = output.origin.x + camera_space_omega[0];
-    output.dir.y = output.origin.y + camera_space_omega[1];
-    output.dir.z = output.origin.z + camera_space_omega[2];
-    
-	output.origin *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
-    output.dir *= -1.0; // this isnt correct but something needs to happen.. Camera is pointing in wrong direction
+    output.dir.x = camera_space_omega[0];
+    output.dir.y = camera_space_omega[1];
+    output.dir.z = camera_space_omega[2];
+
+	output.origin *= -1.0; //reverse rays
+    output.dir *= -1.0; //reverse rays
 
 
     DRAW_ONLY({
-        if (dd.draw){
-            dd.myfile << std::fixed << std::setprecision(5) << output.origin.x << " ";
-            dd.myfile << std::fixed << std::setprecision(5) << output.origin.y << " ";
-            dd.myfile << std::fixed << std::setprecision(5) << output.origin.z << " ";
-            dd.myfile << std::fixed << std::setprecision(5) << output.dir.x * 2000.0 << " ";
-            dd.myfile << std::fixed << std::setprecision(5) << output.dir.y * 2000.0 << " ";
-            dd.myfile << std::fixed << std::setprecision(5) << output.dir.z * 2000.0 << " ";
+        if (dd.draw == true && output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.x << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.y << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.origin.z << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.x << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.y << " ";
+            dd.myfile << std::fixed << std::setprecision(10) << output.dir.z << " ";
         }
     })
 
     // convert wavelength shift into rgb shift
     output.weight *= 1.0f;
+
+
+
+    // line plane intersection with fixed intersection at y = 0
+	AtVector rayplaneintersect = linePlaneIntersection(output.origin, output.dir);
+
+	if (output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
+		//std::cout << "lineplaneintersect: " << rayplaneintersect.x << ", " << rayplaneintersect.y << ", " << rayplaneintersect.z << std::endl;
+
+		if (rayplaneintersect.z > -9999.0 && rayplaneintersect.z < 9999.0){
+			data->average_intersection_distance += rayplaneintersect.z;
+			//std::cout << data->average_intersection_distance << std::endl;
+			++data->average_intersection_distance_cnt;
+		}
+
+		if(rayplaneintersect.z > data->max_intersection_distance){
+			data->max_intersection_distance = rayplaneintersect.z;
+		}
+
+		if(rayplaneintersect.z < data->min_intersection_distance){
+			data->min_intersection_distance = rayplaneintersect.z;
+		}
+	}
+    
 
 
     
