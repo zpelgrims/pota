@@ -46,7 +46,6 @@ enum
     p_sensorHeight,
     p_fStop,
     p_focusDistance,
-    p_sensor_shift_manual
 };
 
 
@@ -71,7 +70,8 @@ struct MyCameraData
 	float sensorShift;
 	int counter;
     LensModel lensModel;
-    float sensor_shift_manual;
+
+    float max_fstop;
 
     float max_intersection_distance;
     float min_intersection_distance;
@@ -157,7 +157,7 @@ float camera_set_focus(float dist, float aperture_radius){
     float out[5] = {0.0f};
 
     // set wavelength
-    sensor[4] = .5f;
+    sensor[4] = .55f;
 
     float offset = 0.0f;
     int count = 0;
@@ -178,7 +178,7 @@ float camera_set_focus(float dist, float aperture_radius){
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, .5f);
+        lens_lt_sample_aperture(target, aperture, sensor, out, .55f);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
@@ -216,7 +216,6 @@ node_parameters
     AiParameterFlt("sensorHeight", 24.0); // 35 mm film
     AiParameterFlt("fStop", 1.4);
     AiParameterFlt("focusDistance", 1500.0); // in mm
-    AiParameterFlt("sensor_shift_manual", 0.0f);
 }
 
 
@@ -258,7 +257,20 @@ node_update
 	data->focusDistance = AiNodeGetFlt(node, "focusDistance");
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 
-    // data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
+	// what is the widest fstop?
+	// FStop = FocalLength / (Radius * 2)
+
+	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
+	AiMsgInfo("[POTA] Lens maximum f-stop: %f", data->max_fstop);
+
+	if (data->fStop == 0.0f){
+		data->apertureRadius = lens_aperture_housing_radius;
+	} else {
+		data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
+	}
+
+	AiMsgInfo("[POTA] old aperture radius: %f", lens_aperture_housing_radius);
+	AiMsgInfo("[POTA] new aperture radius: %f", data->apertureRadius);
 	// data->apertureRadius = lens_aperture_housing_radius;
 
 	float infitiny_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius);
@@ -269,9 +281,6 @@ node_update
 
 	data->min_intersection_distance = 999999.0;
 	data->max_intersection_distance = -999999.0;
-
-
-	//draw_camera_focus(9999999999.0f, lens_aperture_housing_radius, &dd);
 
 	AiCameraUpdate(node, false);
 }
@@ -322,11 +331,18 @@ camera_create_ray
 
   // polynomial optics
 
+
+
     // CHROMATIC ABERRATION STRATEGY
     // no:  trace 1 ray at .55f
     // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
 
-    float lambda = 0.55f; // 550 nanometers
+	// consider 3 apertures instead of one, might have to use an aperture sampling function from lens.h
+	// shift them, increasingly towards the edges of the image
+	// if through all 3, white, if only through two, ..
+
+
+    float lambda = 0.55f; // 500 nanometers
 
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
@@ -351,7 +367,7 @@ camera_create_ray
 	*/
 
     // xor128 is just a fast random number generator, you're probably familiar
-    lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, lens_aperture_housing_radius, 6);
+    lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->apertureRadius, 5);
     
     //aperture[0] *= 0.0; // for testing, creates image without dof
     //aperture[1] *= 0.0; // for testing, creates image without dof
@@ -477,7 +493,6 @@ camera_create_ray
     if (data->counter == countlimit){
     	data->counter = 0;
     }
-
 
 
 	DRAW_ONLY(dd.draw = false;)

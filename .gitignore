@@ -4,4 +4,4 @@
 *.dylib
 
 /polynomialOptics/*
-!/polynomialOptics/render/
+/tests/statues/*
