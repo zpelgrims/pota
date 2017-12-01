@@ -1,20 +1,10 @@
 #include <ai.h>
 #include <iostream>
-#include <string.h>
 #include <algorithm>
-
-
-
-#include <cstdint>
 #include <string>
-#include <cstring>
 #include <fstream>
-#include <sstream>
-#include <iomanip>
 
-#include <cstdlib>
-
-#include "../polynomialOptics/render/lens.h"
+#include "../include/lens.h"
 
 
 #define CACTUS 1
@@ -88,7 +78,6 @@ struct MyCameraData
     long double average_intersection_distance;
     int average_intersection_distance_cnt;
 
-
     drawData draw;
 
 };
@@ -155,7 +144,9 @@ AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
 
 
 
+
 // returns sensor offset in mm
+// where on aperture to sample? The sensor shifts vary so much!
 float camera_set_focus(float dist, float aperture_radius){
 
     // camera space vector to v1:
@@ -166,10 +157,10 @@ float camera_set_focus(float dist, float aperture_radius){
     float out[5] = {0.0f};
 
     // set wavelength
-    sensor[4] = .55f;
+    sensor[4] = .5f;
 
     float offset = 0.0f;
-    int cnt = 0;
+    int count = 0;
 
     // just point through center of aperture
     float aperture[2] = {0.0f, 0.0f};
@@ -180,26 +171,26 @@ float camera_set_focus(float dist, float aperture_radius){
     // see where we need to put the sensor plane.
     for(int s=1; s<=S; s++){
       for(int k=0; k<2; k++){
-
+      	
         // reset aperture
         aperture[0] = 0.0f;
         aperture[1] = 0.0f;
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, .55f);
+        lens_lt_sample_aperture(target, aperture, sensor, out, .5f);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
             AiMsgInfo("[POTA] raytraced sensor shift: %f", sensor[k]/sensor[2+k]);
-            cnt ++;
+            count ++;
         }
       }
     }
 
     // average guesses
-    offset /= cnt; 
-
+    offset /= count; 
+    
     // the focus plane/sensor offset:
     // negative because of reverse direction
     if(offset == offset){ // check NaN cases
@@ -240,9 +231,8 @@ node_update
 {	
 
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-
-
     drawData &dd = data->draw;
+
 	DRAW_ONLY({
         // create file to transfer data to python drawing module
         dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
@@ -271,13 +261,17 @@ node_update
     // data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
 	// data->apertureRadius = lens_aperture_housing_radius;
 
+	float infitiny_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius);
+	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infitiny_focus_sensor_shift);
+
 	data->sensorShift = camera_set_focus(data->focusDistance, lens_aperture_housing_radius);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focusDistance, data->sensorShift);
 
-	data->sensor_shift_manual = AiNodeGetFlt(node, "sensor_shift_manual");
-
 	data->min_intersection_distance = 999999.0;
 	data->max_intersection_distance = -999999.0;
+
+
+	//draw_camera_focus(9999999999.0f, lens_aperture_housing_radius, &dd);
 
 	AiCameraUpdate(node, false);
 }
@@ -288,6 +282,7 @@ node_finish
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
     drawData &dd = data->draw;
 
+    /*
     float average_intersection_distance_normalized = data->average_intersection_distance / (float)data->average_intersection_distance_cnt;
 
     std::cout << "average_intersection_distance: " << data->average_intersection_distance << std::endl;
@@ -296,6 +291,7 @@ node_finish
 
     std::cout << "max_intersection_distance: " << data->max_intersection_distance << std::endl;
     std::cout << "min_intersection_distance: " << data->min_intersection_distance << std::endl;
+	*/
 
     DRAW_ONLY({
     	dd.myfile << "}";
@@ -309,7 +305,7 @@ camera_create_ray
 {
 	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-
+	/*
 	drawData &dd = data->draw;
 
     DRAW_ONLY({
@@ -322,12 +318,14 @@ camera_create_ray
 
 	int countlimit = 500000;
 	++data->counter;
+	*/
 
   // polynomial optics
 
     // CHROMATIC ABERRATION STRATEGY
     // no:  trace 1 ray at .55f
     // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
+
     float lambda = 0.55f; // 550 nanometers
 
     float sensor[5] = {0.0f};
@@ -339,13 +337,10 @@ camera_create_ray
     sensor[0] = input.sx * (data->sensorWidth * 0.5f);
     sensor[1] = input.sy * (data->sensorWidth * 0.5f);
 
-    if(data->counter == countlimit){
-
-    }
 
     // for visual debugging, tmp!
-    sensor[0] = 0.0f;
-    sensor[1] = 0.0f;
+    // sensor[0] = 0.0f;
+    // sensor[1] = 0.0f;
 
     /*
     // transform unit square to unit disk
@@ -389,15 +384,18 @@ camera_create_ray
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
 
-    if(data->counter == countlimit){
-		std::cout << "lens_sphereToCs" << std::endl;
-		std::cout << "\tsensor[0, 1](pos): " << sensor[0] << ", " << sensor[1] << std::endl;
-		std::cout << "\tsensor[2, 3](dir): " << sensor[2] << ", " << sensor[3] << std::endl;
-		std::cout << std::endl;
-		std::cout << "\toutpos[0, 1, 2]: " << camera_space_pos[0] << ", " << camera_space_pos[1] << ", " << camera_space_pos[2] << std::endl;
-		std::cout << "\toutdir[0, 1, 2]: " << camera_space_omega[0] << ", " << camera_space_omega[1] << ", " << camera_space_omega[2] << std::endl;
-		std::cout << std::endl;
-	}
+
+    output.origin.x = camera_space_pos[0];
+    output.origin.y = camera_space_pos[1];
+    output.origin.z = camera_space_pos[2];
+
+    output.dir.x = camera_space_omega[0];
+    output.dir.y = camera_space_omega[1];
+    output.dir.z = camera_space_omega[2];
+
+	output.origin *= -0.1; //reverse rays and convert to cm
+    output.dir *= -0.1; //reverse rays and convert to cm
+
 
 
 	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH
@@ -438,18 +436,8 @@ camera_create_ray
 
 
 
-    output.origin.x = camera_space_pos[0];
-    output.origin.y = camera_space_pos[1];
-    output.origin.z = camera_space_pos[2];
 
-    output.dir.x = camera_space_omega[0];
-    output.dir.y = camera_space_omega[1];
-    output.dir.z = camera_space_omega[2];
-
-	output.origin *= -1.0; //reverse rays
-    output.dir *= -1.0; //reverse rays
-
-
+    /*
     DRAW_ONLY({
         if (dd.draw == true && output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
             dd.myfile << std::fixed << std::setprecision(10) << output.origin.x << " ";
@@ -460,21 +448,17 @@ camera_create_ray
             dd.myfile << std::fixed << std::setprecision(10) << output.dir.z << " ";
         }
     })
+    */
 
-    // convert wavelength shift into rgb shift
-    output.weight *= 1.0f;
-
-
+    /*
 
     // line plane intersection with fixed intersection at y = 0
 	AtVector rayplaneintersect = linePlaneIntersection(output.origin, output.dir);
 
 	if (output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
-		//std::cout << "lineplaneintersect: " << rayplaneintersect.x << ", " << rayplaneintersect.y << ", " << rayplaneintersect.z << std::endl;
 
 		if (rayplaneintersect.z > -9999.0 && rayplaneintersect.z < 9999.0){
 			data->average_intersection_distance += rayplaneintersect.z;
-			//std::cout << data->average_intersection_distance << std::endl;
 			++data->average_intersection_distance_cnt;
 		}
 
@@ -487,36 +471,18 @@ camera_create_ray
 		}
 	}
     
+	*/
 
-
-    
+	/*
     if (data->counter == countlimit){
     	data->counter = 0;
     }
 
 
 
-    // switch structure
-    switch (data->lensModel)
-    {
-        case double_gauss:
-        {
-        }
-        break;
-
-        case fisheye_aspherical:
-        {
-        }
-
-        case NONE:
-        default:
-        
-        break;
-    }
-
-
 	DRAW_ONLY(dd.draw = false;)
     DRAW_ONLY(++dd.counter;)
+    */
 } 
 
 
