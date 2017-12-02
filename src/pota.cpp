@@ -52,7 +52,7 @@ enum
     p_sensor_height,
     p_fstop,
     p_focus_distance,
-    p_aperture_sides
+    p_aperture_blades
 };
 
 
@@ -81,8 +81,9 @@ struct MyCameraData
 	float focus_distance;
 	float aperture_radius;
 	float sensor_shift;
+	float aperture_colorshift;
 
-    int aperture_sides;
+    int aperture_blades;
 	// int counter;
 
 	bool dof;
@@ -234,7 +235,8 @@ node_parameters
     AiParameterFlt("sensor_height", 24.0); // 35 mm film
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
-    AiParameterInt("aperture_sides", 5);
+    AiParameterInt("aperture_blades", 0);
+    AiParameterFlt("aperture_colorshift", 0.8);
     AiParameterBool("dof", true);
 }
 
@@ -279,8 +281,9 @@ node_update
 	data->fstop = AiNodeGetFlt(node, "fstop");
 	data->focus_distance = AiNodeGetFlt(node, "focus_distance");
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
-	data->aperture_sides = AiNodeGetInt(node, "aperture_sides");
+	data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	data->dof = AiNodeGetBool(node, "dof");
+	data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
 
 
 	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
@@ -324,10 +327,12 @@ node_finish
 
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 
-
+	/*
 	AiMsgInfo("%s [POTA] rays passed %d", emoticon, data->rays_succes);
 	AiMsgInfo("%s [POTA] rays blocked %d", emoticon, data->rays_fail);
 	AiMsgInfo("%s [POTA] rays blocked percentage %f", emoticon, (float)data->rays_fail / (float)(data->rays_succes + data->rays_fail));
+	*/
+
 
 	/*
     DRAW_ONLY({
@@ -374,23 +379,8 @@ camera_create_ray
 
     // CHROMATIC ABERRATION STRATEGY
     // no:  trace 1 ray at .55f
-    // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive
+    // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive :(
 
-	// consider 3 apertures instead of one, might have to use an aperture sampling function from lens.h
-	// shift them, increasingly towards the edges of the image
-	// if through all 3, white, if only through two, ..
-
-	// probably should try to trace another ray instead of setting weight to 0, this introduces noise
-    /*
-    float aperture_colorshift = 0.75f;
-    AtRGB aperture_left(0.5f, 0.5f, 0);
-    AtRGB aperture_center(0, 0.5f, 0.5f);
-    AtRGB aperture_right(0.5f, 0, 0.5f);
-    output.weight = 0.0f;
-    int index = 0;
-	*/
-
-    // where do i need to shift the aperture?
 
     float lambda = 0.55f; // 550 nanometers
 
@@ -404,6 +394,39 @@ camera_create_ray
     sensor[1] = input.sy * (data->sensor_width * 0.5f);
 
 
+    // chromatic aberration
+    AtRGB aperture_left(0.5f, 0.5f, 0);
+    AtRGB aperture_center(0, 0.5f, 0.5f);
+    AtRGB aperture_right(0.5f, 0, 0.5f);
+    int index = 0;
+    float shift_x = data->aperture_colorshift * std::abs(sensor[0]);
+    float shift_y = data->aperture_colorshift * std::abs(sensor[1]);
+	
+    // AtVector2 sample;
+    // sample.x = input.lensx;
+    // sample.y = input.lensy;
+    /*
+    // choose base on random number sample.x [0, 1]
+    if (input.lensx < 0.33f) {
+        index = -1;
+        // sample.x /= 0.33f;
+    } else if (input.lensx < 0.66f) {
+        index = 0;
+        // sample.x -= 0.33f;
+        // sample.x /= 0.33f;
+    } else {
+        index = 1;
+        // sample.x -= 0.66f;
+        // sample.x /= 0.33f;
+    }
+    */
+
+    if(input.lensx < 0.33f) index = -1;
+    else if(input.lensx < 0.66f) index = 0;
+    else index = 1;
+    
+
+
     /* 
     // for visual debugging, rays should converge to single point in idealised lens
     	sensor[0] = 0.0f;
@@ -411,11 +434,14 @@ camera_create_ray
 	*/
     
     
-    if (!data->dof){ // no dof, all rays through single aperture point
+    if (!data->dof) // no dof, all rays through single aperture point
+    { 
     	aperture[0] = 0.0;
     	aperture[1] = 0.0;
 
-    } else if (data->dof && data->aperture_sides < 3){
+    } 
+    else if (data->dof && data->aperture_blades < 3)
+    {
 
 		// transform unit square to unit disk
 	    AtVector2 unit_disk(0.0f, 0.0f);
@@ -423,23 +449,30 @@ camera_create_ray
 
 	    aperture[0] = unit_disk.x * data->aperture_radius;
 	    aperture[1] = unit_disk.y * data->aperture_radius;
+	    
+	    if(data->aperture_colorshift > 0.0f)
+	    {
+		    AtVector sample3d(index * shift_x + aperture[0], index * shift_y + aperture[1], 0);    
+		    AtVector left_center(-shift_x, -shift_y, 0);
+		    AtVector middle_center(0, 0, 0);
+		    AtVector right_center(shift_x, shift_y, 0);
+	    	output.weight = 0.0f;
 
-    } else if (data->dof && data->aperture_sides > 3){
-    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->aperture_radius, data->aperture_sides);
+		    if (AiV3Length(left_center - sample3d) < data->aperture_radius) output.weight += aperture_left;
+		    if (AiV3Length(middle_center - sample3d) < data->aperture_radius) output.weight += aperture_center;
+	    	if (AiV3Length(right_center - sample3d) < data->aperture_radius) output.weight += aperture_right;
+    	}
+		
+
+    } 
+    else if (data->dof && data->aperture_blades > 3)
+    {
+    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->aperture_radius, data->aperture_blades);
     }
 
 
-
-    // calculate aperture shift based on sensor positions
-    AtVector2 aperture_shift;
-    aperture_shift.x = input.sx * aperture_colorshift;
-    aperture_shift.y = input.sy * aperture_colorshift;
-
-    // test if rays would also go through other, color shifted apertures
-
-
-
-    if (data->dof){
+    if (data->dof)
+    {
     	// aperture sampling, to make sure ray is able to propagate through whole lens system
     	lens_pt_sample_aperture(sensor, aperture, data->sensor_shift);
     }
@@ -452,25 +485,18 @@ camera_create_ray
 
 	// propagate ray from sensor to outer lens element
     float transmittance = lens_evaluate(sensor, out);
-	if(transmittance <= 0.0f){
-		output.weight = 0.0f;
-	}
+	if(transmittance <= 0.0f) output.weight = 0.0f;
 
 
 	// crop out by outgoing pupil
-	if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius)
-	{
-		output.weight = 0.0f;
-	}
+	if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) output.weight = 0.0f;
+
 
 	// crop at inward facing pupil
 	const float px = sensor[0] + sensor[2] * lens_focal_length;
 	const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
 
-	if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius)
-	{
-		output.weight = 0.0f;
-	}
+	if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) output.weight = 0.0f;
 	
 
 	// convert from sphere/sphere space to camera space
@@ -499,8 +525,8 @@ camera_create_ray
 
 
 	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH
-	//now let's go world space:
-	//initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
+	// now let's go world space:
+	// initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
 	view_cam_init_frame(p, &p->v[0].hit);
 	
@@ -517,7 +543,7 @@ camera_create_ray
 	                       + camera_space_omega[2] * p->v[0].hit.n[k];
 	}
 
-	//now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
+	// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
 	const float R = lens_outer_pupil_curvature_radius;
 	// recompute full frame:
 	float n[3] = {0.0f};

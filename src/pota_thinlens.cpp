@@ -1,15 +1,15 @@
 #include <ai.h>
 #include <string.h>
 
-AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
+AI_CAMERA_NODE_EXPORT_METHODS(pota_thinlensMethods)
 
 enum
 {
     p_sensorWidth,
     p_sensorHeight,
-    p_focalLength,
+    p_focal_length,
     p_fStop,
-    p_focalDistance
+    p_focus_distance
 };
 
 struct MyCameraData
@@ -18,9 +18,9 @@ struct MyCameraData
     float tan_fov;
     float sensorWidth;
     float sensorHeight;
-    float focalLength;
+    float focal_length;
     float fStop;
-    float focalDistance;
+    float focus_distance;
     float apertureRadius;
 };
 
@@ -53,9 +53,9 @@ node_parameters
 {
     AiParameterFlt("sensorWidth", 3.6); // 35mm film
     AiParameterFlt("sensorHeight", 2.4); // 35 mm film
-    AiParameterFlt("focalLength", 3.5); // in cm
+    AiParameterFlt("focal_length", 3.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focalDistance", 100.0);
+    AiParameterFlt("focus_distance", 100.0);
 }
 
 
@@ -63,12 +63,6 @@ node_initialize
 {
     AiCameraInitialize(node);
     AiNodeSetLocalData(node, new MyCameraData());
-
-    const int seed = 3158863998;
-    const int nsamples = 2;
-    const int ndim = 2;
-    AtSampler *sampler = AiSampler(seed, nsamples, ndim);
-
 }
 
 
@@ -78,13 +72,13 @@ node_update
 
     data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
     data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
-    data->focalLength = AiNodeGetFlt(node, "focalLength");
+    data->focal_length = AiNodeGetFlt(node, "focal_length");
     data->fStop = AiNodeGetFlt(node, "fStop");
-    data->focalDistance = AiNodeGetFlt(node, "focalDistance");
+    data->focus_distance = AiNodeGetFlt(node, "focus_distance");
 
-    data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focalLength))); // in radians
+    data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focal_length))); // in radians
     data->tan_fov = tanf(data->fov / 2.0f);
-    data->apertureRadius = (data->focalLength) / (2.0f * data->fStop);
+    data->apertureRadius = (data->focal_length) / (2.0f * data->fStop);
 
     AiMsgInfo("[POTA] fov: %f", data->fov);
 
@@ -96,17 +90,11 @@ node_finish
 {
     MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
     delete data;
-
-    AtSampler *sampler = (AtSampler*)AiNodeGetLocalData(node);
-    AiSamplerDestroy(sampler);
 }
 
 camera_create_ray
 {
     const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-    AtSampler *sampler = (AtSampler*)AiNodeGetLocalData(node);
-    AtSamplerIterator *iterator = AiSamplerIterator(sampler, sg);
-
 
     // create point on lens
     AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
@@ -116,11 +104,6 @@ camera_create_ray
 
     // either get uniformly distributed points on the unit disk or bokeh image
     AtVector2 lens(0.0, 0.0);
-    AiSamplerGetSample(iterator, &lens.x)
-
-    AiMsgInfo("lens.x = ", lens.x);
-
-
     concentricDiskSample(input.lensx, input.lensy, &lens);
 
     // scale points in [-1, 1] domain to actual aperture radius
@@ -132,7 +115,7 @@ camera_create_ray
     output.origin.z = 0.0;
 
     // Compute point on plane of focus, intersection on z axis
-    float intersection = std::abs(data->focalDistance / output.dir.z);
+    float intersection = std::abs(data->focus_distance / output.dir.z);
     AtVector focusPoint = output.dir * intersection;
     output.dir = AiV3Normalize(focusPoint - output.origin);
 
@@ -150,9 +133,9 @@ camera_reverse_ray
 node_loader
 {
     if (i != 0) return false;
-    node->methods = potaMethods;
+    node->methods = pota_thinlensMethods;
     node->output_type = AI_TYPE_UNDEFINED;
-    node->name = "pota";
+    node->name = "pota_thinlens";
     node->node_type = AI_NODE_CAMERA;
     strcpy(node->version, AI_VERSION);
     return true;

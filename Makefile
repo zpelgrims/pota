@@ -17,10 +17,13 @@ include/lt_sample_aperture.h
 
 .PHONY=all clean
 
-all: pota
+all: pota pota_thinlens
 
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
 
+pota_thinlens: Makefile src/pota_thinlens.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} src/pota_thinlens.cpp -o bin/pota_thinlens.dylib ${LDFLAGS}
+
 clean:
-	rm -f pota
+	rm -f pota pota_thinlens

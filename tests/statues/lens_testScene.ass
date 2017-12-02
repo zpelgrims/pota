@@ -6,10 +6,10 @@
 
 options
 {
- AA_samples 5
+ AA_samples 10
  xres 1500
  yres 1000
- camera "renderCam_105mm_450cmShape"
+ camera "renderCam_75mm_350cmShape"
 
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -31,7 +31,7 @@ pota
  focus_distance 1500
 }
 
-pota
+#pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -43,7 +43,7 @@ pota
  focus_distance 4521.5
 }
 
-#pota
+pota
 {
  name renderCam_75mm_350cmShape
  matrix
