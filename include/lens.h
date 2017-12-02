@@ -22,7 +22,6 @@ static inline void raytrace_normalise(float *v)
 }
 
 
-
 static inline float dotproduct(float *u, float *v)
 {
   return raytrace_dot(u, v);
@@ -112,6 +111,7 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
   outpos[1] = inpos[1];
 }
 
+
 // a few static defines about general lens geometry
 #include "init.h"
 
@@ -124,6 +124,7 @@ static inline float lens_evaluate(const float *in, float *out)
 {
   __attribute__ ((unused)) const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
 #include "pt_evaluate.h"
+
   out[0] = out_x;
   out[1] = out_y;
   out[2] = out_dx;
@@ -144,8 +145,6 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
 }
 
 
-
-// what unit should "dist" be in? mm, or dm?
 
 // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
 // wavelength, such that the path through the lens system will be valid, i.e.
@@ -169,6 +168,8 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist)
   in[2] = dx;
   in[3] = dy;
 }
+
+
 
 // solves for a sensor position give a scene point and an aperture point
 // returns transmittance from sensor to outer pupil
@@ -200,6 +201,7 @@ static inline void lens_evaluate_jacobian(const float *in, float *J)
   J[15] = dx30; J[16] = dx31; J[17] = dx32; J[18] = dx33; J[19] = dx34;
   J[20] = dx40; J[21] = dx41; J[22] = dx42; J[23] = dx43; J[24] = dx44;
 }
+
 
 static inline float lens_det_sensor_to_outer_pupil(const float *sensor, const float *out, const float focus)
 {
@@ -239,7 +241,7 @@ static inline void lens_evaluate_aperture_jacobian(const float *in, float *J)
 }
 
 static inline float lens_det_aperture_to_sensor(const float *sensor, const float focus)
-{
+{ 
   float J[25];
   lens_evaluate_aperture_jacobian(sensor, J);
   // only interested in how the directional density at the sensor changes wrt the vertex area (spatial) at the aperture

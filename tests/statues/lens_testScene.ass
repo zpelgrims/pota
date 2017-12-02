@@ -28,7 +28,7 @@ pota
  0 -0.135715574 0.990747869 0
  0 21.7935295 51.8878098 1
  fov 54.4322243
- focusDistance 1500
+ focus_distance 1500
 }
 
 pota
@@ -40,7 +40,7 @@ pota
  0 -0.041875653 0.999122858 0
  1.1199075 20.9187965 355.673157 1
  fov 19.4551582
- focusDistance 4521.5
+ focus_distance 4521.5
 }
 
 #pota
@@ -52,7 +52,7 @@ pota
  0 -0.041875653 0.999122858 0
  1.1199075 23.2897511 253.581589 1
  fov 26.9914665
- focusDistance 3500
+ focus_distance 3500
 }
 
 #pota
@@ -64,7 +64,7 @@ pota
  0 -0.135715574 0.990747869 0
  0 35.368679 -47.213192 1
  fov 93.2731552
- focusDistance 500
+ focus_distance 500
 }
 
 skydome_light

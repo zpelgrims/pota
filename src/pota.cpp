@@ -80,6 +80,9 @@ struct MyCameraData
 	// int counter;
 
 	bool dof;
+
+	int rays_succes;
+	int rays_fail;
     
     // float max_intersection_distance;
     // float min_intersection_distance;
@@ -220,11 +223,12 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 
 node_parameters
 {
-    AiParameterEnum("lensModel", double_gauss, LensModelNames);
+    AiParameterEnum("lensModel", double_gauss_angenieux, LensModelNames);
     AiParameterFlt("sensor_width", 36.0); // 35mm film
     AiParameterFlt("sensor_height", 24.0); // 35 mm film
-    AiParameterFlt("fstop", 1.4);
+    AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
+    AiParameterInt("aperture_sides", 5);
     AiParameterBool("dof", true);
 }
 
@@ -292,6 +296,10 @@ node_update
 	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focus_distance, data->sensor_shift);
 
+	/*
+	data->rays_succes = 0;
+	data->rays_fail = 0;
+	*/
 
 	/*
 	DRAW_ONLY({
@@ -305,11 +313,15 @@ node_update
 }
 
 
-
 node_finish
 {
 
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+
+
+	AiMsgInfo("[POTA] rays passed %d", data->rays_succes);
+	AiMsgInfo("[POTA] rays blocked %d", data->rays_fail);
+	AiMsgInfo("[POTA] rays blocked percentage %f", (float)data->rays_fail / (float)(data->rays_succes + data->rays_fail));
 
 	/*
     DRAW_ONLY({
@@ -361,6 +373,8 @@ camera_create_ray
 	// consider 3 apertures instead of one, might have to use an aperture sampling function from lens.h
 	// shift them, increasingly towards the edges of the image
 	// if through all 3, white, if only through two, ..
+
+	// probably should try to trace another ray instead of setting weight to 0, this introduces noise
 
 
     float lambda = 0.55f; // 550 nanometers
@@ -446,6 +460,13 @@ camera_create_ray
 
 	output.origin *= -0.1; //reverse rays and convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
+
+    /*
+    if (output.weight.r > 0.0f){
+    	++data->rays_succes;
+    } else {
+    	++ data->rays_fail;
+    }*/
 
 
 
