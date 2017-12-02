@@ -23,6 +23,12 @@ std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
 #endif
 
 
+#ifdef __APPLE__
+	const char emoticon[5] = {0xF0, 0x9F, 0xA5, 0x91, '\0'};
+#else
+	const char emoticon[0] = {};
+#endif
+
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
@@ -194,7 +200,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
-            AiMsgInfo("[POTA] raytraced sensor shift: %f", sensor[k]/sensor[2+k]);
+            AiMsgInfo("%s [POTA] raytraced sensor shift: %f", emoticon, sensor[k]/sensor[2+k]);
             count ++;
         }
       }
@@ -208,13 +214,13 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
     if(offset == offset){ // check NaN cases
 		const float limit = 45.0f; // why this hard limit? Where does it come from?
 		if(offset > limit){
-			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
+			AiMsgInfo("%s [POTA] sensor offset bigger than maxlimit: %f > %f", emoticon, offset, limit);
           	return limit;
 		} else if(offset < -limit){
-			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
+			AiMsgInfo("%s [POTA] sensor offset smaller than minlimit: %f < %f", emoticon, offset, -limit);
         	return -limit;
 		} else {
-			AiMsgInfo("[POTA] sensor offset inside of limits: %f", offset);
+			AiMsgInfo("%s [POTA] sensor offset inside of limits: %f", emoticon, offset);
 			return offset; // in mm
 		}
     }
@@ -256,17 +262,17 @@ node_update
     */
 
 
-	AiMsgInfo("[POTA] lens_length: %s", lens_name);
-    AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", lens_outer_pupil_radius);
-    AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", lens_inner_pupil_radius);
-    AiMsgInfo("[POTA] lens_length: %f", lens_length);
-	AiMsgInfo("[POTA] lens_focal_length: %f", lens_focal_length);
-	AiMsgInfo("[POTA] lens_aperture_pos: %f", lens_aperture_pos);
-	AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", lens_aperture_housing_radius);
-	AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", lens_outer_pupil_curvature_radius);
-	AiMsgInfo("[POTA] lens_focal_length: %f", lens_focal_length);
-	AiMsgInfo("[POTA] lens_field_of_view: %f", lens_field_of_view);
-	AiMsgInfo("[POTA] --------------------------------------");
+	AiMsgInfo("%s [POTA] lens_length: %s", emoticon, lens_name);
+    AiMsgInfo("%s [POTA] lens_outer_pupil_radius: %f", emoticon, lens_outer_pupil_radius);
+    AiMsgInfo("%s [POTA] lens_inner_pupil_radius: %f", emoticon, lens_inner_pupil_radius);
+    AiMsgInfo("%s [POTA] lens_length: %f", emoticon, lens_length);
+	AiMsgInfo("%s [POTA] lens_focal_length: %f", emoticon, lens_focal_length);
+	AiMsgInfo("%s [POTA] lens_aperture_pos: %f", emoticon, lens_aperture_pos);
+	AiMsgInfo("%s [POTA] lens_aperture_housing_radius: %f", emoticon, lens_aperture_housing_radius);
+	AiMsgInfo("%s [POTA] lens_outer_pupil_curvature_radius: %f", emoticon, lens_outer_pupil_curvature_radius);
+	AiMsgInfo("%s [POTA] lens_focal_length: %f", emoticon, lens_focal_length);
+	AiMsgInfo("%s [POTA] lens_field_of_view: %f", emoticon, lens_field_of_view);
+	AiMsgInfo("%s [POTA] --------------------------------------", emoticon);
 
 	data->sensor_width = AiNodeGetFlt(node, "sensor_width");
 	data->sensor_height = AiNodeGetFlt(node, "sensor_height");
@@ -278,7 +284,7 @@ node_update
 
 
 	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
-	AiMsgInfo("[POTA] Lens maximum f-stop: %f", data->max_fstop);
+	AiMsgInfo("%s [POTA] Lens maximum f-stop: %f", emoticon, data->max_fstop);
 
 	if (data->fstop == 0.0f){
 		data->aperture_radius = lens_aperture_housing_radius;
@@ -286,15 +292,15 @@ node_update
 		data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * data->fstop));
 	}
 
-	AiMsgInfo("[POTA] full aperture radius: %f", lens_aperture_housing_radius);
-	AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", data->aperture_radius);
+	AiMsgInfo("%s [POTA] full aperture radius: %f", emoticon, lens_aperture_housing_radius);
+	AiMsgInfo("%s [POTA] fstop-calculated aperture radius: %f", emoticon, data->aperture_radius);
 
 
 	// focus test, calculate sensor shift for correct focusing
 	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, .55f);
 	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, .55f);
-	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
-	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focus_distance, data->sensor_shift);
+	AiMsgInfo("%s [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
+	AiMsgInfo("%s [POTA] sensor_shift to focus at %f: %f", emoticon, data->focus_distance, data->sensor_shift);
 
 	/*
 	data->rays_succes = 0;
@@ -319,9 +325,9 @@ node_finish
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 
 
-	AiMsgInfo("[POTA] rays passed %d", data->rays_succes);
-	AiMsgInfo("[POTA] rays blocked %d", data->rays_fail);
-	AiMsgInfo("[POTA] rays blocked percentage %f", (float)data->rays_fail / (float)(data->rays_succes + data->rays_fail));
+	AiMsgInfo("%s [POTA] rays passed %d", emoticon, data->rays_succes);
+	AiMsgInfo("%s [POTA] rays blocked %d", emoticon, data->rays_fail);
+	AiMsgInfo("%s [POTA] rays blocked percentage %f", emoticon, (float)data->rays_fail / (float)(data->rays_succes + data->rays_fail));
 
 	/*
     DRAW_ONLY({
@@ -375,7 +381,16 @@ camera_create_ray
 	// if through all 3, white, if only through two, ..
 
 	// probably should try to trace another ray instead of setting weight to 0, this introduces noise
+    /*
+    float aperture_colorshift = 0.75f;
+    AtRGB aperture_left(0.5f, 0.5f, 0);
+    AtRGB aperture_center(0, 0.5f, 0.5f);
+    AtRGB aperture_right(0.5f, 0, 0.5f);
+    output.weight = 0.0f;
+    int index = 0;
+	*/
 
+    // where do i need to shift the aperture?
 
     float lambda = 0.55f; // 550 nanometers
 
@@ -389,17 +404,18 @@ camera_create_ray
     sensor[1] = input.sy * (data->sensor_width * 0.5f);
 
 
-    /* for visual debugging, rays should converge to single point in idealised lens
+    /* 
+    // for visual debugging, rays should converge to single point in idealised lens
     	sensor[0] = 0.0f;
     	sensor[1] = 0.0f;
 	*/
     
     
-    if (!data->dof){
+    if (!data->dof){ // no dof, all rays through single aperture point
     	aperture[0] = 0.0;
     	aperture[1] = 0.0;
 
-    } else if (data->dof && data->aperture_sides == 0){
+    } else if (data->dof && data->aperture_sides < 3){
 
 		// transform unit square to unit disk
 	    AtVector2 unit_disk(0.0f, 0.0f);
@@ -408,14 +424,26 @@ camera_create_ray
 	    aperture[0] = unit_disk.x * data->aperture_radius;
 	    aperture[1] = unit_disk.y * data->aperture_radius;
 
-    } else if (data->dof && data->aperture_sides > 0){
+    } else if (data->dof && data->aperture_sides > 3){
     	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->aperture_radius, data->aperture_sides);
     }
 
 
-    // aperture sampling, to make sure ray goes through
-    lens_pt_sample_aperture(sensor, aperture, data->sensor_shift);
 
+    // calculate aperture shift based on sensor positions
+    AtVector2 aperture_shift;
+    aperture_shift.x = input.sx * aperture_colorshift;
+    aperture_shift.y = input.sy * aperture_colorshift;
+
+    // test if rays would also go through other, color shifted apertures
+
+
+
+    if (data->dof){
+    	// aperture sampling, to make sure ray is able to propagate through whole lens system
+    	lens_pt_sample_aperture(sensor, aperture, data->sensor_shift);
+    }
+    
 
     // move to beginning of polynomial
 	sensor[0] += sensor[2] * data->sensor_shift; //sensor.pos.x = sensor.dir.x * sensor_shift
