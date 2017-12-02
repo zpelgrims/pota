@@ -15,7 +15,7 @@ std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
 #  define WORK_ONLY(block)
 #endif
 
-#define DRAW 1
+#define DRAW 0
 #ifdef DRAW
 #  define DRAW_ONLY(block) block
 #else
@@ -42,17 +42,21 @@ struct drawData{
 enum
 {
 	p_lensModel,
-	p_sensorWidth,
-    p_sensorHeight,
-    p_fStop,
-    p_focusDistance,
+	p_sensor_width,
+    p_sensor_height,
+    p_fstop,
+    p_focus_distance,
+    p_aperture_sides
 };
 
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
+    fisheye,
     fisheye_aspherical,
     double_gauss,
+    double_gauss_angenieux,
+    petzval,
     NONE
 };
 
@@ -60,26 +64,27 @@ enum LensModel{
 
 struct MyCameraData
 {
-	float fov;
-	float tan_fov;
-	float sensorWidth;
-	float sensorHeight;
-	float fStop;
-	float focusDistance;
-	float apertureRadius;
-	float sensorShift;
-	int counter;
-    LensModel lensModel;
-
-    float max_fstop;
-
-    float max_intersection_distance;
-    float min_intersection_distance;
-    long double average_intersection_distance;
-    int average_intersection_distance_cnt;
-
+	LensModel lensModel;
     drawData draw;
 
+
+	float sensor_width;
+	float sensor_height;
+	float fstop;
+    float max_fstop;
+	float focus_distance;
+	float aperture_radius;
+	float sensor_shift;
+
+    int aperture_sides;
+	// int counter;
+
+	bool dof;
+    
+    // float max_intersection_distance;
+    // float min_intersection_distance;
+    // long double average_intersection_distance;
+    // int average_intersection_distance_cnt;
 };
 
 
@@ -87,8 +92,11 @@ struct MyCameraData
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] =
 {
+    "fisheye",
     "fisheye_aspherical",
     "double_gauss",
+    "double_gauss_angenieux",
+    "petzval",
     NULL
 };
 
@@ -108,9 +116,11 @@ inline float Lerp(float t, float v1, float v2)
 	return (1 - t) * v1 + t * v2;
 }
 
+
+
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
+inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 {
     float phi, r;
 
@@ -146,9 +156,8 @@ AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
 
 
 // returns sensor offset in mm
-// where on aperture to sample? The sensor shifts vary so much!
-float camera_set_focus(float dist, float aperture_radius){
-
+float camera_set_focus(float dist, float aperture_radius, float lambda)
+{
     // camera space vector to v1:
     const float target[3] = { 0.0, 0.0, dist};
 
@@ -157,7 +166,7 @@ float camera_set_focus(float dist, float aperture_radius){
     float out[5] = {0.0f};
 
     // set wavelength
-    sensor[4] = .55f;
+    sensor[4] = lambda;
 
     float offset = 0.0f;
     int count = 0;
@@ -178,7 +187,7 @@ float camera_set_focus(float dist, float aperture_radius){
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, .55f);
+        lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
@@ -212,10 +221,11 @@ float camera_set_focus(float dist, float aperture_radius){
 node_parameters
 {
     AiParameterEnum("lensModel", double_gauss, LensModelNames);
-    AiParameterFlt("sensorWidth", 36.0); // 35mm film
-    AiParameterFlt("sensorHeight", 24.0); // 35 mm film
-    AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focusDistance", 1500.0); // in mm
+    AiParameterFlt("sensor_width", 36.0); // 35mm film
+    AiParameterFlt("sensor_height", 24.0); // 35 mm film
+    AiParameterFlt("fstop", 1.4);
+    AiParameterFlt("focus_distance", 1500.0); // in mm
+    AiParameterBool("dof", true);
 }
 
 
@@ -230,13 +240,16 @@ node_update
 {	
 
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-    drawData &dd = data->draw;
 
+	/*
 	DRAW_ONLY({
+		drawData &dd = data->draw;
+
         // create file to transfer data to python drawing module
         dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
         dd.myfile << "RAYS{";
     })
+    */
 
 
 	AiMsgInfo("[POTA] lens_length: %s", lens_name);
@@ -251,87 +264,95 @@ node_update
 	AiMsgInfo("[POTA] lens_field_of_view: %f", lens_field_of_view);
 	AiMsgInfo("[POTA] --------------------------------------");
 
-	data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
-	data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
-	data->fStop = AiNodeGetFlt(node, "fStop");
-	data->focusDistance = AiNodeGetFlt(node, "focusDistance");
+	data->sensor_width = AiNodeGetFlt(node, "sensor_width");
+	data->sensor_height = AiNodeGetFlt(node, "sensor_height");
+	data->fstop = AiNodeGetFlt(node, "fstop");
+	data->focus_distance = AiNodeGetFlt(node, "focus_distance");
 	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
+	data->aperture_sides = AiNodeGetInt(node, "aperture_sides");
+	data->dof = AiNodeGetBool(node, "dof");
 
-	// what is the widest fstop?
-	// FStop = FocalLength / (Radius * 2)
 
 	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
 	AiMsgInfo("[POTA] Lens maximum f-stop: %f", data->max_fstop);
 
-	if (data->fStop == 0.0f){
-		data->apertureRadius = lens_aperture_housing_radius;
+	if (data->fstop == 0.0f){
+		data->aperture_radius = lens_aperture_housing_radius;
 	} else {
-		data->apertureRadius = fminf(lens_aperture_housing_radius, (lens_focal_length) / (2.0f * data->fStop));
+		data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * data->fstop));
 	}
 
-	AiMsgInfo("[POTA] old aperture radius: %f", lens_aperture_housing_radius);
-	AiMsgInfo("[POTA] new aperture radius: %f", data->apertureRadius);
-	// data->apertureRadius = lens_aperture_housing_radius;
+	AiMsgInfo("[POTA] full aperture radius: %f", lens_aperture_housing_radius);
+	AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", data->aperture_radius);
 
-	float infitiny_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius);
-	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infitiny_focus_sensor_shift);
 
-	data->sensorShift = camera_set_focus(data->focusDistance, lens_aperture_housing_radius);
-	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focusDistance, data->sensorShift);
+	// focus test, calculate sensor shift for correct focusing
+	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, .55f);
+	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, .55f);
+	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
+	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", data->focus_distance, data->sensor_shift);
 
-	data->min_intersection_distance = 999999.0;
-	data->max_intersection_distance = -999999.0;
+
+	/*
+	DRAW_ONLY({
+		data->min_intersection_distance = 999999.0;
+		data->max_intersection_distance = -999999.0;
+    })
+    */
+
 
 	AiCameraUpdate(node, false);
 }
+
+
 
 node_finish
 {
 
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-    drawData &dd = data->draw;
 
-    /*
-    float average_intersection_distance_normalized = data->average_intersection_distance / (float)data->average_intersection_distance_cnt;
-
-    std::cout << "average_intersection_distance: " << data->average_intersection_distance << std::endl;
-    std::cout << "average_intersection_distance_cnt: " << data->average_intersection_distance_cnt << std::endl;
-    std::cout << "average_intersection_distance_normalized: " << average_intersection_distance_normalized << std::endl;
-
-    std::cout << "max_intersection_distance: " << data->max_intersection_distance << std::endl;
-    std::cout << "min_intersection_distance: " << data->min_intersection_distance << std::endl;
-	*/
-
+	/*
     DRAW_ONLY({
+
+    	// debug only
+	    float average_intersection_distance_normalized = data->average_intersection_distance / (float)data->average_intersection_distance_cnt;
+	    std::cout << "average_intersection_distance: " << data->average_intersection_distance << std::endl;
+	    std::cout << "average_intersection_distance_cnt: " << data->average_intersection_distance_cnt << std::endl;
+	    std::cout << "average_intersection_distance_normalized: " << average_intersection_distance_normalized << std::endl;
+	    std::cout << "max_intersection_distance: " << data->max_intersection_distance << std::endl;
+	    std::cout << "min_intersection_distance: " << data->min_intersection_distance << std::endl;
+
+    	drawData &dd = data->draw;
     	dd.myfile << "}";
         dd.myfile.close();
     })
+    */
 
 	delete data;
 }
 
+
+
+
 camera_create_ray
 {
-	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
 	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-	/*
-	drawData &dd = data->draw;
+	// drawData &dd = data->draw;
 
     DRAW_ONLY({
+    	/*
         if (dd.counter == 50000){
             dd.draw = true;
             dd.counter = 0;
     	}
+
+    	int countlimit = 500000;
+		++data->counter;
+		*/
     })
-
-
-	int countlimit = 500000;
-	++data->counter;
-	*/
+	
 
   // polynomial optics
-
-
 
     // CHROMATIC ABERRATION STRATEGY
     // no:  trace 1 ray at .55f
@@ -342,7 +363,7 @@ camera_create_ray
 	// if through all 3, white, if only through two, ..
 
 
-    float lambda = 0.55f; // 500 nanometers
+    float lambda = 0.55f; // 550 nanometers
 
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
@@ -350,52 +371,67 @@ camera_create_ray
     sensor[4] = lambda;
 
     // set sensor position coords
-    sensor[0] = input.sx * (data->sensorWidth * 0.5f);
-    sensor[1] = input.sy * (data->sensorWidth * 0.5f);
+    sensor[0] = input.sx * (data->sensor_width * 0.5f);
+    sensor[1] = input.sy * (data->sensor_width * 0.5f);
 
 
-    // for visual debugging, tmp!
-    // sensor[0] = 0.0f;
-    // sensor[1] = 0.0f;
-
-    /*
-    // transform unit square to unit disk
-    AtVector2 unit_disk(0.0f, 0.0f);
-    concentricDiskSample(input.lensx, input.lensy, &unit_disk);
-    aperture[0] = unit_disk.x * lens_aperture_housing_radius;
-    aperture[1] = unit_disk.y * lens_aperture_housing_radius;
+    /* for visual debugging, rays should converge to single point in idealised lens
+    	sensor[0] = 0.0f;
+    	sensor[1] = 0.0f;
 	*/
-
-    // xor128 is just a fast random number generator, you're probably familiar
-    lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->apertureRadius, 5);
     
-    //aperture[0] *= 0.0; // for testing, creates image without dof
-    //aperture[1] *= 0.0; // for testing, creates image without dof
+    
+    if (!data->dof){
+    	aperture[0] = 0.0;
+    	aperture[1] = 0.0;
 
-    lens_pt_sample_aperture(sensor, aperture, data->sensorShift);
+    } else if (data->dof && data->aperture_sides == 0){
+
+		// transform unit square to unit disk
+	    AtVector2 unit_disk(0.0f, 0.0f);
+	    concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
+
+	    aperture[0] = unit_disk.x * data->aperture_radius;
+	    aperture[1] = unit_disk.y * data->aperture_radius;
+
+    } else if (data->dof && data->aperture_sides > 0){
+    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->aperture_radius, data->aperture_sides);
+    }
+
+
+    // aperture sampling, to make sure ray goes through
+    lens_pt_sample_aperture(sensor, aperture, data->sensor_shift);
+
 
     // move to beginning of polynomial
-	sensor[0] += sensor[2] * data->sensorShift; //sensor.pos.x = sensor.dir.x * sensorshift
-	sensor[1] += sensor[3] * data->sensorShift; //sensor.pos.y = sensor.dir.y * sensorshift
+	sensor[0] += sensor[2] * data->sensor_shift; //sensor.pos.x = sensor.dir.x * sensor_shift
+	sensor[1] += sensor[3] * data->sensor_shift; //sensor.pos.y = sensor.dir.y * sensor_shift
 
 
+	// propagate ray from sensor to outer lens element
     float transmittance = lens_evaluate(sensor, out);
 	if(transmittance <= 0.0f){
 		output.weight = 0.0f;
 	}
 
-	// crop out by outgoing pupil and crop at inward facing pupil:
+
+	// crop out by outgoing pupil
+	if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius)
+	{
+		output.weight = 0.0f;
+	}
+
+	// crop at inward facing pupil
 	const float px = sensor[0] + sensor[2] * lens_focal_length;
 	const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
 
-	if((out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) ||
-	   (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius))
+	if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius)
 	{
 		output.weight = 0.0f;
 	}
 	
 
-	// convert from sphere/sphere to camera coords
+	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
@@ -404,7 +440,6 @@ camera_create_ray
     output.origin.x = camera_space_pos[0];
     output.origin.y = camera_space_pos[1];
     output.origin.z = camera_space_pos[2];
-
     output.dir.x = camera_space_omega[0];
     output.dir.y = camera_space_omega[1];
     output.dir.z = camera_space_omega[2];
