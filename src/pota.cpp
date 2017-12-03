@@ -201,7 +201,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
-            AiMsgInfo("%s  [POTA] raytraced sensor shift: %f", emoticon, sensor[k]/sensor[2+k]);
+            AiMsgInfo("\t%s  [POTA] raytraced sensor shift at aperture[%f, %f]: %f", emoticon, aperture[0], aperture[1], sensor[k]/sensor[2+k]);
             count ++;
         }
       }
@@ -264,6 +264,7 @@ node_update
     */
 
 
+	AiMsgInfo("%s  [POTA] ----------  LENS CONSTANTS  -----------", emoticon);
 	AiMsgInfo("%s  [POTA] lens_length: %s", emoticon, lens_name);
     AiMsgInfo("%s  [POTA] lens_outer_pupil_radius: %f", emoticon, lens_outer_pupil_radius);
     AiMsgInfo("%s  [POTA] lens_inner_pupil_radius: %f", emoticon, lens_inner_pupil_radius);
@@ -287,7 +288,7 @@ node_update
 
 
 	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
-	AiMsgInfo("%s  [POTA] Lens maximum f-stop: %f", emoticon, data->max_fstop);
+	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, data->max_fstop);
 
 	if (data->fstop == 0.0f){
 		data->aperture_radius = lens_aperture_housing_radius;
@@ -299,8 +300,13 @@ node_update
 	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, data->aperture_radius);
 
 
+	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
+
 	// focus test, calculate sensor shift for correct focusing
+    AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:", emoticon);
 	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, .55f);
+
+    AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:", emoticon);
 	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, .55f);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, data->focus_distance, data->sensor_shift);
@@ -438,10 +444,10 @@ camera_create_ray
 	    if(data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
 	    else concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
 
-
 	    aperture[0] = unit_disk.x * data->aperture_radius;
 	    aperture[1] = unit_disk.y * data->aperture_radius;
 	    
+	    // hacky chromatic aberration
 	    if(data->aperture_colorshift > 0.0f)
 	    {	
 		    AtVector sample3d(index * shift_x + aperture[0], index * shift_y + aperture[1], 0);    
