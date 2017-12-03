@@ -3,3 +3,7 @@
 - add chromatic aberrations, explore Benedikt Bitterli's cheat
 
 - make switching between lens files possible
+
+- investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
+
+- test unicode emoticon on windows
