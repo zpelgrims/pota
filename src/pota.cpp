@@ -3,9 +3,19 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
+#include <math.h>
 
 #include "../include/lens.h"
 
+
+/*
+#include <iostream>
+#include <chrono>
+typedef std::chrono::high_resolution_clock Clock;
+auto t1 = Clock::now();
+auto t2 = Clock::now();
+std::cout << t2-t1 << '\n';
+*/
 
 #define CACTUS 1
 #ifdef CACTUS
@@ -236,7 +246,7 @@ node_parameters
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
     AiParameterInt("aperture_blades", 0);
-    AiParameterFlt("aperture_colorshift", 0.8);
+    AiParameterFlt("aperture_colorshift", 0.0);
     AiParameterBool("dof", true);
 }
 
@@ -298,8 +308,6 @@ node_update
 
 	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, lens_aperture_housing_radius);
 	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, data->aperture_radius);
-
-
 	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
 
 	// focus test, calculate sensor shift for correct focusing
@@ -409,7 +417,6 @@ camera_create_ray
     float shift_y = data->aperture_colorshift * std::abs(sensor[1]);
 	AtVector2 ca_aperture_sample(input.lensx, input.lensy);
     
-    // choose base on random number
     if (input.lensx < 0.33f) {
         index = -1;
         ca_aperture_sample.x /= 0.33f;
@@ -459,6 +466,9 @@ camera_create_ray
 		    if (AiV3Length(left_center - sample3d) < data->aperture_radius) output.weight += aperture_left;
 		    if (AiV3Length(middle_center - sample3d) < data->aperture_radius) output.weight += aperture_center;
 	    	if (AiV3Length(right_center - sample3d) < data->aperture_radius) output.weight += aperture_right;
+
+	    	aperture[0] = sample3d.x;
+	    	aperture[1] = sample3d.y;
     	}
     } 
     else if (data->dof && data->aperture_blades > 2)

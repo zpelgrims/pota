@@ -2,8 +2,10 @@
 
 - add chromatic aberrations, explore Benedikt Bitterli's cheat
 
-- make switching between lens files possible
+- make switching between lens files possible, first do all the rest, could become a performance issue
 
 - investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 
 - test unicode emoticon on windows
+
+- add image bokeh sampling from zoic

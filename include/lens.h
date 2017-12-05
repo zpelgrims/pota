@@ -27,20 +27,24 @@ static inline float dotproduct(float *u, float *v)
   return raytrace_dot(u, v);
 }
 
+
 static inline void crossproduct(const float *r, const float *u, float *v)
 {
   return raytrace_cross(v, r, u);
 }
+
 
 static inline void normalise(float *v)
 {
   return raytrace_normalise(v);
 }
 
+
 static inline float MAX(float a, float b)
 {
   return a>b?a:b;
 }
+
 
 static inline void common_sincosf(float phi, float* sin, float* cos)
 {
@@ -51,7 +55,6 @@ static inline void common_sincosf(float phi, float* sin, float* cos)
   sincosf(phi, sin, cos);
 #endif
 }
-
 
 
 // helper function for dumped polynomials to compute integer powers of x:
@@ -133,7 +136,7 @@ static inline float lens_evaluate(const float *in, float *out)
   return MAX(0.0f, out_transmittance);
 }
 
-
+/*
 // evaluates from the sensor (in) to the aperture (out) only
 // returns the transmittance.
 static inline float lens_evaluate_aperture(const float *in, float *out)
@@ -143,7 +146,7 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
   out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
   return MAX(0.0f, out_transmittance);
 }
-
+*/
 
 
 // solves for the two directions [dx,dy], keeps the two positions [x,y] and the
@@ -189,7 +192,7 @@ static inline float lens_lt_sample_aperture(
 
 }
 
-
+/*
 // jacobian of polynomial mapping sensor to outer pupil. in[]: sensor point/direction/lambda.
 static inline void lens_evaluate_jacobian(const float *in, float *J)
 {
@@ -267,7 +270,7 @@ static inline float lens_aperture_area(const float radius, const int blades)
   const float tri = .5f*radius * radius * sinf(2.0f*M_PI/(float)blades);
   return blades * tri;
 }
-
+*/
 
 static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
 {
@@ -289,7 +292,7 @@ static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, 
   *y = radius * (b * p1[0] + c * p2[0]);
 }
 
-
+/*
 static inline int lens_clip_aperture(const float x, const float y, const float radius, const int blades)
 { 
   // early out
@@ -311,3 +314,4 @@ static inline int lens_clip_aperture(const float x, const float y, const float r
   }
   return 1;
 }
+*/
