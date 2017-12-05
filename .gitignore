@@ -3,4 +3,6 @@
 *.png
 *.dylib
 
-/polynomialOptics
+/polynomialOptics/*
+/tests/statues/*
+/tests/grid/*
