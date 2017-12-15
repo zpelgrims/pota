@@ -1,13 +1,27 @@
 #include <ai.h>
 #include "../include/lens.h"
 
+
+#define cimg_display 0
+#include "paper/include/CImg.h"
+#include "paper/include/spectrum.h"
+using namespace cimg_library;
+
+
 // need to pass the lens data to this shader
+// check for intersections along P->Lens path
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
 struct SampleBokehData
 {
    AtString aov_name;
+
+   float aperture_radius;
+
+
+   CImg<float> img_out;
+
 };
  
 enum SampleBokehParams
@@ -55,10 +69,8 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 
 
 
-// watch out, scene point needs to be in camera space, not world space!
-
 // given camera space scene point, return point on sensor
-void trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda)
+void trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
 {
    const float target[3] = { sample_position.x, sample_position.y, sample_position.z};
 
@@ -70,16 +82,16 @@ void trace_backwards(const AtVector sample_position, const float aperture_radius
 
    // just point through center of aperture
    float aperture[2] = {0.0f, 0.0f};
-   AtVector2 lens;
-      
-   concentricDiskSample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens);
 
-   // reset aperture
+   AtVector2 lens;
+   concentricDiskSample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens);
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
 
    lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
 
+   sensor_position.x = sensor[0];
+   sensor_position.y = sensor[1];
    /*
    if(sensor[2+k] > 0){
       offset = sensor[k]/sensor[2+k];
@@ -108,6 +120,10 @@ node_update
    SampleBokehData *data = (SampleBokehData*)AiNodeGetLocalData(node);
    data->aov_name = AiNodeGetStr(node, "aov_name");
    AiAOVRegister(data->aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
+
+   // get camera data
+   // data->aperture_radius = 
+   data->img_out = new CImg<float>(width, height, 1, 3, 0);
 }
  
 node_finish
@@ -126,17 +142,32 @@ shader_evaluate
    if (sg->out.RGBA().r > 4.0f || sg->out.RGBA().g > 4.0f || sg->out.RGBA().b > 4.0f)
    {
 
+      AtRGBA sample_energy = sg->out.RGBA / samples;
+
       // convert sample world space position to camera space
-      AtMatrix camera_space;
-      AiWorldToCameraMatrix(&camera_node, AiCameraGetShutterStart(), camera_space); //how do i get the camera node?
+      AtMatrix world_to_camera_matrix;
+      AtVector screen_space_sample_position;
+      AtVector2 sensor_position;
+
+      AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
+      AiM4PointByMatrixMult(&screen_space_sample_position, world_to_camera_matrix, &sg->P);
+
 
       //trace backwards
       for(count=0; count<samples; count++)
       {
-         AtRGBA sample_energy = sg->out.RGBA / samples;
 
+         trace_backwards(screen_space_sample_position, data->aperture_radius, data->lambda, sensor_position);
+         
+         // do i need to check for pupil intersections or not?
 
-         trace_backwards
+         // what is the pixel position? Convert sensor position to pixel position
+         AtVector2 pixel(sensor_coords[0] / (data->sensor_width * 0.5), sensor_coords[1] / (data->sensor_width * 0.5));
+
+         // write sample to image
+         data->img_out->atXY(pixel.x, pixel.y, 0, 0) = sample_energy.r;
+         data->img_out->atXY(pixel.x, pixel.y, 0, 1) = sample_energy.g;
+         data->img_out->atXY(pixel.x, pixel.y, 0, 2) = sample_energy.b;
       }
 
       // print sample positions as test
@@ -148,6 +179,7 @@ shader_evaluate
 
 
    // write AOV only if in use
+   // should i be putting everthing inside this loop?
    if ((sg->Rt & AI_RAY_CAMERA) && AiAOVEnabled(data->aov_name, AI_TYPE_RGBA))
    {
       AiAOVSetRGBA(sg, data->aov_name, sample_r_intensity);
