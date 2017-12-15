@@ -19,7 +19,6 @@ struct SampleBokehData
 
    float aperture_radius;
 
-
    CImg<float> img_out;
 
 };
@@ -152,6 +151,8 @@ shader_evaluate
       AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
       AiM4PointByMatrixMult(&screen_space_sample_position, world_to_camera_matrix, &sg->P);
 
+      // do i need to care about the w vector element? As in Marc's shader?
+
 
       //trace backwards
       for(count=0; count<samples; count++)
@@ -162,7 +163,13 @@ shader_evaluate
          // do i need to check for pupil intersections or not?
 
          // what is the pixel position? Convert sensor position to pixel position
+         // also not sure about units of sensor_width here
          AtVector2 pixel(sensor_coords[0] / (data->sensor_width * 0.5), sensor_coords[1] / (data->sensor_width * 0.5));
+
+         //now i have sx, sy, but how to convert these to x, y?
+         // screen-space coordinates will range between
+         // (screen_window_min.x, screen_window_min.y/frame_aspect_ratio) and
+         // (screen_window_max.x, screen_window_max.y/frame_aspect_ratio) 
 
          // write sample to image
          data->img_out->atXY(pixel.x, pixel.y, 0, 0) = sample_energy.r;
