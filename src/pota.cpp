@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
-#include <math.h>
 
 #include "../include/lens.h"
 
@@ -77,7 +76,7 @@ enum LensModel{
 };
 
 
-
+// will need to put this as extern, since aov shader needs to use this data and the arnold shaderglobals have not been created
 struct MyCameraData
 {
 	LensModel lensModel;
@@ -407,7 +406,7 @@ camera_create_ray
     sensor[0] = input.sx * (data->sensor_width * 0.5f);
     sensor[1] = input.sy * (data->sensor_width * 0.5f);
 
-
+	/*
     // chromatic aberration
     AtRGB aperture_left(0.5f, 0.5f, 0);
     AtRGB aperture_center(0, 0.5f, 0.5f);
@@ -429,7 +428,7 @@ camera_create_ray
         ca_aperture_sample.x -= 0.66f;
         ca_aperture_sample.x /= 0.33f;
     }
-    
+	*/
 
     /* 
     // for visual debugging, rays should converge to single point in idealised lens
@@ -448,12 +447,13 @@ camera_create_ray
     {
 		// transform unit square to unit disk
 	    AtVector2 unit_disk(0.0f, 0.0f);
-	    if(data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
-	    else concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
+	    //if(data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
+	    //else 
+	    concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
 
 	    aperture[0] = unit_disk.x * data->aperture_radius;
 	    aperture[1] = unit_disk.y * data->aperture_radius;
-	    
+		/*
 	    // hacky chromatic aberration
 	    if(data->aperture_colorshift > 0.0f)
 	    {	
@@ -470,6 +470,7 @@ camera_create_ray
 	    	aperture[0] = sample3d.x;
 	    	aperture[1] = sample3d.y;
     	}
+		*/
     } 
     else if (data->dof && data->aperture_blades > 2)
     {
