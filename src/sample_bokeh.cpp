@@ -66,7 +66,7 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 
 // this probably needs to know about the sensor shift!
 // given camera space scene point, return point on sensor
-inline void trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
+inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
 {
    const float target[3] = { sample_position.x, sample_position.y, - sample_position.z};
 
@@ -92,8 +92,18 @@ inline void trace_backwards(const AtVector sample_position, const float aperture
    sensor[0] += sensor[2] * sensor_shift;
    sensor[1] += sensor[3] * sensor_shift;
 
+   // crop out by outgoing pupil
+   if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) return false;
+   
+   // crop at inward facing pupil
+   const float px = sensor[0] + sensor[2] * lens_focal_length;
+   const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
+
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
+
+   return true;
 }
 
 
@@ -170,12 +180,12 @@ shader_evaluate
       const float aperture_radius = 12.75f;
       const float lambda = 0.55f;
       const float sensor_width = 36.0f;
-      const float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-      const float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+      const float xres = (float)AiNodeGetInt(AiUniverseGetOptions(), "xres");
+      const float yres = (float)AiNodeGetInt(AiUniverseGetOptions(), "yres");
       const float frame_aspect_ratio = xres / yres;
 
-      const int samples = 1000;
-      const float minimum_rgb = 3.0f;
+      const int samples = 300;
+      const float minimum_rgb = 2.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -206,7 +216,9 @@ shader_evaluate
          {
             // is the sensor at z0? I think first lens element is instead. Might have to subtract lens length? not sure
             // probably have to *10.0 for cm to mm conversion
-            trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position);
+            if(!trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position)){
+               continue;
+            }
 
             // do i need to check for pupil intersections or not?
 
@@ -217,8 +229,13 @@ shader_evaluate
             const float pixel_x = ((-s.x + 1.0) / 2.0) * xres;
             const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
 
+            //figure out why sometimes pixel is nan, can't just skip it
+            if ((pixel_x > xres) || (pixel_y > yres) || (pixel_x != pixel_x) || (pixel_y != pixel_y)) continue;
+
             // write sample to image
             // think cimg rgb values are (0->255) instead of (0->1)
+            //AiMsgInfo("pixel: %f, %f", pixel_x, pixel_y);
+
             bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255, pixel_x, pixel_y, 0, 0, true);
             bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255, pixel_x, pixel_y, 0, 1, true);
             bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255, pixel_x, pixel_y, 0, 2, true);
