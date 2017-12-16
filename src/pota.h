@@ -49,7 +49,7 @@ struct MyCameraData
 	int rays_fail;
 };
 
-extern struct MyCameraData data;
+extern struct MyCameraData camera_data;
 
 
 

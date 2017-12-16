@@ -10,7 +10,7 @@ using namespace cimg_library;
 
 // need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
 // check for intersections along P->Lens path
-// are my units correct? everything is in mm but sg->P etc is probably in cm
+// summing of samples is probably wrong
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -18,7 +18,11 @@ struct SampleBokehData
 {
    AtString aov_name;
    CImg<float> * img_out;
-
+   int aa_samples;
+   int xres;
+   int yres;
+   int samples;
+   float minimum_rgb;
 };
  
 enum SampleBokehParams
@@ -68,7 +72,7 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
 {
-   const float target[3] = { sample_position.x, sample_position.y, - sample_position.z};
+   const float target[3] = { sample_position.x, sample_position.y, -sample_position.z};
 
    // initialize 5d light fields
    float sensor[5] = {0.0f};
@@ -87,8 +91,6 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
 
    // need to find point on shifted sensor for focusing
-   // can probably do some manual ray/plane intersection.. but i only have 2 axis pos/dir information
-
    sensor[0] += sensor[2] * sensor_shift;
    sensor[1] += sensor[3] * sensor_shift;
 
@@ -123,17 +125,17 @@ node_initialize
  
 node_update
 {
-   // register AOV
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+
+   // register AOV
    bokeh_data->aov_name = AiNodeGetStr(node, "aov_name");
    AiAOVRegister(bokeh_data->aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
-
-   // camera data should be updated globally, no need to re-assign
-
    
-   float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-   float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-   bokeh_data->img_out = new CImg<float>(xres, yres, 1, 4, 0);
+   bokeh_data->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+
+   bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+   bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+   bokeh_data->img_out = new CImg<float>(bokeh_data->xres, bokeh_data->yres, 1, 4, 0);
 
    
 }
@@ -171,7 +173,7 @@ node_finish
  
 shader_evaluate
 {
-   const SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+   SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
 
    // write AOV only if in use
    if ((sg->Rt & AI_RAY_CAMERA) && AiAOVEnabled(bokeh_data->aov_name, AI_TYPE_RGBA))
@@ -180,19 +182,20 @@ shader_evaluate
       const float aperture_radius = 12.75f;
       const float lambda = 0.55f;
       const float sensor_width = 36.0f;
-      const float xres = (float)AiNodeGetInt(AiUniverseGetOptions(), "xres");
-      const float yres = (float)AiNodeGetInt(AiUniverseGetOptions(), "yres");
+
+      const float xres = (float)bokeh_data->xres;
+      const float yres = (float)bokeh_data->yres;
       const float frame_aspect_ratio = xres / yres;
 
-      const int samples = 300;
-      const float minimum_rgb = 2.0f;
+      bokeh_data->samples = 300;
+      bokeh_data->minimum_rgb = 2.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
       // figure out better way, based on:
       // distance from focus point
       // intensity of sample
-      if ((sg->out.RGBA().r > minimum_rgb) || (sg->out.RGBA().g > minimum_rgb) || (sg->out.RGBA().b > minimum_rgb))
+      if ((sg->out.RGBA().r > bokeh_data->minimum_rgb) || (sg->out.RGBA().g > bokeh_data->minimum_rgb) || (sg->out.RGBA().b > bokeh_data->minimum_rgb))
       {
          
          sample_energy.r = sg->out.RGBA().r;
@@ -200,7 +203,7 @@ shader_evaluate
          sample_energy.b = sg->out.RGBA().b;
          sample_energy.a = 1.0f;
 
-         sample_energy /= (float)samples;
+         sample_energy /= (float)bokeh_data->samples;
 
    
          // convert sample world space position to camera space
@@ -209,10 +212,9 @@ shader_evaluate
 
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
-         // do i need to care about the w vector element? As in Marc's shader?
 
 
-         for(int count=0; count<samples; count++)
+         for(int count=0; count<bokeh_data->samples; count++)
          {
             // is the sensor at z0? I think first lens element is instead. Might have to subtract lens length? not sure
             // probably have to *10.0 for cm to mm conversion
@@ -220,14 +222,13 @@ shader_evaluate
                continue;
             }
 
-            // do i need to check for pupil intersections or not?
-
             // convert sensor position to pixel position
             AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
                         sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
 
-            const float pixel_x = ((-s.x + 1.0) / 2.0) * xres;
-            const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
+            const float pixel_x = ((-s.x + 1.0) / 2.0) * bokeh_data->xres;
+            const float pixel_y = ((s.y + 1.0) / 2.0) * bokeh_data->yres;
+
 
             //figure out why sometimes pixel is nan, can't just skip it
             if ((pixel_x > xres) || (pixel_y > yres) || (pixel_x != pixel_x) || (pixel_y != pixel_y)) continue;

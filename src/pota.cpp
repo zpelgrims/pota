@@ -1,8 +1,6 @@
 #include <ai.h>
-
-#include "pota.h"
 #include "../include/lens.h"
-
+#include "pota.h"
 
 
 /*
@@ -210,11 +208,11 @@ node_initialize
 node_update
 {	
 
-	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
 	/*
 	DRAW_ONLY({
-		drawData &dd = data->draw;
+		drawData &dd = camera_data->draw;
 
         // create file to transfer data to python drawing module
         dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
@@ -236,49 +234,49 @@ node_update
 	AiMsgInfo("%s  [POTA] lens_field_of_view: %f", emoticon, lens_field_of_view);
 	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
 
-	data->sensor_width = AiNodeGetFlt(node, "sensor_width");
-	data->sensor_height = AiNodeGetFlt(node, "sensor_height");
-	data->fstop = AiNodeGetFlt(node, "fstop");
-	data->focus_distance = AiNodeGetFlt(node, "focus_distance");
-	data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
-	data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
-	data->dof = AiNodeGetBool(node, "dof");
-	data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
+	camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
+	camera_data->sensor_height = AiNodeGetFlt(node, "sensor_height");
+	camera_data->fstop = AiNodeGetFlt(node, "fstop");
+	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance");
+	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
+	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
+	camera_data->dof = AiNodeGetBool(node, "dof");
+	camera_data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
 
-	data->lambda = .55f;
+	camera_data->lambda = .55f;
 
 
-	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
-	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, data->max_fstop);
+	camera_data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
+	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, camera_data->max_fstop);
 
-	if (data->fstop == 0.0f){
-		data->aperture_radius = lens_aperture_housing_radius;
+	if (camera_data->fstop == 0.0f){
+		camera_data->aperture_radius = lens_aperture_housing_radius;
 	} else {
-		data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * data->fstop));
+		camera_data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * camera_data->fstop));
 	}
 
 	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, lens_aperture_housing_radius);
-	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, data->aperture_radius);
+	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, camera_data->aperture_radius);
 	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
 
 	// focus test, calculate sensor shift for correct focusing
     AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:", emoticon);
-	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, data->lambda);
+	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, camera_data->lambda);
 
     AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:", emoticon);
-	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, data->lambda);
+	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, lens_aperture_housing_radius, camera_data->lambda);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
-	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, data->focus_distance, data->sensor_shift);
+	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, camera_data->focus_distance, camera_data->sensor_shift);
 
 	/*
-	data->rays_succes = 0;
-	data->rays_fail = 0;
+	camera_data->rays_succes = 0;
+	camera_data->rays_fail = 0;
 	*/
 
 	/*
 	DRAW_ONLY({
-		data->min_intersection_distance = 999999.0;
-		data->max_intersection_distance = -999999.0;
+		camera_data->min_intersection_distance = 999999.0;
+		camera_data->max_intersection_distance = -999999.0;
     })
     */
 
@@ -290,12 +288,12 @@ node_update
 node_finish
 {
 
-	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
 	/*
-	AiMsgInfo("%s  [POTA] rays passed %d", emoticon, data->rays_succes);
-	AiMsgInfo("%s  [POTA] rays blocked %d", emoticon, data->rays_fail);
-	AiMsgInfo("%s  [POTA] rays blocked percentage %f", emoticon, (float)data->rays_fail / (float)(data->rays_succes + data->rays_fail));
+	AiMsgInfo("%s  [POTA] rays passed %d", emoticon, camera_data->rays_succes);
+	AiMsgInfo("%s  [POTA] rays blocked %d", emoticon, camera_data->rays_fail);
+	AiMsgInfo("%s  [POTA] rays blocked percentage %f", emoticon, (float)camera_data->rays_fail / (float)(camera_data->rays_succes + camera_data->rays_fail));
 	*/
 
 
@@ -303,14 +301,14 @@ node_finish
     DRAW_ONLY({
 
     	// debug only
-	    float average_intersection_distance_normalized = data->average_intersection_distance / (float)data->average_intersection_distance_cnt;
-	    std::cout << "average_intersection_distance: " << data->average_intersection_distance << std::endl;
-	    std::cout << "average_intersection_distance_cnt: " << data->average_intersection_distance_cnt << std::endl;
+	    float average_intersection_distance_normalized = camera_data->average_intersection_distance / (float)camera_data->average_intersection_distance_cnt;
+	    std::cout << "average_intersection_distance: " << camera_data->average_intersection_distance << std::endl;
+	    std::cout << "average_intersection_distance_cnt: " << camera_data->average_intersection_distance_cnt << std::endl;
 	    std::cout << "average_intersection_distance_normalized: " << average_intersection_distance_normalized << std::endl;
-	    std::cout << "max_intersection_distance: " << data->max_intersection_distance << std::endl;
-	    std::cout << "min_intersection_distance: " << data->min_intersection_distance << std::endl;
+	    std::cout << "max_intersection_distance: " << camera_data->max_intersection_distance << std::endl;
+	    std::cout << "min_intersection_distance: " << camera_data->min_intersection_distance << std::endl;
 
-    	drawData &dd = data->draw;
+    	drawData &dd = camera_data->draw;
     	dd.myfile << "}";
         dd.myfile.close();
     })
@@ -323,8 +321,8 @@ node_finish
 
 camera_create_ray
 {
-	MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-	// drawData &dd = data->draw;
+	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
+	// drawData &dd = camera_data->draw;
 
     DRAW_ONLY({
     	/*
@@ -334,7 +332,7 @@ camera_create_ray
     	}
 
     	int countlimit = 500000;
-		++data->counter;
+		++camera_data->counter;
 		*/
     })
 	
@@ -348,11 +346,16 @@ camera_create_ray
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
-    sensor[4] = data->lambda;
+    sensor[4] = camera_data->lambda;
 
     // set sensor position coords
-    sensor[0] = input.sx * (data->sensor_width * 0.5f);
-    sensor[1] = input.sy * (data->sensor_width * 0.5f);
+    sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
+    sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
+
+    AtVector2 sensor_position_original(sensor[0], sensor[1]);
+    bool ray_succes = false;
+    int tries = 0;
+    int max_tries = 10;
 
 	/*
     // chromatic aberration
@@ -360,8 +363,8 @@ camera_create_ray
     AtRGB aperture_center(0, 0.5f, 0.5f);
     AtRGB aperture_right(0.5f, 0, 0.5f);
     int index = 0;
-    float shift_x = data->aperture_colorshift * std::abs(sensor[0]);
-    float shift_y = data->aperture_colorshift * std::abs(sensor[1]);
+    float shift_x = camera_data->aperture_colorshift * std::abs(sensor[0]);
+    float shift_y = camera_data->aperture_colorshift * std::abs(sensor[1]);
 	AtVector2 ca_aperture_sample(input.lensx, input.lensy);
     
     if (input.lensx < 0.33f) {
@@ -383,74 +386,97 @@ camera_create_ray
     	sensor[0] = 0.0f;
     	sensor[1] = 0.0f;
 	*/
-    
-    
-    if (!data->dof) // no dof, all rays through single aperture point
-    { 
-    	aperture[0] = 0.0;
-    	aperture[1] = 0.0;
 
-    } 
-    else if (data->dof && data->aperture_blades < 2)
-    {
-		// transform unit square to unit disk
-	    AtVector2 unit_disk(0.0f, 0.0f);
-	    //if(data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
-	    //else 
-	    concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
+    while(ray_succes == false && tries <= max_tries){
 
-	    aperture[0] = unit_disk.x * data->aperture_radius;
-	    aperture[1] = unit_disk.y * data->aperture_radius;
-		/*
-	    // hacky chromatic aberration
-	    if(data->aperture_colorshift > 0.0f)
-	    {	
-		    AtVector sample3d(index * shift_x + aperture[0], index * shift_y + aperture[1], 0);    
-		    AtVector left_center(-shift_x, -shift_y, 0);
-		    AtVector middle_center(0, 0, 0);
-		    AtVector right_center(shift_x, shift_y, 0);
-	    	output.weight = 0.0f;
+    	//reset the initial sensor coords
+    	sensor[0] = 0.0f; sensor[1] = 0.0f; sensor[2] = 0.0f; sensor[3] = 0.0f; sensor[4] = camera_data->lambda;
+	    aperture[0] = 0.0f; aperture[1] = 0.0f; aperture[2] = 0.0f; aperture[3] = 0.0f; aperture[4] = 0.0f;
+	    out[0] = 0.0f; out[1] = 0.0f; out[2] = 0.0f; out[3] = 0.0f; out[4] = 0.0f;
 
-		    if (AiV3Length(left_center - sample3d) < data->aperture_radius) output.weight += aperture_left;
-		    if (AiV3Length(middle_center - sample3d) < data->aperture_radius) output.weight += aperture_center;
-	    	if (AiV3Length(right_center - sample3d) < data->aperture_radius) output.weight += aperture_right;
+	    // set sensor position coords
+	    sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
+	    sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
+	    
+	    if (!camera_data->dof) // no dof, all rays through single aperture point
+	    { 
+	    	aperture[0] = 0.0;
+	    	aperture[1] = 0.0;
 
-	    	aperture[0] = sample3d.x;
-	    	aperture[1] = sample3d.y;
-    	}
-		*/
-    } 
-    else if (data->dof && data->aperture_blades > 2)
-    {
-    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, data->aperture_radius, data->aperture_blades);
-    }
+	    } 
+	    else if (camera_data->dof && camera_data->aperture_blades < 2)
+	    {
+			// transform unit square to unit disk
+		    AtVector2 unit_disk(0.0f, 0.0f);
+		    //if(camera_data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
+		    //else 
+		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
+		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &unit_disk);
 
+		    aperture[0] = unit_disk.x * camera_data->aperture_radius;
+		    aperture[1] = unit_disk.y * camera_data->aperture_radius;
+			/*
+		    // hacky chromatic aberration
+		    if(camera_data->aperture_colorshift > 0.0f)
+		    {	
+			    AtVector sample3d(index * shift_x + aperture[0], index * shift_y + aperture[1], 0);    
+			    AtVector left_center(-shift_x, -shift_y, 0);
+			    AtVector middle_center(0, 0, 0);
+			    AtVector right_center(shift_x, shift_y, 0);
+		    	output.weight = 0.0f;
 
-    if (data->dof)
-    {
-    	// aperture sampling, to make sure ray is able to propagate through whole lens system
-    	lens_pt_sample_aperture(sensor, aperture, data->sensor_shift);
-    }
-    
+			    if (AiV3Length(left_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_left;
+			    if (AiV3Length(middle_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_center;
+		    	if (AiV3Length(right_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_right;
 
-    // move to beginning of polynomial
-	sensor[0] += sensor[2] * data->sensor_shift; //sensor.pos.x = sensor.dir.x * sensor_shift
-	sensor[1] += sensor[3] * data->sensor_shift; //sensor.pos.y = sensor.dir.y * sensor_shift
-
-
-	// propagate ray from sensor to outer lens element
-    float transmittance = lens_evaluate(sensor, out);
-	if(transmittance <= 0.0f) output.weight = 0.0f;
+		    	aperture[0] = sample3d.x;
+		    	aperture[1] = sample3d.y;
+	    	}
+			*/
+	    } 
+	    else if (camera_data->dof && camera_data->aperture_blades > 2)
+	    {
+	    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, camera_data->aperture_radius, camera_data->aperture_blades);
+	    }
 
 
-	// crop out by outgoing pupil
-	if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) output.weight = 0.0f;
+	    if (camera_data->dof)
+	    {
+	    	// aperture sampling, to make sure ray is able to propagate through whole lens system
+	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift);
+	    }
+	    
 
-	// crop at inward facing pupil
-	const float px = sensor[0] + sensor[2] * lens_focal_length;
-	const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-	if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) output.weight = 0.0f;
-	
+	    // move to beginning of polynomial
+		sensor[0] += sensor[2] * camera_data->sensor_shift; //sensor.pos.x = sensor.dir.x * sensor_shift
+		sensor[1] += sensor[3] * camera_data->sensor_shift; //sensor.pos.y = sensor.dir.y * sensor_shift
+
+
+		// propagate ray from sensor to outer lens element
+	    float transmittance = lens_evaluate(sensor, out);
+		if(transmittance <= 0.0f){
+			++tries;
+			continue;
+		}
+
+		// crop out by outgoing pupil
+		if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius){
+			++tries;
+			continue;
+		}
+
+		// crop at inward facing pupil
+		const float px = sensor[0] + sensor[2] * lens_focal_length;
+		const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+		if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius){
+			++tries;
+			continue;
+		}	
+		
+		ray_succes = true;
+	}
+
+	if (ray_succes == false) output.weight = 0.0f;
 
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
@@ -468,12 +494,13 @@ camera_create_ray
 	output.origin *= -0.1; //reverse rays and convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
 
-    /*
-    if (output.weight.r > 0.0f){
-    	++data->rays_succes;
-    } else {
-    	++ data->rays_fail;
-    }*/
+
+    // EXPERIMENTAL, I KNOW IT IS INCORRECT BUT AT LEAST THE VISUAL PROBLEM IS RESOLVED
+    // NOT CALCULATING THE DERIVATIVES PROBS AFFECTS TEXTURE I/O
+    if (tries > 0){
+        output.dOdy = output.origin;
+        output.dDdy = output.dir; 
+    }
 
 
 
@@ -537,24 +564,24 @@ camera_create_ray
 	if (output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
 
 		if (rayplaneintersect.z > -9999.0 && rayplaneintersect.z < 9999.0){
-			data->average_intersection_distance += rayplaneintersect.z;
-			++data->average_intersection_distance_cnt;
+			camera_data->average_intersection_distance += rayplaneintersect.z;
+			++camera_data->average_intersection_distance_cnt;
 		}
 
-		if(rayplaneintersect.z > data->max_intersection_distance){
-			data->max_intersection_distance = rayplaneintersect.z;
+		if(rayplaneintersect.z > camera_data->max_intersection_distance){
+			camera_data->max_intersection_distance = rayplaneintersect.z;
 		}
 
-		if(rayplaneintersect.z < data->min_intersection_distance){
-			data->min_intersection_distance = rayplaneintersect.z;
+		if(rayplaneintersect.z < camera_data->min_intersection_distance){
+			camera_data->min_intersection_distance = rayplaneintersect.z;
 		}
 	}
     
 	*/
 
 	/*
-    if (data->counter == countlimit){
-    	data->counter = 0;
+    if (camera_data->counter == countlimit){
+    	camera_data->counter = 0;
     }
 
 
