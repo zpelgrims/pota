@@ -1,5 +1,4 @@
 #include <ai.h>
-#include <math.h>
 #include "../include/lens.h"
 
 
@@ -10,6 +9,7 @@ using namespace cimg_library;
 
 // need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
 // check for intersections along P->Lens path
+// are my units correct? everything is in mm but sg->P etc is probably in cm
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -155,15 +155,15 @@ shader_evaluate
    if ((sg->Rt & AI_RAY_CAMERA) && AiAOVEnabled(data->aov_name, AI_TYPE_RGBA))
    {
 
-      const float aperture_radius = 12.75;
+      const float aperture_radius = 12.75f;
       const float lambda = 0.55f;
-      const float sensor_width = 36.0;
+      const float sensor_width = 36.0f;
       const float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
       const float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
       const float frame_aspect_ratio = xres / yres;
 
       const int samples = 1000;
-      const float minimum_rgb = 5.0f;
+      const float minimum_rgb = 3.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -196,25 +196,17 @@ shader_evaluate
          for(int count=0; count<samples; count++)
          {
             // is the sensor at z0? I think first lens element is instead. Might have to subtract lens length? not sure
-            trace_backwards(camera_space_sample_position, aperture_radius, lambda, sensor_position);
-
-            //AiMsgInfo("sensor_position: [%f, %f]", sensor_position.x, sensor_position.y);
+            // probably have to *10.0 for cm to mm conversion
+            trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position);
 
             // do i need to check for pupil intersections or not?
 
-            // what is the pixel position? Convert sensor position to pixel position
-            // also not sure about units of sensor_width here
-            AtVector2 s(sensor_position.x / (sensor_width * 0.5), sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
-            //const int pixel_x = (int)round(((s.x + 1)/2.0) * xres);
-            //const int pixel_y = (int)round(((s.y + 1)/2.0) * yres);
-            const float pixel_x = ((-s.x + 1.0)/2.0) * xres;
-            const float pixel_y = ((s.y + 1.0)/2.0) * yres;
+            // convert sensor position to pixel position
+            AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
+                        sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
 
-            // something is going wrong with the pixel positions, probably due to sensor_position
-            //AiMsgInfo("pixel: [%f, %f]", pixel_x, pixel_y);
-            // screen-space coordinates will range between
-            // (screen_window_min.x, screen_window_min.y/frame_aspect_ratio) and
-            // (screen_window_max.x, screen_window_max.y/frame_aspect_ratio) 
+            const float pixel_x = ((-s.x + 1.0) / 2.0) * xres;
+            const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
 
             // write sample to image
             // think cimg rgb values are (0->255) instead of (0->1)
@@ -222,12 +214,6 @@ shader_evaluate
             data->img_out->set_linear_atXY(sample_energy.g * 255, pixel_x, pixel_y, 0, 1, true);
             data->img_out->set_linear_atXY(sample_energy.b * 255, pixel_x, pixel_y, 0, 2, true);
             data->img_out->set_linear_atXY(sample_energy.a * 255, pixel_x, pixel_y, 0, 3, true);
-
-            /*data->img_out->atXY(pixel_x, pixel_y, 0, 0) = sample_energy.r + data->img_out->atXY(pixel_x, pixel_y, 0, 0);
-            data->img_out->atXY(pixel_x, pixel_y, 0, 1) = sample_energy.g + data->img_out->atXY(pixel_x, pixel_y, 0, 1);
-            data->img_out->atXY(pixel_x, pixel_y, 0, 2) = sample_energy.b + data->img_out->atXY(pixel_x, pixel_y, 0, 2);
-            data->img_out->atXY(pixel_x, pixel_y, 0, 3) = sample_energy.a + data->img_out->atXY(pixel_x, pixel_y, 0, 3);
-            */
          }
 
          

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
-#include <math.h>
 
 #include "../include/lens.h"
 
