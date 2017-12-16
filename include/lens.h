@@ -174,7 +174,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist)
 
 
 
-// solves for a sensor position give a scene point and an aperture point
+// solves for a sensor position given a scene point and an aperture point
 // returns transmittance from sensor to outer pupil
 static inline float lens_lt_sample_aperture(
     const float *scene,   // 3d point in scene in camera space
@@ -192,7 +192,7 @@ static inline float lens_lt_sample_aperture(
 
 }
 
-/*
+
 // jacobian of polynomial mapping sensor to outer pupil. in[]: sensor point/direction/lambda.
 static inline void lens_evaluate_jacobian(const float *in, float *J)
 {
@@ -270,7 +270,7 @@ static inline float lens_aperture_area(const float radius, const int blades)
   const float tri = .5f*radius * radius * sinf(2.0f*M_PI/(float)blades);
   return blades * tri;
 }
-*/
+
 
 static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
 {
