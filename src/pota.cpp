@@ -1,10 +1,8 @@
 #include <ai.h>
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <fstream>
 
+#include "pota.h"
 #include "../include/lens.h"
+
 
 
 /*
@@ -43,15 +41,7 @@ AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 
 
-struct drawData{
-    std::ofstream myfile;
-    bool draw;
-    int counter;
 
-    drawData()
-        : draw(false), counter(0){
-    }
-};
 
 
 enum
@@ -65,46 +55,6 @@ enum
 };
 
 
-// enum to switch between lens models in interface dropdown
-enum LensModel{
-    fisheye,
-    fisheye_aspherical,
-    double_gauss,
-    double_gauss_angenieux,
-    petzval,
-    NONE
-};
-
-
-// will need to put this as extern, since aov shader needs to use this data and the arnold shaderglobals have not been created
-struct MyCameraData
-{
-	LensModel lensModel;
-    drawData draw;
-
-
-	float sensor_width;
-	float sensor_height;
-	float fstop;
-    float max_fstop;
-	float focus_distance;
-	float aperture_radius;
-	float sensor_shift;
-	float aperture_colorshift;
-
-    int aperture_blades;
-	// int counter;
-
-	bool dof;
-
-	int rays_succes;
-	int rays_fail;
-    
-    // float max_intersection_distance;
-    // float min_intersection_distance;
-    // long double average_intersection_distance;
-    // int average_intersection_distance_cnt;
-};
 
 
 
@@ -295,6 +245,8 @@ node_update
 	data->dof = AiNodeGetBool(node, "dof");
 	data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
 
+	data->lambda = .55f;
+
 
 	data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
 	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, data->max_fstop);
@@ -311,10 +263,10 @@ node_update
 
 	// focus test, calculate sensor shift for correct focusing
     AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:", emoticon);
-	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, .55f);
+	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, data->lambda);
 
     AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:", emoticon);
-	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, .55f);
+	data->sensor_shift = camera_set_focus(data->focus_distance, lens_aperture_housing_radius, data->lambda);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, data->focus_distance, data->sensor_shift);
 
@@ -364,7 +316,6 @@ node_finish
     })
     */
 
-	delete data;
 }
 
 
@@ -394,13 +345,10 @@ camera_create_ray
     // no:  trace 1 ray at .55f
     // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive :(
 
-
-    float lambda = 0.55f; // 550 nanometers
-
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
-    sensor[4] = lambda;
+    sensor[4] = data->lambda;
 
     // set sensor position coords
     sensor[0] = input.sx * (data->sensor_width * 0.5f);
