@@ -64,7 +64,7 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 // given camera space scene point, return point on sensor
 inline void trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
 {
-   const float target[3] = { sample_position.x, sample_position.y, sample_position.z};
+   const float target[3] = { sample_position.x, sample_position.y, - sample_position.z};
 
    // initialize 5d light fields
    float sensor[5] = {0.0f};
@@ -119,6 +119,8 @@ node_finish
 {
    SampleBokehData *data = (SampleBokehData*)AiNodeGetLocalData(node);
 
+
+   /*
    float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
    float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
@@ -135,7 +137,9 @@ node_finish
          data->img_out->atXY(i,j,0,3) /= samples;
      } 
    }
+   */
 
+   // change to exr...
    data->img_out->save("/Users/zeno/pota/tests/image/cimg_bokeh.ppm");
    
 
@@ -156,9 +160,10 @@ shader_evaluate
       const float sensor_width = 36.0;
       const float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
       const float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+      const float frame_aspect_ratio = xres / yres;
 
       const int samples = 1000;
-      const float minimum_rgb = 17.0f;
+      const float minimum_rgb = 5.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -172,6 +177,8 @@ shader_evaluate
          sample_energy.g = sg->out.RGBA().g;
          sample_energy.b = sg->out.RGBA().b;
          sample_energy.a = 1.0f;
+
+         sample_energy /= samples;
 
    
          // convert sample world space position to camera space
@@ -190,33 +197,31 @@ shader_evaluate
          {
             // is the sensor at z0? I think first lens element is instead. Might have to subtract lens length? not sure
             trace_backwards(camera_space_sample_position, aperture_radius, lambda, sensor_position);
-            
-            AiMsgInfo("sensor_position: [%f, %f]", sensor_position.x, sensor_position.y);
+
+            //AiMsgInfo("sensor_position: [%f, %f]", sensor_position.x, sensor_position.y);
 
             // do i need to check for pupil intersections or not?
 
             // what is the pixel position? Convert sensor position to pixel position
             // also not sure about units of sensor_width here
-            AtVector2 s(sensor_position.x / (sensor_width * 0.5), sensor_position.y / (sensor_width * 0.5));
+            AtVector2 s(sensor_position.x / (sensor_width * 0.5), sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
             //const int pixel_x = (int)round(((s.x + 1)/2.0) * xres);
             //const int pixel_y = (int)round(((s.y + 1)/2.0) * yres);
-            const float pixel_x = ((s.x + 1)/2.0) * xres;
-            const float pixel_y = ((s.y + 1)/2.0) * yres;
+            const float pixel_x = ((-s.x + 1.0)/2.0) * xres;
+            const float pixel_y = ((s.y + 1.0)/2.0) * yres;
 
             // something is going wrong with the pixel positions, probably due to sensor_position
-            AiMsgInfo("pixel: [%f, %f]", pixel_x, pixel_y);
+            //AiMsgInfo("pixel: [%f, %f]", pixel_x, pixel_y);
             // screen-space coordinates will range between
             // (screen_window_min.x, screen_window_min.y/frame_aspect_ratio) and
             // (screen_window_max.x, screen_window_max.y/frame_aspect_ratio) 
 
             // write sample to image
             // think cimg rgb values are (0->255) instead of (0->1)
-
-            //const float rgba[4] = {sample_energy.r, sample_energy.g, sample_energy.b, sample_energy.a};
-            //data->img_out->set_linear_atXY(sample_energy.r, pixel_x, pixel_y, 0, 0, true);
-            //data->img_out->set_linear_atXY(sample_energy.g, pixel_x, pixel_y, 0, 1, true);
-            //data->img_out->set_linear_atXY(sample_energy.b, pixel_x, pixel_y, 0, 2, true);
-            //data->img_out->set_linear_atXY(sample_energy.a, pixel_x, pixel_y, 0, 3, true);
+            data->img_out->set_linear_atXY(sample_energy.r * 255, pixel_x, pixel_y, 0, 0, true);
+            data->img_out->set_linear_atXY(sample_energy.g * 255, pixel_x, pixel_y, 0, 1, true);
+            data->img_out->set_linear_atXY(sample_energy.b * 255, pixel_x, pixel_y, 0, 2, true);
+            data->img_out->set_linear_atXY(sample_energy.a * 255, pixel_x, pixel_y, 0, 3, true);
 
             /*data->img_out->atXY(pixel_x, pixel_y, 0, 0) = sample_energy.r + data->img_out->atXY(pixel_x, pixel_y, 0, 0);
             data->img_out->atXY(pixel_x, pixel_y, 0, 1) = sample_energy.g + data->img_out->atXY(pixel_x, pixel_y, 0, 1);
