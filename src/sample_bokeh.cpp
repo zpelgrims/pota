@@ -62,6 +62,8 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
 }
 
 
+
+
 // this probably needs to know about the sensor shift!
 // given camera space scene point, return point on sensor
 inline void trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
@@ -74,12 +76,21 @@ inline void trace_backwards(const AtVector sample_position, const float aperture
    float aperture[2] = {0.0f};
    sensor[4] = lambda;
 
+   // remove temp
+   float sensor_shift = 1.398059;
+
    AtVector2 lens;
    concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens);
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
 
    lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
+
+   // need to find point on shifted sensor for focusing
+   // can probably do some manual ray/plane intersection.. but i only have 2 axis pos/dir information
+
+   sensor[0] += sensor[2] * sensor_shift;
+   sensor[1] += sensor[3] * sensor_shift;
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
