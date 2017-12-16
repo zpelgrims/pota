@@ -38,10 +38,6 @@ std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 
-
-
-
-
 enum
 {
 	p_lensModel,
@@ -51,8 +47,6 @@ enum
     p_focus_distance,
     p_aperture_blades
 };
-
-
 
 
 
@@ -355,7 +349,7 @@ camera_create_ray
     AtVector2 sensor_position_original(sensor[0], sensor[1]);
     bool ray_succes = false;
     int tries = 0;
-    int max_tries = 10;
+    int max_tries = 20;
 
 	/*
     // chromatic aberration
@@ -390,13 +384,12 @@ camera_create_ray
     while(ray_succes == false && tries <= max_tries){
 
     	//reset the initial sensor coords
-    	sensor[0] = 0.0f; sensor[1] = 0.0f; sensor[2] = 0.0f; sensor[3] = 0.0f; sensor[4] = camera_data->lambda;
+    	sensor[0] = sensor_position_original.x; 
+    	sensor[1] = sensor_position_original.y; 
+    	sensor[2] = 0.0f; sensor[3] = 0.0f; 
+    	sensor[4] = camera_data->lambda;
 	    aperture[0] = 0.0f; aperture[1] = 0.0f; aperture[2] = 0.0f; aperture[3] = 0.0f; aperture[4] = 0.0f;
 	    out[0] = 0.0f; out[1] = 0.0f; out[2] = 0.0f; out[3] = 0.0f; out[4] = 0.0f;
-
-	    // set sensor position coords
-	    sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
-	    sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
 	    
 	    if (!camera_data->dof) // no dof, all rays through single aperture point
 	    { 
