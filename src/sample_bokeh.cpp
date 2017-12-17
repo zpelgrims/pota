@@ -11,6 +11,9 @@ using namespace cimg_library;
 // need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
 // check for intersections along P->Lens path
 // summing of samples is probably wrong
+// write to exr, oiio?
+// how to get rid of under-sampling fireflies? need to average with already-existing pixel values for the pixel? maybe they arent fireflies?
+
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -32,45 +35,9 @@ enum SampleBokehParams
 
 
 
-
-// xorshift fast random number generator
-inline uint32_t xor128(void){
-    static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-    uint32_t t = x ^ (x << 11);
-    x = y; y = z; z = w;
-    return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
-
-
-// Improved concentric mapping code by Dave Cline [peter shirley´s blog]
-// maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
-{
-    float phi, r;
-
-    // switch coordinate space from [0, 1] to [-1, 1]
-    float a = 2.0 * ox - 1.0;
-    float b = 2.0 * oy - 1.0;
-
-    if ((a * a) > (b * b)){
-        r = a;
-        phi = (0.78539816339f) * (b / a);
-    }
-    else {
-        r = b;
-        phi = (AI_PIOVER2)-(0.78539816339f) * (a / b);
-    }
-
-    lens->x = r * std::cos(phi);
-    lens->y = r * std::sin(phi);
-}
-
-
-
-
 // this probably needs to know about the sensor shift!
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position)
+inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
 {
    const float target[3] = { sample_position.x, sample_position.y, -sample_position.z};
 
@@ -79,9 +46,6 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    float out[5] = {0.0f};
    float aperture[2] = {0.0f};
    sensor[4] = lambda;
-
-   // remove temp
-   float sensor_shift = 1.398059;
 
    AtVector2 lens;
    concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens);
@@ -144,7 +108,6 @@ node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
 
-
    /*
    float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
    float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
@@ -166,7 +129,6 @@ node_finish
 
    // change to exr...
    bokeh_data->img_out->save("/Users/zeno/pota/tests/image/cimg_bokeh.ppm");
-   
 
    delete bokeh_data;
 }
@@ -195,7 +157,7 @@ shader_evaluate
       // figure out better way, based on:
       // distance from focus point
       // intensity of sample
-      if ((sg->out.RGBA().r > bokeh_data->minimum_rgb) || (sg->out.RGBA().g > bokeh_data->minimum_rgb) || (sg->out.RGBA().b > bokeh_data->minimum_rgb))
+      if ((sg->out.RGBA().r > bokeh_data-> minimum_rgb) || (sg->out.RGBA().g > bokeh_data-> minimum_rgb) || (sg->out.RGBA().b > bokeh_data-> minimum_rgb))
       {
          
          sample_energy.r = sg->out.RGBA().r;
@@ -216,9 +178,9 @@ shader_evaluate
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
-            // is the sensor at z0? I think first lens element is instead. Might have to subtract lens length? not sure
             // probably have to *10.0 for cm to mm conversion
-            if(!trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position)){
+            if(!trace_backwards(camera_space_sample_position, aperture_radius, lambda, sensor_position, 1.398059))
+            {
                continue;
             }
 
@@ -226,21 +188,24 @@ shader_evaluate
             AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
                         sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
 
-            const float pixel_x = ((-s.x + 1.0) / 2.0) * bokeh_data->xres;
-            const float pixel_y = ((s.y + 1.0) / 2.0) * bokeh_data->yres;
+            const float pixel_x = ((-s.x + 1.0) / 2.0) * xres;
+            const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
 
 
             //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel_x > xres) || (pixel_y > yres) || (pixel_x != pixel_x) || (pixel_y != pixel_y)) continue;
+            if ((pixel_x > xres) || (pixel_y > yres) || (pixel_x != pixel_x) || (pixel_y != pixel_y))
+            {
+               continue;
+            }
 
             // write sample to image
             // think cimg rgb values are (0->255) instead of (0->1)
             //AiMsgInfo("pixel: %f, %f", pixel_x, pixel_y);
 
-            bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255, pixel_x, pixel_y, 0, 0, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255, pixel_x, pixel_y, 0, 1, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255, pixel_x, pixel_y, 0, 2, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.a * 255, pixel_x, pixel_y, 0, 3, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255.0f, pixel_x, pixel_y, 0, 0, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255.0f, pixel_x, pixel_y, 0, 1, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255.0f, pixel_x, pixel_y, 0, 2, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.a * 255.0f, pixel_x, pixel_y, 0, 3, true);
          }
 
          
@@ -248,7 +213,13 @@ shader_evaluate
 
       // ideally would be cool to write to an aov but not sure if I can access the different pixels other than
       // the one related to the current sample
-      // AiAOVSetRGBA(sg, bokeh_data->aov_name, sample_energy);
+      AtRGBA aov_value;
+      aov_value.r = bokeh_data->img_out->atXY(sg->x, sg->y, 0);
+      aov_value.g = bokeh_data->img_out->atXY(sg->x, sg->y, 1);
+      aov_value.b = bokeh_data->img_out->atXY(sg->x, sg->y, 2);
+      aov_value.a = bokeh_data->img_out->atXY(sg->x, sg->y, 3);
+
+      AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value / 255.0f);
    }
 }
  
