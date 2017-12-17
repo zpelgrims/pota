@@ -63,16 +63,10 @@ AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
 // returns sensor offset in mm
 float camera_set_focus(float dist, float aperture_radius, float lambda)
 {
-    // camera space vector to v1:
     const float target[3] = { 0.0, 0.0, dist};
-
-    // initialize 5d light fields
     float sensor[5] = {0.0f};
     float out[5] = {0.0f};
-
-    // set wavelength
     sensor[4] = lambda;
-
     float offset = 0.0f;
     int count = 0;
 
@@ -345,10 +339,10 @@ camera_create_ray
 	    {
 			// transform unit square to unit disk
 		    AtVector2 unit_disk(0.0f, 0.0f);
-		    //if(camera_data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk);
+		    //if(camera_data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk, true);
 		    //else 
-		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, &unit_disk);
-		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &unit_disk);
+		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, &unit_disk, false);
+		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &unit_disk, true);
 
 		    aperture[0] = unit_disk.x * camera_data->aperture_radius;
 		    aperture[1] = unit_disk.y * camera_data->aperture_radius;

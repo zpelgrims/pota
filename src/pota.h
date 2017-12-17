@@ -78,9 +78,33 @@ inline float Lerp(float t, float v1, float v2)
 }
 
 
-// Improved concentric mapping code by Dave Cline [peter shirley´s blog]
+// sin approximation, not completely accurate but faster than std::sin
+inline float fastSin(float x){
+    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
+    const float B = 4.0f / AI_PI;
+    const float C = -4.0f / (AI_PI*AI_PI);
+    float y = B * x + C * x * std::abs(x);
+    const float P = 0.225f;
+    return P * (y * std::abs(y) - y) + y;
+}
+
+
+inline float fastCos(float x){
+    // conversion from sin to cos
+    x += AI_PI * 0.5;
+
+    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
+    const float B = 4.0f / AI_PI;
+    const float C = -4.0f / (AI_PI*AI_PI);
+    float y = B * x + C * x * std::abs(x);
+    const float P = 0.225f;
+    return P * (y * std::abs(y) - y) + y;
+}
+
+
+
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
+inline void concentric_disk_sample(const float ox, const float oy, AtVector2 *lens, bool fast_trigo)
 {
     float phi, r;
 
@@ -97,6 +121,13 @@ inline void concentric_disk_sample(float ox, float oy, AtVector2 *lens)
         phi = (AI_PIOVER2)-(0.78539816339f) * (a / b);
     }
 
-    lens->x = r * std::cos(phi);
-    lens->y = r * std::sin(phi);
+    if (!fast_trigo){
+        lens->x = r * std::cos(phi);
+        lens->y = r * std::sin(phi);
+    } else {
+        lens->x = r * fastCos(phi);
+        lens->y = r * fastSin(phi);
+    }
+
+    
 }
