@@ -48,7 +48,7 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    sensor[4] = lambda;
 
    AtVector2 lens;
-   concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens);
+   concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens, true);
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
 
