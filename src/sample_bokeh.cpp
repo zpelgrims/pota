@@ -34,12 +34,12 @@ enum SampleBokehParams
 };
 
 
+// righ tnow kinda looks like an inside-out lens, something wrong with the supplied coordinates?
 
-// this probably needs to know about the sensor shift!
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
 {
-   const float target[3] = { sample_position.x, sample_position.y, -sample_position.z};
+   const float target[3] = { -sample_position.x, sample_position.y, -sample_position.z};
 
    // initialize 5d light fields
    float sensor[5] = {0.0f};
@@ -52,19 +52,23 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
 
-   lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
 
-   // need to find point on shifted sensor for focusing
+   if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda) <= 0.0f) return false;
+
+   // shift sensor
+   // does this need to be before or after aperture blocking?..
    sensor[0] += sensor[2] * sensor_shift;
    sensor[1] += sensor[3] * sensor_shift;
 
    // crop out by outgoing pupil
+   // not sure if needed over here, since we're tracing backwards
    if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) return false;
    
    // crop at inward facing pupil
    const float px = sensor[0] + sensor[2] * lens_focal_length;
    const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
+
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
@@ -149,8 +153,8 @@ shader_evaluate
       const float yres = (float)bokeh_data->yres;
       const float frame_aspect_ratio = xres / yres;
 
-      bokeh_data->samples = 300;
-      bokeh_data->minimum_rgb = 2.0f;
+      bokeh_data->samples = 800;
+      bokeh_data->minimum_rgb = 4.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -188,7 +192,7 @@ shader_evaluate
             AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
                         sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
 
-            const float pixel_x = ((-s.x + 1.0) / 2.0) * xres;
+            const float pixel_x = ((s.x + 1.0) / 2.0) * xres;
             const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
 
 
