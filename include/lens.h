@@ -292,7 +292,7 @@ static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, 
   *y = radius * (b * p1[0] + c * p2[0]);
 }
 
-/*
+
 static inline int lens_clip_aperture(const float x, const float y, const float radius, const int blades)
 { 
   // early out
@@ -314,4 +314,3 @@ static inline int lens_clip_aperture(const float x, const float y, const float r
   }
   return 1;
 }
-*/

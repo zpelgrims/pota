@@ -3,15 +3,6 @@
 #include "pota.h"
 
 
-/*
-#include <iostream>
-#include <chrono>
-typedef std::chrono::high_resolution_clock Clock;
-auto t1 = Clock::now();
-auto t2 = Clock::now();
-std::cout << t2-t1 << '\n';
-*/
-
 #define CACTUS 1
 #ifdef CACTUS
 #  define WORK_ONLY(block) block
@@ -26,8 +17,6 @@ std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
 #else
 #  define DRAW_ONLY(block)
 #endif
-
-
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
