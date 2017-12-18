@@ -57,8 +57,8 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
 
    // shift sensor
    // does this need to be before or after aperture blocking?..
-   sensor[0] += sensor[2] * sensor_shift;
-   sensor[1] += sensor[3] * sensor_shift;
+   sensor[0] += sensor[2] * -sensor_shift;
+   sensor[1] += sensor[3] * -sensor_shift;
 
    // crop out by outgoing pupil
    // not sure if needed over here, since we're tracing backwards
