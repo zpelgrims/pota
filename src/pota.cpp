@@ -341,8 +341,8 @@ camera_create_ray
 		    AtVector2 unit_disk(0.0f, 0.0f);
 		    //if(camera_data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk, true);
 		    //else 
-		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, &unit_disk, false);
-		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &unit_disk, true);
+		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
+		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
 
 		    aperture[0] = unit_disk.x * camera_data->aperture_radius;
 		    aperture[1] = unit_disk.y * camera_data->aperture_radius;

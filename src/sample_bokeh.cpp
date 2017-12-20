@@ -48,10 +48,9 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    sensor[4] = lambda;
 
    AtVector2 lens;
-   concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, &lens, true);
+   concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, lens, true);
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
-
 
    if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda) <= 0.0f) return false;
 
@@ -61,7 +60,6 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
 
    // shift sensor
-   // does this need to be before or after aperture blocking?..
    sensor[0] += sensor[2] * -sensor_shift;
    sensor[1] += sensor[3] * -sensor_shift;
 
