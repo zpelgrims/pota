@@ -39,7 +39,7 @@ enum SampleBokehParams
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
 {
-   const float target[3] = { -sample_position.x, sample_position.y, -sample_position.z};
+   const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
 
    // initialize 5d light fields
    float sensor[5] = {0.0f};
@@ -55,16 +55,15 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
 
    if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda) <= 0.0f) return false;
 
-   // shift sensor
-   // does this need to be before or after aperture blocking?..
-   sensor[0] += sensor[2] * -sensor_shift;
-   sensor[1] += sensor[3] * -sensor_shift;
-
    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
    const float px = sensor[0] + sensor[2] * lens_focal_length;
    const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
 
+   // shift sensor
+   // does this need to be before or after aperture blocking?..
+   sensor[0] += sensor[2] * -sensor_shift;
+   sensor[1] += sensor[3] * -sensor_shift;
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
@@ -186,19 +185,17 @@ shader_evaluate
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
-            // probably have to *10.0 for cm to mm conversion
-            if(!trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position, 1.398059))
+            if(!trace_backwards( -camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position, 1.398059))
             {
                continue;
             }
-
 
             // convert sensor position to pixel position
             AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
                         sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
 
             const float pixel_x = ((s.x + 1.0) / 2.0) * xres;
-            const float pixel_y = ((s.y + 1.0) / 2.0) * yres;
+            const float pixel_y = ((-s.y + 1.0) / 2.0) * yres;
 
 
             //figure out why sometimes pixel is nan, can't just skip it
