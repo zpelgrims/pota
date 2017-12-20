@@ -1,11 +1,9 @@
 #include <ai.h>
+#include <vector>
+
 #include "../include/lens.h"
 #include "pota.h"
-
-
-#define cimg_display 0
-#include "../include/CImg.h"
-using namespace cimg_library;
+#include "../include/miniexr.h"
 
 
 // need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
@@ -20,12 +18,13 @@ AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
 struct SampleBokehData
 {
    AtString aov_name;
-   CImg<float> * img_out;
    int aa_samples;
    int xres;
    int yres;
    int samples;
    float minimum_rgb;
+
+   std::vector<AtRGBA> image;
 };
  
 enum SampleBokehParams
@@ -42,10 +41,9 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
 
    // initialize 5d light fields
-   float sensor[5] = {0.0f};
-   float out[5] = {0.0f};
-   float aperture[2] = {0.0f};
-   sensor[4] = lambda;
+   float sensor[5] =    {0.0f, 0.0f, 0.0f, 0.0f, lambda};
+   float out[5] =       {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+   float aperture[2] =  {0.0f, 0.0f};
 
    AtVector2 lens;
    concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, lens, true);
@@ -86,11 +84,13 @@ node_parameters
    AiParameterStr("aov_name", "");
    AiMetaDataSetBool(nentry, "aov_name", "linkable", false);
 }
+
  
 node_initialize
 {
    AiNodeSetLocalData(node, new SampleBokehData());
 }
+
  
 node_update
 {
@@ -101,39 +101,47 @@ node_update
    AiAOVRegister(bokeh_data->aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
    
    bokeh_data->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-
    bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
    bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-   bokeh_data->img_out = new CImg<float>(bokeh_data->xres, bokeh_data->yres, 1, 4, 0);
 
-   
+   bokeh_data->image.clear();
+   bokeh_data->image.reserve(bokeh_data->xres * bokeh_data->yres);
 }
- 
+
+
 node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
 
-   /*
-   float xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-   float yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
-   const int samples = 1000;
-   
-   // normalize samples
-   for (int j = 0; j < yres; ++j)
+
+   // fill exr
+   unsigned short rgba[bokeh_data->yres * bokeh_data->xres * 4];
+   unsigned ofs = 0;
+   int pixelnumber = 0;
+   for (int y = 0; y < bokeh_data->yres; ++y)
    {
-     for (int i = 0; i < xres; ++i)
-     { 
-         bokeh_data->img_out->atXY(i,j,0,0) /= samples;
-         bokeh_data->img_out->atXY(i,j,0,1) /= samples;
-         bokeh_data->img_out->atXY(i,j,0,2) /= samples;
-         bokeh_data->img_out->atXY(i,j,0,3) /= samples;
-     } 
-   }
-   */
+      for (int x = 0; x < bokeh_data->xres; ++x)
+      {  
+         rgba[ofs] = FloatToHalf(bokeh_data->image[pixelnumber].r);
+         rgba[ofs+1] = FloatToHalf(bokeh_data->image[pixelnumber].g);
+         rgba[ofs+2] = FloatToHalf(bokeh_data->image[pixelnumber].b);
+         rgba[ofs+3] = FloatToHalf(bokeh_data->image[pixelnumber].a);
 
-   // change to exr...
-   bokeh_data->img_out->save("/Users/zeno/pota/tests/image/cimg_bokeh.ppm");
+         ofs += 4;
+         ++pixelnumber;
+      }
+   }
+
+   size_t exrSize;
+   unsigned char* exr = miniexr_write (bokeh_data->xres, bokeh_data->yres, 4, rgba, &exrSize);
+   FILE* f = fopen ("/Users/zeno/pota/tests/image/pota_bokeh.exr", "wb");
+   fwrite (exr, 1, exrSize, f);
+   fclose (f);
+   free (exr);
+
+
+
 
    delete bokeh_data;
 }
@@ -152,10 +160,10 @@ shader_evaluate
 
       const float xres = (float)bokeh_data->xres;
       const float yres = (float)bokeh_data->yres;
-      const float frame_aspect_ratio = xres / yres;
+      const float frame_aspect_ratio = xres/yres;
 
-      bokeh_data->samples = 200;
-      bokeh_data->minimum_rgb = 2.0f;
+      bokeh_data->samples = 50;
+      bokeh_data->minimum_rgb = 0.25f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -179,7 +187,6 @@ shader_evaluate
 
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
-
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
@@ -211,26 +218,19 @@ shader_evaluate
             */
 
             // write sample to image
-            // think cimg rgb values are (0->255) instead of (0->1)
-            bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255.0f * 1.5, pixel_x, pixel_y, 0, 0, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255.0f * 1.5, pixel_x, pixel_y, 0, 1, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255.0f * 1.5, pixel_x, pixel_y, 0, 2, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.a * 255.0f * 1.5, pixel_x, pixel_y, 0, 3, true);
-
+            bokeh_data->image[static_cast<int>(bokeh_data->xres * floor(pixel_y) + floor(pixel_x))] += sample_energy;
          }
-
-         
       }
 
       // ideally would be cool to write to an aov but not sure if I can access the different pixels other than
       // the one related to the current sample
-      AtRGBA aov_value;
-      aov_value.r = bokeh_data->img_out->atXY(sg->x, sg->y, 0);
-      aov_value.g = bokeh_data->img_out->atXY(sg->x, sg->y, 1);
-      aov_value.b = bokeh_data->img_out->atXY(sg->x, sg->y, 2);
-      aov_value.a = bokeh_data->img_out->atXY(sg->x, sg->y, 3);
+      //AtRGBA aov_value;
+      //aov_value.r = bokeh_data->img_out->atXY(sg->x, sg->y, 0);
+      //aov_value.g = bokeh_data->img_out->atXY(sg->x, sg->y, 1);
+      //aov_value.b = bokeh_data->img_out->atXY(sg->x, sg->y, 2);
+      //aov_value.a = bokeh_data->img_out->atXY(sg->x, sg->y, 3);
 
-      AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value / 255.0f);
+      //AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value / 255.0f);
    }
 }
  

@@ -13,8 +13,8 @@ include/pt_evaluate.h\
 include/pt_sample_aperture.h\
 include/pt_evaluate_aperture.h\
 include/lt_sample_aperture.h\
-include/CImg.h \
-src/pota.h
+src/pota.h \
+include/miniexr.h
 
 
 .PHONY=all clean
