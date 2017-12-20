@@ -11,7 +11,7 @@ using namespace cimg_library;
 // need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
 // check for intersections along P->Lens path
 // summing of samples is probably wrong
-// write to exr, oiio?
+// write to exr, oiio, tinyexr?
 // how to get rid of under-sampling fireflies? need to average with already-existing pixel values for the pixel? maybe they arent fireflies?
 
 
@@ -34,7 +34,7 @@ enum SampleBokehParams
 };
 
 
-// righ tnow kinda looks like an inside-out lens, something wrong with the supplied coordinates?
+// LOTS OF NaNs near the edges, why does this happen? Key to everything!
 
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
@@ -60,11 +60,7 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    sensor[0] += sensor[2] * -sensor_shift;
    sensor[1] += sensor[3] * -sensor_shift;
 
-   // crop out by outgoing pupil
-   // not sure if needed over here, since we're tracing backwards
-   if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) return false;
-   
-   // crop at inward facing pupil
+   // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
    const float px = sensor[0] + sensor[2] * lens_focal_length;
    const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
@@ -72,6 +68,14 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
+
+   /*
+   if ((sensor[0] != sensor[0]) || (sensor[1] != sensor[1])){
+      AiMsgInfo("sensor: [%f, %f, %f, %f, %f]", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
+      AiMsgInfo("out: [%f, %f, %f, %f, %f]", out[0], out[1], out[2], out[3], out[4]);
+      AiMsgInfo("aperture: [%f, %f]", aperture[0], aperture[1]);
+   }
+   */
 
    return true;
 }
@@ -153,8 +157,8 @@ shader_evaluate
       const float yres = (float)bokeh_data->yres;
       const float frame_aspect_ratio = xres / yres;
 
-      bokeh_data->samples = 800;
-      bokeh_data->minimum_rgb = 4.0f;
+      bokeh_data->samples = 200;
+      bokeh_data->minimum_rgb = 2.0f;
 
       AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
@@ -183,10 +187,11 @@ shader_evaluate
          for(int count=0; count<bokeh_data->samples; count++)
          {
             // probably have to *10.0 for cm to mm conversion
-            if(!trace_backwards(camera_space_sample_position, aperture_radius, lambda, sensor_position, 1.398059))
+            if(!trace_backwards(camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position, 1.398059))
             {
                continue;
             }
+
 
             // convert sensor position to pixel position
             AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
@@ -202,14 +207,21 @@ shader_evaluate
                continue;
             }
 
+            /*
+            if ((pixel_x != pixel_x) || (pixel_y != pixel_y)){
+               AiMsgInfo("sensor_position: \t\t[%f, %f]", sensor_position.x, sensor_position.y);
+               AiMsgInfo("s: \t\t[%f, %f]", s.x, s.y);
+               AiMsgInfo("pixel: \t\t[%f, %f]", pixel_x, pixel_y);
+            }
+            */
+
             // write sample to image
             // think cimg rgb values are (0->255) instead of (0->1)
-            //AiMsgInfo("pixel: %f, %f", pixel_x, pixel_y);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255.0f * 1.5, pixel_x, pixel_y, 0, 0, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255.0f * 1.5, pixel_x, pixel_y, 0, 1, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255.0f * 1.5, pixel_x, pixel_y, 0, 2, true);
+            bokeh_data->img_out->set_linear_atXY(sample_energy.a * 255.0f * 1.5, pixel_x, pixel_y, 0, 3, true);
 
-            bokeh_data->img_out->set_linear_atXY(sample_energy.r * 255.0f, pixel_x, pixel_y, 0, 0, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.g * 255.0f, pixel_x, pixel_y, 0, 1, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.b * 255.0f, pixel_x, pixel_y, 0, 2, true);
-            bokeh_data->img_out->set_linear_atXY(sample_energy.a * 255.0f, pixel_x, pixel_y, 0, 3, true);
          }
 
          
