@@ -104,7 +104,7 @@ inline float fastCos(float x){
 
 
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(const float ox, const float oy, AtVector2 *lens, bool fast_trigo)
+inline void concentric_disk_sample(const float ox, const float oy, AtVector2 &lens, bool fast_trigo)
 {
     float phi, r;
 
@@ -122,11 +122,11 @@ inline void concentric_disk_sample(const float ox, const float oy, AtVector2 *le
     }
 
     if (!fast_trigo){
-        lens->x = r * std::cos(phi);
-        lens->y = r * std::sin(phi);
+        lens.x = r * std::cos(phi);
+        lens.y = r * std::sin(phi);
     } else {
-        lens->x = r * fastCos(phi);
-        lens->y = r * fastSin(phi);
+        lens.x = r * fastCos(phi);
+        lens.y = r * fastSin(phi);
     }
 
     
