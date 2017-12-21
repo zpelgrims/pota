@@ -14,7 +14,7 @@ include/pt_sample_aperture.h\
 include/pt_evaluate_aperture.h\
 include/lt_sample_aperture.h\
 src/pota.h \
-include/miniexr.h
+include/tinyexr.h 
 
 
 .PHONY=all clean
