@@ -99,23 +99,18 @@ node_update
 node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-
+   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+   
    // fill exr
    std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
-   int offset = 0;
+   int offset = -1;
    int pixelnumber = 0;
-   for (int y = 0; y < bokeh_data->yres; ++y)
-   {
-      for (int x = 0; x < bokeh_data->xres; ++x)
-      {  
-         image[offset] = bokeh_data->image[pixelnumber].r;
-         image[offset+1] = bokeh_data->image[pixelnumber].g;
-         image[offset+2] = bokeh_data->image[pixelnumber].b;
-         image[offset+3] = bokeh_data->image[pixelnumber].a;
-
-         offset += 4;
-         ++pixelnumber;
-      }
+   for(auto i = 0; i < bokeh_data->xres * bokeh_data->yres; i++){
+      image[++offset] = bokeh_data->image[pixelnumber].r;
+      image[++offset] = bokeh_data->image[pixelnumber].g;
+      image[++offset] = bokeh_data->image[pixelnumber].b;
+      image[++offset] = bokeh_data->image[pixelnumber].a;
+      ++pixelnumber;
    }
 
    SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, "/Users/zeno/pota/tests/image/pota_bokeh_tinyexr.exr");
