@@ -41,9 +41,7 @@ struct MyCameraData
 	LensModel lensModel;
     drawData draw;
 
-
 	float sensor_width;
-	float sensor_height;
 	float fstop;
     float max_fstop;
 	float focus_distance;
@@ -53,6 +51,8 @@ struct MyCameraData
 	float lambda;
     int aperture_blades;
 	bool dof;
+    int backward_samples;
+    float minimum_rgb;
 
 	int rays_succes;
 	int rays_fail;

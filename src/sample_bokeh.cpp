@@ -6,10 +6,9 @@
 #define TINYEXR_IMPLEMENTATION
 #include "../include/tinyexr.h"
 
-
-// need to pass the lens data to this shader, probably have to do this in a global structure (gael honorez)
 // check for intersections along P->Lens path
 // summing of samples is wrong, if it is sampled more it gets brighter
+// come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -19,9 +18,6 @@ struct SampleBokehData
    int aa_samples;
    int xres;
    int yres;
-   int samples;
-   float minimum_rgb;
-
    std::vector<AtRGBA> image;
 };
  
@@ -61,14 +57,6 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
-
-   /*
-   if ((sensor[0] != sensor[0]) || (sensor[1] != sensor[1])){
-      AiMsgInfo("sensor: [%f, %f, %f, %f, %f]", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
-      AiMsgInfo("out: [%f, %f, %f, %f, %f]", out[0], out[1], out[2], out[3], out[4]);
-      AiMsgInfo("aperture: [%f, %f]", aperture[0], aperture[1]);
-   }
-   */
 
    return true;
 }
@@ -140,12 +128,10 @@ shader_evaluate
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
    const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-   bokeh_data->samples = 4000;
-   bokeh_data->minimum_rgb = 3.0f;
    const float xres = (float)bokeh_data->xres;
    const float yres = (float)bokeh_data->yres;
    const float frame_aspect_ratio = xres/yres;
-   AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
+   AtRGBA sample_energy = AI_RGBA_ZERO;
 
    // write AOV only if in use
    if ((sg->Rt & AI_RAY_CAMERA) && AiAOVEnabled(bokeh_data->aov_name, AI_TYPE_RGBA))
@@ -153,12 +139,11 @@ shader_evaluate
       // figure out better way, based on:
       // distance from focus point
       // intensity of sample
-      if ((sg->out.RGBA().r > bokeh_data-> minimum_rgb) || (sg->out.RGBA().g > bokeh_data-> minimum_rgb) || (sg->out.RGBA().b > bokeh_data-> minimum_rgb))
+      if ((sg->out.RGBA().r > camera_data->minimum_rgb) || (sg->out.RGBA().g > camera_data->minimum_rgb) || (sg->out.RGBA().b > camera_data->minimum_rgb))
       {
-         
          sample_energy = sg->out.RGBA();
          sample_energy.a = 1.0f;
-         sample_energy /= (float)bokeh_data->samples;
+         sample_energy /= (float)camera_data->backward_samples;
 
          // convert sample world space position to camera space
          AtMatrix world_to_camera_matrix;
@@ -167,7 +152,7 @@ shader_evaluate
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
 
-         for(int count=0; count<bokeh_data->samples; count++)
+         for(int count=0; count<camera_data->backward_samples; count++)
          {
             if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift))
             {
@@ -187,14 +172,6 @@ shader_evaluate
             {
                continue;
             }
-
-            /*
-            if ((pixel_x != pixel_x) || (pixel_y != pixel_y)){
-               AiMsgInfo("sensor_position: \t\t[%f, %f]", sensor_position.x, sensor_position.y);
-               AiMsgInfo("s: \t\t[%f, %f]", s.x, s.y);
-               AiMsgInfo("pixel: \t\t[%f, %f]", pixel_x, pixel_y);
-            }
-            */
 
             // write sample to image
             bokeh_data->image[static_cast<int>(bokeh_data->xres * floor(pixel_y) + floor(pixel_x))] += sample_energy;
