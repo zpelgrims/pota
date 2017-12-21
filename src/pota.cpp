@@ -47,7 +47,6 @@ static const char* LensModelNames[] =
 
 
 
-
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
 AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
     AtVector coord(100.0, 0.0, 100.0);
