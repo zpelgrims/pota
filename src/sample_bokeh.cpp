@@ -9,7 +9,7 @@
 // CRASHED at 00:00:00, pixel (1068, -1) -> sort out, why is this -1? should be 0
 // check for intersections along P->Lens path
 // come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
-// fix nans
+// fix nans of double gauss angenieux
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -30,7 +30,6 @@ enum SampleBokehParams
 };
 
 
-// LOTS OF NaNs near the edges, why does this happen? Key to everything!
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
 {
@@ -101,7 +100,7 @@ node_update
 node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-   //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // fill exr
    std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
@@ -117,7 +116,7 @@ node_finish
       ++pixelnumber;
    }
 
-   SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, "/Users/zeno/pota/tests/image/pota_bokeh_tinyexr.exr");
+   SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, camera_data->bokeh_exr_path.c_str());
 
    delete bokeh_data;
 }
