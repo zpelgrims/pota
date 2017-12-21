@@ -53,6 +53,7 @@ struct MyCameraData
 	bool dof;
     int backward_samples;
     float minimum_rgb;
+    AtString bokeh_exr_path;
 
 	int rays_succes;
 	int rays_fail;
