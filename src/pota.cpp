@@ -26,7 +26,6 @@ enum
 {
 	p_lensModel,
 	p_sensor_width,
-    p_sensor_height,
     p_fstop,
     p_focus_distance,
     p_aperture_blades
@@ -120,12 +119,13 @@ node_parameters
 {
     AiParameterEnum("lensModel", double_gauss_angenieux, LensModelNames);
     AiParameterFlt("sensor_width", 36.0); // 35mm film
-    AiParameterFlt("sensor_height", 24.0); // 35 mm film
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
     AiParameterInt("aperture_blades", 0);
     AiParameterFlt("aperture_colorshift", 0.0);
     AiParameterBool("dof", true);
+    AiParameterInt("backward_samples", 1000);
+    AiParameterFlt("minimum_rgb", 3.0f);
 }
 
 
@@ -166,14 +166,14 @@ node_update
 	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
 
 	camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
-	camera_data->sensor_height = AiNodeGetFlt(node, "sensor_height");
 	camera_data->fstop = AiNodeGetFlt(node, "fstop");
 	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance");
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
 	camera_data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
-
+	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
+	camera_data->minimum_rgb = AiNodeGetInt(node, "minimum_rgb");
 	camera_data->lambda = .55f;
 
 
