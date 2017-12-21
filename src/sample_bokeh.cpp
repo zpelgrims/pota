@@ -74,8 +74,6 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
 }
 
 
-
-
  
 node_parameters
 {
@@ -93,25 +91,26 @@ node_initialize
 node_update
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-
+   
    // register AOV
    bokeh_data->aov_name = AiNodeGetStr(node, "aov_name");
    AiAOVRegister(bokeh_data->aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
    
+   // get general options
    bokeh_data->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
    bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
    bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
+   // reset exr
    bokeh_data->image.clear();
    bokeh_data->image.reserve(bokeh_data->xres * bokeh_data->yres);
+
 }
 
 
 node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-
-
 
    // fill exr
    std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
@@ -133,32 +132,24 @@ node_finish
 
    SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, "/Users/zeno/pota/tests/image/pota_bokeh_tinyexr.exr");
 
-
-
    delete bokeh_data;
 }
  
 shader_evaluate
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+   bokeh_data->samples = 4000;
+   bokeh_data->minimum_rgb = 3.0f;
+   const float xres = (float)bokeh_data->xres;
+   const float yres = (float)bokeh_data->yres;
+   const float frame_aspect_ratio = xres/yres;
+   AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
 
    // write AOV only if in use
    if ((sg->Rt & AI_RAY_CAMERA) && AiAOVEnabled(bokeh_data->aov_name, AI_TYPE_RGBA))
    {
-
-      const float aperture_radius = 12.75f;
-      const float lambda = 0.55f;
-      const float sensor_width = 36.0f;
-
-      const float xres = (float)bokeh_data->xres;
-      const float yres = (float)bokeh_data->yres;
-      const float frame_aspect_ratio = xres/yres;
-
-      bokeh_data->samples = 4000;
-      bokeh_data->minimum_rgb = 3.0f;
-
-      AtRGBA sample_energy(0.0, 0.0, 0.0, 0.0);
-
       // figure out better way, based on:
       // distance from focus point
       // intensity of sample
@@ -178,14 +169,14 @@ shader_evaluate
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
-            if(!trace_backwards( -camera_space_sample_position * 10.0, aperture_radius, lambda, sensor_position, 1.398059))
+            if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift))
             {
                continue;
             }
 
             // convert sensor position to pixel position
-            AtVector2 s(sensor_position.x / (sensor_width * 0.5), 
-                        sensor_position.y / (sensor_width * 0.5) * frame_aspect_ratio);
+            AtVector2 s(sensor_position.x / (camera_data->sensor_width * 0.5), 
+                        sensor_position.y / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
 
             const float pixel_x = ((s.x + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s.y + 1.0) / 2.0) * yres;
