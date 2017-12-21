@@ -7,8 +7,8 @@
 #include "../include/tinyexr.h"
 
 // check for intersections along P->Lens path
-// summing of samples is wrong, if it is sampled more it gets brighter
 // come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
+// fix nans
 
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
  
@@ -89,7 +89,6 @@ node_update
    bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
    bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
-   // reset exr
    bokeh_data->image.clear();
    bokeh_data->image.reserve(bokeh_data->xres * bokeh_data->yres);
 
@@ -99,17 +98,19 @@ node_update
 node_finish
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
-   
+   //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+
    // fill exr
    std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
    int offset = -1;
    int pixelnumber = 0;
+   int samples = bokeh_data->aa_samples * bokeh_data->aa_samples;
+
    for(auto i = 0; i < bokeh_data->xres * bokeh_data->yres; i++){
-      image[++offset] = bokeh_data->image[pixelnumber].r;
-      image[++offset] = bokeh_data->image[pixelnumber].g;
-      image[++offset] = bokeh_data->image[pixelnumber].b;
-      image[++offset] = bokeh_data->image[pixelnumber].a;
+      image[++offset] = bokeh_data->image[pixelnumber].r / samples;
+      image[++offset] = bokeh_data->image[pixelnumber].g / samples;
+      image[++offset] = bokeh_data->image[pixelnumber].b / samples;
+      image[++offset] = bokeh_data->image[pixelnumber].a / samples;
       ++pixelnumber;
    }
 
@@ -169,7 +170,8 @@ shader_evaluate
             }
 
             // write sample to image
-            bokeh_data->image[static_cast<int>(bokeh_data->xres * floor(pixel_y) + floor(pixel_x))] += sample_energy;
+            int pixelnumber = static_cast<int>(bokeh_data->xres * floor(pixel_y) + floor(pixel_x));
+            bokeh_data->image[pixelnumber] += sample_energy;
          }
       }
 
