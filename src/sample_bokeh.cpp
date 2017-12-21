@@ -6,6 +6,7 @@
 #define TINYEXR_IMPLEMENTATION
 #include "../include/tinyexr.h"
 
+// CRASHED at 00:00:00, pixel (1068, -1) -> sort out, why is this -1? should be 0
 // check for intersections along P->Lens path
 // come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 // fix nans
@@ -18,6 +19,7 @@ struct SampleBokehData
    int aa_samples;
    int xres;
    int yres;
+   int samples;
    std::vector<AtRGBA> image;
 };
  
@@ -79,7 +81,8 @@ node_initialize
 node_update
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-   
+   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+
    // register AOV
    bokeh_data->aov_name = AiNodeGetStr(node, "aov_name");
    AiAOVRegister(bokeh_data->aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
@@ -104,13 +107,13 @@ node_finish
    std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
    int offset = -1;
    int pixelnumber = 0;
-   int samples = bokeh_data->aa_samples * bokeh_data->aa_samples;
+   int aa_square = bokeh_data->aa_samples * bokeh_data->aa_samples;
 
    for(auto i = 0; i < bokeh_data->xres * bokeh_data->yres; i++){
-      image[++offset] = bokeh_data->image[pixelnumber].r / samples;
-      image[++offset] = bokeh_data->image[pixelnumber].g / samples;
-      image[++offset] = bokeh_data->image[pixelnumber].b / samples;
-      image[++offset] = bokeh_data->image[pixelnumber].a / samples;
+      image[++offset] = bokeh_data->image[pixelnumber].r / (float)aa_square;
+      image[++offset] = bokeh_data->image[pixelnumber].g / (float)aa_square;
+      image[++offset] = bokeh_data->image[pixelnumber].b / (float)aa_square;
+      image[++offset] = bokeh_data->image[pixelnumber].a / (float)aa_square;
       ++pixelnumber;
    }
 
@@ -123,6 +126,10 @@ shader_evaluate
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
    const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+   // why does this need to be in shader_evaluate to work? returns 0 in _update_?
+   bokeh_data->samples = camera_data->backward_samples * (bokeh_data->aa_samples * bokeh_data->aa_samples);
+
 
    const float xres = (float)bokeh_data->xres;
    const float yres = (float)bokeh_data->yres;
@@ -139,7 +146,7 @@ shader_evaluate
       {
          sample_energy = sg->out.RGBA();
          sample_energy.a = 1.0f;
-         sample_energy /= (float)camera_data->backward_samples;
+         sample_energy /=  static_cast<float>(bokeh_data->samples);
 
          // convert sample world space position to camera space
          AtMatrix world_to_camera_matrix;
@@ -148,7 +155,7 @@ shader_evaluate
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
 
-         for(int count=0; count<camera_data->backward_samples; count++)
+         for(int count=0; count<bokeh_data->samples; count++)
          {
             if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift))
             {
@@ -162,9 +169,13 @@ shader_evaluate
             const float pixel_x = ((s.x + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s.y + 1.0) / 2.0) * yres;
 
-
             //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel_x > xres) || (pixel_y > yres) || (pixel_x != pixel_x) || (pixel_y != pixel_y))
+            if ((pixel_x > xres) || 
+                (pixel_x < 0)    || 
+                (pixel_y > yres) || 
+                (pixel_y < 0)    || 
+                (pixel_x != pixel_x) || 
+                (pixel_y != pixel_y))
             {
                continue;
             }

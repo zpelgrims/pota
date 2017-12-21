@@ -124,7 +124,7 @@ node_parameters
     AiParameterInt("aperture_blades", 0);
     AiParameterFlt("aperture_colorshift", 0.0);
     AiParameterBool("dof", true);
-    AiParameterInt("backward_samples", 1000);
+    AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
     AiParameterStr("bokeh_exr_path", "Users/zeno/pota/tests/image/pota_bokeh.exr");
 }
@@ -176,7 +176,7 @@ node_update
 	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
-	
+
 	camera_data->lambda = .55f;
 
 
