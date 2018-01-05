@@ -118,6 +118,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 node_parameters
 {
     AiParameterEnum("lensModel", double_gauss_angenieux, LensModelNames);
+    AiParameterFlt("wavelength", 550.0); // wavelength in nm
     AiParameterFlt("sensor_width", 36.0); // 35mm film
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
@@ -126,7 +127,7 @@ node_parameters
     AiParameterBool("dof", true);
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
-    AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tesjts/image/pota_bokeh.exr");
+    AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tests/image/pota_bokeh.exr");
 }
 
 
@@ -177,8 +178,8 @@ node_update
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 
-	camera_data->lambda = .55f;
-
+	camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
+	AiMsgInfo("%s  [POTA] wavelength: %f", emoticon, camera_data->lambda);
 
 	camera_data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
 	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, camera_data->max_fstop);
