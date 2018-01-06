@@ -25,21 +25,10 @@ enum LensModel{
     NONE
 };
 
-struct drawData{
-    std::ofstream myfile;
-    bool draw;
-    int counter;
-
-    drawData()
-        : draw(false), counter(0){
-    }
-};
-
 
 struct MyCameraData
 {
 	LensModel lensModel;
-    drawData draw;
 
 	float sensor_width;
 	float fstop;

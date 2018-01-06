@@ -144,17 +144,7 @@ node_update
 {	
 
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
-
-	/*
-	DRAW_ONLY({
-		drawData &dd = camera_data->draw;
-
-        // create file to transfer data to python drawing module
-        dd.myfile.open(DRAW_DIRECTORY + "draw.pota", std::ofstream::out | std::ofstream::trunc);
-        dd.myfile << "RAYS{";
-    })
-    */
-
+	
 
 	AiMsgInfo("%s  [POTA] ----------  LENS CONSTANTS  -----------", emoticon);
 	AiMsgInfo("%s  [POTA] lens_length: %s", emoticon, lens_name);
@@ -201,13 +191,6 @@ node_update
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, camera_data->focus_distance, camera_data->sensor_shift);
 
-	/*
-	DRAW_ONLY({
-		camera_data->min_intersection_distance = 999999.0;
-		camera_data->max_intersection_distance = -999999.0;
-    })
-    */
-
 
 	AiCameraUpdate(node, false);
 }
@@ -217,31 +200,7 @@ node_finish
 {
 
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
-
-	/*
-	AiMsgInfo("%s  [POTA] rays passed %d", emoticon, camera_data->rays_succes);
-	AiMsgInfo("%s  [POTA] rays blocked %d", emoticon, camera_data->rays_fail);
-	AiMsgInfo("%s  [POTA] rays blocked percentage %f", emoticon, (float)camera_data->rays_fail / (float)(camera_data->rays_succes + camera_data->rays_fail));
-	*/
-
-
-	/*
-    DRAW_ONLY({
-
-    	// debug only
-	    float average_intersection_distance_normalized = camera_data->average_intersection_distance / (float)camera_data->average_intersection_distance_cnt;
-	    std::cout << "average_intersection_distance: " << camera_data->average_intersection_distance << std::endl;
-	    std::cout << "average_intersection_distance_cnt: " << camera_data->average_intersection_distance_cnt << std::endl;
-	    std::cout << "average_intersection_distance_normalized: " << average_intersection_distance_normalized << std::endl;
-	    std::cout << "max_intersection_distance: " << camera_data->max_intersection_distance << std::endl;
-	    std::cout << "min_intersection_distance: " << camera_data->min_intersection_distance << std::endl;
-
-    	drawData &dd = camera_data->draw;
-    	dd.myfile << "}";
-        dd.myfile.close();
-    })
-    */
-
+	delete camera_data;
 }
 
 
@@ -250,22 +209,6 @@ node_finish
 camera_create_ray
 {
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
-	// drawData &dd = camera_data->draw;
-
-    DRAW_ONLY({
-    	/*
-        if (dd.counter == 50000){
-            dd.draw = true;
-            dd.counter = 0;
-    	}
-
-    	int countlimit = 500000;
-		++camera_data->counter;
-		*/
-    })
-	
-
-  // polynomial optics
 
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
@@ -419,33 +362,6 @@ camera_create_ray
 		p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
 		return 0.0f;
 	*/
-
-
-
-
-    /*
-    DRAW_ONLY({
-        if (dd.draw == true && output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.x << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.y << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.origin.z << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.x << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.y << " ";
-            dd.myfile << std::fixed << std::setprecision(10) << output.dir.z << " ";
-        }
-    })
-    */
-
-
-	/*
-    if (camera_data->counter == countlimit){
-    	camera_data->counter = 0;
-    }
-
-
-	DRAW_ONLY(dd.draw = false;)
-    DRAW_ONLY(++dd.counter;)
-    */
 } 
 
 
