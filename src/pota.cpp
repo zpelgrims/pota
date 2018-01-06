@@ -3,22 +3,6 @@
 #include "pota.h"
 
 
-#define CACTUS 1
-#ifdef CACTUS
-#  define WORK_ONLY(block) block
-std::string DRAW_DIRECTORY="/Users/zeno/pota/tests/";
-#else
-#  define WORK_ONLY(block)
-#endif
-
-#define DRAW 0
-#ifdef DRAW
-#  define DRAW_ONLY(block) block
-#else
-#  define DRAW_ONLY(block)
-#endif
-
-
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 
@@ -37,7 +21,6 @@ enum
 };
 
 
-
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] =
 {
@@ -48,7 +31,6 @@ static const char* LensModelNames[] =
     "petzval",
     NULL
 };
-
 
 
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
@@ -142,9 +124,7 @@ node_initialize
 
 node_update
 {	
-
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
-	
 
 	AiMsgInfo("%s  [POTA] ----------  LENS CONSTANTS  -----------", emoticon);
 	AiMsgInfo("%s  [POTA] lens_length: %s", emoticon, lens_name);
@@ -222,20 +202,15 @@ camera_create_ray
     AtVector2 sensor_position_original(sensor[0], sensor[1]);
     bool ray_succes = false;
     int tries = 0;
-    int max_tries = 20;
-
-    /* 
-    // for visual debugging, rays should converge to single point in idealised lens
-    	sensor[0] = 0.0f;
-    	sensor[1] = 0.0f;
-	*/
+    int max_tries = 15;
 
     while(ray_succes == false && tries <= max_tries){
 
     	//reset the initial sensor coords
     	sensor[0] = sensor_position_original.x; 
     	sensor[1] = sensor_position_original.y; 
-    	sensor[2] = 0.0f; sensor[3] = 0.0f; 
+    	sensor[2] = 0.0f;
+    	sensor[3] = 0.0f; 
     	sensor[4] = camera_data->lambda;
 	    aperture[0] = 0.0f; aperture[1] = 0.0f; aperture[2] = 0.0f; aperture[3] = 0.0f; aperture[4] = 0.0f;
 	    out[0] = 0.0f; out[1] = 0.0f; out[2] = 0.0f; out[3] = 0.0f; out[4] = 0.0f;
@@ -327,40 +302,40 @@ camera_create_ray
 
 
 
-	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH
-	// now let's go world space:
-	// initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
+	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH FOR OTHER RENDER ENGINES
+		// now let's go world space:
+		// initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
-	view_cam_init_frame(p, &p->v[0].hit);
-	
-	for(int k=0;k<3;k++)
-	{
-		//this is the world space position of the outgoing ray:
-	    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
-	                        + camera_space_pos[1] * p->v[0].hit.b[k] 
-	                        + camera_space_pos[2] * p->v[0].hit.n[k];
+		view_cam_init_frame(p, &p->v[0].hit);
+		
+		for(int k=0;k<3;k++)
+		{
+			//this is the world space position of the outgoing ray:
+		    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
+		                        + camera_space_pos[1] * p->v[0].hit.b[k] 
+		                        + camera_space_pos[2] * p->v[0].hit.n[k];
 
-		//this is the world space direction of the outgoing ray:
-	    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
-	                       + camera_space_omega[1] * p->v[0].hit.b[k]
-	                       + camera_space_omega[2] * p->v[0].hit.n[k];
-	}
+			//this is the world space direction of the outgoing ray:
+		    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
+		                       + camera_space_omega[1] * p->v[0].hit.b[k]
+		                       + camera_space_omega[2] * p->v[0].hit.n[k];
+		}
 
-	// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
-	const float R = lens_outer_pupil_curvature_radius;
-	// recompute full frame:
-	float n[3] = {0.0f};
-	for(int k=0;k<3;k++)
-	    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
-	            + p->v[0].hit.b[k] * out[1]/R 
-	            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
+		// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
+		const float R = lens_outer_pupil_curvature_radius;
+		// recompute full frame:
+		float n[3] = {0.0f};
+		for(int k=0;k<3;k++)
+		    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
+		            + p->v[0].hit.b[k] * out[1]/R 
+		            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
 
-	for(int k=0;k<3;k++) p->v[0].hit.n[k] = n[k];
+		for(int k=0;k<3;k++) p->v[0].hit.n[k] = n[k];
 
-	// also clip to valid pixel range.
-	if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
-		p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
-		return 0.0f;
+		// also clip to valid pixel range.
+		if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
+			p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
+			return 0.0f;
 	*/
 } 
 
