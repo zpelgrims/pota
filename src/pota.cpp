@@ -26,9 +26,14 @@ enum
 {
 	p_lensModel,
 	p_sensor_width,
+	p_wavelength,
+	p_dof,
     p_fstop,
     p_focus_distance,
-    p_aperture_blades
+    p_aperture_blades,
+    p_backward_samples,
+    p_minimum_rgb,
+    p_bokeh_exr_path
 };
 
 
@@ -54,8 +59,6 @@ AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
     coord = AiV3Normalize(coord);
     return rayOrigin + (rayDirection * (AiV3Dot(coord, planeNormal) - AiV3Dot(planeNormal, rayOrigin)) / AiV3Dot(planeNormal, rayDirection));
 }
-
-
 
 
 // returns sensor offset in mm
@@ -117,14 +120,13 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 
 node_parameters
 {
-    AiParameterEnum("lensModel", double_gauss_angenieux, LensModelNames);
-    AiParameterFlt("wavelength", 550.0); // wavelength in nm
+    AiParameterEnum("lensModel", petzval, LensModelNames);
     AiParameterFlt("sensor_width", 36.0); // 35mm film
+    AiParameterFlt("wavelength", 550.0); // wavelength in nm
+    AiParameterBool("dof", true);
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 1500.0); // in mm
     AiParameterInt("aperture_blades", 0);
-    AiParameterFlt("aperture_colorshift", 0.0);
-    AiParameterBool("dof", true);
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
     AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tests/image/pota_bokeh.exr");
@@ -173,7 +175,6 @@ node_update
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
-	camera_data->aperture_colorshift = AiNodeGetFlt(node, "aperture_colorshift");
 	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
@@ -184,11 +185,8 @@ node_update
 	camera_data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
 	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, camera_data->max_fstop);
 
-	if (camera_data->fstop == 0.0f){
-		camera_data->aperture_radius = lens_aperture_housing_radius;
-	} else {
-		camera_data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * camera_data->fstop));
-	}
+	if (camera_data->fstop == 0.0f) camera_data->aperture_radius = lens_aperture_housing_radius;
+	else camera_data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * camera_data->fstop));
 
 	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, lens_aperture_housing_radius);
 	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, camera_data->aperture_radius);
@@ -202,11 +200,6 @@ node_update
 	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, lens_aperture_housing_radius, camera_data->lambda);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, camera_data->focus_distance, camera_data->sensor_shift);
-
-	/*
-	camera_data->rays_succes = 0;
-	camera_data->rays_fail = 0;
-	*/
 
 	/*
 	DRAW_ONLY({
@@ -274,10 +267,6 @@ camera_create_ray
 
   // polynomial optics
 
-    // CHROMATIC ABERRATION STRATEGY
-    // no:  trace 1 ray at .55f
-    // yes: trace 3 rays at different wavelengths (CIE RGB) -> 3x more expensive :(
-
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
@@ -291,30 +280,6 @@ camera_create_ray
     bool ray_succes = false;
     int tries = 0;
     int max_tries = 20;
-
-	/*
-    // chromatic aberration
-    AtRGB aperture_left(0.5f, 0.5f, 0);
-    AtRGB aperture_center(0, 0.5f, 0.5f);
-    AtRGB aperture_right(0.5f, 0, 0.5f);
-    int index = 0;
-    float shift_x = camera_data->aperture_colorshift * std::abs(sensor[0]);
-    float shift_y = camera_data->aperture_colorshift * std::abs(sensor[1]);
-	AtVector2 ca_aperture_sample(input.lensx, input.lensy);
-    
-    if (input.lensx < 0.33f) {
-        index = -1;
-        ca_aperture_sample.x /= 0.33f;
-    } else if (input.lensx < 0.66f) {
-        index = 0;
-        ca_aperture_sample.x -= 0.33f;
-        ca_aperture_sample.x /= 0.33f;
-    } else {
-        index = 1;
-        ca_aperture_sample.x -= 0.66f;
-        ca_aperture_sample.x /= 0.33f;
-    }
-	*/
 
     /* 
     // for visual debugging, rays should converge to single point in idealised lens
@@ -342,31 +307,11 @@ camera_create_ray
 	    {
 			// transform unit square to unit disk
 		    AtVector2 unit_disk(0.0f, 0.0f);
-		    //if(camera_data->aperture_colorshift > 0.0f) concentric_disk_sample(ca_aperture_sample.x, ca_aperture_sample.y, &unit_disk, true);
-		    //else 
 		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
 		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
 
 		    aperture[0] = unit_disk.x * camera_data->aperture_radius;
 		    aperture[1] = unit_disk.y * camera_data->aperture_radius;
-			/*
-		    // hacky chromatic aberration
-		    if(camera_data->aperture_colorshift > 0.0f)
-		    {	
-			    AtVector sample3d(index * shift_x + aperture[0], index * shift_y + aperture[1], 0);    
-			    AtVector left_center(-shift_x, -shift_y, 0);
-			    AtVector middle_center(0, 0, 0);
-			    AtVector right_center(shift_x, shift_y, 0);
-		    	output.weight = 0.0f;
-
-			    if (AiV3Length(left_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_left;
-			    if (AiV3Length(middle_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_center;
-		    	if (AiV3Length(right_center - sample3d) < camera_data->aperture_radius) output.weight += aperture_right;
-
-		    	aperture[0] = sample3d.x;
-		    	aperture[1] = sample3d.y;
-	    	}
-			*/
 	    } 
 	    else if (camera_data->dof && camera_data->aperture_blades > 2)
 	    {
@@ -430,6 +375,7 @@ camera_create_ray
 
 
     // EXPERIMENTAL, I KNOW IT IS INCORRECT BUT AT LEAST THE VISUAL PROBLEM IS RESOLVED
+    // HAVE TO DO THIS BECAUSE OF SHOOTING MULTIPLE RAYS
     // NOT CALCULATING THE DERIVATIVES PROBS AFFECTS TEXTURE I/O
     if (tries > 0){
         output.dOdy = output.origin;
@@ -490,28 +436,6 @@ camera_create_ray
     })
     */
 
-    /*
-
-    // line plane intersection with fixed intersection at y = 0
-	AtVector rayplaneintersect = linePlaneIntersection(output.origin, output.dir);
-
-	if (output.weight.r != 0.0f && output.weight.g != 0.0f && output.weight.b != 0.0f){
-
-		if (rayplaneintersect.z > -9999.0 && rayplaneintersect.z < 9999.0){
-			camera_data->average_intersection_distance += rayplaneintersect.z;
-			++camera_data->average_intersection_distance_cnt;
-		}
-
-		if(rayplaneintersect.z > camera_data->max_intersection_distance){
-			camera_data->max_intersection_distance = rayplaneintersect.z;
-		}
-
-		if(rayplaneintersect.z < camera_data->min_intersection_distance){
-			camera_data->min_intersection_distance = rayplaneintersect.z;
-		}
-	}
-    
-	*/
 
 	/*
     if (camera_data->counter == countlimit){
