@@ -6,6 +6,6 @@
 
 - test unicode emoticon on windows
 
-- add image bokeh sampling from zoic
+- add image bokeh sampling from zoic?
 
 - looks like chromatic aberration can’t be implemented properly, will have to trace 3 images, one for each rgb channel
