@@ -33,16 +33,6 @@ static const char* LensModelNames[] =
 };
 
 
-// line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
-AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
-    AtVector coord(100.0, 0.0, 100.0);
-    AtVector planeNormal(0.0, 1.0, 0.0);
-    rayDirection = AiV3Normalize(rayDirection);
-    coord = AiV3Normalize(coord);
-    return rayOrigin + (rayDirection * (AiV3Dot(coord, planeNormal) - AiV3Dot(planeNormal, rayOrigin)) / AiV3Dot(planeNormal, rayDirection));
-}
-
-
 // returns sensor offset in mm
 float camera_set_focus(float dist, float aperture_radius, float lambda, MyCameraData *camera_data)
 {
