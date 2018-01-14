@@ -1,3 +1,1 @@
-Attempt to implement [Sparse high-degree polynomials for wide-angle lenses [2016]](https://cg.ivd.kit.edu/publications/2016/lens_sparse_poly/2016_optics.pdf) for the [Arnold renderer](www.solidangle.com).
-
-Work in progress!
+POTA is an implementation of [Sparse high-degree polynomials for wide-angle lenses [2016]](https://cg.ivd.kit.edu/publications/2016/lens_sparse_poly/2016_optics.pdf) for the [Arnold renderer](www.solidangle.com). It renders images with high-order aberrations, at a fraction of the cost of tracing rays through lens elements. It is done by pre-calculating fitted polynomials, which serve as a black-box to transform the rays on the sensor to rays on the outer pupil. All credit goes out to the authors of the paper, I only wrote the implementation for Arnold.
