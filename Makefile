@@ -8,11 +8,6 @@ LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 
 HEADERS=\
 include/lens.h\
-include/init.h\
-include/pt_evaluate.h\
-include/pt_sample_aperture.h\
-include/pt_evaluate_aperture.h\
-include/lt_sample_aperture.h\
 src/pota.h \
 include/tinyexr.h 
 

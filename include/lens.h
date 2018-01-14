@@ -115,10 +115,6 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
 }
 
 
-// a few static defines about general lens geometry
-//#include "init.h"
-
-// a few static defines about general lens geometry
 inline void load_lens_constants (MyCameraData *camera_data)
 {
   switch (camera_data->lensModel){
