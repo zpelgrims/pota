@@ -9,7 +9,7 @@ options
  AA_samples 5
  xres 1500
  yres 1000
- camera "renderCam_105mm_450cmShape"
+ camera "renderCam_180fov_50cmShape"
 
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -60,7 +60,7 @@ pota
  focus_distance 3500
 }
 
-#pota
+pota
 {
  name renderCam_180fov_50cmShape
  matrix
@@ -70,6 +70,7 @@ pota
  0 35.368679 -47.213192 1
  fov 93.2731552
  focus_distance 500
+ lensModel fisheye_aspherical
 }
 
 skydome_light

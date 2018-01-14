@@ -22,6 +22,7 @@ enum LensModel{
     double_gauss,
     double_gauss_angenieux,
     petzval,
+    tessar_anamorphic,
     NONE
 };
 
@@ -41,7 +42,7 @@ struct MyCameraData
     float lens_outer_pupil_curvature_radius;
     float lens_field_of_view;
 
-    
+
 	float sensor_width;
 	float fstop;
     float max_fstop;
