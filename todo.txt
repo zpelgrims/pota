@@ -1,11 +1,14 @@
-- Implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
+BASE RELEASE:
 
-- make switching between lens files possible, first do all the rest, could become a performance issue
+	make switching between lens files possible
+	test unicode emoticon on windows
+	compile and package for windows and osx
+	render comparison image
 
-- investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 
-- test unicode emoticon on windows
+POINT RELEASES:
 
-- add image bokeh sampling from zoic?
-
-- looks like chromatic aberration can’t be implemented properly, will have to trace 3 images, one for each rgb channel
+	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
+	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
+	add more lens descriptions (different focal lengths)
+	add frame numbering to aov shader
