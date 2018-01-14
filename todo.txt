@@ -1,4 +1,4 @@
-- Figure out the arnold ray_reverse function, why is this needed? Can I skip this and return false?
+- Implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
 
 - make switching between lens files possible, first do all the rest, could become a performance issue
 

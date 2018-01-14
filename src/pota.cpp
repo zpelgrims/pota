@@ -233,7 +233,8 @@ camera_create_ray
 	    } 
 	    else if (camera_data->dof && camera_data->aperture_blades > 2)
 	    {
-	    	lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, camera_data->aperture_radius, camera_data->aperture_blades);
+	    	if (tries == 0) lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, camera_data->aperture_radius, camera_data->aperture_blades);
+	    	else lens_sample_aperture(&aperture[0], &aperture[1], xor128() / 4294967296.0f, xor128() / 4294967296.0f, camera_data->aperture_radius, camera_data->aperture_blades);
 	    }
 
 
@@ -245,8 +246,8 @@ camera_create_ray
 	    
 
 	    // move to beginning of polynomial
-		sensor[0] += sensor[2] * camera_data->sensor_shift; //sensor.pos.x = sensor.dir.x * sensor_shift
-		sensor[1] += sensor[3] * camera_data->sensor_shift; //sensor.pos.y = sensor.dir.y * sensor_shift
+		sensor[0] += sensor[2] * camera_data->sensor_shift;
+		sensor[1] += sensor[3] * camera_data->sensor_shift;
 
 
 		// propagate ray from sensor to outer lens element

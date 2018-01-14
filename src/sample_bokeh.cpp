@@ -6,7 +6,6 @@
 #define TINYEXR_IMPLEMENTATION
 #include "../include/tinyexr.h"
 
-// CRASHED at 00:00:00, pixel (1068, -1) -> sort out, why is this -1? should be 0
 // check for intersections along P->Lens path
 // come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 // fix nans of double gauss angenieux
