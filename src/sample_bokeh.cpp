@@ -1,7 +1,8 @@
 #include <ai.h>
 #include <vector>
-#include "../include/lens.h"
 #include "pota.h"
+#include "../include/lens.h"
+
 
 #define TINYEXR_IMPLEMENTATION
 #include "../include/tinyexr.h"
@@ -30,7 +31,7 @@ enum SampleBokehParams
 
 
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift)
+inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift, MyCameraData *camera_data)
 {
    const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
 
@@ -44,12 +45,12 @@ inline bool trace_backwards(const AtVector sample_position, const float aperture
    aperture[0] = lens.x * aperture_radius;
    aperture[1] = lens.y * aperture_radius;
 
-   if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda) <= 0.0f) return false;
+   if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data) <= 0.0f) return false;
 
    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const float px = sensor[0] + sensor[2] * lens_focal_length;
-   const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-   if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius) return false;
+   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+   const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius) return false;
 
    // shift sensor
    sensor[0] += sensor[2] * -sensor_shift;
@@ -79,7 +80,7 @@ node_initialize
 node_update
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+   //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // register AOV
    bokeh_data->aov_name = AiNodeGetStr(node, "aov_name");
@@ -123,7 +124,7 @@ node_finish
 shader_evaluate
 {
    SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
-   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+   MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // why does this need to be in shader_evaluate to work? returns 0 in _update_?
    bokeh_data->samples = camera_data->backward_samples * (bokeh_data->aa_samples * bokeh_data->aa_samples);
@@ -155,7 +156,7 @@ shader_evaluate
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
-            if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift))
+            if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift, camera_data))
             {
                continue;
             }

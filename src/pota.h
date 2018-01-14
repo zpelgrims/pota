@@ -30,6 +30,18 @@ struct MyCameraData
 {
 	LensModel lensModel;
 
+    // lens constants
+    const char* lens_name;
+    float lens_outer_pupil_radius;
+    float lens_inner_pupil_radius;
+    float lens_length;
+    float lens_focal_length;
+    float lens_aperture_pos;
+    float lens_aperture_housing_radius;
+    float lens_outer_pupil_curvature_radius;
+    float lens_field_of_view;
+
+    
 	float sensor_width;
 	float fstop;
     float max_fstop;

@@ -4,6 +4,7 @@ BASE RELEASE:
 	test unicode emoticon on windows
 	compile and package for windows and osx
 	render comparison image
+	add and test magic number
 
 
 POINT RELEASES:
