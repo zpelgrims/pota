@@ -36,7 +36,6 @@ struct MyCameraData
 	float focus_distance;
 	float aperture_radius;
 	float sensor_shift;
-	float aperture_colorshift;
 	float lambda;
     int aperture_blades;
 	bool dof;
