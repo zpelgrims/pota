@@ -29,6 +29,7 @@ static const char* LensModelNames[] =
     "double_gauss",
     "double_gauss_angenieux",
     "petzval",
+    "tessar_anamorphic",
     NULL
 };
 
@@ -57,7 +58,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
         aperture[0] = 0.0f;
         aperture[1] = 0.0f;
 
-        aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
+        aperture[k] = aperture_radius * (s/(S+1.0f) * 0.5); // (1to4)/(4+1) = .2, .4, .6, .8
 
         lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data);
 

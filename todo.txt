@@ -5,6 +5,8 @@ BASE RELEASE:
 	compile and package for windows and osx
 	render comparison image
 	add and test magic number
+	[fisheye, fisheye_aspherical] crashes, check number output
+	is focusing optimal..?
 
 
 POINT RELEASES:
