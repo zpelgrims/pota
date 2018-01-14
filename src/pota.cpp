@@ -1,6 +1,6 @@
 #include <ai.h>
-#include "../include/lens.h"
 #include "pota.h"
+#include "../include/lens.h"
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
@@ -44,7 +44,7 @@ AtVector linePlaneIntersection(AtVector rayOrigin, AtVector rayDirection) {
 
 
 // returns sensor offset in mm
-float camera_set_focus(float dist, float aperture_radius, float lambda)
+float camera_set_focus(float dist, float aperture_radius, float lambda, MyCameraData *camera_data)
 {
     const float target[3] = { 0.0, 0.0, dist};
     float sensor[5] = {0.0f};
@@ -69,7 +69,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda)
 
         aperture[k] = aperture_radius * s/(S+1.0f); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
+        lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
@@ -126,19 +126,6 @@ node_update
 {	
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
-	AiMsgInfo("%s  [POTA] ----------  LENS CONSTANTS  -----------", emoticon);
-	AiMsgInfo("%s  [POTA] lens_length: %s", emoticon, lens_name);
-    AiMsgInfo("%s  [POTA] lens_outer_pupil_radius: %f", emoticon, lens_outer_pupil_radius);
-    AiMsgInfo("%s  [POTA] lens_inner_pupil_radius: %f", emoticon, lens_inner_pupil_radius);
-    AiMsgInfo("%s  [POTA] lens_length: %f", emoticon, lens_length);
-	AiMsgInfo("%s  [POTA] lens_focal_length: %f", emoticon, lens_focal_length);
-	AiMsgInfo("%s  [POTA] lens_aperture_pos: %f", emoticon, lens_aperture_pos);
-	AiMsgInfo("%s  [POTA] lens_aperture_housing_radius: %f", emoticon, lens_aperture_housing_radius);
-	AiMsgInfo("%s  [POTA] lens_outer_pupil_curvature_radius: %f", emoticon, lens_outer_pupil_curvature_radius);
-	AiMsgInfo("%s  [POTA] lens_focal_length: %f", emoticon, lens_focal_length);
-	AiMsgInfo("%s  [POTA] lens_field_of_view: %f", emoticon, lens_field_of_view);
-	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
-
 	camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
 	camera_data->fstop = AiNodeGetFlt(node, "fstop");
 	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance");
@@ -149,25 +136,27 @@ node_update
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 
+	load_lens_constants(camera_data);
+
 	camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
 	AiMsgInfo("%s  [POTA] wavelength: %f", emoticon, camera_data->lambda);
 
-	camera_data->max_fstop = lens_focal_length / (lens_aperture_housing_radius * 2.0f);
+	camera_data->max_fstop = camera_data->lens_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
 	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, camera_data->max_fstop);
 
-	if (camera_data->fstop == 0.0f) camera_data->aperture_radius = lens_aperture_housing_radius;
-	else camera_data->aperture_radius = fminf(lens_aperture_housing_radius, lens_focal_length / (2.0f * camera_data->fstop));
+	if (camera_data->fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
+	else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_focal_length / (2.0f * camera_data->fstop));
 
-	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, lens_aperture_housing_radius);
+	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, camera_data->lens_aperture_housing_radius);
 	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, camera_data->aperture_radius);
 	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
 
 	// focus test, calculate sensor shift for correct focusing
     AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:", emoticon);
-	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, lens_aperture_housing_radius, camera_data->lambda);
+	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
 
     AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:", emoticon);
-	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, lens_aperture_housing_radius, camera_data->lambda);
+	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
 	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, camera_data->focus_distance, camera_data->sensor_shift);
 
@@ -241,7 +230,7 @@ camera_create_ray
 	    if (camera_data->dof)
 	    {
 	    	// aperture sampling, to make sure ray is able to propagate through whole lens system
-	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift);
+	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
 	    }
 	    
 
@@ -251,22 +240,22 @@ camera_create_ray
 
 
 		// propagate ray from sensor to outer lens element
-	    float transmittance = lens_evaluate(sensor, out);
+	    float transmittance = lens_evaluate(sensor, out, camera_data);
 		if(transmittance <= 0.0f){
 			++tries;
 			continue;
 		}
 
 		// crop out by outgoing pupil
-		if( out[0]*out[0] + out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius){
+		if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
 			++tries;
 			continue;
 		}
 
 		// crop at inward facing pupil
-		const float px = sensor[0] + sensor[2] * lens_focal_length;
-		const float py = sensor[1] + sensor[3] * lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-		if (px*px + py*py > lens_inner_pupil_radius*lens_inner_pupil_radius){
+		const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+		const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+		if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
 			++tries;
 			continue;
 		}	
@@ -279,7 +268,7 @@ camera_create_ray
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
+	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
 
     output.origin.x = camera_space_pos[0];
@@ -323,7 +312,7 @@ camera_create_ray
 		}
 
 		// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
-		const float R = lens_outer_pupil_curvature_radius;
+		const float R = camera_data->lens_outer_pupil_curvature_radius;
 		// recompute full frame:
 		float n[3] = {0.0f};
 		for(int k=0;k<3;k++)
