@@ -30,6 +30,7 @@ static const char* LensModelNames[] =
     "double_gauss_angenieux",
     "petzval",
     "tessar_anamorphic",
+    "wideangle",
     NULL
 };
 
@@ -162,8 +163,6 @@ node_finish
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 	delete camera_data;
 }
-
-
 
 
 camera_create_ray

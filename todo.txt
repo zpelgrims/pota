@@ -7,6 +7,7 @@ BASE RELEASE:
 	add and test magic number
 	[fisheye, fisheye_aspherical] crashes, check number output
 	is focusing optimal..?
+	wideangle isn’t focusing
 
 
 POINT RELEASES:
