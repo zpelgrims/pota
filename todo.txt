@@ -11,7 +11,10 @@ BASE RELEASE:
 
 
 POINT RELEASES:
-
+	
+	fix nans of double gauss angenieux
+	check for intersections along P->Lens path
+	come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
 	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 	add more lens descriptions (different focal lengths)

@@ -3,16 +3,12 @@
 #include "pota.h"
 #include "lens.h"
 
-
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
-// check for intersections along P->Lens path
-// come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
-// fix nans of double gauss angenieux
-
 AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
- 
+
+
 struct SampleBokehData
 {
    AtString aov_name;

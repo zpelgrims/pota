@@ -1,0 +1,110 @@
+[node pota]
+    desc STRING "Polynomial optics camera shader"
+    maya.name               STRING  "camera"
+    maya.id                 INT     0x00070102
+    maya.classification     STRING  "shader/surface"
+    maya.type               STRING  "camera"
+    maya.translator         STRING  "pota"
+
+    c4d.classification      STRING  "generic"
+
+    houdini.icon            STRING  "SHOP_surface"
+    houdini.label           STRING  "pota"
+    houdini.help_url        STRING  "http://www.zenopelgrims.com/polynomial-optics-arnold"
+    houdini.order           STRING  "lensModel sensor_width wavelength dof fstop focus_distance aperture_blades backwards_samples minimum_rgb bokeh_exr_path"
+
+
+    [attr lensModel]
+        maya.name           STRING  "aiLensModel"
+        desc                STRING  "Lens Model"
+        default             STRING  "petzval"
+
+        houdini.label       STRING  "Lens Model"
+
+
+    [attr sensor_width]
+        maya.name           STRING  "aiSensorWidth"
+        min                 FLOAT   0.1
+        max                 FLOAT   100
+        default             FLOAT   36
+        desc                STRING  "Width of the sensor in mm. Default value is the width of a full frame sensor."
+
+        houdini.label       STRING  "Sensor Width"
+
+
+    [attr wavelength]
+        maya.name           STRING  "aiWavelength"
+        min                 FLOAT   390.0
+        max                 FLOAT   700.0
+        default             FLOAT   550.0
+        desc                STRING  "Wavelength in nanometers."
+
+        houdini.label       STRING  "Wavelength"
+
+
+    [attr dof]
+        maya.name           STRING  "aiDof"
+        default             BOOL    true
+        desc                STRING  "Enable Depth of Field"
+        linkable            BOOL    FALSE
+
+        houdini.label       STRING  "Enable Depth of Field"
+
+
+    [attr fstop]
+        maya.name           STRING  "aiFstop"
+        min                 FLOAT   0.0
+        max                 FLOAT   64.0
+        default             FLOAT   2.8
+        desc                STRING  "F-Stop"
+
+        houdini.label       STRING  "f-stop"
+
+
+    [attr focus_distance]
+        maya.name           STRING  "aiFocusDistance"
+        min                 FLOAT   0.0
+        max                 FLOAT   1000000.0
+        default             FLOAT   1500.0
+        desc                STRING  "Focus distance in mm"
+
+        houdini.label       STRING  "Focus Distance (mm)"
+
+
+    [attr aperture_blades]
+        maya.name           STRING  "aiApertureBlades"
+        default             INT     0
+        min                 INT     0
+        max                 INT     8
+        desc                STRING  "Number of aperture blades. 0 is perfectly circular."
+
+        houdini.label       STRING  "Aperture Blades"
+
+
+    [attr backward_samples]
+        maya.name           STRING  "aiBackwardSamples"
+        default             INT     3
+        min                 INT     1
+        max                 INT     100
+        desc                STRING  "Multiplier on the bidirectional samples in the AOV shader"
+
+        houdini.label       STRING  "AOV Backwards Samples"
+
+
+    [attr minimum_rgb]
+        maya.name           STRING  "aiMinimumRgb"
+        default             FLOAT   4.0
+        min                 FLOAT   0.0
+        max                 FLOAT   100.0
+        desc                STRING  "Minimum r, g or b of the sample to trigger the backwards tracing in the AOV shader."
+
+        houdini.label       STRING  "AOV Minimum RGB"
+
+
+    [attr bokeh_exr_path]
+        maya.name           STRING  "aiBokehEXRPath"
+        default             STRING  ""
+        desc                STRING  "EXR path for backwards traced samples"
+        linkable            BOOL    FALSE
+
+        houdini.label       STRING  "Bokeh EXR Path"

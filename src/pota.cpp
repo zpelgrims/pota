@@ -44,6 +44,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
     sensor[4] = lambda;
     float offset = 0.0f;
     int count = 0;
+    float scale_samples = 0.5f;
 
     // just point through center of aperture
     float aperture[2] = {0.0f, 0.0f};
@@ -59,13 +60,13 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
         aperture[0] = 0.0f;
         aperture[1] = 0.0f;
 
-        aperture[k] = aperture_radius * (s/(S+1.0f) * 0.5); // (1to4)/(4+1) = .2, .4, .6, .8
+        aperture[k] = aperture_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = .2, .4, .6, .8
 
         lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
-            AiMsgInfo("\t%s  [POTA] raytraced sensor shift at aperture[%f, %f]: %f", aperture[0], aperture[1], sensor[k]/sensor[2+k]);
+            AiMsgInfo("\t[POTA] raytraced sensor shift at aperture[%f, %f]: %f", aperture[0], aperture[1], sensor[k]/sensor[2+k]);
             count ++;
         }
       }
@@ -79,13 +80,13 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
     if(offset == offset){ // check NaN cases
 		const float limit = 45.0f; // why this hard limit? Where does it come from?
 		if(offset > limit){
-			AiMsgInfo("%s  [POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
+			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
           	return limit;
 		} else if(offset < -limit){
-			AiMsgInfo("%s  [POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
+			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
         	return -limit;
 		} else {
-			AiMsgInfo("%s  [POTA] sensor offset inside of limits: %f", offset);
+			AiMsgInfo("[POTA] sensor offset inside of limits: %f", offset);
 			return offset; // in mm
 		}
     }
@@ -131,26 +132,26 @@ node_update
 	load_lens_constants(camera_data);
 
 	camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-	AiMsgInfo("%s  [POTA] wavelength: %f", camera_data->lambda);
+	AiMsgInfo("[POTA] wavelength: %f", camera_data->lambda);
 
 	camera_data->max_fstop = camera_data->lens_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
-	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", camera_data->max_fstop);
+	AiMsgInfo("[POTA] lens wide open f-stop: %f", camera_data->max_fstop);
 
 	if (camera_data->fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
 	else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_focal_length / (2.0f * camera_data->fstop));
 
-	AiMsgInfo("%s  [POTA] full aperture radius: %f", camera_data->lens_aperture_housing_radius);
-	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
-	AiMsgInfo("%s  [POTA] --------------------------------------");
+	AiMsgInfo("[POTA] full aperture radius: %f", camera_data->lens_aperture_housing_radius);
+	AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
+	AiMsgInfo("[POTA] --------------------------------------");
 
 	// focus test, calculate sensor shift for correct focusing
-    AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:");
+    AiMsgInfo("[POTA] calculating sensor shift at infinity focus:");
 	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
 
-    AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:");
+    AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
 	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
-	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
-	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
+	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
+	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
 
 	AiCameraUpdate(node, false);
