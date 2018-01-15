@@ -7,14 +7,6 @@
 #include <fstream>
 
 
-#ifdef __APPLE__
-    const char emoticon[5] = {0xF0, 0x9F, 0xA5, 0x91, '\0'};
-#else
-    const char emoticon[0] = {};
-#endif
-
-
-
 // enum to switch between lens models in interface dropdown
 enum LensModel{
     fisheye,

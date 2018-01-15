@@ -65,7 +65,7 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
-            AiMsgInfo("\t%s  [POTA] raytraced sensor shift at aperture[%f, %f]: %f", emoticon, aperture[0], aperture[1], sensor[k]/sensor[2+k]);
+            AiMsgInfo("\t%s  [POTA] raytraced sensor shift at aperture[%f, %f]: %f", aperture[0], aperture[1], sensor[k]/sensor[2+k]);
             count ++;
         }
       }
@@ -79,13 +79,13 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
     if(offset == offset){ // check NaN cases
 		const float limit = 45.0f; // why this hard limit? Where does it come from?
 		if(offset > limit){
-			AiMsgInfo("%s  [POTA] sensor offset bigger than maxlimit: %f > %f", emoticon, offset, limit);
+			AiMsgInfo("%s  [POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
           	return limit;
 		} else if(offset < -limit){
-			AiMsgInfo("%s  [POTA] sensor offset smaller than minlimit: %f < %f", emoticon, offset, -limit);
+			AiMsgInfo("%s  [POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
         	return -limit;
 		} else {
-			AiMsgInfo("%s  [POTA] sensor offset inside of limits: %f", emoticon, offset);
+			AiMsgInfo("%s  [POTA] sensor offset inside of limits: %f", offset);
 			return offset; // in mm
 		}
     }
@@ -131,26 +131,26 @@ node_update
 	load_lens_constants(camera_data);
 
 	camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-	AiMsgInfo("%s  [POTA] wavelength: %f", emoticon, camera_data->lambda);
+	AiMsgInfo("%s  [POTA] wavelength: %f", camera_data->lambda);
 
 	camera_data->max_fstop = camera_data->lens_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
-	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", emoticon, camera_data->max_fstop);
+	AiMsgInfo("%s  [POTA] lens wide open f-stop: %f", camera_data->max_fstop);
 
 	if (camera_data->fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
 	else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_focal_length / (2.0f * camera_data->fstop));
 
-	AiMsgInfo("%s  [POTA] full aperture radius: %f", emoticon, camera_data->lens_aperture_housing_radius);
-	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", emoticon, camera_data->aperture_radius);
-	AiMsgInfo("%s  [POTA] --------------------------------------", emoticon);
+	AiMsgInfo("%s  [POTA] full aperture radius: %f", camera_data->lens_aperture_housing_radius);
+	AiMsgInfo("%s  [POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
+	AiMsgInfo("%s  [POTA] --------------------------------------");
 
 	// focus test, calculate sensor shift for correct focusing
-    AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:", emoticon);
+    AiMsgInfo("%s  [POTA] calculating sensor shift at infinity focus:");
 	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
 
-    AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:", emoticon);
+    AiMsgInfo("%s  [POTA] calculating sensor shift at focus distance:");
 	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
-	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", emoticon, infinity_focus_sensor_shift);
-	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", emoticon, camera_data->focus_distance, camera_data->sensor_shift);
+	AiMsgInfo("%s  [POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
+	AiMsgInfo("%s  [POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
 
 	AiCameraUpdate(node, false);
