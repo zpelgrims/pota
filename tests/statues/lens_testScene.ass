@@ -29,7 +29,7 @@ pota
  0 21.7935295 51.8878098 1
  fov 54.4322243
  focus_distance 1500
- lensModel wideangle
+ lensModel petzval
 }
 
 #pota
