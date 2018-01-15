@@ -1,6 +1,6 @@
 #include <ai.h>
 #include "pota.h"
-#include "../include/lens.h"
+#include "lens.h"
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)

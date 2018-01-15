@@ -1,11 +1,11 @@
 #include <ai.h>
 #include <vector>
 #include "pota.h"
-#include "../include/lens.h"
+#include "lens.h"
 
 
 #define TINYEXR_IMPLEMENTATION
-#include "../include/tinyexr.h"
+#include "tinyexr.h"
 
 // check for intersections along P->Lens path
 // come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
