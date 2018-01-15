@@ -23,6 +23,7 @@ enum LensModel{
     double_gauss_angenieux,
     petzval,
     tessar_anamorphic,
+    wideangle,
     NONE
 };
 
