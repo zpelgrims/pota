@@ -7,9 +7,9 @@ CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/incl
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 
 HEADERS=\
-include/lens.h\
+src/lens.h\
 src/pota.h \
-include/tinyexr.h 
+src/tinyexr.h 
 
 
 .PHONY=all clean
