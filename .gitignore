@@ -2,6 +2,8 @@
 *.exr
 *.png
 *.dylib
+*.pyc
+*.dll
 
 /include/*
 
