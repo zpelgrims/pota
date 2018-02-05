@@ -65,10 +65,10 @@
         maya.name           STRING  "aiFocusDistance"
         min                 FLOAT   0.0
         max                 FLOAT   1000000.0
-        default             FLOAT   1500.0
-        desc                STRING  "Focus distance in mm"
+        default             FLOAT   150.0
+        desc                STRING  "Focus distance in cm"
 
-        houdini.label       STRING  "Focus Distance (mm)"
+        houdini.label       STRING  "Focus Distance (cm)"
 
 
     [attr aperture_blades]
