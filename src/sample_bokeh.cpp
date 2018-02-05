@@ -168,9 +168,9 @@ shader_evaluate
             if ((pixel_x > xres) || 
                 (pixel_x < 0)    || 
                 (pixel_y > yres) || 
-                (pixel_y < 0)    || 
-                (pixel_x != pixel_x) || 
-                (pixel_y != pixel_y))
+                (pixel_y < 0))//    || 
+                //(pixel_x != pixel_x) || 
+                //(pixel_y != pixel_y))
             {
                continue;
             }
