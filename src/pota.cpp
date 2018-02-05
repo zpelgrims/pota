@@ -93,6 +93,47 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
 }
 
 
+// line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
+AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
+    AtVector coord(100.0, 0.0, 100.0);
+    AtVector planeNormal(0.0, 1.0, 0.0);
+    rayDirection = AiV3Normalize(rayDirection);
+    coord = AiV3Normalize(coord);
+    return rayOrigin + (rayDirection * (AiV3Dot(coord, planeNormal) - AiV3Dot(planeNormal, rayOrigin)) / AiV3Dot(planeNormal, rayDirection));
+}
+
+
+float camera_set_focus_brute_force_search(float sensor_shift, MyCameraData *camera_data)
+{
+	float sensor[5] = {0.0f};
+    float aperture[5] = {0.0f};
+    float out[5] = {0.0f};
+    sensor[4] = camera_data->lambda;
+
+    float offset = 0.0f;
+
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.01;
+
+    lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
+
+    // move to beginning of polynomial
+	sensor[0] += sensor[2] * sensor_shift;
+	sensor[1] += sensor[3] * sensor_shift;
+
+	float transmittance = lens_evaluate(sensor, out, camera_data);
+
+	// convert from sphere/sphere space to camera space
+	float camera_space_pos[3];
+	float camera_space_omega[3];
+	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+
+	AtVector ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
+	AtVector ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
+
+    return line_plane_intersection(ray_origin, ray_dir).z;
+}
+
+
 node_parameters
 {
     AiParameterEnum("lensModel", petzval, LensModelNames);
@@ -155,6 +196,27 @@ node_update
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
 
+
+	// dumb linear brute force focus search, replace with quicker, more precise method
+	float distance = 0.0;
+	float closest_distance = 9999999.0;
+	float best_sensor_shift = 0.0;
+
+	for (float sensorshift = -10.0f; sensorshift <= 10.0f; sensorshift += 0.0001f){
+		distance = camera_set_focus_brute_force_search(sensorshift, camera_data);
+
+		float new_distance = std::abs(camera_data->focus_distance - std::abs(distance));
+
+		if (new_distance < closest_distance){
+			closest_distance = new_distance;
+			best_sensor_shift = sensorshift;
+		}
+	}
+
+	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
+	camera_data->sensor_shift = std::abs(best_sensor_shift);
+
+
 	AiCameraUpdate(node, false);
 }
 
@@ -183,7 +245,7 @@ camera_create_ray
     AtVector2 sensor_position_original(sensor[0], sensor[1]);
     bool ray_succes = false;
     int tries = 0;
-    int max_tries = 15;
+    int max_tries = 50;
 
     while(ray_succes == false && tries <= max_tries){
 
@@ -270,8 +332,11 @@ camera_create_ray
     output.dir.y = camera_space_omega[1];
     output.dir.z = camera_space_omega[2];
 
+    AiMsgInfo("intersection: %f", line_plane_intersection(output.origin, output.dir).z);
+
 	output.origin *= -0.1; //reverse rays and convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
+
 
 
     // EXPERIMENTAL, I KNOW IT IS INCORRECT BUT AT LEAST THE VISUAL PROBLEM IS RESOLVED
