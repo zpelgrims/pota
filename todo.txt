@@ -1,13 +1,13 @@
 BASE RELEASE:
 
-	make switching between lens files possible
-	test unicode emoticon on windows
 	compile and package for windows and osx
 	render comparison image
 	add and test magic number
 	[fisheye, fisheye_aspherical] crashes, check number output
 	is focusing optimal..?
 	wideangle isn’t focusing
+	.mtd for sample_bokeh
+	figure out why trying to shoot ray multiple times degrades image sampling
 
 
 POINT RELEASES:

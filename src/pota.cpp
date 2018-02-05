@@ -36,12 +36,12 @@ static const char* LensModelNames[] =
 
 
 // returns sensor offset in mm
-float camera_set_focus(float dist, float aperture_radius, float lambda, MyCameraData *camera_data)
+float camera_set_focus(float dist, MyCameraData *camera_data)
 {
     const float target[3] = { 0.0, 0.0, dist};
     float sensor[5] = {0.0f};
     float out[5] = {0.0f};
-    sensor[4] = lambda;
+    sensor[4] = camera_data->lambda;
     float offset = 0.0f;
     int count = 0;
     float scale_samples = 0.5f;
@@ -60,9 +60,9 @@ float camera_set_focus(float dist, float aperture_radius, float lambda, MyCamera
         aperture[0] = 0.0f;
         aperture[1] = 0.0f;
 
-        aperture[k] = aperture_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = .2, .4, .6, .8
+        aperture[k] = camera_data->lens_aperture_housing_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = .2, .4, .6, .8
 
-        lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data);
+        lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
 
         if(sensor[2+k] > 0){
             offset += sensor[k]/sensor[2+k];
@@ -146,10 +146,10 @@ node_update
 
 	// focus test, calculate sensor shift for correct focusing
     AiMsgInfo("[POTA] calculating sensor shift at infinity focus:");
-	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
+	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
 
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data->lens_aperture_housing_radius, camera_data->lambda, camera_data);
+	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
