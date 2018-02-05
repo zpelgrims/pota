@@ -100,7 +100,7 @@ node_parameters
     AiParameterFlt("wavelength", 550.0); // wavelength in nm
     AiParameterBool("dof", true);
     AiParameterFlt("fstop", 0.0);
-    AiParameterFlt("focus_distance", 1500.0); // in mm
+    AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
     AiParameterInt("aperture_blades", 0);
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
@@ -121,7 +121,7 @@ node_update
 
 	camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
 	camera_data->fstop = AiNodeGetFlt(node, "fstop");
-	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance");
+	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f;
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
@@ -150,6 +150,7 @@ node_update
 
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
 	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
+
 	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
