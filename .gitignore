@@ -4,6 +4,9 @@
 *.dylib
 *.pyc
 *.dll
+*.exp
+*.lib
+*.obj
 
 /include/*
 
