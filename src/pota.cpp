@@ -112,7 +112,7 @@ float camera_set_focus_brute_force_search(float sensor_shift, MyCameraData *came
 
     float offset = 0.0f;
 
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.01;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.15;
 
     lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -196,7 +196,6 @@ node_update
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
 
 
-
 	// dumb linear brute force focus search, replace with quicker, more precise method
 	float distance = 0.0;
 	float closest_distance = 9999999.0;
@@ -205,16 +204,16 @@ node_update
 	for (float sensorshift = -10.0f; sensorshift <= 10.0f; sensorshift += 0.0001f){
 		distance = camera_set_focus_brute_force_search(sensorshift, camera_data);
 
-		float new_distance = std::abs(camera_data->focus_distance - std::abs(distance));
+		float new_distance = camera_data->focus_distance - distance;
 
-		if (new_distance < closest_distance){
+		if (new_distance < closest_distance && new_distance > 0.0){
 			closest_distance = new_distance;
 			best_sensor_shift = sensorshift;
 		}
 	}
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
-	camera_data->sensor_shift = std::abs(best_sensor_shift);
+	camera_data->sensor_shift = best_sensor_shift;
 
 
 	AiCameraUpdate(node, false);
@@ -332,7 +331,7 @@ camera_create_ray
     output.dir.y = camera_space_omega[1];
     output.dir.z = camera_space_omega[2];
 
-    AiMsgInfo("intersection: %f", line_plane_intersection(output.origin, output.dir).z);
+    //AiMsgInfo("intersection: %f", line_plane_intersection(output.origin, output.dir).z);
 
 	output.origin *= -0.1; //reverse rays and convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
