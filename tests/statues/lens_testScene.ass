@@ -44,6 +44,7 @@ pota
  focus_distance 452.15
  fstop 0.0
  aperture_blades 0
+ lensModel petzval
 }
 
 #pota

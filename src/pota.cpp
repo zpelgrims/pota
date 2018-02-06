@@ -112,7 +112,7 @@ float camera_set_focus_brute_force_search(float sensor_shift, MyCameraData *came
 
     float offset = 0.0f;
 
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.15;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.01;
 
     lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -203,7 +203,6 @@ node_update
 
 	for (float sensorshift = -10.0f; sensorshift <= 10.0f; sensorshift += 0.0001f){
 		distance = camera_set_focus_brute_force_search(sensorshift, camera_data);
-
 		float new_distance = camera_data->focus_distance - distance;
 
 		if (new_distance < closest_distance && new_distance > 0.0){
@@ -213,8 +212,8 @@ node_update
 	}
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
+	AiMsgInfo("TEST: y=0 intersection at shift of %f: %f", best_sensor_shift, camera_set_focus_brute_force_search(best_sensor_shift, camera_data));
 	camera_data->sensor_shift = best_sensor_shift;
-
 
 	AiCameraUpdate(node, false);
 }

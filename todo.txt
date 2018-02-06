@@ -8,6 +8,7 @@ BASE RELEASE:
 	wideangle isn’t focusing
 	.mtd for sample_bokeh
 	figure out why trying to shoot ray multiple times degrades image sampling
+	why are the infinity focuses so off?
 
 
 POINT RELEASES:

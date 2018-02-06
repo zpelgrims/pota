@@ -33,7 +33,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiWavelength", label="Wavelength (nm)")
         self.addControl("aiDof", label="Enable depth of field")
         self.addControl("aiFstop", label="F-stop")
-        self.addControl("aiFocusDistance", label="Focus distance (mm)")
+        self.addControl("aiFocusDistance", label="Focus distance (cm)")
         self.addControl("aiApertureBlades", label="Aperture blades")
         
         self.endLayout()
