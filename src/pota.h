@@ -42,12 +42,16 @@ struct MyCameraData
 	float focus_distance;
 	float aperture_radius;
 	float sensor_shift;
+    int vignetting_retries;
 	float lambda;
     int aperture_blades;
 	bool dof;
     int backward_samples;
     float minimum_rgb;
     AtString bokeh_exr_path;
+
+    bool run_intersection_tests;
+    int count;
 };
 
 extern struct MyCameraData camera_data;

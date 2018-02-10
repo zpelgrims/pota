@@ -14,10 +14,13 @@ enum
 	p_dof,
     p_fstop,
     p_focus_distance,
+    p_extra_sensor_shift,
+    p_vignetting_retries,
     p_aperture_blades,
     p_backward_samples,
     p_minimum_rgb,
-    p_bokeh_exr_path
+    p_bokeh_exr_path,
+    p_run_intersection_tests
 };
 
 
@@ -60,7 +63,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
         aperture[0] = 0.0f;
         aperture[1] = 0.0f;
 
-        aperture[k] = camera_data->lens_aperture_housing_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = .2, .4, .6, .8
+        aperture[k] = camera_data->lens_aperture_housing_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = (.2, .4, .6, .8) * scale_samples
 
         lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
 
@@ -78,7 +81,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
     // the focus plane/sensor offset:
     // negative because of reverse direction
     if(offset == offset){ // check NaN cases
-		const float limit = 45.0f; // why this hard limit? Where does it come from?
+		const float limit = 45.0f;
 		if(offset > limit){
 			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
           	return limit;
@@ -103,21 +106,18 @@ AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
 }
 
 
-float camera_set_focus_brute_force_search(float sensor_shift, MyCameraData *camera_data)
+float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *camera_data)
 {
 	float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
+
     sensor[4] = camera_data->lambda;
-
-    float offset = 0.0f;
-
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.01;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.05;
 
     lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
-    // move to beginning of polynomial
-	sensor[0] += sensor[2] * sensor_shift;
+    sensor[0] += sensor[2] * sensor_shift;
 	sensor[1] += sensor[3] * sensor_shift;
 
 	float transmittance = lens_evaluate(sensor, out, camera_data);
@@ -130,7 +130,7 @@ float camera_set_focus_brute_force_search(float sensor_shift, MyCameraData *came
 	AtVector ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	AtVector ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
-    return line_plane_intersection(ray_origin, ray_dir).z;
+    return line_plane_intersection(ray_origin * -0.1, ray_dir * -0.1).z;
 }
 
 
@@ -142,10 +142,13 @@ node_parameters
     AiParameterBool("dof", true);
     AiParameterFlt("fstop", 0.0);
     AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+    AiParameterFlt("extra_sensor_shift", 0.0); // tmp remove
+    AiParameterInt("vignetting_retries", 15);
     AiParameterInt("aperture_blades", 0);
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
     AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tests/image/pota_bokeh.exr");
+    AiParameterBool("run_intersection_tests", true);
 }
 
 
@@ -166,9 +169,12 @@ node_update
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
+    camera_data->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
 	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+
+    AiMsgInfo("");
 
 	load_lens_constants(camera_data);
 
@@ -185,6 +191,7 @@ node_update
 	AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
 	AiMsgInfo("[POTA] --------------------------------------");
 
+    /*
 	// focus test, calculate sensor shift for correct focusing
     AiMsgInfo("[POTA] calculating sensor shift at infinity focus:");
 	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
@@ -194,16 +201,16 @@ node_update
 
 	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
-
+    */
 
 	// dumb linear brute force focus search, replace with quicker, more precise method
 	float distance = 0.0;
-	float closest_distance = 9999999.0;
+	float closest_distance = AI_BIG;
 	float best_sensor_shift = 0.0;
 
 	for (float sensorshift = -10.0f; sensorshift <= 10.0f; sensorshift += 0.0001f){
-		distance = camera_set_focus_brute_force_search(sensorshift, camera_data);
-		float new_distance = camera_data->focus_distance - distance;
+		distance = camera_get_y0_intersection_distance(sensorshift, camera_data);
+		float new_distance = AiNodeGetFlt(node, "focus_distance") - distance;
 
 		if (new_distance < closest_distance && new_distance > 0.0){
 			closest_distance = new_distance;
@@ -212,9 +219,16 @@ node_update
 	}
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
-	AiMsgInfo("TEST: y=0 intersection at shift of %f: %f", best_sensor_shift, camera_set_focus_brute_force_search(best_sensor_shift, camera_data));
-	camera_data->sensor_shift = best_sensor_shift;
+	//AiMsgInfo("TEST: y=0 intersection at brute force shift of %f: %f", best_sensor_shift, camera_get_y0_intersection_distance(best_sensor_shift, camera_data));
+	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+    //camera_data->sensor_shift = AiNodeGetFlt(node, "sensor_shift");
 
+    //AiMsgInfo("TEST: y=0 intersection at regular calculated shift of %f: %f", camera_data->sensor_shift, camera_get_y0_intersection_distance(camera_data->sensor_shift, camera_data));
+    
+    camera_data->count = 0;
+    camera_data->run_intersection_tests = AiNodeGetBool(node, "run_intersection_tests");
+
+    AiMsgInfo("");
 	AiCameraUpdate(node, false);
 }
 
@@ -240,12 +254,16 @@ camera_create_ray
     sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
     sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
 
+    if (camera_data->run_intersection_tests){
+        sensor[0] = 0.0;
+        sensor[1] = 0.0;
+    }
+
     AtVector2 sensor_position_original(sensor[0], sensor[1]);
     bool ray_succes = false;
     int tries = 0;
-    int max_tries = 50;
 
-    while(ray_succes == false && tries <= max_tries){
+    while(ray_succes == false && tries <= camera_data->vignetting_retries){
 
     	//reset the initial sensor coords
     	sensor[0] = sensor_position_original.x; 
@@ -269,14 +287,21 @@ camera_create_ray
 		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
 		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
 
-		    aperture[0] = unit_disk.x * camera_data->aperture_radius;
-		    aperture[1] = unit_disk.y * camera_data->aperture_radius;
+            aperture[0] = unit_disk.x * camera_data->aperture_radius;
+            aperture[1] = unit_disk.y * camera_data->aperture_radius;
+
+            if (camera_data->run_intersection_tests){
+    		    aperture[0] = unit_disk.x * camera_data->aperture_radius * 0.2;
+    		    aperture[1] = unit_disk.y * camera_data->aperture_radius * 0.2;
+            }
 	    } 
 	    else if (camera_data->dof && camera_data->aperture_blades > 2)
 	    {
 	    	if (tries == 0) lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, camera_data->aperture_radius, camera_data->aperture_blades);
 	    	else lens_sample_aperture(&aperture[0], &aperture[1], xor128() / 4294967296.0f, xor128() / 4294967296.0f, camera_data->aperture_radius, camera_data->aperture_blades);
 	    }
+
+        //AiMsgInfo("Passed concentric_disk_sample");
 
 
 	    if (camera_data->dof)
@@ -285,6 +310,7 @@ camera_create_ray
 	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
 	    }
 	    
+        //AiMsgInfo("Passed lens_pt_sample_aperture");
 
 	    // move to beginning of polynomial
 		sensor[0] += sensor[2] * camera_data->sensor_shift;
@@ -297,6 +323,8 @@ camera_create_ray
 			++tries;
 			continue;
 		}
+
+        //AiMsgInfo("Passed lens_evaluate");
 
 		// crop out by outgoing pupil
 		if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
@@ -322,6 +350,7 @@ camera_create_ray
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
+    //AiMsgInfo("Passed lens_sphereToCs");
 
     output.origin.x = camera_space_pos[0];
     output.origin.y = camera_space_pos[1];
@@ -330,10 +359,24 @@ camera_create_ray
     output.dir.y = camera_space_omega[1];
     output.dir.z = camera_space_omega[2];
 
-    //AiMsgInfo("intersection: %f", line_plane_intersection(output.origin, output.dir).z);
 
-	output.origin *= -0.1; //reverse rays and convert to cm
+	output.origin *= 0.1; //reverse rays and convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
+
+    // Nan bailout
+    if (output.origin.x != output.origin.x || output.origin.y != output.origin.y || output.origin.z != output.origin.z || 
+        output.dir.x != output.dir.x || output.dir.y != output.dir.y || output.dir.z != output.dir.z){
+        output.weight = 0.0f;
+    }
+
+    //AiMsgInfo("output.origin: %f %f %f", output.origin.x, output.origin.y, output.origin.z);
+    //AiMsgInfo("output.dir: %f %f %f", output.dir.x, output.dir.y, output.dir.z);
+
+    if (camera_data->count < 5 && camera_data->run_intersection_tests){
+        AiMsgInfo("intersection: %f %f %f", line_plane_intersection(output.origin, output.dir).x, line_plane_intersection(output.origin, output.dir).y, line_plane_intersection(output.origin, output.dir).z);
+        ++camera_data->count;
+    }
+
 
 
 
