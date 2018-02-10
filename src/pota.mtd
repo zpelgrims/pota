@@ -70,6 +70,25 @@
 
         houdini.label       STRING  "Focus Distance (cm)"
 
+    [attr extra_sensor_shift]
+        maya.name           STRING  "aiExtraSensorShift"
+        min                 FLOAT   -10.0
+        max                 FLOAT   10.0
+        default             FLOAT   0.0
+        desc                STRING  "Additional Sensor shift in mm"
+
+        houdini.label       STRING  "Additional Sensor shift in mm"
+
+
+    [attr vignetting_retries]
+        maya.name           STRING  "aiVignettingRetries"
+        min                 INT    1
+        max                 INT    50
+        default             INT    15
+        desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
+
+        houdini.label       STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
+
 
     [attr aperture_blades]
         maya.name           STRING  "aiApertureBlades"

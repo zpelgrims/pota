@@ -217,7 +217,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
   }
 
   AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA] lens_length: %s", camera_data->lens_name);
+  AiMsgInfo("[POTA] lens_name: %s", camera_data->lens_name);
   AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", camera_data->lens_outer_pupil_radius);
   AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", camera_data->lens_inner_pupil_radius);
   AiMsgInfo("[POTA] lens_length: %f", camera_data->lens_length);
@@ -475,7 +475,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
       float pred_dx;
       float pred_dy;
       float sqr_err = FLT_MAX;
-      for(int k=0;k<5&&sqr_err > 1e-4f;k++)
+      for(int k=0; k<5 && sqr_err > 1e-4f; k++)
       {
         const float begin_x = x + dist * dx;
         const float begin_y = y + dist * dy;
