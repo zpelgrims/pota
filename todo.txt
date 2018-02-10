@@ -2,10 +2,6 @@ BASE RELEASE:
 
 	compile and package for windows and osx
 	render comparison image
-	add and test magic number
-	[fisheye, fisheye_aspherical] crashes, check number output
-	is focusing optimal..?
-	wideangle isn’t focusing
 	.mtd for sample_bokeh
 	figure out why trying to shoot ray multiple times degrades image sampling
 	why are the infinity focuses so off?
