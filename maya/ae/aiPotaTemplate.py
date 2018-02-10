@@ -37,7 +37,6 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
-        self.addControl("aiRunIntersectionTests", label="Run [0,0] intersection tests")
         
         self.endLayout()
 
