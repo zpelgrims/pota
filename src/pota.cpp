@@ -19,8 +19,7 @@ enum
     p_aperture_blades,
     p_backward_samples,
     p_minimum_rgb,
-    p_bokeh_exr_path,
-    p_run_intersection_tests
+    p_bokeh_exr_path
 };
 
 
@@ -148,7 +147,6 @@ node_parameters
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
     AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tests/image/pota_bokeh.exr");
-    AiParameterBool("run_intersection_tests", true);
 }
 
 
@@ -219,14 +217,7 @@ node_update
 	}
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
-	//AiMsgInfo("TEST: y=0 intersection at brute force shift of %f: %f", best_sensor_shift, camera_get_y0_intersection_distance(best_sensor_shift, camera_data));
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
-    //camera_data->sensor_shift = AiNodeGetFlt(node, "sensor_shift");
-
-    //AiMsgInfo("TEST: y=0 intersection at regular calculated shift of %f: %f", camera_data->sensor_shift, camera_get_y0_intersection_distance(camera_data->sensor_shift, camera_data));
-    
-    camera_data->count = 0;
-    camera_data->run_intersection_tests = AiNodeGetBool(node, "run_intersection_tests");
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
@@ -289,11 +280,6 @@ camera_create_ray
 
             aperture[0] = unit_disk.x * camera_data->aperture_radius;
             aperture[1] = unit_disk.y * camera_data->aperture_radius;
-
-            if (camera_data->run_intersection_tests){
-    		    aperture[0] = unit_disk.x * camera_data->aperture_radius * 0.2;
-    		    aperture[1] = unit_disk.y * camera_data->aperture_radius * 0.2;
-            }
 	    } 
 	    else if (camera_data->dof && camera_data->aperture_blades > 2)
 	    {
@@ -301,17 +287,12 @@ camera_create_ray
 	    	else lens_sample_aperture(&aperture[0], &aperture[1], xor128() / 4294967296.0f, xor128() / 4294967296.0f, camera_data->aperture_radius, camera_data->aperture_blades);
 	    }
 
-        //AiMsgInfo("Passed concentric_disk_sample");
-
-
 	    if (camera_data->dof)
 	    {
 	    	// aperture sampling, to make sure ray is able to propagate through whole lens system
 	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
 	    }
 	    
-        //AiMsgInfo("Passed lens_pt_sample_aperture");
-
 	    // move to beginning of polynomial
 		sensor[0] += sensor[2] * camera_data->sensor_shift;
 		sensor[1] += sensor[3] * camera_data->sensor_shift;
@@ -324,7 +305,6 @@ camera_create_ray
 			continue;
 		}
 
-        //AiMsgInfo("Passed lens_evaluate");
 
 		// crop out by outgoing pupil
 		if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
@@ -350,7 +330,6 @@ camera_create_ray
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
-    //AiMsgInfo("Passed lens_sphereToCs");
 
     output.origin.x = camera_space_pos[0];
     output.origin.y = camera_space_pos[1];
@@ -360,7 +339,7 @@ camera_create_ray
     output.dir.z = camera_space_omega[2];
 
 
-	output.origin *= 0.1; //reverse rays and convert to cm
+	output.origin *= 0.1; // convert to cm
     output.dir *= -0.1; //reverse rays and convert to cm
 
     // Nan bailout
@@ -368,15 +347,6 @@ camera_create_ray
         output.dir.x != output.dir.x || output.dir.y != output.dir.y || output.dir.z != output.dir.z){
         output.weight = 0.0f;
     }
-
-    //AiMsgInfo("output.origin: %f %f %f", output.origin.x, output.origin.y, output.origin.z);
-    //AiMsgInfo("output.dir: %f %f %f", output.dir.x, output.dir.y, output.dir.z);
-
-    if (camera_data->count < 5 && camera_data->run_intersection_tests){
-        AiMsgInfo("intersection: %f %f %f", line_plane_intersection(output.origin, output.dir).x, line_plane_intersection(output.origin, output.dir).y, line_plane_intersection(output.origin, output.dir).z);
-        ++camera_data->count;
-    }
-
 
 
 
