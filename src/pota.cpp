@@ -149,6 +149,129 @@ void brute_force_focus_search(float focus_distance, float &best_sensor_shift, fl
 }
 
 
+inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, AtRGB &weight, AtVector &origin, AtVector &direction, MyCameraData *camera_data)
+{
+
+    bool ray_succes = false;
+    tries = 0;
+    float sensor[5] = {0.0f};
+    float aperture[5] = {0.0f};
+    float out[5] = {0.0f};
+    sensor[4] = camera_data->lambda;
+
+    while(ray_succes == false && tries <= camera_data->vignetting_retries){
+
+    	sensor[5] = {0.0f};
+	    aperture[5] = {0.0f};
+	    out[5] = {0.0f};
+	    sensor[4] = camera_data->lambda;
+
+	    // set sensor position coords
+	    sensor[0] = input_sx * (camera_data->sensor_width * 0.5f);
+	    sensor[1] = input_sy * (camera_data->sensor_width * 0.5f);
+
+	    
+	    if (!camera_data->dof) // no dof, all rays through single aperture point
+	    { 
+	    	aperture[0] = 0.0;
+	    	aperture[1] = 0.0;
+
+	    } 
+	    else if (camera_data->dof && camera_data->aperture_blades < 2)
+	    {
+			// transform unit square to unit disk
+		    AtVector2 unit_disk(0.0f, 0.0f);
+		    if (tries == 0) concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
+		    else {
+		    	if (original_ray){
+				    r1 = xor128() / 4294967296.0f;
+				    r2 = xor128() / 4294967296.0f;
+			    }
+		    	concentric_disk_sample(r1, r2, unit_disk, true);
+		    }
+
+            aperture[0] = unit_disk.x * camera_data->aperture_radius;
+            aperture[1] = unit_disk.y * camera_data->aperture_radius;
+	    } 
+	    else if (camera_data->dof && camera_data->aperture_blades > 2)
+	    {
+	    	if (tries == 0) lens_sample_aperture(&aperture[0], &aperture[1], input_lensx, input_lensy, camera_data->aperture_radius, camera_data->aperture_blades);
+	    	else {
+	    		if (original_ray)
+	    		{
+		    		r1 = xor128() / 4294967296.0f;
+		    		r2 = xor128() / 4294967296.0f;
+	    		}
+	    		lens_sample_aperture(&aperture[0], &aperture[1], r1, r2, camera_data->aperture_radius, camera_data->aperture_blades);
+	    	}
+	    }
+
+	    if (camera_data->dof)
+	    {
+	    	// aperture sampling, to make sure ray is able to propagate through whole lens system
+	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
+	    }
+	    
+
+	    // move to beginning of polynomial
+		sensor[0] += sensor[2] * camera_data->sensor_shift;
+		sensor[1] += sensor[3] * camera_data->sensor_shift;
+
+
+		// propagate ray from sensor to outer lens element
+	    float transmittance = lens_evaluate(sensor, out, camera_data);
+		if(transmittance <= 0.0f){
+			++tries;
+			continue;
+		}
+
+
+		// crop out by outgoing pupil
+		if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
+			++tries;
+			continue;
+		}
+
+		// crop at inward facing pupil
+		const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+		const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+		if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
+			++tries;
+			continue;
+		}
+		
+		ray_succes = true;
+	}
+
+	if (ray_succes == false) weight = 0.0f;
+
+	// convert from sphere/sphere space to camera space
+	float camera_space_pos[3];
+	float camera_space_omega[3];
+	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+
+
+    origin.x = camera_space_pos[0];
+    origin.y = camera_space_pos[1];
+    origin.z = camera_space_pos[2];
+    direction.x = camera_space_omega[0];
+    direction.y = camera_space_omega[1];
+    direction.z = camera_space_omega[2];
+
+
+	origin *= 0.1; // convert to cm
+    direction *= -0.1; //reverse rays and convert to cm
+
+    // Nan bailout
+    if (origin.x != origin.x || origin.y != origin.y || origin.z != origin.z || 
+        direction.x != direction.x || direction.y != direction.y || direction.z != direction.z)
+    {
+        weight = 0.0f;
+    }
+
+}
+
+
 node_parameters
 {
     AiParameterEnum("lensModel", petzval, LensModelNames);
@@ -245,114 +368,13 @@ camera_create_ray
 {
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
-    float sensor[5] = {0.0f};
-    float aperture[5] = {0.0f};
-    float out[5] = {0.0f};
-    sensor[4] = camera_data->lambda;
+	int tries = 0;
+	float r1 = 0.0;
+	float r2 = 0.0;
 
-    // set sensor position coords
-    sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
-    sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
+    trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, r1, r2, output.weight, output.origin, output.dir, camera_data);
 
-    AtVector2 sensor_position_original(sensor[0], sensor[1]);
-    bool ray_succes = false;
-    int tries = 0;
-
-    while(ray_succes == false && tries <= camera_data->vignetting_retries){
-
-    	//reset the initial sensor coords
-    	sensor[0] = sensor_position_original.x; 
-    	sensor[1] = sensor_position_original.y; 
-    	sensor[2] = 0.0f;
-    	sensor[3] = 0.0f; 
-    	sensor[4] = camera_data->lambda;
-	    aperture[0] = 0.0f; aperture[1] = 0.0f; aperture[2] = 0.0f; aperture[3] = 0.0f; aperture[4] = 0.0f;
-	    out[0] = 0.0f; out[1] = 0.0f; out[2] = 0.0f; out[3] = 0.0f; out[4] = 0.0f;
-	    
-	    if (!camera_data->dof) // no dof, all rays through single aperture point
-	    { 
-	    	aperture[0] = 0.0;
-	    	aperture[1] = 0.0;
-
-	    } 
-	    else if (camera_data->dof && camera_data->aperture_blades < 2)
-	    {
-			// transform unit square to unit disk
-		    AtVector2 unit_disk(0.0f, 0.0f);
-		    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
-		    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
-
-            aperture[0] = unit_disk.x * camera_data->aperture_radius;
-            aperture[1] = unit_disk.y * camera_data->aperture_radius;
-	    } 
-	    else if (camera_data->dof && camera_data->aperture_blades > 2)
-	    {
-	    	if (tries == 0) lens_sample_aperture(&aperture[0], &aperture[1], input.lensx, input.lensy, camera_data->aperture_radius, camera_data->aperture_blades);
-	    	else lens_sample_aperture(&aperture[0], &aperture[1], xor128() / 4294967296.0f, xor128() / 4294967296.0f, camera_data->aperture_radius, camera_data->aperture_blades);
-	    }
-
-	    if (camera_data->dof)
-	    {
-	    	// aperture sampling, to make sure ray is able to propagate through whole lens system
-	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
-	    }
-	    
-
-	    // move to beginning of polynomial
-		sensor[0] += sensor[2] * camera_data->sensor_shift;
-		sensor[1] += sensor[3] * camera_data->sensor_shift;
-
-
-		// propagate ray from sensor to outer lens element
-	    float transmittance = lens_evaluate(sensor, out, camera_data);
-		if(transmittance <= 0.0f){
-			++tries;
-			continue;
-		}
-
-
-		// crop out by outgoing pupil
-		if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
-			++tries;
-			continue;
-		}
-
-		// crop at inward facing pupil
-		const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-		const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-		if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
-			++tries;
-			continue;
-		}	
-		
-		ray_succes = true;
-	}
-
-	if (ray_succes == false) output.weight = 0.0f;
-
-	// convert from sphere/sphere space to camera space
-	float camera_space_pos[3];
-	float camera_space_omega[3];
-	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
-
-
-    output.origin.x = camera_space_pos[0];
-    output.origin.y = camera_space_pos[1];
-    output.origin.z = camera_space_pos[2];
-    output.dir.x = camera_space_omega[0];
-    output.dir.y = camera_space_omega[1];
-    output.dir.z = camera_space_omega[2];
-
-
-	output.origin *= 0.1; // convert to cm
-    output.dir *= -0.1; //reverse rays and convert to cm
-
-    // Nan bailout
-    if (output.origin.x != output.origin.x || output.origin.y != output.origin.y || output.origin.z != output.origin.z || 
-        output.dir.x != output.dir.x || output.dir.y != output.dir.y || output.dir.z != output.dir.z){
-        output.weight = 0.0f;
-    }
-
+    //now only need the random aperture parameters to re-trace to the exact same point
 
 
     // EXPERIMENTAL, I KNOW IT IS INCORRECT BUT AT LEAST THE VISUAL PROBLEM IS RESOLVED
@@ -373,7 +395,10 @@ camera_create_ray
 
 	    // CreateRay(node, input, output)
 		// CreateRay(node, input_dx, output_dx)
+	    trace_ray(false, tries, input_dx.sx, input_dx.sy, r1, r2, r1, r2, output_dx.weight, output_dx.origin, output_dx.dir, camera_data);
+
 		// CreateRay(node, input_dy, output_dy)
+	    trace_ray(false, tries, input_dy.sx, input_dy.sy, r1, r2, r1, r2, output_dy.weight, output_dy.origin, output_dy.dir, camera_data);
 
 	    output.dOdx = (output_dx.origin - output.origin) / step;
 		output.dOdy = (output_dy.origin - output.origin) / step;
