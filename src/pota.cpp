@@ -130,7 +130,7 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
 	AtVector ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	AtVector ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
-    return line_plane_intersection(ray_origin * -0.1, ray_dir * -0.1).z;
+    return line_plane_intersection(ray_origin * 0.1, ray_dir * -0.1).z;
 }
 
 
@@ -223,7 +223,7 @@ node_update
     brute_force_focus_search(AiNodeGetFlt(node, "focus_distance"), best_sensor_shift, closest_distance, camera_data);
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
-	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+	camera_data->sensor_shift = -best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
     float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
     AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);

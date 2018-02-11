@@ -3,8 +3,8 @@ BASE RELEASE:
 	compile and package for windows and osx
 	render comparison image
 	.mtd for sample_bokeh
+	sample_bokeh not working on windows? Check differences
 	why are the infinity focuses so off?
-	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
 
 
 POINT RELEASES:
@@ -16,3 +16,4 @@ POINT RELEASES:
 	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 	add more lens descriptions (different focal lengths)
 	add frame numbering to aov shader
+	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10

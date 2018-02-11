@@ -11,7 +11,7 @@
     houdini.icon            STRING  "SHOP_surface"
     houdini.label           STRING  "pota"
     houdini.help_url        STRING  "http://www.zenopelgrims.com/polynomial-optics-arnold"
-    houdini.order           STRING  "lensModel sensor_width wavelength dof fstop focus_distance aperture_blades backwards_samples minimum_rgb bokeh_exr_path"
+    houdini.order           STRING  "lensModel sensor_width wavelength dof fstop focus_distance extra_sensor_shift vignetting_retries aperture_blades backwards_samples minimum_rgb bokeh_exr_path"
 
 
     [attr lensModel]
