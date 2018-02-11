@@ -133,6 +133,21 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
 }
 
 
+void brute_force_focus_search(float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
+    float distance = 0.0;
+
+    for (float sensorshift = -20.0f; sensorshift <= 20.0f; sensorshift += 0.0005f){
+        distance = camera_get_y0_intersection_distance(sensorshift, camera_data);
+        float new_distance = focus_distance - distance;
+
+        if (new_distance < closest_distance && new_distance > 0.0){
+            closest_distance = new_distance;
+            best_sensor_shift = sensorshift;
+        }
+    }
+}
+
+
 node_parameters
 {
     AiParameterEnum("lensModel", petzval, LensModelNames);
@@ -202,22 +217,15 @@ node_update
     */
 
 	// dumb linear brute force focus search, replace with quicker, more precise method
-	float distance = 0.0;
-	float closest_distance = AI_BIG;
-	float best_sensor_shift = 0.0;
-
-	for (float sensorshift = -10.0f; sensorshift <= 10.0f; sensorshift += 0.0001f){
-		distance = camera_get_y0_intersection_distance(sensorshift, camera_data);
-		float new_distance = AiNodeGetFlt(node, "focus_distance") - distance;
-
-		if (new_distance < closest_distance && new_distance > 0.0){
-			closest_distance = new_distance;
-			best_sensor_shift = sensorshift;
-		}
-	}
+    float best_sensor_shift = 0.0f;
+    float closest_distance = AI_BIG;
+    brute_force_focus_search(AiNodeGetFlt(node, "focus_distance"), best_sensor_shift, closest_distance, camera_data);
 
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+
+    float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
+    AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
@@ -244,11 +252,6 @@ camera_create_ray
     // set sensor position coords
     sensor[0] = input.sx * (camera_data->sensor_width * 0.5f);
     sensor[1] = input.sy * (camera_data->sensor_width * 0.5f);
-
-    if (camera_data->run_intersection_tests){
-        sensor[0] = 0.0;
-        sensor[1] = 0.0;
-    }
 
     AtVector2 sensor_position_original(sensor[0], sensor[1]);
     bool ray_succes = false;
@@ -293,6 +296,7 @@ camera_create_ray
 	    	lens_pt_sample_aperture(sensor, aperture, camera_data->sensor_shift, camera_data);
 	    }
 	    
+
 	    // move to beginning of polynomial
 		sensor[0] += sensor[2] * camera_data->sensor_shift;
 		sensor[1] += sensor[3] * camera_data->sensor_shift;
