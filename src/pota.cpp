@@ -162,7 +162,7 @@ node_parameters
     AiParameterInt("aperture_blades", 0);
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
-    AiParameterStr("bokeh_exr_path", "/Users/zeno/pota/tests/image/pota_bokeh.exr");
+    AiParameterStr("bokeh_exr_path", "");
 }
 
 

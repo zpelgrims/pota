@@ -112,14 +112,22 @@ node_finish
       ++pixelnumber;
    }
 
-   
 
-   std::string substring = "####";
-   std::string original_string = camera_data->bokeh_exr_path;
-   original_string.replace(original_string.find(substring), substring.length(), std::to_string(AiNodeGetInt(AiUniverseGetOptions(), "frame")));
+   // replace frame substring
+   std::string original_string = camera_data->bokeh_exr_path.c_str();
+
+   std::string substring = "";
+   size_t numberofhashes = std::count(original_string.begin(), original_string.end(), '#');
+   for (int i = 0; i < numberofhashes; i++){
+      substring.insert(0, "#");
+   }
+
+   std::string framestring = std::to_string(static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame")));
+   framestring.insert(0, substring.length() - framestring.length(), '0');
+   original_string.replace(original_string.find(substring), substring.length(), framestring);
 
    SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, original_string.c_str());
-   AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string);
+   AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string.c_str());
 
    delete bokeh_data;
 }
