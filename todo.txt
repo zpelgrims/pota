@@ -16,5 +16,4 @@ POINT RELEASES:
 	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
 	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 	add more lens descriptions (different focal lengths)
-	add frame numbering to aov shader
 	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
