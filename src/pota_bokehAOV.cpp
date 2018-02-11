@@ -112,8 +112,14 @@ node_finish
       ++pixelnumber;
    }
 
-   SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, camera_data->bokeh_exr_path.c_str());
-   AiMsgWarning("[POTA] Bokeh AOV written to %s", camera_data->bokeh_exr_path);
+   
+
+   std::string substring = "####";
+   std::string original_string = camera_data->bokeh_exr_path;
+   original_string.replace(original_string.find(substring), substring.length(), std::to_string(AiNodeGetInt(AiUniverseGetOptions(), "frame")));
+
+   SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, original_string.c_str());
+   AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string);
 
    delete bokeh_data;
 }
@@ -184,7 +190,7 @@ shader_evaluate
 
       // ideally would be cool to write to an aov but not sure if I can access the different pixels other than
       // the one related to the current sample
-      AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y) + sg->x];// (sg->y+1, sg->x+1?)
+      AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y+1, sg->x+1)]; // IS THE +1 CORRECT? 
       AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value);
    }
 }
