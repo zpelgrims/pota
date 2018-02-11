@@ -16,6 +16,7 @@ enum LensModel{
     petzval,
     tessar_anamorphic,
     wideangle,
+    canon_anamorphic,
     NONE
 };
 
