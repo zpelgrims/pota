@@ -6,10 +6,10 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
-AI_SHADER_NODE_EXPORT_METHODS(SampleBokehMtd);
+AI_SHADER_NODE_EXPORT_METHODS(PotaBokehAOVMtd);
 
 
-struct SampleBokehData
+struct PotaBokehAOVData
 {
    AtString aov_name;
    int aa_samples;
@@ -69,13 +69,13 @@ node_parameters
  
 node_initialize
 {
-   AiNodeSetLocalData(node, new SampleBokehData());
+   AiNodeSetLocalData(node, new PotaBokehAOVData());
 }
 
  
 node_update
 {
-   SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+   PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
    //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // register AOV
@@ -95,7 +95,7 @@ node_update
 
 node_finish
 {
-   SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+   PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
    const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // fill exr
@@ -113,13 +113,14 @@ node_finish
    }
 
    SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, camera_data->bokeh_exr_path.c_str());
+   AiMsgWarning("[POTA] Bokeh AOV written to %s", camera_data->bokeh_exr_path);
 
    delete bokeh_data;
 }
  
 shader_evaluate
 {
-   SampleBokehData *bokeh_data = (SampleBokehData*)AiNodeGetLocalData(node);
+   PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
    MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
    // why does this need to be in shader_evaluate to work? returns 0 in _update_?
@@ -168,9 +169,9 @@ shader_evaluate
             if ((pixel_x > xres) || 
                 (pixel_x < 0)    || 
                 (pixel_y > yres) || 
-                (pixel_y < 0))//    || 
-                //(pixel_x != pixel_x) || 
-                //(pixel_y != pixel_y))
+                (pixel_y < 0)    || 
+                (pixel_x != pixel_x) ||  //nan checking
+                (pixel_y != pixel_y)) // nan checking
             {
                continue;
             }
@@ -183,17 +184,17 @@ shader_evaluate
 
       // ideally would be cool to write to an aov but not sure if I can access the different pixels other than
       // the one related to the current sample
-      //AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y) + sg->x]; (sg->y+1, sg->x+1?)
-      //AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value);
+      AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y) + sg->x];// (sg->y+1, sg->x+1?)
+      AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value);
    }
 }
  
 node_loader
 {
    if (i != 0) return false;
-   node->methods     = SampleBokehMtd;
+   node->methods     = PotaBokehAOVMtd;
    node->output_type = AI_TYPE_RGBA;
-   node->name        = "sample_bokeh";
+   node->name        = "pota_bokehAOV";
    node->node_type   = AI_NODE_SHADER;
    strcpy(node->version, AI_VERSION);
    return true;

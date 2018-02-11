@@ -11,7 +11,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
 
     def LoadFilenameButtonPushBokeh(self, *args):
         basicFilter = 'All Files (*.*)'
-        ret = cmds.fileDialog2(fileFilter=basicFilter, dialogStyle=2, cap='Load File',okc='Load',fm=4)
+        ret = cmds.fileDialog2(fileFilter=basicFilter, dialogStyle=2, cap='Select sample_bokeh file location',fm=0)
         if ret is not None and len(ret):
             self.filenameEditBokeh(ret[0])
             cmds.textFieldButtonGrp("filenameBokehGrp", edit=True, text=ret[0])
