@@ -113,7 +113,7 @@ node_finish
    }
 
 
-   // replace frame substring
+   // replace frame numbering
    std::string original_string = camera_data->bokeh_exr_path.c_str();
 
    std::string substring = "";
