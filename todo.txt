@@ -5,7 +5,7 @@ BASE RELEASE:
 	.mtd for sample_bokeh
 	sample_bokeh not working on windows? Check differences
 	why are the infinity focuses so off?
-	previous focus made nicer bokeh with petzval.. Why?
+	previous focus made nicer bokeh with petzval.. Why? Which one is the most correct?
 
 
 POINT RELEASES:
