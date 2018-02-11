@@ -359,9 +359,9 @@ camera_create_ray
     // HAVE TO DO THIS BECAUSE OF SHOOTING MULTIPLE RAYS
     // NOT CALCULATING THE DERIVATIVES PROBS AFFECTS TEXTURE I/O
     if (tries > 0){
-        //output.dOdy = output.origin;
-        //output.dDdy = output.dir;
-
+        output.dOdy = output.origin;
+        output.dDdy = output.dir;
+/*
         float step = 0.001;
 	    AtCameraInput input_dx = input;
 	    AtCameraInput input_dy = input;
@@ -379,6 +379,7 @@ camera_create_ray
 		output.dOdy = (output_dy.origin - output.origin) / step;
 		output.dDdx = (output_dx.dir - output.dir) / step;
 		output.dDdy = (output_dy.dir - output.dir) / step;
+*/
     }
 
 
