@@ -33,6 +33,7 @@ static const char* LensModelNames[] =
     "petzval",
     "tessar_anamorphic",
     "wideangle",
+    "canon_anamorphic",
     NULL
 };
 
