@@ -97,6 +97,50 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
 }
 
 
+
+// returns sensor offset in mm
+float camera_set_focus_infinity(MyCameraData *camera_data)
+{
+	float parallel_ray_height = 0.5;
+    const float target[3] = { 0.0, parallel_ray_height, AI_BIG};
+    float sensor[5] = {0.0f};
+    float out[5] = {0.0f};
+    sensor[4] = camera_data->lambda;
+    float offset = 0.0f;
+    int count = 0;
+
+    // just point through center of aperture
+    float aperture[2] = {0.0f, parallel_ray_height};
+
+    const int S = 4;
+
+    // trace a couple of adjoint rays from there to the sensor and
+    // see where we need to put the sensor plane.
+    for(int s=1; s<=S; s++){
+      for(int k=0; k<2; k++){
+      	
+        // reset aperture
+        aperture[0] = 0.0f;
+        aperture[1] = 0.5f;
+
+        lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
+
+        if(sensor[2+k] > 0){
+            offset += sensor[k]/sensor[2+k];
+            count ++;
+        }
+      }
+    }
+
+    offset /= count; 
+    
+    if(offset == offset){ // check NaN cases
+		return offset;
+    }
+}
+
+
+
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
 AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
     AtVector coord(100.0, 0.0, 100.0);
@@ -198,6 +242,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 				    r1 = xor128() / 4294967296.0f;
 				    r2 = xor128() / 4294967296.0f;
 			    }
+
 		    	concentric_disk_sample(r1, r2, unit_disk, true);
 		    }
 
@@ -213,6 +258,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 		    		r1 = xor128() / 4294967296.0f;
 		    		r2 = xor128() / 4294967296.0f;
 	    		}
+
 	    		lens_sample_aperture(&aperture[0], &aperture[1], r1, r2, camera_data->aperture_radius, camera_data->aperture_blades);
 	    	}
 	    }
@@ -242,6 +288,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 			++tries;
 			continue;
 		}
+
 
 		// crop at inward facing pupil
 		const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
@@ -325,6 +372,7 @@ node_update
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 	camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 
+
     AiMsgInfo("");
 
 	load_lens_constants(camera_data);
@@ -342,28 +390,35 @@ node_update
 	AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
 	AiMsgInfo("[POTA] --------------------------------------");
 
-    /*
-	// focus test, calculate sensor shift for correct focusing
-    AiMsgInfo("[POTA] calculating sensor shift at infinity focus:");
-	float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
 
+    /*
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
 	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
-
-	AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
     */
+
 
 	// dumb linear brute force focus search, replace with quicker, more precise method
     float best_sensor_shift = 0.0f;
     float closest_distance = AI_BIG;
     brute_force_focus_search(AiNodeGetFlt(node, "focus_distance"), best_sensor_shift, closest_distance, camera_data);
-
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
 	camera_data->sensor_shift = -best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
+	// average guesses infinity focus search
     float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
-    AiMsgInfo("[POTA] sensor_shift to focus at infinity: %f", infinity_focus_sensor_shift);
+    AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
+
+	// brute force infinity focus search
+	float best_sensor_shift_infinity = 0.0f;
+	float closest_distance_infinity = AI_BIG;
+    brute_force_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera_data);
+    AiMsgInfo("[POTA] sensor_shift [brute force forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
+
+    // bidirectional parallel infinity focus search
+    float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera_data);
+    AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
+
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
