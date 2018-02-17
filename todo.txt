@@ -8,11 +8,9 @@ BASE RELEASE:
 
 
 POINT RELEASES:
-	figure out why trying to shoot ray multiple times degrades image sampling
 	fix nans of double gauss angenieux
 	check for intersections along P->Lens path
 	come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
-	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 	add more lens descriptions (different focal lengths)
 	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
