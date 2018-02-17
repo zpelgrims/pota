@@ -131,7 +131,8 @@ node_finish
 
    delete bokeh_data;
 }
- 
+
+
 shader_evaluate
 {
    PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);

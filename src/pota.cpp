@@ -19,7 +19,8 @@ enum
     p_aperture_blades,
     p_backward_samples,
     p_minimum_rgb,
-    p_bokeh_exr_path
+    p_bokeh_exr_path,
+    p_proper_ray_derivatives
 };
 
 
@@ -161,14 +162,24 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
     while(ray_succes == false && tries <= camera_data->vignetting_retries){
 
-    	sensor[5] = {0.0f};
-	    aperture[5] = {0.0f};
-	    out[5] = {0.0f};
-	    sensor[4] = camera_data->lambda;
-
-	    // set sensor position coords
+    	// set sensor position coords
 	    sensor[0] = input_sx * (camera_data->sensor_width * 0.5f);
 	    sensor[1] = input_sy * (camera_data->sensor_width * 0.5f);
+    	sensor[2] = 0.0f;
+    	sensor[3] = 0.0f;
+	    sensor[4] = camera_data->lambda;
+
+	    aperture[0] = 0.0f;
+	    aperture[1] = 0.0f;
+	    aperture[2] = 0.0f;
+	    aperture[3] = 0.0f;
+	    aperture[4] = 0.0f;
+
+	    out[0] = 0.0f;
+	    out[1] = 0.0f;
+	    out[2] = 0.0f;
+	    out[3] = 0.0f;
+	    out[4] = 0.0f;
 
 	    
 	    if (!camera_data->dof) // no dof, all rays through single aperture point
@@ -245,6 +256,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 	if (ray_succes == false) weight = 0.0f;
 
+
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
@@ -286,6 +298,7 @@ node_parameters
     AiParameterInt("backward_samples", 3);
     AiParameterFlt("minimum_rgb", 3.0f);
     AiParameterStr("bokeh_exr_path", "");
+    AiParameterBool("proper_ray_derivatives", true);
 }
 
 
@@ -310,6 +323,7 @@ node_update
 	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+	camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 
     AiMsgInfo("");
 
@@ -369,79 +383,74 @@ camera_create_ray
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
 	int tries = 0;
-	float r1 = 0.0;
-	float r2 = 0.0;
+	float random1 = 0.0;
+	float random2 = 0.0;
 
-    trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, r1, r2, output.weight, output.origin, output.dir, camera_data);
+    trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, output.weight, output.origin, output.dir, camera_data);
 
-    //now only need the random aperture parameters to re-trace to the exact same point
-
-
-    // EXPERIMENTAL, I KNOW IT IS INCORRECT BUT AT LEAST THE VISUAL PROBLEM IS RESOLVED
-    // HAVE TO DO THIS BECAUSE OF SHOOTING MULTIPLE RAYS
-    // NOT CALCULATING THE DERIVATIVES PROBS AFFECTS TEXTURE I/O
+    // calculate new ray derivatives
+    // sucks a bit to have to trace 3 rays.. Bit slow
     if (tries > 0){
-        //output.dOdy = output.origin;
-        //output.dDdy = output.dir;
+    	if (!camera_data->proper_ray_derivatives){
+	        output.dOdy = output.origin;
+	        output.dDdy = output.dir;
+		} else {
+			float step = 0.001;
+		    AtCameraInput input_dx = input;
+		    AtCameraInput input_dy = input;
+		    AtCameraOutput output_dx;
+		    AtCameraOutput output_dy;
 
-        float step = 0.001;
-	    AtCameraInput input_dx = input;
-	    AtCameraInput input_dy = input;
-	    AtCameraOutput output_dx;
-	    AtCameraOutput output_dy;
+		    input_dx.sx += input.dsx * step;
+		    input_dy.sy += input.dsy * step;
 
-	    input_dx.sx += input.dsx * step;
-	    input_dy.sy += input.dsy * step;
+		    trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, output_dx.weight, output_dx.origin, output_dx.dir, camera_data);
+		    trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, output_dy.weight, output_dy.origin, output_dy.dir, camera_data);
 
-	    // CreateRay(node, input, output)
-		// CreateRay(node, input_dx, output_dx)
-	    trace_ray(false, tries, input_dx.sx, input_dx.sy, r1, r2, r1, r2, output_dx.weight, output_dx.origin, output_dx.dir, camera_data);
-
-		// CreateRay(node, input_dy, output_dy)
-	    trace_ray(false, tries, input_dy.sx, input_dy.sy, r1, r2, r1, r2, output_dy.weight, output_dy.origin, output_dy.dir, camera_data);
-
-	    output.dOdx = (output_dx.origin - output.origin) / step;
-		output.dOdy = (output_dy.origin - output.origin) / step;
-		output.dDdx = (output_dx.dir - output.dir) / step;
-		output.dDdy = (output_dy.dir - output.dir) / step;
+		    output.dOdx = (output_dx.origin - output.origin) / step;
+			output.dOdy = (output_dy.origin - output.origin) / step;
+			output.dDdx = (output_dx.dir - output.dir) / step;
+			output.dDdy = (output_dy.dir - output.dir) / step;
+		}
     }
 
 
 
-	/* NOT NEEDED FOR ARNOLD, GOOD INFO THOUGH FOR OTHER RENDER ENGINES
-		// now let's go world space:
-		// initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
+	/* 
 
-		view_cam_init_frame(p, &p->v[0].hit);
-		
-		for(int k=0;k<3;k++)
-		{
-			//this is the world space position of the outgoing ray:
-		    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
-		                        + camera_space_pos[1] * p->v[0].hit.b[k] 
-		                        + camera_space_pos[2] * p->v[0].hit.n[k];
+	NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
+	// initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
-			//this is the world space direction of the outgoing ray:
-		    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
-		                       + camera_space_omega[1] * p->v[0].hit.b[k]
-		                       + camera_space_omega[2] * p->v[0].hit.n[k];
-		}
+	view_cam_init_frame(p, &p->v[0].hit);
+	
+	for(int k=0;k<3;k++)
+	{
+		//this is the world space position of the outgoing ray:
+	    p->v[0].hit.x[k] +=   camera_space_pos[0] * p->v[0].hit.a[k] 
+	                        + camera_space_pos[1] * p->v[0].hit.b[k] 
+	                        + camera_space_pos[2] * p->v[0].hit.n[k];
 
-		// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
-		const float R = camera_data->lens_outer_pupil_curvature_radius;
-		// recompute full frame:
-		float n[3] = {0.0f};
-		for(int k=0;k<3;k++)
-		    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
-		            + p->v[0].hit.b[k] * out[1]/R 
-		            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
+		//this is the world space direction of the outgoing ray:
+	    p->e[1].omega[k] =   camera_space_omega[0] * p->v[0].hit.a[k] 
+	                       + camera_space_omega[1] * p->v[0].hit.b[k]
+	                       + camera_space_omega[2] * p->v[0].hit.n[k];
+	}
 
-		for(int k=0;k<3;k++) p->v[0].hit.n[k] = n[k];
+	// now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
+	const float R = camera_data->lens_outer_pupil_curvature_radius;
+	// recompute full frame:
+	float n[3] = {0.0f};
+	for(int k=0;k<3;k++)
+	    n[k] +=   p->v[0].hit.a[k] * out[0]/R 
+	            + p->v[0].hit.b[k] * out[1]/R 
+	            + p->v[0].hit.n[k] * (out[2] + R)/fabsf(R);
 
-		// also clip to valid pixel range.
-		if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
-			p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
-			return 0.0f;
+	for(int k=0;k<3;k++) p->v[0].hit.n[k] = n[k];
+
+	// also clip to valid pixel range.
+	if(p->sensor.pixel_i < 0.0f || p->sensor.pixel_i >= view_width() ||
+		p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
+		return 0.0f;
 	*/
 } 
 

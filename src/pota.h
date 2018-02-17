@@ -53,6 +53,8 @@ struct MyCameraData
 
     bool run_intersection_tests;
     int count;
+
+    bool proper_ray_derivatives;
 };
 
 extern struct MyCameraData camera_data;
