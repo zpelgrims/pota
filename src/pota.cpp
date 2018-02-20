@@ -27,6 +27,8 @@ enum
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] =
 {
+    "takumar_1969",
+    "zeiss_biotar_1927",
     "fisheye",
     "fisheye_aspherical",
     "double_gauss",
