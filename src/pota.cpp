@@ -42,6 +42,7 @@ static const char* LensModelNames[] =
 
 
 // returns sensor offset in mm
+// traces rays backwards through the lens
 float camera_set_focus(float dist, MyCameraData *camera_data)
 {
     const float target[3] = { 0.0, 0.0, dist};
@@ -50,7 +51,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
     sensor[4] = camera_data->lambda;
     float offset = 0.0f;
     int count = 0;
-    float scale_samples = 0.5f;
+    float scale_samples = 0.1f;
 
     // just point through center of aperture
     float aperture[2] = {0.0f, 0.0f};
@@ -103,7 +104,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
 // returns sensor offset in mm
 float camera_set_focus_infinity(MyCameraData *camera_data)
 {
-	float parallel_ray_height = 0.5;
+	float parallel_ray_height = camera_data->lens_aperture_housing_radius * 0.1;
     const float target[3] = { 0.0, parallel_ray_height, AI_BIG};
     float sensor[5] = {0.0f};
     float out[5] = {0.0f};
@@ -123,7 +124,7 @@ float camera_set_focus_infinity(MyCameraData *camera_data)
       	
         // reset aperture
         aperture[0] = 0.0f;
-        aperture[1] = 0.5f;
+        aperture[1] = parallel_ray_height;
 
         lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
 
@@ -136,9 +137,8 @@ float camera_set_focus_infinity(MyCameraData *camera_data)
 
     offset /= count; 
     
-    if(offset == offset){ // check NaN cases
-		return offset;
-    }
+    // check NaN cases
+    if(offset == offset) return offset;
 }
 
 
@@ -160,7 +160,7 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
     float out[5] = {0.0f};
 
     sensor[4] = camera_data->lambda;
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.05;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.2;
 
     lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -177,14 +177,14 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
 	AtVector ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	AtVector ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
-    return line_plane_intersection(ray_origin * 0.1, ray_dir * -0.1).z;
+    return line_plane_intersection(ray_origin * -0.1, ray_dir * -0.1).z;
 }
 
 
 void brute_force_focus_search(float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
     float distance = 0.0;
 
-    for (float sensorshift = -20.0f; sensorshift <= 20.0f; sensorshift += 0.0005f){
+    for (float sensorshift = -45.0f; sensorshift <= 45.0f; sensorshift += 0.001f){
         distance = camera_get_y0_intersection_distance(sensorshift, camera_data);
         float new_distance = focus_distance - distance;
 
@@ -194,6 +194,74 @@ void brute_force_focus_search(float focus_distance, float &best_sensor_shift, fl
         }
     }
 }
+
+
+
+inline void trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
+{
+
+    float sensor[5] = {0.0f};
+    float aperture[5] = {0.0f};
+    float out[5] = {0.0f};
+    sensor[4] = camera_data->lambda;
+
+
+	// set sensor position coords
+    sensor[0] = 0.0f;
+    sensor[1] = 0.0f;
+	sensor[2] = 0.0f;
+	sensor[3] = 0.0f;
+    sensor[4] = camera_data->lambda;
+
+    aperture[0] = 0.0f;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.2;
+    aperture[2] = 0.0f;
+    aperture[3] = 0.0f;
+    aperture[4] = 0.0f;
+
+    out[0] = 0.0f;
+    out[1] = 0.0f;
+    out[2] = 0.0f;
+    out[3] = 0.0f;
+    out[4] = 0.0f;
+
+	lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
+
+    // move to beginning of polynomial
+	sensor[0] += sensor[2] * sensor_shift;
+	sensor[1] += sensor[3] * sensor_shift;
+
+
+	// propagate ray from sensor to outer lens element
+    float transmittance = lens_evaluate(sensor, out, camera_data);
+
+
+	// convert from sphere/sphere space to camera space
+	float camera_space_pos[3];
+	float camera_space_omega[3];
+	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+
+	AtVector origin;
+	AtVector direction;
+
+    origin.x = camera_space_pos[0];
+    origin.y = camera_space_pos[1];
+    origin.z = camera_space_pos[2];
+    direction.x = camera_space_omega[0];
+    direction.y = camera_space_omega[1];
+    direction.z = camera_space_omega[2];
+
+
+	origin *= -0.1; // convert to cm
+    direction *= -0.1; //reverse rays and convert to cm
+
+    float y0 = line_plane_intersection(origin, direction).z;
+
+    AiMsgInfo("[POTA] y=0 intersection: %f", y0);
+}
+
+
+
 
 
 inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, AtRGB &weight, AtVector &origin, AtVector &direction, MyCameraData *camera_data)
@@ -320,7 +388,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
     direction.z = camera_space_omega[2];
 
 
-	origin *= 0.1; // convert to cm
+	origin *= -0.1; // convert to cm
     direction *= -0.1; //reverse rays and convert to cm
 
     // Nan bailout
@@ -373,6 +441,7 @@ node_update
 	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
 	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 	camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
+	camera_data->sensor_shift = 0.0;
 
 
     AiMsgInfo("");
@@ -393,11 +462,13 @@ node_update
 	AiMsgInfo("[POTA] --------------------------------------");
 
 
-    /*
+	AiMsgInfo("[POTA] focus distance: %f", camera_data->focus_distance);
+
+    
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
+	//camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
-    */
+    
 
 
 	// dumb linear brute force focus search, replace with quicker, more precise method
@@ -420,6 +491,10 @@ node_update
     // bidirectional parallel infinity focus search
     float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera_data);
     AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
+
+
+    // double check where y=0 intersection point is, should be the same as focus distance
+    trace_ray_focus_check(camera_data->sensor_shift, camera_data);
 
 
     AiMsgInfo("");
@@ -447,6 +522,7 @@ camera_create_ray
 
     // calculate new ray derivatives
     // sucks a bit to have to trace 3 rays.. Bit slow
+    // is there an analytical solution to this?..
     if (tries > 0){
     	if (!camera_data->proper_ray_derivatives){
 	        output.dOdy = output.origin;

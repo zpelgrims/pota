@@ -2,10 +2,11 @@ BASE RELEASE:
 
 	compile and package for windows and osx
 	render comparison image
-	double gauss angenieux infinity focus at -0.4? in lensview it seems to be ok?
 	sample_bokeh not working on windows? Check differences
-	why are some of the infinity focuses so off?
+	why are some of the infinity focuses so off? might have to adjust them
 	previous focus made nicer bokeh with petzval.. Why? Which one is the most correct?
+
+	compute focal length before lens generation so I can properly match the lenses
 
 
 POINT RELEASES:
