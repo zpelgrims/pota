@@ -280,7 +280,6 @@ inline void load_lens_constants (MyCameraData *camera_data)
   AiMsgInfo("[POTA] lens_aperture_pos: %f", camera_data->lens_aperture_pos);
   AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera_data->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera_data->lens_outer_pupil_curvature_radius);
-  AiMsgInfo("[POTA] lens_focal_length: %f", camera_data->lens_focal_length);
   AiMsgInfo("[POTA] lens_field_of_view: %f", camera_data->lens_field_of_view);
   AiMsgInfo("[POTA] --------------------------------------");
 

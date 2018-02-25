@@ -54,8 +54,6 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
     float offset = 0.0f;
     int count = 0;
     float scale_samples = 0.1f;
-
-    // just point through center of aperture
     float aperture[2] = {0.0f, 0.0f};
 
     const int S = 4;
@@ -66,8 +64,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
       for(int k=0; k<2; k++){
       	
         // reset aperture
-        aperture[0] = 0.0f;
-        aperture[1] = 0.0f;
+        aperture[0] = aperture[1] = 0.0f;
 
         aperture[k] = camera_data->lens_aperture_housing_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = (.2, .4, .6, .8) * scale_samples
 
@@ -143,10 +140,11 @@ float camera_set_focus_infinity(MyCameraData *camera_data)
 }
 
 
-std::vector<float> logarithmic_values (){
+std::vector<float> logarithmic_values ()
+{
     float min = 0.0;
     float max = 45.0;
-    float exponent = 2.0; // Sharpness
+    float exponent = 2.0; // sharpness
     std::vector<float> log;
 
     for(float i = -1.0; i <= 1.0; i += 0.0001) {
@@ -159,7 +157,8 @@ std::vector<float> logarithmic_values (){
 
 
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
-AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
+AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection)
+{
     AtVector coord(100.0, 0.0, 100.0);
     AtVector planeNormal(0.0, 1.0, 0.0);
     rayDirection = AiV3Normalize(rayDirection);
@@ -201,13 +200,11 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
 // focus_distance is in mm
 void logarithmic_focus_search(const float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
-    float distance = 0.0;
     std::vector<float> log = logarithmic_values();
 
     for (float sensorshift : log){
-        float intersection_distance = 0.0;
-
-        AiMsgInfo("sensorshift: %f", sensorshift);
+    	float intersection_distance = 0.0;
+        //AiMsgInfo("sensorshift: %f", sensorshift);
 
         camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data);
         //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
@@ -216,8 +213,7 @@ void logarithmic_focus_search(const float focus_distance, float &best_sensor_shi
         if (new_distance < closest_distance && new_distance > 0.0){
             closest_distance = new_distance;
             best_sensor_shift = sensorshift;
-
-            AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
+            //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
         }
     }
 }
@@ -231,7 +227,7 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
     sensor[4] = camera_data->lambda;
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.2;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.1;
 
 	lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -290,34 +286,22 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
-    sensor[4] = camera_data->lambda;
 
     while(ray_succes == false && tries <= camera_data->vignetting_retries){
 
     	// set sensor position coords
 	    sensor[0] = input_sx * (camera_data->sensor_width * 0.5f);
 	    sensor[1] = input_sy * (camera_data->sensor_width * 0.5f);
-    	sensor[2] = 0.0f;
-    	sensor[3] = 0.0f;
+    	sensor[2] = sensor[3] = 0.0f;
 	    sensor[4] = camera_data->lambda;
 
-	    aperture[0] = 0.0f;
-	    aperture[1] = 0.0f;
-	    aperture[2] = 0.0f;
-	    aperture[3] = 0.0f;
-	    aperture[4] = 0.0f;
-
-	    out[0] = 0.0f;
-	    out[1] = 0.0f;
-	    out[2] = 0.0f;
-	    out[3] = 0.0f;
-	    out[4] = 0.0f;
+	    aperture[0] = aperture[1] = aperture[2] = aperture[3]  = aperture[4] = 0.0f;
+	    out[0] = out[1] = out[2] = out[3] = out[4] = 0.0f;
 
 	    
 	    if (!camera_data->dof) // no dof, all rays through single aperture point
 	    { 
-	    	aperture[0] = 0.0;
-	    	aperture[1] = 0.0;
+	    	aperture[0] = aperture[1] = 0.0;
 
 	    } 
 	    else if (camera_data->dof && camera_data->aperture_blades < 2)
@@ -509,7 +493,7 @@ node_update
 
     // double check where y=0 intersection point is, should be the same as focus distance
     if(!trace_ray_focus_check(camera_data->sensor_shift, camera_data)){
-        AiMsgWarning("[POTA] focus check failed");
+        AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
     }
 
     AiMsgInfo("");
