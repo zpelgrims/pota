@@ -498,11 +498,11 @@ node_update
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
     */
 
-	// dumb linear brute force focus search, replace with quicker, more precise method
+	// logartihmic focus search
     float best_sensor_shift = 0.0f;
     float closest_distance = AI_BIG;
     logarithmic_focus_search(camera_data->focus_distance, best_sensor_shift, closest_distance, camera_data);
-	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
+	AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
 	// average guesses infinity focus search
@@ -510,11 +510,11 @@ node_update
     AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
     
     
-	// brute force infinity focus search
+	// logarithmic infinity focus search
 	float best_sensor_shift_infinity = 0.0f;
 	float closest_distance_infinity = AI_BIG;
     logarithmic_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera_data);
-    AiMsgInfo("[POTA] sensor_shift [brute force forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
+    AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
     
     // bidirectional parallel infinity focus search
     float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera_data);
