@@ -114,6 +114,20 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
 inline void load_lens_constants (MyCameraData *camera_data)
 {
   switch (camera_data->lensModel){
+    case NONE:
+    {
+      camera_data->lens_name = "petzval"; // descriptive name of the lens
+      camera_data->lens_outer_pupil_radius = 11.250000; // scene facing radius in mm
+      camera_data->lens_inner_pupil_radius = 6.750000; // sensor facing radius in mm
+      camera_data->lens_length = 82.800003; // overall lens length in mm
+      camera_data->lens_focal_length = 37.500000; // approximate lens focal length in mm (BFL)
+      camera_data->lens_aperture_pos = 22.949999; // distance aperture -> outer pupil in mm
+      camera_data->lens_aperture_housing_radius = 7.500000; // lens housing radius at the aperture
+      camera_data->lens_outer_pupil_curvature_radius = 39.675003; // radius of curvature of the outer pupil
+      camera_data->lens_field_of_view = 0.944800; // cosine of the approximate field of view assuming a 35mm image
+
+    } break;
+
     case petzval:
     {
       camera_data->lens_name = "petzval"; // descriptive name of the lens
@@ -227,8 +241,34 @@ inline void load_lens_constants (MyCameraData *camera_data)
 
     } break;
 
+    case takumar_1969:
+    {
+      camera_data->lens_name = "1969 pentax takumar 50mm"; // descriptive name of the lens
+      camera_data->lens_outer_pupil_radius = 21.000000; // scene facing radius in mm
+      camera_data->lens_inner_pupil_radius = 16.000000; // sensor facing radius in mm
+      camera_data->lens_length = 83.804993; // overall lens length in mm
+      camera_data->lens_focal_length = 31.750000; // approximate lens focal length in mm (BFL)
+      camera_data->lens_aperture_pos = 23.730000; // distance aperture -> outer pupil in mm
+      camera_data->lens_aperture_housing_radius = 13.200000; // lens housing radius at the aperture
+      camera_data->lens_outer_pupil_curvature_radius = 55.000000; // radius of curvature of the outer pupil
+      camera_data->lens_field_of_view = 0.913921; // cosine of the approximate field of view assuming a 35mm image
 
-    // need to add a default case + other cases
+    } break;
+
+    case zeiss_biotar_1927:
+    {
+      camera_data->lens_name = "1927 zeiss biotar 58mm"; // descriptive name of the lens
+      camera_data->lens_outer_pupil_radius = 20.299999; // scene facing radius in mm
+      camera_data->lens_inner_pupil_radius = 15.660000; // sensor facing radius in mm
+      camera_data->lens_length = 91.663193; // overall lens length in mm
+      camera_data->lens_focal_length = 37.700001; // approximate lens focal length in mm (BFL)
+      camera_data->lens_aperture_pos = 24.939999; // distance aperture -> outer pupil in mm
+      camera_data->lens_aperture_housing_radius = 13.049999; // lens housing radius at the aperture
+      camera_data->lens_outer_pupil_curvature_radius = 48.487999; // radius of curvature of the outer pupil
+      camera_data->lens_field_of_view = 0.926006; // cosine of the approximate field of view assuming a 35mm image
+
+    } break;
+
   }
 
   AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
@@ -258,6 +298,16 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
 
   float out_transmittance = 0.0f;
   switch (camera_data->lensModel){
+
+    case NONE:
+    {
+      out[0] =  + 61.6861 *dx + 0.516318 *x + 0.239174 *x*lambda + 6.09756 *dx*lambda + 0.0418018 *y*dx*dy + 0.0291763 *x*y*dy + 0.0384633 *lens_ipow(x, 2)*dx + -41.8684 *lens_ipow(dx, 3) + -0.16516 *x*lens_ipow(lambda, 2) + -41.0878 *dx*lens_ipow(dy, 2) + 0.000319801 *x*lens_ipow(y, 2) + 0.000310337 *lens_ipow(x, 3) + 0.431597 *x*lens_ipow(dy, 2) + 0.417681 *x*lens_ipow(dx, 2) + 0.0106198 *lens_ipow(y, 2)*dx + -4.03513 *dx*lens_ipow(lambda, 3) + 1.11768e-05 *x*lens_ipow(y, 2)*lambda + -0.000382566 *lens_ipow(x, 2)*dx*lambda + -8.637e-05 *lens_ipow(x, 2)*y*dx*dy*lambda + 5.14981e-06 *lens_ipow(x, 7)*lens_ipow(dx, 2)*lens_ipow(lambda, 2) + 13819.6 *lens_ipow(dx, 9)*lens_ipow(lambda, 2) + 1.71189e-08 *lens_ipow(x, 5)*lens_ipow(y, 3)*lens_ipow(dx, 2)*dy + 3.21537e-10 *lens_ipow(x, 9)*lens_ipow(lambda, 2) + 0.00130788 *lens_ipow(x, 3)*lens_ipow(y, 2)*lens_ipow(dx, 4)*lens_ipow(dy, 2) + 0.000150672 *lens_ipow(x, 6)*lens_ipow(dx, 3)*lens_ipow(lambda, 2) + 5.82064e-14 *lens_ipow(x, 7)*lens_ipow(y, 4) + -0.0568649 *lens_ipow(x, 4)*lens_ipow(dx, 5)*lens_ipow(lambda, 2) + 6.75549e-08 *lens_ipow(x, 8)*dx*lens_ipow(lambda, 2);
+      out[1] =  + 0.453506 *y + 59.1587 *dy + 19.1364 *dy*lambda + 0.592232 *y*lambda + 0.411922 *y*lens_ipow(dx, 2) + 0.0392662 *lens_ipow(y, 2)*dy + 0.451829 *y*lens_ipow(dy, 2) + 0.0283685 *x*y*dx + -42.1243 *lens_ipow(dx, 2)*dy + -0.817315 *y*lens_ipow(lambda, 2) + 0.000312315 *lens_ipow(x, 2)*y + -19.7228 *dy*lens_ipow(lambda, 2) + 0.000313434 *lens_ipow(y, 3) + 0.0101854 *lens_ipow(x, 2)*dy + -41.478 *lens_ipow(dy, 3) + 0.395356 *y*lens_ipow(lambda, 3) + 1.6101e-05 *lens_ipow(y, 3)*lambda + 8.49311e-06 *lens_ipow(x, 2)*y*lambda + 7.11498 *dy*lens_ipow(lambda, 4) + -7.43062e-05 *lens_ipow(y, 3)*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -9.90812e-06 *lens_ipow(y, 5)*lens_ipow(dx, 2)*lens_ipow(dy, 2) + 1.08674e-14 *lens_ipow(x, 2)*lens_ipow(y, 9) + 2.57069e-11 *lens_ipow(y, 9)*lens_ipow(dx, 2) + 2.33768e-09 *lens_ipow(x, 4)*lens_ipow(y, 4)*lens_ipow(dx, 2)*dy + 1.52162e-14 *lens_ipow(x, 6)*lens_ipow(y, 5) + -0.313837 *lens_ipow(x, 2)*y*lens_ipow(dy, 8) + 4.28086e-05 *x*lens_ipow(y, 5)*dx*lens_ipow(dy, 4) + 0.00203743 *x*lens_ipow(y, 4)*dx*lens_ipow(dy, 5);
+      out[2] =  + -1.63943 *dx + -0.0305953 *x + 0.0323359 *dx*lambda + -0.0004223 *lens_ipow(x, 2)*dx + 1.74614e-06 *x*lens_ipow(y, 2) + 4.9289 *lens_ipow(dx, 3)*lambda + -0.0847201 *x*lens_ipow(dy, 2)*lambda + -1.54502e-05 *x*lens_ipow(y, 2)*lambda + -8.9172e-06 *lens_ipow(x, 3)*lambda + -0.00275435 *x*y*dy*lambda + -0.000390955 *lens_ipow(x, 2)*dx*lambda + -0.000707983 *lens_ipow(y, 2)*dx*lambda + -2.05796 *dx*lens_ipow(dy, 2)*lambda + -0.0998601 *y*dx*dy*lambda + 0.0184584 *x*lens_ipow(dx, 4) + 0.0249779 *y*dx*dy*lens_ipow(lambda, 2) + -8.31442 *lens_ipow(dx, 3)*lens_ipow(lambda, 2) + 1.57657 *lens_ipow(dx, 5) + 4.83602e-06 *lens_ipow(x, 3)*lens_ipow(lambda, 2) + 0.0421838 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.00116668 *x*y*dy*lens_ipow(lambda, 2) + -0.020373 *x*lens_ipow(dx, 2)*lens_ipow(lambda, 3) + 4.0944 *lens_ipow(dx, 3)*lens_ipow(lambda, 3) + -1.18558 *x*y*lens_ipow(dx, 4)*lens_ipow(dy, 3) + 20.8038 *dx*lens_ipow(dy, 8) + 2134.98 *lens_ipow(dx, 5)*lens_ipow(dy, 4) + 0.000186958 *lens_ipow(x, 2)*lens_ipow(y, 2)*lens_ipow(dx, 3)*lens_ipow(dy, 2) + 0.000963685 *x*lens_ipow(lambda, 9);
+      out[3] =  + -0.030348 *y + -1.6733 *dy + 0.226598 *dy*lambda + -0.000739868 *y*lambda + 0.0043513 *y*lens_ipow(dx, 2) + -0.000633417 *lens_ipow(y, 2)*dy + -0.00400459 *y*lens_ipow(dy, 2) + 0.0669129 *x*dx*dy + -9.59075e-05 *x*y*dx + 2.91954 *lens_ipow(dx, 2)*dy + 0.000576135 *y*lens_ipow(lambda, 2) + -0.334116 *dy*lens_ipow(lambda, 2) + -3.05205e-06 *lens_ipow(y, 3) + 0.000314298 *lens_ipow(x, 2)*dy + 0.885659 *lens_ipow(dy, 3) + 7.50285e-05 *lens_ipow(x, 2)*dy*lambda + -0.113294 *lens_ipow(dy, 3)*lambda + 0.176171 *dy*lens_ipow(lambda, 3) + -6.45139e-07 *lens_ipow(y, 3)*lambda + 4.94668e-05 *x*y*dx*lambda + 0.00640416 *x*dx*dy*lambda + -0.0369238 *x*lens_ipow(dx, 3)*dy + 2.5536 *lens_ipow(dx, 2)*lens_ipow(dy, 3) + 1.94879 *lens_ipow(dy, 5) + -0.000400921 *x*y*dx*lens_ipow(dy, 2) + 0.0245005 *y*lens_ipow(dy, 4) + 5.94929e-06 *lens_ipow(x, 3)*dx*dy + 0.011227 *y*lens_ipow(dx, 4)*lambda;
+      out_transmittance =  + 0.59399  + 0.836383 *lambda + -0.000344805 *x*dx + -7.02536e-06 *lens_ipow(x, 2) + -1.73936 *lens_ipow(lambda, 2) + 1.70047 *lens_ipow(lambda, 3) + -0.644121 *lens_ipow(lambda, 4) + -0.150549 *lens_ipow(dx, 4) + -0.449125 *lens_ipow(dx, 2)*lens_ipow(dy, 2) + -1.08274e-05 *lens_ipow(x, 2)*y*dy + -1.09547e-05 *x*lens_ipow(y, 2)*dx + -4.56631e-07 *lens_ipow(x, 2)*lens_ipow(y, 2) + -3.11249e-07 *lens_ipow(y, 4) + -0.00046016 *lens_ipow(y, 2)*lens_ipow(dy, 2) + -2.35642e-05 *lens_ipow(y, 3)*dy + -2.22792e-09 *lens_ipow(x, 6) + -1.06372e-07 *lens_ipow(x, 5)*dx + -1.21435e-10 *lens_ipow(y, 6) + -5.63631e-10 *lens_ipow(x, 7)*dx + -4.88522e-12 *lens_ipow(x, 4)*lens_ipow(y, 4) + 1.25574e-08 *lens_ipow(x, 3)*lens_ipow(y, 3)*dx*dy + -2.84961e-08 *lens_ipow(x, 6)*lens_ipow(dx, 2) + -3.7395e-13 *lens_ipow(x, 2)*lens_ipow(y, 6) + 2.03261e-06 *lens_ipow(y, 4)*lens_ipow(dy, 4)*lambda + 7.20677e-05 *lens_ipow(x, 4)*lens_ipow(dx, 6) + -3.53471e-15 *lens_ipow(x, 8)*lens_ipow(y, 2) + -3.64078e-15 *lens_ipow(x, 10) + 3.93018e-08 *lens_ipow(x, 5)*y*lens_ipow(dx, 3)*dy*lambda;
+    } break;
+
 
     case petzval:
     {
@@ -338,6 +388,26 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
       out_transmittance =  + -0.142169  + 1.92514 *lambda + 6.72398e-05 *y*dy + 0.00909521 *lens_ipow(dy, 2) + 0.00605164 *lens_ipow(dx, 2) + -5.08868 *lens_ipow(lambda, 2) + 7.22269 *lens_ipow(lambda, 3) + -5.35032 *lens_ipow(lambda, 4) + -0.929084 *lens_ipow(dx, 4) + -0.0421714 *y*lens_ipow(dy, 3) + -8.53396e-05 *lens_ipow(y, 2)*lens_ipow(dx, 2) + -2.71483 *lens_ipow(dx, 2)*lens_ipow(dy, 2) + 3.43471e-07 *lens_ipow(x, 2)*y*dy + -1.95128 *lens_ipow(dy, 4) + -2.76707e-09 *lens_ipow(y, 4) + -0.0296087 *y*lens_ipow(dx, 2)*dy + -8.3443e-07 *lens_ipow(x, 3)*dx + -0.00036513 *lens_ipow(y, 2)*lens_ipow(dy, 2) + -2.9618e-08 *lens_ipow(x, 4) + -5.77741e-05 *lens_ipow(x, 2)*lens_ipow(dy, 2) + -1.16249e-06 *lens_ipow(y, 3)*dy + -0.00011303 *lens_ipow(x, 2)*lens_ipow(dx, 2)*lambda + -0.00365224 *x*lens_ipow(dx, 3)*lambda + 1.62955 *lens_ipow(lambda, 5) + -0.00280221 *x*y*lens_ipow(dx, 3)*dy + -5.56816e-11 *lens_ipow(x, 4)*lens_ipow(y, 2)*lambda + -2.4492e-11 *lens_ipow(x, 7)*dx + -3.41091e-13 *lens_ipow(x, 8);
     } break;
 
+
+    case takumar_1969:
+    {
+      out[0] =  + 49.8032 *dx + 0.0143226 *x*y*dy + 0.0149205 *lens_ipow(x, 2)*dx + -20.8277 *lens_ipow(dx, 3) + -21.2379 *dx*lens_ipow(dy, 2) + -0.000546669 *x*lens_ipow(y, 2) + -0.00103006 *lens_ipow(x, 3) + 0.300221 *x*lens_ipow(dx, 2) + 0.00687478 *lens_ipow(y, 2)*dx + 0.556502 *x*lens_ipow(dx, 2)*lambda + 1.14168 *x*lens_ipow(dy, 2)*lambda + 0.000347782 *x*lens_ipow(y, 2)*lambda + 0.00191234 *lens_ipow(x, 3)*lambda + 0.0160337 *lens_ipow(x, 2)*dx*lambda + -0.00119575 *lens_ipow(x, 3)*lens_ipow(lambda, 2) + 0.00142374 *lens_ipow(x, 3)*lens_ipow(dy, 2) + -0.632997 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.000748107 *x*lens_ipow(y, 2)*lens_ipow(dy, 2) + -0.00165018 *lens_ipow(x, 3)*lens_ipow(dy, 2)*lambda + -3.27465e-05 *lens_ipow(x, 4)*dx*lens_ipow(lambda, 2) + -1.81354e-09 *lens_ipow(x, 5)*lens_ipow(y, 2) + -7.07079e-10 *x*lens_ipow(y, 6) + -1.95349 *x*lens_ipow(dx, 4)*lens_ipow(lambda, 2) + -2.73806 *x*lens_ipow(dx, 2)*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -3.13846e-09 *lens_ipow(x, 3)*lens_ipow(y, 4)*lambda + 0.0657627 *x*y*lens_ipow(dy, 3)*lens_ipow(lambda, 3) + -2.56873e-09 *lens_ipow(x, 7)*lens_ipow(lambda, 2) + -0.000182029 *lens_ipow(y, 5)*lens_ipow(dx, 3)*lens_ipow(dy, 3);
+      out[1] =  + -0.141503 *y + 49.4365 *dy + 0.548589 *dy*lambda + 0.41489 *y*lambda + 0.0244066 *lens_ipow(y, 2)*dy + 0.0146213 *x*y*dx + -20.9484 *lens_ipow(dx, 2)*dy + -0.297076 *y*lens_ipow(lambda, 2) + -0.000312083 *lens_ipow(x, 2)*y + -0.000250017 *lens_ipow(y, 3) + 0.00729085 *lens_ipow(x, 2)*dy + -20.3828 *lens_ipow(dy, 3) + 3.33439 *y*lens_ipow(dy, 2)*lambda + 2.51912 *y*lens_ipow(dx, 2)*lambda + -3.78891 *y*lens_ipow(dx, 2)*lens_ipow(lambda, 2) + -1.13034e-06 *lens_ipow(x, 2)*lens_ipow(y, 3) + 0.00048002 *lens_ipow(y, 3)*lens_ipow(dx, 2) + -0.807166 *y*lens_ipow(dx, 2)*lens_ipow(dy, 2) + -5.2979e-07 *lens_ipow(y, 5) + -5.07164 *y*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -2.56011e-05 *lens_ipow(y, 4)*dy*lambda + 1.06779e-06 *lens_ipow(x, 2)*lens_ipow(y, 3)*lambda + -1.08743e-09 *lens_ipow(x, 6)*y + 2.24155 *y*lens_ipow(dx, 2)*lens_ipow(lambda, 4) + 3.04667 *y*lens_ipow(dy, 2)*lens_ipow(lambda, 4) + 0.0920095 *lens_ipow(y, 2)*lens_ipow(dy, 5) + 3.60861e-06 *lens_ipow(x, 4)*y*lens_ipow(dx, 2)*lambda + -6.55673e-12 *lens_ipow(x, 4)*lens_ipow(y, 5);
+      out[2] =  + -0.910038 *dx + -0.0193261 *x + -0.00125658 *x*lambda + -0.000251218 *x*y*dy + -0.000174838 *lens_ipow(x, 2)*dx + 0.4129 *lens_ipow(dx, 3) + 0.0963517 *dx*lens_ipow(dy, 2) + 8.84115e-06 *x*lens_ipow(y, 2) + 2.17952e-05 *lens_ipow(x, 3) + -0.0273656 *x*lens_ipow(dy, 2)*lambda + -4.84779e-05 *lens_ipow(x, 3)*lambda + 6.32952e-05 *lens_ipow(y, 2)*dx*lambda + 2.10771e-08 *lens_ipow(x, 3)*lens_ipow(y, 2) + -2.16392e-07 *lens_ipow(x, 4)*dx + 4.52445e-05 *lens_ipow(x, 3)*lens_ipow(lambda, 2) + -3.78941e-06 *lens_ipow(x, 3)*lens_ipow(dy, 2) + 2.33559e-05 *lens_ipow(x, 2)*y*dx*dy + 0.0814277 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 3) + -2.28441e-08 *lens_ipow(x, 3)*lens_ipow(y, 2)*lambda + -3.87632e-06 *x*lens_ipow(y, 3)*lens_ipow(dx, 2)*dy + -0.0687767 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 4) + 0.00341197 *lens_ipow(y, 2)*lens_ipow(dx, 3)*lens_ipow(lambda, 2) + 2.89162e-11 *lens_ipow(x, 7)*lambda + -0.00400648 *lens_ipow(y, 2)*lens_ipow(dx, 3)*lens_ipow(lambda, 3) + 1.58178e-13 *lens_ipow(x, 5)*lens_ipow(y, 4) + 3.50375e-14 *x*lens_ipow(y, 8) + -6.49335e-09 *lens_ipow(y, 6)*dx*lens_ipow(dy, 2) + -5.95238e-08 *lens_ipow(x, 5)*lens_ipow(lambda, 6);
+      out[3] =  + -0.0178342 *y + -0.908344 *dy + -0.00663163 *y*lambda + -0.007604 *y*lens_ipow(dx, 2) + -0.000187248 *lens_ipow(y, 2)*dy + 0.0159022 *x*dx*dy + -0.000243681 *x*y*dx + 0.761103 *lens_ipow(dx, 2)*dy + 0.00492946 *y*lens_ipow(lambda, 2) + 7.69502e-06 *lens_ipow(x, 2)*y + 7.76167e-06 *lens_ipow(y, 3) + 0.40198 *lens_ipow(dy, 3) + 4.60293e-05 *lens_ipow(x, 2)*dy*lambda + 0.000907222 *lens_ipow(x, 2)*lens_ipow(dx, 2)*dy + -5.04469e-07 *lens_ipow(y, 4)*dy + 3.23617e-08 *lens_ipow(x, 2)*lens_ipow(y, 3) + -6.79163e-06 *lens_ipow(y, 3)*lens_ipow(dx, 2) + 7.16848e-09 *lens_ipow(x, 4)*y + 6.51238e-09 *lens_ipow(y, 5) + 0.000381824 *lens_ipow(x, 2)*lens_ipow(dy, 3) + 1.13086e-05 *lens_ipow(x, 3)*dx*dy + -0.383626 *lens_ipow(dx, 4)*dy + 6.49928e-07 *lens_ipow(y, 4)*dy*lambda + -3.25634e-08 *lens_ipow(x, 2)*lens_ipow(y, 3)*lambda + 2.0029e-06 *lens_ipow(y, 4)*lens_ipow(dx, 2)*dy + -3.86222e-06 *x*lens_ipow(y, 3)*dx*lens_ipow(dy, 2) + -4.87562e-12 *lens_ipow(x, 6)*lens_ipow(y, 2)*dy + -1.16396e-11 *lens_ipow(x, 2)*lens_ipow(y, 6)*dy*lens_ipow(lambda, 2);
+      out_transmittance =  + 2.13553 *lambda + -4.72826 *lens_ipow(lambda, 2) + -0.00103031 *y*dy*lambda + -0.00102465 *x*dx*lambda + -1.11271e-05 *lens_ipow(x, 2)*lambda + -1.11545e-05 *lens_ipow(y, 2)*lambda + 4.91467 *lens_ipow(lambda, 3) + -1.97319 *lens_ipow(lambda, 4) + -0.361162 *lens_ipow(dx, 4) + -0.0189262 *y*lens_ipow(dy, 3) + -0.00017862 *lens_ipow(y, 2)*lens_ipow(dx, 2) + -0.0190907 *x*lens_ipow(dx, 3) + -0.918305 *lens_ipow(dx, 2)*lens_ipow(dy, 2) + -0.35869 *lens_ipow(dy, 4) + -9.73633e-08 *lens_ipow(x, 2)*lens_ipow(y, 2) + -0.000498028 *lens_ipow(x, 2)*lens_ipow(dx, 2) + -0.0192091 *y*lens_ipow(dx, 2)*dy + -0.000495702 *lens_ipow(y, 2)*lens_ipow(dy, 2) + -0.0193094 *x*dx*lens_ipow(dy, 2) + -0.000651255 *x*y*dx*dy + -0.000179837 *lens_ipow(x, 2)*lens_ipow(dy, 2) + -0.169861 *lens_ipow(dx, 4)*lambda + -0.17091 *lens_ipow(dy, 4)*lambda + 1.62928e-07 *lens_ipow(x, 2)*lens_ipow(y, 2)*lambda + -4.02531e-16 *lens_ipow(y, 10) + -2.37748e-15 *lens_ipow(x, 2)*lens_ipow(y, 8) + -7.81748e-15 *lens_ipow(x, 6)*lens_ipow(y, 4) + -5.03842e-16 *lens_ipow(x, 10);
+    } break;
+
+    case zeiss_biotar_1927:
+    {
+      out[0] =  + 57.1689 *dx + 0.193146 *x + 0.0484321 *x*lambda + 0.389705 *y*dx*dy + 0.0233441 *x*y*dy + 0.0310786 *lens_ipow(x, 2)*dx + -23.7113 *lens_ipow(dx, 3) + -23.7666 *dx*lens_ipow(dy, 2) + -8.51031e-05 *lens_ipow(x, 3) + 1.06525 *x*lens_ipow(dx, 2) + 0.00892956 *lens_ipow(y, 2)*dx + 1.01113 *dx*lens_ipow(lambda, 2) + 2.53406 *x*lens_ipow(dy, 2)*lambda + 0.000108935 *lens_ipow(x, 3)*lambda + -1.85433e-06 *lens_ipow(x, 3)*lens_ipow(y, 2) + 0.10017 *x*y*lens_ipow(dx, 2)*dy + -6.25497e-05 *lens_ipow(x, 4)*dx + 0.06383 *lens_ipow(x, 2)*lens_ipow(dx, 3) + -9.03315e-07 *lens_ipow(x, 5) + -9.64335e-07 *x*lens_ipow(y, 4) + -7.09054e-05 *lens_ipow(x, 2)*lens_ipow(y, 2)*dx + -5.51919e-05 *lens_ipow(x, 3)*y*dy + -5.40607e-05 *x*lens_ipow(y, 3)*dy + 0.0395167 *lens_ipow(y, 2)*dx*lens_ipow(dy, 2) + -2.25422 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.0239359 *x*y*lens_ipow(dy, 3) + 0.052306 *lens_ipow(x, 2)*dx*lens_ipow(dy, 2)*lambda + -1.71832e-05 *lens_ipow(y, 4)*dx*lambda;
+      out[1] =  + 0.223232 *y + 57.5672 *dy + 0.691113 *y*lens_ipow(dx, 2) + 0.017258 *lens_ipow(y, 2)*dy + 0.843734 *y*lens_ipow(dy, 2) + 0.39208 *x*dx*dy + 0.0232544 *x*y*dx + -23.9144 *lens_ipow(dx, 2)*dy + -0.000545388 *lens_ipow(y, 3) + 0.00915536 *lens_ipow(x, 2)*dy + -25.0805 *lens_ipow(dy, 3) + 0.000785302 *lens_ipow(y, 3)*lambda + 0.0413811 *lens_ipow(x, 2)*lens_ipow(dx, 2)*dy + -1.07207e-05 *lens_ipow(x, 4)*dy + -5.43478e-05 *x*lens_ipow(y, 3)*dx + 0.0238682 *x*y*lens_ipow(dx, 3) + 0.0188301 *lens_ipow(y, 2)*dy*lens_ipow(lambda, 2) + 0.100844 *x*y*dx*lens_ipow(dy, 2) + 0.0275789 *lens_ipow(y, 2)*lens_ipow(dx, 2)*dy + -1.83776e-06 *lens_ipow(x, 2)*lens_ipow(y, 3) + -5.44981e-05 *lens_ipow(x, 3)*y*dx + -1.19686e-06 *lens_ipow(x, 4)*y + -7.01775e-05 *lens_ipow(x, 2)*lens_ipow(y, 2)*dy + 0.00737572 *lens_ipow(y, 3)*lens_ipow(dy, 2)*lambda + 4.09626e-07 *lens_ipow(x, 4)*y*lambda + 0.348138 *lens_ipow(y, 2)*lens_ipow(dy, 3)*lambda + -1.64278e-06 *lens_ipow(y, 5)*lens_ipow(lambda, 2) + 5.19554 *y*lens_ipow(dy, 4)*lens_ipow(lambda, 2);
+      out[2] =  + -1.19429 *dx + -0.0217102 *x + -0.000720481 *x*lambda + -0.00940156 *y*dx*dy + -0.000254619 *x*y*dy + -0.000118977 *lens_ipow(x, 2)*dx + 0.587852 *lens_ipow(dx, 3) + -0.204803 *dx*lens_ipow(dy, 2) + 7.50277e-06 *x*lens_ipow(y, 2) + 6.29155e-06 *lens_ipow(x, 3) + -0.00442155 *x*lens_ipow(dx, 2) + 7.82376e-05 *lens_ipow(y, 2)*dx + -0.0537613 *x*lens_ipow(dy, 2)*lambda + 7.1261e-09 *lens_ipow(x, 5) + 0.0496316 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 1.09726e-06 *lens_ipow(x, 4)*dx*lambda + 3.78813e-05 *lens_ipow(x, 3)*lens_ipow(dx, 2)*lambda + -1.66454e-05 *lens_ipow(x, 3)*lens_ipow(dy, 2)*lambda + -0.0135048 *x*y*lens_ipow(dx, 2)*lens_ipow(dy, 3) + 17.0903 *lens_ipow(dx, 3)*lens_ipow(dy, 4) + -1.76629e-06 *lens_ipow(y, 4)*dx*lens_ipow(dy, 2) + 0.00015555 *lens_ipow(x, 2)*y*lens_ipow(dx, 3)*dy + -0.00160529 *lens_ipow(x, 2)*dx*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 4.71609e-07 *x*lens_ipow(y, 3)*dy*lens_ipow(lambda, 3) + 2.08345e-11 *lens_ipow(x, 4)*lens_ipow(y, 4)*dx + 3.06727e-13 *lens_ipow(x, 5)*lens_ipow(y, 4) + 2.98578e-14 *lens_ipow(x, 5)*lens_ipow(y, 5)*dy + -3.77699e-14 *lens_ipow(x, 4)*lens_ipow(y, 6)*dx;
+      out[3] =  + -0.0221765 *y + -1.19483 *dy + 0.0266626 *x*dx*dy + -0.000118529 *x*y*dx + 1.31992 *lens_ipow(dx, 2)*dy + 6.74637e-06 *lens_ipow(x, 2)*y + 1.16569e-05 *lens_ipow(y, 3) + 0.00019251 *lens_ipow(x, 2)*dy + 0.605434 *lens_ipow(dy, 3) + -0.0134873 *y*lens_ipow(dx, 2)*lambda + -7.33135e-06 *lens_ipow(y, 3)*lambda + 1.41568 *lens_ipow(dx, 2)*lens_ipow(dy, 3) + 0.0329062 *x*dx*lens_ipow(dy, 3) + -1.03815e-05 *lens_ipow(x, 2)*y*lens_ipow(dx, 2) + 1.06567e-08 *lens_ipow(x, 2)*lens_ipow(y, 3) + -3.06289e-05 *lens_ipow(y, 3)*lens_ipow(dx, 2) + 4.87314e-09 *lens_ipow(x, 4)*y + 1.3886e-09 *lens_ipow(x, 2)*lens_ipow(y, 4)*dy + 0.00190446 *lens_ipow(x, 2)*lens_ipow(dy, 5) + 0.0885763 *y*lens_ipow(dx, 4)*lens_ipow(lambda, 3) + 2.64595e-09 *lens_ipow(x, 3)*lens_ipow(y, 3)*dx*lambda + 1.23741e-07 *lens_ipow(y, 5)*lens_ipow(dx, 2)*lambda + -0.0933092 *lens_ipow(y, 2)*lens_ipow(dx, 2)*lens_ipow(dy, 3)*lens_ipow(lambda, 2) + 9.98314e-14 *lens_ipow(x, 4)*lens_ipow(y, 5) + -2.22296 *y*lens_ipow(dx, 2)*lens_ipow(dy, 4)*lens_ipow(lambda, 3) + 2.72843e-08 *lens_ipow(y, 5)*lens_ipow(lambda, 5) + -3.78021e-06 *lens_ipow(y, 5)*lens_ipow(dx, 2)*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.000607305 *lens_ipow(y, 3)*lens_ipow(dy, 8);
+      out_transmittance =  + 0.445415  + 0.703675 *lambda + -0.00105712 *x*dx + -1.95963e-05 *lens_ipow(x, 2) + -0.0406648 *lens_ipow(dx, 2) + -0.968706 *lens_ipow(lambda, 2) + 0.4698 *lens_ipow(lambda, 3) + -0.0454226 *y*lens_ipow(dy, 3) + -1.65054 *lens_ipow(dx, 2)*lens_ipow(dy, 2) + -1.23797e-05 *lens_ipow(x, 2)*y*dy + -0.885696 *lens_ipow(dy, 4) + -1.25888e-07 *lens_ipow(x, 2)*lens_ipow(y, 2) + -1.09325e-07 *lens_ipow(y, 4) + -0.0373244 *y*lens_ipow(dx, 2)*dy + -4.93975e-06 *lens_ipow(x, 3)*dx + -0.00131154 *lens_ipow(y, 2)*lens_ipow(dy, 2) + -0.0374354 *x*dx*lens_ipow(dy, 2) + -0.00129105 *x*y*dx*dy + -0.000344897 *lens_ipow(x, 2)*lens_ipow(dy, 2) + -1.8055e-05 *lens_ipow(y, 3)*dy + -2.18263e-05 *x*lens_ipow(y, 2)*dx*lambda + -0.000617129 *lens_ipow(y, 2)*lens_ipow(dx, 2)*lambda + -5.14691 *lens_ipow(dx, 6) + -0.419065 *x*lens_ipow(dx, 5) + -0.0184877 *lens_ipow(x, 2)*lens_ipow(dx, 4) + -3.62468e-06 *lens_ipow(x, 4)*lens_ipow(dx, 2) + -0.000379881 *lens_ipow(x, 3)*lens_ipow(dx, 3) + -2.20816e-12 *lens_ipow(x, 4)*lens_ipow(y, 4)*lens_ipow(lambda, 2);
+
+    } break;
+
   }
 
   return MAX(0.0f, out_transmittance);
@@ -367,6 +437,50 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
 
 //#include "pt_sample_aperture.h"
   switch (camera_data->lensModel){
+    
+    case NONE:
+    {
+      float pred_x;
+      float pred_y;
+      float pred_dx;
+      float pred_dy;
+      float sqr_err = FLT_MAX;
+      for(int k=0;k<5&&sqr_err > 1e-4f;k++)
+      {
+        const float begin_x = x + dist * dx;
+        const float begin_y = y + dist * dy;
+        const float begin_dx = dx;
+        const float begin_dy = dy;
+        const float begin_lambda = lambda;
+        pred_x =  + 47.9583 *begin_dx + 0.726604 *begin_x + 0.30773 *begin_x*begin_lambda + 10.0443 *begin_dx*begin_lambda + 0.51757 *begin_y*begin_dx*begin_dy + 0.0130025 *begin_x*begin_y*begin_dy + 0.0209696 *lens_ipow(begin_x, 2)*begin_dx + -0.428152 *begin_x*lens_ipow(begin_lambda, 2) + 0.0001599 *begin_x*lens_ipow(begin_y, 2) + 0.000146126 *lens_ipow(begin_x, 3) + 0.109933 *begin_x*lens_ipow(begin_dy, 2) + 0.60574 *begin_x*lens_ipow(begin_dx, 2) + 0.00896142 *lens_ipow(begin_y, 2)*begin_dx + -10.4332 *begin_dx*lens_ipow(begin_lambda, 2) + 0.208867 *begin_x*lens_ipow(begin_lambda, 3) + 2.55743e-05 *lens_ipow(begin_x, 4)*begin_dx + 3.82423 *begin_dx*lens_ipow(begin_lambda, 4) + 2.4372e-07 *lens_ipow(begin_x, 5) + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dx*begin_dy + 0.000614863 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 2) + -3.80606e-05 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + 0.836959 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2)*begin_lambda + 2.60785e-08 *lens_ipow(begin_x, 5)*begin_lambda + 2.35096e-10 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 2) + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dx*begin_dy*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + 5.01276e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 3) + -4.29584e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 4);
+        pred_y =  + 0.727662 *begin_y + 47.9805 *begin_dy + 9.94011 *begin_dy*begin_lambda + 0.303795 *begin_y*begin_lambda + 0.116675 *begin_y*lens_ipow(begin_dx, 2) + 0.0212751 *lens_ipow(begin_y, 2)*begin_dy + 0.606324 *begin_y*lens_ipow(begin_dy, 2) + 0.541493 *begin_x*begin_dx*begin_dy + 0.0133007 *begin_x*begin_y*begin_dx + 0.525397 *lens_ipow(begin_dx, 2)*begin_dy + -0.422576 *begin_y*lens_ipow(begin_lambda, 2) + 0.000155139 *lens_ipow(begin_x, 2)*begin_y + -10.2959 *begin_dy*lens_ipow(begin_lambda, 2) + 0.000145719 *lens_ipow(begin_y, 3) + 0.00910908 *lens_ipow(begin_x, 2)*begin_dy + 0.205574 *begin_y*lens_ipow(begin_lambda, 3) + -0.000530731 *lens_ipow(begin_y, 2)*begin_dy*begin_lambda + 9.11966e-06 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 0.00188791 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_dy + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dx*begin_dy + 3.75232 *begin_dy*lens_ipow(begin_lambda, 4) + 7.66467e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + 0.54031 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + 4.37653e-05 *lens_ipow(begin_y, 4)*begin_dy*begin_lambda + 0.00104185 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 2)*begin_lambda + 4.47109e-07 *lens_ipow(begin_y, 5)*begin_lambda + 8.89044e-10 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 3)*lens_ipow(begin_lambda, 3) + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dx*begin_dy*lens_ipow(begin_lambda, 4);
+        pred_dx =  + 0.489166 *begin_dx + -0.0138238 *begin_x + 0.0158286 *begin_x*begin_lambda + 0.469504 *begin_dx*begin_lambda + 0.00808112 *begin_y*begin_dx*begin_dy + 0.000528987 *begin_x*begin_y*begin_dy + 0.000694739 *lens_ipow(begin_x, 2)*begin_dx + -0.341088 *lens_ipow(begin_dx, 3) + -0.0220346 *begin_x*lens_ipow(begin_lambda, 2) + -0.33104 *begin_dx*lens_ipow(begin_dy, 2) + 6.53379e-06 *begin_x*lens_ipow(begin_y, 2) + 5.59884e-06 *lens_ipow(begin_x, 3) + 0.00268339 *begin_x*lens_ipow(begin_dy, 2) + 0.00916356 *begin_x*lens_ipow(begin_dx, 2) + 0.00022903 *lens_ipow(begin_y, 2)*begin_dx + -0.4885 *begin_dx*lens_ipow(begin_lambda, 2) + 0.0107461 *begin_x*lens_ipow(begin_lambda, 3) + 3.4652e-07 *lens_ipow(begin_x, 3)*begin_lambda + 9.87083e-07 *lens_ipow(begin_x, 4)*begin_dx + 0.179614 *begin_dx*lens_ipow(begin_lambda, 4) + 1.02144e-08 *lens_ipow(begin_x, 5) + 9.19451e-05 *lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_dy, 2) + 2.29793e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 2) + 0.0140785 *begin_x*begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + -27.9691 *lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 4) + -8.02962e-05 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 3)*begin_dy + 2.2643e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*begin_lambda + 2.26493e-14 *lens_ipow(begin_x, 7)*lens_ipow(begin_y, 2);
+        pred_dy =  + -0.0137889 *begin_y + 0.490712 *begin_dy + 0.461858 *begin_dy*begin_lambda + 0.0156755 *begin_y*begin_lambda + 0.00261594 *begin_y*lens_ipow(begin_dx, 2) + 0.000728088 *lens_ipow(begin_y, 2)*begin_dy + 0.00969924 *begin_y*lens_ipow(begin_dy, 2) + 0.00798963 *begin_x*begin_dx*begin_dy + 0.000529122 *begin_x*begin_y*begin_dx + -0.341312 *lens_ipow(begin_dx, 2)*begin_dy + -0.0217976 *begin_y*lens_ipow(begin_lambda, 2) + 6.30389e-06 *lens_ipow(begin_x, 2)*begin_y + -0.477862 *begin_dy*lens_ipow(begin_lambda, 2) + 5.9506e-06 *lens_ipow(begin_y, 3) + 0.000227942 *lens_ipow(begin_x, 2)*begin_dy + -0.346063 *lens_ipow(begin_dy, 3) + 0.01061 *begin_y*lens_ipow(begin_lambda, 3) + 4.20858e-07 *lens_ipow(begin_y, 3)*begin_lambda + 4.18636e-07 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 7.75236e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_dy + 0.173747 *begin_dy*lens_ipow(begin_lambda, 4) + 4.92036e-11 *lens_ipow(begin_y, 7) + 4.91915e-09 *lens_ipow(begin_y, 6)*begin_dy + 1.20536e-07 *lens_ipow(begin_y, 5)*lens_ipow(begin_dy, 2) + 0.00352233 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 4) + 2.7495e-13 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5) + -9.16196e-10 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*begin_dx*begin_dy + -4051.9 *lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 7);
+        float dx1_domega0[2][2];
+        dx1_domega0[0][0] =  + 47.9583  + 10.0443 *begin_lambda + 0.51757 *begin_y*begin_dy + 0.0209696 *lens_ipow(begin_x, 2) + 1.21148 *begin_x*begin_dx + 0.00896142 *lens_ipow(begin_y, 2) + -10.4332 *lens_ipow(begin_lambda, 2) + 2.55743e-05 *lens_ipow(begin_x, 4) + 3.82423 *lens_ipow(begin_lambda, 4) + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dy + 0.00122973 *lens_ipow(begin_x, 3)*begin_dx + 1.67392 *begin_x*begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dy*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dy*lens_ipow(begin_lambda, 2)+0.0f;
+        dx1_domega0[0][1] =  + 0.51757 *begin_y*begin_dx + 0.0130025 *begin_x*begin_y + 0.219866 *begin_x*begin_dy + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dx + -7.61212e-05 *begin_x*lens_ipow(begin_y, 2)*begin_dy + 1.67392 *begin_x*lens_ipow(begin_dx, 2)*begin_dy*begin_lambda + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dx*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dx*lens_ipow(begin_lambda, 2)+0.0f;
+        dx1_domega0[1][0] =  + 0.233349 *begin_y*begin_dx + 0.541493 *begin_x*begin_dy + 0.0133007 *begin_x*begin_y + 1.05079 *begin_dx*begin_dy + 0.00377582 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dy + 1.08062 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 4)+0.0f;
+        dx1_domega0[1][1] =  + 47.9805  + 9.94011 *begin_lambda + 0.0212751 *lens_ipow(begin_y, 2) + 1.21265 *begin_y*begin_dy + 0.541493 *begin_x*begin_dx + 0.525397 *lens_ipow(begin_dx, 2) + -10.2959 *lens_ipow(begin_lambda, 2) + 0.00910908 *lens_ipow(begin_x, 2) + -0.000530731 *lens_ipow(begin_y, 2)*begin_lambda + 0.00188791 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2) + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dx + 3.75232 *lens_ipow(begin_lambda, 4) + 1.08062 *begin_y*lens_ipow(begin_dx, 2)*begin_dy + 4.37653e-05 *lens_ipow(begin_y, 4)*begin_lambda + 0.00208371 *lens_ipow(begin_y, 3)*begin_dy*begin_lambda + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_lambda, 4)+0.0f;
+        float invJ[2][2];
+        const float invdet = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+        invJ[0][0] =  dx1_domega0[1][1]*invdet;
+        invJ[1][1] =  dx1_domega0[0][0]*invdet;
+        invJ[0][1] = -dx1_domega0[0][1]*invdet;
+        invJ[1][0] = -dx1_domega0[1][0]*invdet;
+        const float dx1[2] = {out_x - pred_x, out_y - pred_y};
+        for(int i=0;i<2;i++)
+        {
+          dx += invJ[0][i]*dx1[i];
+          dy += invJ[1][i]*dx1[i];
+        }
+        sqr_err = dx1[0]*dx1[0] + dx1[1]*dx1[1];
+      }
+      out_dx = pred_dx;
+      out_dy = pred_dy;
+    } break;
+
+
+
     case petzval:
     {
       float pred_x;
@@ -702,6 +816,91 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
       out_dy = pred_dy;
     } break;
 
+
+    case zeiss_biotar_1927:
+    {
+      float pred_x;
+      float pred_y;
+      float pred_dx;
+      float pred_dy;
+      float sqr_err = FLT_MAX;
+      for(int k=0;k<5&&sqr_err > 1e-4f;k++)
+      {
+        const float begin_x = x + dist * dx;
+        const float begin_y = y + dist * dy;
+        const float begin_dx = dx;
+        const float begin_dy = dy;
+        const float begin_lambda = lambda;
+        pred_x =  + 36.5996 *begin_dx + 0.454717 *begin_x + 0.041798 *begin_x*begin_lambda + 1.8289 *begin_dx*begin_lambda + -0.005327 *lens_ipow(begin_x, 2)*begin_dx + -22.4015 *lens_ipow(begin_dx, 3) + -23.0927 *begin_dx*lens_ipow(begin_dy, 2) + -0.000160418 *begin_x*lens_ipow(begin_y, 2) + -0.000163105 *lens_ipow(begin_x, 3) + -0.216495 *begin_x*lens_ipow(begin_dy, 2) + -0.462226 *begin_x*lens_ipow(begin_dx, 2) + -0.00111586 *lens_ipow(begin_y, 2)*begin_dx + -0.0170951 *begin_x*begin_y*begin_dy*begin_lambda + -0.603514 *begin_y*begin_dx*begin_dy*begin_lambda + -3.98252e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + 0.0316894 *begin_x*begin_y*lens_ipow(begin_dx, 2)*begin_dy + -1.29849e-07 *begin_x*lens_ipow(begin_y, 4) + -1.6084e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dx + -0.426172 *begin_y*begin_dx*lens_ipow(begin_dy, 3) + 0.0202469 *begin_x*begin_y*begin_dy*lens_ipow(begin_lambda, 3) + -7.04916e-08 *lens_ipow(begin_x, 6)*begin_dx + -1.97483e-06 *lens_ipow(begin_x, 5)*lens_ipow(begin_dx, 2) + 0.830881 *begin_y*begin_dx*begin_dy*lens_ipow(begin_lambda, 4) + -7.23502e-10 *lens_ipow(begin_x, 7) + -2.65605e-08 *lens_ipow(begin_x, 5)*begin_y*begin_dy*begin_lambda + -3.26686e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 3)*begin_lambda + -6.91074e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dy*begin_lambda + -2.27346e-12 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4);
+        pred_y =  + 0.456094 *begin_y + 36.6078 *begin_dy + 1.85026 *begin_dy*begin_lambda + 0.0401649 *begin_y*begin_lambda + -0.218319 *begin_y*lens_ipow(begin_dx, 2) + -0.00569834 *lens_ipow(begin_y, 2)*begin_dy + -0.479457 *begin_y*lens_ipow(begin_dy, 2) + -23.1138 *lens_ipow(begin_dx, 2)*begin_dy + -0.000170969 *lens_ipow(begin_x, 2)*begin_y + -0.000164487 *lens_ipow(begin_y, 3) + -0.00134042 *lens_ipow(begin_x, 2)*begin_dy + -22.5954 *lens_ipow(begin_dy, 3) + -0.0143399 *begin_x*begin_y*begin_dx*begin_lambda + -0.610815 *begin_x*begin_dx*begin_dy*begin_lambda + -0.441549 *begin_x*lens_ipow(begin_dx, 3)*begin_dy + -3.59301e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -1.05117e-07 *lens_ipow(begin_x, 4)*begin_y + 0.000261591 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dy, 2) + -1.86206e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dy*begin_lambda + 0.0593064 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -7.67347e-10 *lens_ipow(begin_y, 7) + -7.31072e-08 *lens_ipow(begin_y, 6)*begin_dy + -2.04157e-06 *lens_ipow(begin_y, 5)*lens_ipow(begin_dy, 2) + -3.34223e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx + 0.0196232 *begin_x*begin_y*begin_dx*lens_ipow(begin_lambda, 4) + 0.903883 *begin_x*begin_dx*begin_dy*lens_ipow(begin_lambda, 4) + -3.19105e-08 *begin_x*lens_ipow(begin_y, 5)*begin_dx*begin_lambda + -2.10282e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5);
+        pred_dx =  + 0.467568 *begin_dx + -0.0229943 *begin_x + 0.00742905 *begin_x*begin_lambda + -0.0171701 *begin_y*begin_dx*begin_dy + -0.000165131 *begin_x*begin_y*begin_dy + -0.249908 *lens_ipow(begin_dx, 3) + -0.00536854 *begin_x*lens_ipow(begin_lambda, 2) + -0.262829 *begin_dx*lens_ipow(begin_dy, 2) + -1.04805e-05 *begin_x*lens_ipow(begin_y, 2) + -1.08788e-05 *lens_ipow(begin_x, 3) + -0.00954645 *begin_x*lens_ipow(begin_dy, 2) + -0.0268255 *begin_x*lens_ipow(begin_dx, 2) + -0.000894062 *lens_ipow(begin_x, 2)*begin_dx*begin_lambda + -0.000291871 *lens_ipow(begin_y, 2)*begin_dx*begin_lambda + -1.74848e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + 0.000575377 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_lambda, 2) + 7.50303e-08 *lens_ipow(begin_x, 4)*begin_y*begin_dx*begin_dy + -0.000109488 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 4) + -2.49935e-11 *begin_x*lens_ipow(begin_y, 6) + -0.41979 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 3) + -3.44027e-08 *lens_ipow(begin_x, 5)*lens_ipow(begin_dy, 2) + -2.02028e-11 *lens_ipow(begin_x, 7) + -0.529128 *begin_x*lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 2)*begin_lambda + -1.99617e-13 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4) + 9.41261e-07 *lens_ipow(begin_y, 4)*begin_dx*lens_ipow(begin_lambda, 4) + -1.24327 *begin_y*begin_dx*lens_ipow(begin_dy, 7)*begin_lambda + -0.88097 *begin_x*lens_ipow(begin_dx, 8)*begin_lambda + -6.49398e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dy*lens_ipow(begin_lambda, 3);
+        pred_dy =  + -0.0229102 *begin_y + 0.467941 *begin_dy + 0.00700857 *begin_y*begin_lambda + -0.00960727 *begin_y*lens_ipow(begin_dx, 2) + -0.0273515 *begin_y*lens_ipow(begin_dy, 2) + -0.0175974 *begin_x*begin_dx*begin_dy + -0.00017146 *begin_x*begin_y*begin_dx + -0.249872 *lens_ipow(begin_dx, 2)*begin_dy + -0.00498688 *begin_y*lens_ipow(begin_lambda, 2) + -1.05302e-05 *lens_ipow(begin_x, 2)*begin_y + -9.64725e-06 *lens_ipow(begin_y, 3) + -0.26292 *lens_ipow(begin_dy, 3) + -0.000281665 *lens_ipow(begin_x, 2)*begin_dy*begin_lambda + -0.000789011 *lens_ipow(begin_y, 2)*begin_dy*begin_lambda + -2.11368e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -9.8521e-09 *lens_ipow(begin_y, 5) + -4.56476e-08 *lens_ipow(begin_y, 5)*lens_ipow(begin_dx, 2) + -5.02616e-11 *lens_ipow(begin_x, 6)*begin_y + -0.114917 *begin_y*lens_ipow(begin_dy, 6) + -2.57554e-09 *begin_x*lens_ipow(begin_y, 5)*begin_dx*begin_lambda + 0.00314807 *lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 5) + 5.12646e-11 *lens_ipow(begin_x, 6)*begin_y*begin_lambda + -4.41944e-07 *lens_ipow(begin_x, 4)*begin_y*lens_ipow(begin_dy, 4) + -0.00412254 *lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 7) + 1.48608e-06 *lens_ipow(begin_x, 4)*begin_dy*lens_ipow(begin_lambda, 5) + -28.2788 *begin_x*lens_ipow(begin_dx, 7)*lens_ipow(begin_dy, 3) + 1533.74 *lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 7) + -4.79903e-16 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 7);
+        float dx1_domega0[2][2];
+        dx1_domega0[0][0] =  + 36.5996  + 1.8289 *begin_lambda + -0.005327 *lens_ipow(begin_x, 2) + -67.2044 *lens_ipow(begin_dx, 2) + -23.0927 *lens_ipow(begin_dy, 2) + -0.924453 *begin_x*begin_dx + -0.00111586 *lens_ipow(begin_y, 2) + -0.603514 *begin_y*begin_dy*begin_lambda + 0.0633788 *begin_x*begin_y*begin_dx*begin_dy + -1.6084e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -0.426172 *begin_y*lens_ipow(begin_dy, 3) + -7.04916e-08 *lens_ipow(begin_x, 6) + -3.94966e-06 *lens_ipow(begin_x, 5)*begin_dx + 0.830881 *begin_y*begin_dy*lens_ipow(begin_lambda, 4) + -9.80058e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*begin_lambda+0.0f;
+        dx1_domega0[0][1] =  + -46.1854 *begin_dx*begin_dy + -0.432989 *begin_x*begin_dy + -0.0170951 *begin_x*begin_y*begin_lambda + -0.603514 *begin_y*begin_dx*begin_lambda + 0.0316894 *begin_x*begin_y*lens_ipow(begin_dx, 2) + -1.27852 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + 0.0202469 *begin_x*begin_y*lens_ipow(begin_lambda, 3) + 0.830881 *begin_y*begin_dx*lens_ipow(begin_lambda, 4) + -2.65605e-08 *lens_ipow(begin_x, 5)*begin_y*begin_lambda + -6.91074e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_lambda+0.0f;
+        dx1_domega0[1][0] =  + -0.436637 *begin_y*begin_dx + -46.2276 *begin_dx*begin_dy + -0.0143399 *begin_x*begin_y*begin_lambda + -0.610815 *begin_x*begin_dy*begin_lambda + -1.32465 *begin_x*lens_ipow(begin_dx, 2)*begin_dy + 0.0593064 *begin_x*begin_y*lens_ipow(begin_dy, 2)*begin_lambda + -3.34223e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3) + 0.0196232 *begin_x*begin_y*lens_ipow(begin_lambda, 4) + 0.903883 *begin_x*begin_dy*lens_ipow(begin_lambda, 4) + -3.19105e-08 *begin_x*lens_ipow(begin_y, 5)*begin_lambda+0.0f;
+        dx1_domega0[1][1] =  + 36.6078  + 1.85026 *begin_lambda + -0.00569834 *lens_ipow(begin_y, 2) + -0.958913 *begin_y*begin_dy + -23.1138 *lens_ipow(begin_dx, 2) + -0.00134042 *lens_ipow(begin_x, 2) + -67.7861 *lens_ipow(begin_dy, 2) + -0.610815 *begin_x*begin_dx*begin_lambda + -0.441549 *begin_x*lens_ipow(begin_dx, 3) + 0.000523182 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -1.86206e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_lambda + 0.118613 *begin_x*begin_y*begin_dx*begin_dy*begin_lambda + -7.31072e-08 *lens_ipow(begin_y, 6) + -4.08314e-06 *lens_ipow(begin_y, 5)*begin_dy + 0.903883 *begin_x*begin_dx*lens_ipow(begin_lambda, 4)+0.0f;
+        float invJ[2][2];
+        const float invdet = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+        invJ[0][0] =  dx1_domega0[1][1]*invdet;
+        invJ[1][1] =  dx1_domega0[0][0]*invdet;
+        invJ[0][1] = -dx1_domega0[0][1]*invdet;
+        invJ[1][0] = -dx1_domega0[1][0]*invdet;
+        const float dx1[2] = {out_x - pred_x, out_y - pred_y};
+        for(int i=0;i<2;i++)
+        {
+          dx += invJ[0][i]*dx1[i];
+          dy += invJ[1][i]*dx1[i];
+        }
+        sqr_err = dx1[0]*dx1[0] + dx1[1]*dx1[1];
+      }
+      out_dx = pred_dx;
+      out_dy = pred_dy;
+
+    } break;
+
+    case takumar_1969:
+    {
+      float pred_x;
+      float pred_y;
+      float pred_dx;
+      float pred_dy;
+      float sqr_err = FLT_MAX;
+      for(int k=0;k<5&&sqr_err > 1e-4f;k++)
+      {
+        const float begin_x = x + dist * dx;
+        const float begin_y = y + dist * dy;
+        const float begin_dx = dx;
+        const float begin_dy = dy;
+        const float begin_lambda = lambda;
+        pred_x =  + 30.4517 *begin_dx + 0.335491 *begin_x + 0.189788 *begin_x*begin_lambda + 5.85562 *begin_dx*begin_lambda + -0.141897 *begin_y*begin_dx*begin_dy + 0.00157184 *begin_x*begin_y*begin_dy + 0.0036529 *lens_ipow(begin_x, 2)*begin_dx + -18.0466 *lens_ipow(begin_dx, 3) + -0.139713 *begin_x*lens_ipow(begin_lambda, 2) + -17.5218 *begin_dx*lens_ipow(begin_dy, 2) + -0.000157628 *begin_x*lens_ipow(begin_y, 2) + -0.000149439 *lens_ipow(begin_x, 3) + -0.164804 *begin_x*lens_ipow(begin_dy, 2) + -0.277242 *begin_x*lens_ipow(begin_dx, 2) + -4.06094 *begin_dx*lens_ipow(begin_lambda, 2) + 8.19514e-05 *begin_x*lens_ipow(begin_y, 2)*begin_lambda + 6.17978e-05 *lens_ipow(begin_x, 3)*begin_lambda + 0.00342147 *lens_ipow(begin_y, 2)*begin_dx*begin_lambda + -4.00211e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + -1.93383e-07 *lens_ipow(begin_x, 5) + -2.14205e-07 *begin_x*lens_ipow(begin_y, 4) + 0.243286 *begin_x*lens_ipow(begin_dy, 4) + -0.0124942 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_dy, 2) + 5.92223 *lens_ipow(begin_dx, 5)*begin_lambda + 0.148547 *begin_x*begin_y*lens_ipow(begin_dx, 4)*begin_dy + -0.0244494 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + -43.3246 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 5) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dx*begin_dy;
+        pred_y =  + 0.333768 *begin_y + 30.3142 *begin_dy + 6.19823 *begin_dy*begin_lambda + 0.194459 *begin_y*begin_lambda + -0.16036 *begin_y*lens_ipow(begin_dx, 2) + 0.00366671 *lens_ipow(begin_y, 2)*begin_dy + -0.277416 *begin_y*lens_ipow(begin_dy, 2) + -0.132609 *begin_x*begin_dx*begin_dy + 0.00165636 *begin_x*begin_y*begin_dx + -17.3693 *lens_ipow(begin_dx, 2)*begin_dy + -0.142883 *begin_y*lens_ipow(begin_lambda, 2) + -0.000147929 *lens_ipow(begin_x, 2)*begin_y + -4.24615 *begin_dy*lens_ipow(begin_lambda, 2) + -0.000147913 *lens_ipow(begin_y, 3) + 0.00203755 *lens_ipow(begin_x, 2)*begin_dy + -18.0699 *lens_ipow(begin_dy, 3) + 6.06488e-05 *lens_ipow(begin_y, 3)*begin_lambda + 6.63746e-05 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 0.224708 *begin_y*lens_ipow(begin_dx, 4) + 3.54072 *lens_ipow(begin_dy, 5) + -0.0124248 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*begin_dy + -4.00944e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -2.13743e-07 *lens_ipow(begin_x, 4)*begin_y + -1.95879e-07 *lens_ipow(begin_y, 5) + -0.0087466 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 3) + 0.141742 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 4) + -4.65243 *begin_x*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 3) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dx*begin_dy;
+        pred_dx =  + 0.354976 *begin_dx + -0.0297645 *begin_x + 0.0101801 *begin_x*begin_lambda + -0.0254185 *begin_y*begin_dx*begin_dy + -0.000384867 *lens_ipow(begin_x, 2)*begin_dx + -0.745377 *lens_ipow(begin_dx, 3) + -0.00743799 *begin_x*lens_ipow(begin_lambda, 2) + -0.703223 *begin_dx*lens_ipow(begin_dy, 2) + -1.16151e-05 *begin_x*lens_ipow(begin_y, 2) + -1.25599e-05 *lens_ipow(begin_x, 3) + -0.0134835 *begin_x*lens_ipow(begin_dy, 2) + -0.0397407 *begin_x*lens_ipow(begin_dx, 2) + -0.000137945 *lens_ipow(begin_y, 2)*begin_dx + -0.000160391 *begin_x*begin_y*begin_dy*begin_lambda + -3.25033e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + 1.20509e-06 *lens_ipow(begin_x, 4)*begin_dx + -9.33333e-09 *lens_ipow(begin_x, 5) + -1.51762e-08 *begin_x*lens_ipow(begin_y, 4) + 7.91498e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dx + -0.000743166 *begin_x*begin_y*lens_ipow(begin_dy, 3) + 3.03966e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_lambda + -9.2384e-07 *lens_ipow(begin_x, 4)*begin_dx*begin_lambda + -2.14671e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + 3.21907 *lens_ipow(begin_dx, 7)*begin_lambda + 5.58099e-09 *lens_ipow(begin_y, 6)*lens_ipow(begin_dx, 3) + -4.92172 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 5)*begin_lambda + 519.145 *lens_ipow(begin_dx, 7)*lens_ipow(begin_dy, 4) + 5.01736e-14 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 4)*begin_dx;
+        pred_dy =  + -0.0298109 *begin_y + 0.352584 *begin_dy + 0.0105834 *begin_y*begin_lambda + -0.0130088 *begin_y*lens_ipow(begin_dx, 2) + -0.000316348 *lens_ipow(begin_y, 2)*begin_dy + -0.0376198 *begin_y*lens_ipow(begin_dy, 2) + -0.024998 *begin_x*begin_dx*begin_dy + -0.000150875 *begin_x*begin_y*begin_dx + -0.662402 *lens_ipow(begin_dx, 2)*begin_dy + -0.00765622 *begin_y*lens_ipow(begin_lambda, 2) + -1.39981e-05 *lens_ipow(begin_x, 2)*begin_y + -1.48982e-05 *lens_ipow(begin_y, 3) + -0.000178082 *lens_ipow(begin_x, 2)*begin_dy + -0.699257 *lens_ipow(begin_dy, 3) + 1.99975e-07 *lens_ipow(begin_x, 4)*begin_dy + -3.1307e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + 1.03186e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dy + -0.0564625 *begin_x*begin_dx*lens_ipow(begin_dy, 3)*begin_lambda + -0.0656574 *begin_y*lens_ipow(begin_dy, 4)*begin_lambda + 4.13981e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_lambda + -0.00184793 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 3)*begin_lambda + 4.07312e-09 *lens_ipow(begin_y, 6)*begin_dy + 4.45956e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx + -2.81257e-11 *lens_ipow(begin_x, 6)*begin_y + 0.000625798 *begin_x*lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_dy, 3)*begin_lambda + 5.8015e-12 *begin_x*lens_ipow(begin_y, 7)*begin_dx + -6.65151e-12 *lens_ipow(begin_y, 8)*begin_dy*begin_lambda + -2.9162e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5)*lens_ipow(begin_dy, 2);
+        float dx1_domega0[2][2];
+        dx1_domega0[0][0] =  + 30.4517  + 5.85562 *begin_lambda + -0.141897 *begin_y*begin_dy + 0.0036529 *lens_ipow(begin_x, 2) + -54.1398 *lens_ipow(begin_dx, 2) + -17.5218 *lens_ipow(begin_dy, 2) + -0.554483 *begin_x*begin_dx + -4.06094 *lens_ipow(begin_lambda, 2) + 0.00342147 *lens_ipow(begin_y, 2)*begin_lambda + -0.0124942 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + 29.6111 *lens_ipow(begin_dx, 4)*begin_lambda + 0.594187 *begin_x*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -0.0733483 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + -129.974 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 5) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dy+0.0f;
+        dx1_domega0[0][1] =  + -0.141897 *begin_y*begin_dx + 0.00157184 *begin_x*begin_y + -35.0437 *begin_dx*begin_dy + -0.329608 *begin_x*begin_dy + 0.973146 *begin_x*lens_ipow(begin_dy, 3) + -0.0249884 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + 0.148547 *begin_x*begin_y*lens_ipow(begin_dx, 4) + -216.623 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 4) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dx+0.0f;
+        dx1_domega0[1][0] =  + -0.32072 *begin_y*begin_dx + -0.132609 *begin_x*begin_dy + 0.00165636 *begin_x*begin_y + -34.7386 *begin_dx*begin_dy + 0.898834 *begin_y*lens_ipow(begin_dx, 3) + -0.0248497 *lens_ipow(begin_y, 2)*begin_dx*begin_dy + 0.141742 *begin_x*begin_y*lens_ipow(begin_dy, 4) + -13.9573 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dy+0.0f;
+        dx1_domega0[1][1] =  + 30.3142  + 6.19823 *begin_lambda + 0.00366671 *lens_ipow(begin_y, 2) + -0.554831 *begin_y*begin_dy + -0.132609 *begin_x*begin_dx + -17.3693 *lens_ipow(begin_dx, 2) + -4.24615 *lens_ipow(begin_lambda, 2) + 0.00203755 *lens_ipow(begin_x, 2) + -54.2097 *lens_ipow(begin_dy, 2) + 17.7036 *lens_ipow(begin_dy, 4) + -0.0124248 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + -0.0262398 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + 0.566968 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 3) + -13.9573 *begin_x*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dx+0.0f;
+        float invJ[2][2];
+        const float invdet = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+        invJ[0][0] =  dx1_domega0[1][1]*invdet;
+        invJ[1][1] =  dx1_domega0[0][0]*invdet;
+        invJ[0][1] = -dx1_domega0[0][1]*invdet;
+        invJ[1][0] = -dx1_domega0[1][0]*invdet;
+        const float dx1[2] = {out_x - pred_x, out_y - pred_y};
+        for(int i=0;i<2;i++)
+        {
+          dx += invJ[0][i]*dx1[i];
+          dy += invJ[1][i]*dx1[i];
+        }
+        sqr_err = dx1[0]*dx1[0] + dx1[1]*dx1[1];
+      }
+      out_dx = pred_dx;
+      out_dy = pred_dy;
+
+    } break;
+
   }
 
 
@@ -737,6 +936,108 @@ static inline float lens_lt_sample_aperture(
 
 
   switch (camera_data->lensModel){
+    
+    case NONE:
+    {
+      float view[3] =
+      {
+        scene_x,
+        scene_y,
+        scene_z + camera_data->lens_outer_pupil_curvature_radius
+      };
+      normalise(view);
+      int error = 0;
+      if(1 || view[2] >= camera_data->lens_field_of_view)
+      {
+        const float eps = 1e-8;
+        float sqr_err = 1e30, sqr_ap_err = 1e30;
+        float prev_sqr_err = 1e32, prev_sqr_ap_err = 1e32;
+        for(int k=0;k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0;k++)
+        {
+          prev_sqr_err = sqr_err, prev_sqr_ap_err = sqr_ap_err;
+          const float begin_x = x;
+          const float begin_y = y;
+          const float begin_dx = dx;
+          const float begin_dy = dy;
+          const float begin_lambda = lambda;
+          const float pred_ap[2] = {
+             + 47.9583 *begin_dx + 0.726604 *begin_x + 0.30773 *begin_x*begin_lambda + 10.0443 *begin_dx*begin_lambda + 0.51757 *begin_y*begin_dx*begin_dy + 0.0130025 *begin_x*begin_y*begin_dy + 0.0209696 *lens_ipow(begin_x, 2)*begin_dx + -0.428152 *begin_x*lens_ipow(begin_lambda, 2) + 0.0001599 *begin_x*lens_ipow(begin_y, 2) + 0.000146126 *lens_ipow(begin_x, 3) + 0.109933 *begin_x*lens_ipow(begin_dy, 2) + 0.60574 *begin_x*lens_ipow(begin_dx, 2) + 0.00896142 *lens_ipow(begin_y, 2)*begin_dx + -10.4332 *begin_dx*lens_ipow(begin_lambda, 2) + 0.208867 *begin_x*lens_ipow(begin_lambda, 3) + 2.55743e-05 *lens_ipow(begin_x, 4)*begin_dx + 3.82423 *begin_dx*lens_ipow(begin_lambda, 4) + 2.4372e-07 *lens_ipow(begin_x, 5) + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dx*begin_dy + 0.000614863 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 2) + -3.80606e-05 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + 0.836959 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2)*begin_lambda + 2.60785e-08 *lens_ipow(begin_x, 5)*begin_lambda + 2.35096e-10 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 2) + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dx*begin_dy*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + 5.01276e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 3) + -4.29584e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 4),
+             + 0.727662 *begin_y + 47.9805 *begin_dy + 9.94011 *begin_dy*begin_lambda + 0.303795 *begin_y*begin_lambda + 0.116675 *begin_y*lens_ipow(begin_dx, 2) + 0.0212751 *lens_ipow(begin_y, 2)*begin_dy + 0.606324 *begin_y*lens_ipow(begin_dy, 2) + 0.541493 *begin_x*begin_dx*begin_dy + 0.0133007 *begin_x*begin_y*begin_dx + 0.525397 *lens_ipow(begin_dx, 2)*begin_dy + -0.422576 *begin_y*lens_ipow(begin_lambda, 2) + 0.000155139 *lens_ipow(begin_x, 2)*begin_y + -10.2959 *begin_dy*lens_ipow(begin_lambda, 2) + 0.000145719 *lens_ipow(begin_y, 3) + 0.00910908 *lens_ipow(begin_x, 2)*begin_dy + 0.205574 *begin_y*lens_ipow(begin_lambda, 3) + -0.000530731 *lens_ipow(begin_y, 2)*begin_dy*begin_lambda + 9.11966e-06 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 0.00188791 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_dy + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dx*begin_dy + 3.75232 *begin_dy*lens_ipow(begin_lambda, 4) + 7.66467e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + 0.54031 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + 4.37653e-05 *lens_ipow(begin_y, 4)*begin_dy*begin_lambda + 0.00104185 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 2)*begin_lambda + 4.47109e-07 *lens_ipow(begin_y, 5)*begin_lambda + 8.89044e-10 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 3)*lens_ipow(begin_lambda, 3) + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dx*begin_dy*lens_ipow(begin_lambda, 4)
+          };
+          const float delta_ap[] = {ap_x - pred_ap[0], ap_y - pred_ap[1]};
+          sqr_ap_err = delta_ap[0]*delta_ap[0]+delta_ap[1]*delta_ap[1];
+          float dx1_domega0[2][2];
+          dx1_domega0[0][0] =  + 47.9583  + 10.0443 *begin_lambda + 0.51757 *begin_y*begin_dy + 0.0209696 *lens_ipow(begin_x, 2) + 1.21148 *begin_x*begin_dx + 0.00896142 *lens_ipow(begin_y, 2) + -10.4332 *lens_ipow(begin_lambda, 2) + 2.55743e-05 *lens_ipow(begin_x, 4) + 3.82423 *lens_ipow(begin_lambda, 4) + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dy + 0.00122973 *lens_ipow(begin_x, 3)*begin_dx + 1.67392 *begin_x*begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dy*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dy*lens_ipow(begin_lambda, 2)+0.0f;
+          dx1_domega0[0][1] =  + 0.51757 *begin_y*begin_dx + 0.0130025 *begin_x*begin_y + 0.219866 *begin_x*begin_dy + -0.000238119 *lens_ipow(begin_x, 2)*begin_y*begin_dx + -7.61212e-05 *begin_x*lens_ipow(begin_y, 2)*begin_dy + 1.67392 *begin_x*lens_ipow(begin_dx, 2)*begin_dy*begin_lambda + -1.07059e-06 *lens_ipow(begin_x, 4)*begin_y*begin_dx*begin_lambda + -3.9565e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dx*lens_ipow(begin_lambda, 2)+0.0f;
+          dx1_domega0[1][0] =  + 0.233349 *begin_y*begin_dx + 0.541493 *begin_x*begin_dy + 0.0133007 *begin_x*begin_y + 1.05079 *begin_dx*begin_dy + 0.00377582 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dy + 1.08062 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 4)+0.0f;
+          dx1_domega0[1][1] =  + 47.9805  + 9.94011 *begin_lambda + 0.0212751 *lens_ipow(begin_y, 2) + 1.21265 *begin_y*begin_dy + 0.541493 *begin_x*begin_dx + 0.525397 *lens_ipow(begin_dx, 2) + -10.2959 *lens_ipow(begin_lambda, 2) + 0.00910908 *lens_ipow(begin_x, 2) + -0.000530731 *lens_ipow(begin_y, 2)*begin_lambda + 0.00188791 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2) + -0.000453148 *begin_x*lens_ipow(begin_y, 2)*begin_dx + 3.75232 *lens_ipow(begin_lambda, 4) + 1.08062 *begin_y*lens_ipow(begin_dx, 2)*begin_dy + 4.37653e-05 *lens_ipow(begin_y, 4)*begin_lambda + 0.00208371 *lens_ipow(begin_y, 3)*begin_dy*begin_lambda + -3.83891e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_lambda, 4)+0.0f;
+          float invApJ[2][2];
+          const float invdetap = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+          invApJ[0][0] =  dx1_domega0[1][1]*invdetap;
+          invApJ[1][1] =  dx1_domega0[0][0]*invdetap;
+          invApJ[0][1] = -dx1_domega0[0][1]*invdetap;
+          invApJ[1][0] = -dx1_domega0[1][0]*invdetap;
+          for(int i=0;i<2;i++)
+          {
+            dx += invApJ[0][i]*delta_ap[i];
+            dy += invApJ[1][i]*delta_ap[i];
+          }
+          out[0] =  + 61.6861 *begin_dx + 0.516318 *begin_x + 0.239174 *begin_x*begin_lambda + 6.09756 *begin_dx*begin_lambda + 0.0418018 *begin_y*begin_dx*begin_dy + 0.0291763 *begin_x*begin_y*begin_dy + 0.0384633 *lens_ipow(begin_x, 2)*begin_dx + -41.8684 *lens_ipow(begin_dx, 3) + -0.16516 *begin_x*lens_ipow(begin_lambda, 2) + -41.0878 *begin_dx*lens_ipow(begin_dy, 2) + 0.000319801 *begin_x*lens_ipow(begin_y, 2) + 0.000310337 *lens_ipow(begin_x, 3) + 0.431597 *begin_x*lens_ipow(begin_dy, 2) + 0.417681 *begin_x*lens_ipow(begin_dx, 2) + 0.0106198 *lens_ipow(begin_y, 2)*begin_dx + -4.03513 *begin_dx*lens_ipow(begin_lambda, 3) + 1.11768e-05 *begin_x*lens_ipow(begin_y, 2)*begin_lambda + -0.000382566 *lens_ipow(begin_x, 2)*begin_dx*begin_lambda + -8.637e-05 *lens_ipow(begin_x, 2)*begin_y*begin_dx*begin_dy*begin_lambda + 5.14981e-06 *lens_ipow(begin_x, 7)*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + 13819.6 *lens_ipow(begin_dx, 9)*lens_ipow(begin_lambda, 2) + 1.71189e-08 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2)*begin_dy + 3.21537e-10 *lens_ipow(begin_x, 9)*lens_ipow(begin_lambda, 2) + 0.00130788 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 2) + 0.000150672 *lens_ipow(begin_x, 6)*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + 5.82064e-14 *lens_ipow(begin_x, 7)*lens_ipow(begin_y, 4) + -0.0568649 *lens_ipow(begin_x, 4)*lens_ipow(begin_dx, 5)*lens_ipow(begin_lambda, 2) + 6.75549e-08 *lens_ipow(begin_x, 8)*begin_dx*lens_ipow(begin_lambda, 2);
+          out[1] =  + 0.453506 *begin_y + 59.1587 *begin_dy + 19.1364 *begin_dy*begin_lambda + 0.592232 *begin_y*begin_lambda + 0.411922 *begin_y*lens_ipow(begin_dx, 2) + 0.0392662 *lens_ipow(begin_y, 2)*begin_dy + 0.451829 *begin_y*lens_ipow(begin_dy, 2) + 0.0283685 *begin_x*begin_y*begin_dx + -42.1243 *lens_ipow(begin_dx, 2)*begin_dy + -0.817315 *begin_y*lens_ipow(begin_lambda, 2) + 0.000312315 *lens_ipow(begin_x, 2)*begin_y + -19.7228 *begin_dy*lens_ipow(begin_lambda, 2) + 0.000313434 *lens_ipow(begin_y, 3) + 0.0101854 *lens_ipow(begin_x, 2)*begin_dy + -41.478 *lens_ipow(begin_dy, 3) + 0.395356 *begin_y*lens_ipow(begin_lambda, 3) + 1.6101e-05 *lens_ipow(begin_y, 3)*begin_lambda + 8.49311e-06 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 7.11498 *begin_dy*lens_ipow(begin_lambda, 4) + -7.43062e-05 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + -9.90812e-06 *lens_ipow(begin_y, 5)*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + 1.08674e-14 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 9) + 2.57069e-11 *lens_ipow(begin_y, 9)*lens_ipow(begin_dx, 2) + 2.33768e-09 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*begin_dy + 1.52162e-14 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 5) + -0.313837 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dy, 8) + 4.28086e-05 *begin_x*lens_ipow(begin_y, 5)*begin_dx*lens_ipow(begin_dy, 4) + 0.00203743 *begin_x*lens_ipow(begin_y, 4)*begin_dx*lens_ipow(begin_dy, 5);
+          out[2] =  + -1.63943 *begin_dx + -0.0305953 *begin_x + 0.0323359 *begin_dx*begin_lambda + -0.0004223 *lens_ipow(begin_x, 2)*begin_dx + 1.74614e-06 *begin_x*lens_ipow(begin_y, 2) + 4.9289 *lens_ipow(begin_dx, 3)*begin_lambda + -0.0847201 *begin_x*lens_ipow(begin_dy, 2)*begin_lambda + -1.54502e-05 *begin_x*lens_ipow(begin_y, 2)*begin_lambda + -8.9172e-06 *lens_ipow(begin_x, 3)*begin_lambda + -0.00275435 *begin_x*begin_y*begin_dy*begin_lambda + -0.000390955 *lens_ipow(begin_x, 2)*begin_dx*begin_lambda + -0.000707983 *lens_ipow(begin_y, 2)*begin_dx*begin_lambda + -2.05796 *begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -0.0998601 *begin_y*begin_dx*begin_dy*begin_lambda + 0.0184584 *begin_x*lens_ipow(begin_dx, 4) + 0.0249779 *begin_y*begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + -8.31442 *lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + 1.57657 *lens_ipow(begin_dx, 5) + 4.83602e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_lambda, 2) + 0.0421838 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.00116668 *begin_x*begin_y*begin_dy*lens_ipow(begin_lambda, 2) + -0.020373 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 3) + 4.0944 *lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 3) + -1.18558 *begin_x*begin_y*lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 3) + 20.8038 *begin_dx*lens_ipow(begin_dy, 8) + 2134.98 *lens_ipow(begin_dx, 5)*lens_ipow(begin_dy, 4) + 0.000186958 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2) + 0.000963685 *begin_x*lens_ipow(begin_lambda, 9);
+          out[3] =  + -0.030348 *begin_y + -1.6733 *begin_dy + 0.226598 *begin_dy*begin_lambda + -0.000739868 *begin_y*begin_lambda + 0.0043513 *begin_y*lens_ipow(begin_dx, 2) + -0.000633417 *lens_ipow(begin_y, 2)*begin_dy + -0.00400459 *begin_y*lens_ipow(begin_dy, 2) + 0.0669129 *begin_x*begin_dx*begin_dy + -9.59075e-05 *begin_x*begin_y*begin_dx + 2.91954 *lens_ipow(begin_dx, 2)*begin_dy + 0.000576135 *begin_y*lens_ipow(begin_lambda, 2) + -0.334116 *begin_dy*lens_ipow(begin_lambda, 2) + -3.05205e-06 *lens_ipow(begin_y, 3) + 0.000314298 *lens_ipow(begin_x, 2)*begin_dy + 0.885659 *lens_ipow(begin_dy, 3) + 7.50285e-05 *lens_ipow(begin_x, 2)*begin_dy*begin_lambda + -0.113294 *lens_ipow(begin_dy, 3)*begin_lambda + 0.176171 *begin_dy*lens_ipow(begin_lambda, 3) + -6.45139e-07 *lens_ipow(begin_y, 3)*begin_lambda + 4.94668e-05 *begin_x*begin_y*begin_dx*begin_lambda + 0.00640416 *begin_x*begin_dx*begin_dy*begin_lambda + -0.0369238 *begin_x*lens_ipow(begin_dx, 3)*begin_dy + 2.5536 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 1.94879 *lens_ipow(begin_dy, 5) + -0.000400921 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 2) + 0.0245005 *begin_y*lens_ipow(begin_dy, 4) + 5.94929e-06 *lens_ipow(begin_x, 3)*begin_dx*begin_dy + 0.011227 *begin_y*lens_ipow(begin_dx, 4)*begin_lambda;
+          float pred_out_cs[7] = {0.0f};
+          lens_sphereToCs(out, out+2, pred_out_cs, pred_out_cs+3, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          float view[3] =
+          {
+            scene_x - pred_out_cs[0],
+            scene_y - pred_out_cs[1],
+            scene_z - pred_out_cs[2]
+          };
+          normalise(view);
+          float out_new[5];
+          lens_csToSphere(pred_out_cs, view, out_new, out_new+2, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          const float delta_out[] = {out_new[2] - out[2], out_new[3] - out[3]};
+          sqr_err = delta_out[0]*delta_out[0]+delta_out[1]*delta_out[1];
+          float domega2_dx0[2][2];
+          domega2_dx0[0][0] =  + -0.0305953  + -0.000844601 *begin_x*begin_dx + 1.74614e-06 *lens_ipow(begin_y, 2) + -0.0847201 *lens_ipow(begin_dy, 2)*begin_lambda + -1.54502e-05 *lens_ipow(begin_y, 2)*begin_lambda + -2.67516e-05 *lens_ipow(begin_x, 2)*begin_lambda + -0.00275435 *begin_y*begin_dy*begin_lambda + -0.00078191 *begin_x*begin_dx*begin_lambda + 0.0184584 *lens_ipow(begin_dx, 4) + 1.45081e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_lambda, 2) + 0.0421838 *lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.00116668 *begin_y*begin_dy*lens_ipow(begin_lambda, 2) + -0.020373 *lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 3) + -1.18558 *begin_y*lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 3) + 0.000373915 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2) + 0.000963685 *lens_ipow(begin_lambda, 9)+0.0f;
+          domega2_dx0[0][1] =  + 3.49228e-06 *begin_x*begin_y + -3.09004e-05 *begin_x*begin_y*begin_lambda + -0.00275435 *begin_x*begin_dy*begin_lambda + -0.00141597 *begin_y*begin_dx*begin_lambda + -0.0998601 *begin_dx*begin_dy*begin_lambda + 0.0249779 *begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + 0.00116668 *begin_x*begin_dy*lens_ipow(begin_lambda, 2) + -1.18558 *begin_x*lens_ipow(begin_dx, 4)*lens_ipow(begin_dy, 3) + 0.000373915 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2)+0.0f;
+          domega2_dx0[1][0] =  + 0.0669129 *begin_dx*begin_dy + -9.59075e-05 *begin_y*begin_dx + 0.000628596 *begin_x*begin_dy + 0.000150057 *begin_x*begin_dy*begin_lambda + 4.94668e-05 *begin_y*begin_dx*begin_lambda + 0.00640416 *begin_dx*begin_dy*begin_lambda + -0.0369238 *lens_ipow(begin_dx, 3)*begin_dy + -0.000400921 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + 1.78479e-05 *lens_ipow(begin_x, 2)*begin_dx*begin_dy+0.0f;
+          domega2_dx0[1][1] =  + -0.030348  + -0.000739868 *begin_lambda + 0.0043513 *lens_ipow(begin_dx, 2) + -0.00126683 *begin_y*begin_dy + -0.00400459 *lens_ipow(begin_dy, 2) + -9.59075e-05 *begin_x*begin_dx + 0.000576135 *lens_ipow(begin_lambda, 2) + -9.15615e-06 *lens_ipow(begin_y, 2) + -1.93542e-06 *lens_ipow(begin_y, 2)*begin_lambda + 4.94668e-05 *begin_x*begin_dx*begin_lambda + -0.000400921 *begin_x*begin_dx*lens_ipow(begin_dy, 2) + 0.0245005 *lens_ipow(begin_dy, 4) + 0.011227 *lens_ipow(begin_dx, 4)*begin_lambda+0.0f;
+          float invJ[2][2];
+          const float invdet = 1.0f/(domega2_dx0[0][0]*domega2_dx0[1][1] - domega2_dx0[0][1]*domega2_dx0[1][0]);
+          invJ[0][0] =  domega2_dx0[1][1]*invdet;
+          invJ[1][1] =  domega2_dx0[0][0]*invdet;
+          invJ[0][1] = -domega2_dx0[0][1]*invdet;
+          invJ[1][0] = -domega2_dx0[1][0]*invdet;
+          for(int i=0;i<2;i++)
+          {
+            x += 0.72 * invJ[0][i]*delta_out[i];
+            y += 0.72 * invJ[1][i]*delta_out[i];
+          }
+          if(sqr_err>prev_sqr_err) error |= 1;
+          if(sqr_ap_err>prev_sqr_ap_err) error |= 2;
+          if(out[0]!=out[0]) error |= 4;
+          if(out[1]!=out[1]) error |= 8;
+          // reset error code for first few iterations.
+          if(k<10) error = 0;
+        }
+      }
+      else
+        error = 128;
+      if(out[0]*out[0]+out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius) error |= 16;
+      const float begin_x = x;
+      const float begin_y = y;
+      const float begin_dx = dx;
+      const float begin_dy = dy;
+      const float begin_lambda = lambda;
+      if(error==0)
+        out[4] =  + 0.59399  + 0.836383 *begin_lambda + -0.000344805 *begin_x*begin_dx + -7.02536e-06 *lens_ipow(begin_x, 2) + -1.73936 *lens_ipow(begin_lambda, 2) + 1.70047 *lens_ipow(begin_lambda, 3) + -0.644121 *lens_ipow(begin_lambda, 4) + -0.150549 *lens_ipow(begin_dx, 4) + -0.449125 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + -1.08274e-05 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -1.09547e-05 *begin_x*lens_ipow(begin_y, 2)*begin_dx + -4.56631e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -3.11249e-07 *lens_ipow(begin_y, 4) + -0.00046016 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -2.35642e-05 *lens_ipow(begin_y, 3)*begin_dy + -2.22792e-09 *lens_ipow(begin_x, 6) + -1.06372e-07 *lens_ipow(begin_x, 5)*begin_dx + -1.21435e-10 *lens_ipow(begin_y, 6) + -5.63631e-10 *lens_ipow(begin_x, 7)*begin_dx + -4.88522e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4) + 1.25574e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx*begin_dy + -2.84961e-08 *lens_ipow(begin_x, 6)*lens_ipow(begin_dx, 2) + -3.7395e-13 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 6) + 2.03261e-06 *lens_ipow(begin_y, 4)*lens_ipow(begin_dy, 4)*begin_lambda + 7.20677e-05 *lens_ipow(begin_x, 4)*lens_ipow(begin_dx, 6) + -3.53471e-15 *lens_ipow(begin_x, 8)*lens_ipow(begin_y, 2) + -3.64078e-15 *lens_ipow(begin_x, 10) + 3.93018e-08 *lens_ipow(begin_x, 5)*begin_y*lens_ipow(begin_dx, 3)*begin_dy*begin_lambda;
+      else
+        out[4] = 0.0f;
+    } break;
+
+
     case petzval:
     {
       float view[3] =
@@ -1531,6 +1832,212 @@ static inline float lens_lt_sample_aperture(
       const float begin_lambda = lambda;
       if(error==0)
         out[4] =  + -0.142169  + 1.92514 *begin_lambda + 6.72398e-05 *begin_y*begin_dy + 0.00909521 *lens_ipow(begin_dy, 2) + 0.00605164 *lens_ipow(begin_dx, 2) + -5.08868 *lens_ipow(begin_lambda, 2) + 7.22269 *lens_ipow(begin_lambda, 3) + -5.35032 *lens_ipow(begin_lambda, 4) + -0.929084 *lens_ipow(begin_dx, 4) + -0.0421714 *begin_y*lens_ipow(begin_dy, 3) + -8.53396e-05 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + -2.71483 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + 3.43471e-07 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -1.95128 *lens_ipow(begin_dy, 4) + -2.76707e-09 *lens_ipow(begin_y, 4) + -0.0296087 *begin_y*lens_ipow(begin_dx, 2)*begin_dy + -8.3443e-07 *lens_ipow(begin_x, 3)*begin_dx + -0.00036513 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -2.9618e-08 *lens_ipow(begin_x, 4) + -5.77741e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + -1.16249e-06 *lens_ipow(begin_y, 3)*begin_dy + -0.00011303 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_lambda + -0.00365224 *begin_x*lens_ipow(begin_dx, 3)*begin_lambda + 1.62955 *lens_ipow(begin_lambda, 5) + -0.00280221 *begin_x*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -5.56816e-11 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 2)*begin_lambda + -2.4492e-11 *lens_ipow(begin_x, 7)*begin_dx + -3.41091e-13 *lens_ipow(begin_x, 8);
+      else
+        out[4] = 0.0f;
+
+    } break;
+
+
+    case takumar_1969:
+    {
+      float view[3] =
+      {
+        scene_x,
+        scene_y,
+        scene_z + camera_data->lens_outer_pupil_curvature_radius
+      };
+      normalise(view);
+      int error = 0;
+      if(1 || view[2] >= camera_data->lens_field_of_view)
+      {
+        const float eps = 1e-8;
+        float sqr_err = 1e30, sqr_ap_err = 1e30;
+        float prev_sqr_err = 1e32, prev_sqr_ap_err = 1e32;
+        for(int k=0;k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0;k++)
+        {
+          prev_sqr_err = sqr_err, prev_sqr_ap_err = sqr_ap_err;
+          const float begin_x = x;
+          const float begin_y = y;
+          const float begin_dx = dx;
+          const float begin_dy = dy;
+          const float begin_lambda = lambda;
+          const float pred_ap[2] = {
+             + 30.4517 *begin_dx + 0.335491 *begin_x + 0.189788 *begin_x*begin_lambda + 5.85562 *begin_dx*begin_lambda + -0.141897 *begin_y*begin_dx*begin_dy + 0.00157184 *begin_x*begin_y*begin_dy + 0.0036529 *lens_ipow(begin_x, 2)*begin_dx + -18.0466 *lens_ipow(begin_dx, 3) + -0.139713 *begin_x*lens_ipow(begin_lambda, 2) + -17.5218 *begin_dx*lens_ipow(begin_dy, 2) + -0.000157628 *begin_x*lens_ipow(begin_y, 2) + -0.000149439 *lens_ipow(begin_x, 3) + -0.164804 *begin_x*lens_ipow(begin_dy, 2) + -0.277242 *begin_x*lens_ipow(begin_dx, 2) + -4.06094 *begin_dx*lens_ipow(begin_lambda, 2) + 8.19514e-05 *begin_x*lens_ipow(begin_y, 2)*begin_lambda + 6.17978e-05 *lens_ipow(begin_x, 3)*begin_lambda + 0.00342147 *lens_ipow(begin_y, 2)*begin_dx*begin_lambda + -4.00211e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + -1.93383e-07 *lens_ipow(begin_x, 5) + -2.14205e-07 *begin_x*lens_ipow(begin_y, 4) + 0.243286 *begin_x*lens_ipow(begin_dy, 4) + -0.0124942 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_dy, 2) + 5.92223 *lens_ipow(begin_dx, 5)*begin_lambda + 0.148547 *begin_x*begin_y*lens_ipow(begin_dx, 4)*begin_dy + -0.0244494 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + -43.3246 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 5) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dx*begin_dy,
+             + 0.333768 *begin_y + 30.3142 *begin_dy + 6.19823 *begin_dy*begin_lambda + 0.194459 *begin_y*begin_lambda + -0.16036 *begin_y*lens_ipow(begin_dx, 2) + 0.00366671 *lens_ipow(begin_y, 2)*begin_dy + -0.277416 *begin_y*lens_ipow(begin_dy, 2) + -0.132609 *begin_x*begin_dx*begin_dy + 0.00165636 *begin_x*begin_y*begin_dx + -17.3693 *lens_ipow(begin_dx, 2)*begin_dy + -0.142883 *begin_y*lens_ipow(begin_lambda, 2) + -0.000147929 *lens_ipow(begin_x, 2)*begin_y + -4.24615 *begin_dy*lens_ipow(begin_lambda, 2) + -0.000147913 *lens_ipow(begin_y, 3) + 0.00203755 *lens_ipow(begin_x, 2)*begin_dy + -18.0699 *lens_ipow(begin_dy, 3) + 6.06488e-05 *lens_ipow(begin_y, 3)*begin_lambda + 6.63746e-05 *lens_ipow(begin_x, 2)*begin_y*begin_lambda + 0.224708 *begin_y*lens_ipow(begin_dx, 4) + 3.54072 *lens_ipow(begin_dy, 5) + -0.0124248 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*begin_dy + -4.00944e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -2.13743e-07 *lens_ipow(begin_x, 4)*begin_y + -1.95879e-07 *lens_ipow(begin_y, 5) + -0.0087466 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 3) + 0.141742 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 4) + -4.65243 *begin_x*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 3) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dx*begin_dy
+          };
+          const float delta_ap[] = {ap_x - pred_ap[0], ap_y - pred_ap[1]};
+          sqr_ap_err = delta_ap[0]*delta_ap[0]+delta_ap[1]*delta_ap[1];
+          float dx1_domega0[2][2];
+          dx1_domega0[0][0] =  + 30.4517  + 5.85562 *begin_lambda + -0.141897 *begin_y*begin_dy + 0.0036529 *lens_ipow(begin_x, 2) + -54.1398 *lens_ipow(begin_dx, 2) + -17.5218 *lens_ipow(begin_dy, 2) + -0.554483 *begin_x*begin_dx + -4.06094 *lens_ipow(begin_lambda, 2) + 0.00342147 *lens_ipow(begin_y, 2)*begin_lambda + -0.0124942 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + 29.6111 *lens_ipow(begin_dx, 4)*begin_lambda + 0.594187 *begin_x*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -0.0733483 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + -129.974 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 5) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dy+0.0f;
+          dx1_domega0[0][1] =  + -0.141897 *begin_y*begin_dx + 0.00157184 *begin_x*begin_y + -35.0437 *begin_dx*begin_dy + -0.329608 *begin_x*begin_dy + 0.973146 *begin_x*lens_ipow(begin_dy, 3) + -0.0249884 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + 0.148547 *begin_x*begin_y*lens_ipow(begin_dx, 4) + -216.623 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 4) + -3.99556e-11 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 3)*begin_dx+0.0f;
+          dx1_domega0[1][0] =  + -0.32072 *begin_y*begin_dx + -0.132609 *begin_x*begin_dy + 0.00165636 *begin_x*begin_y + -34.7386 *begin_dx*begin_dy + 0.898834 *begin_y*lens_ipow(begin_dx, 3) + -0.0248497 *lens_ipow(begin_y, 2)*begin_dx*begin_dy + 0.141742 *begin_x*begin_y*lens_ipow(begin_dy, 4) + -13.9573 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dy+0.0f;
+          dx1_domega0[1][1] =  + 30.3142  + 6.19823 *begin_lambda + 0.00366671 *lens_ipow(begin_y, 2) + -0.554831 *begin_y*begin_dy + -0.132609 *begin_x*begin_dx + -17.3693 *lens_ipow(begin_dx, 2) + -4.24615 *lens_ipow(begin_lambda, 2) + 0.00203755 *lens_ipow(begin_x, 2) + -54.2097 *lens_ipow(begin_dy, 2) + 17.7036 *lens_ipow(begin_dy, 4) + -0.0124248 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + -0.0262398 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + 0.566968 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 3) + -13.9573 *begin_x*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2) + -4.04516e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dx+0.0f;
+          float invApJ[2][2];
+          const float invdetap = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+          invApJ[0][0] =  dx1_domega0[1][1]*invdetap;
+          invApJ[1][1] =  dx1_domega0[0][0]*invdetap;
+          invApJ[0][1] = -dx1_domega0[0][1]*invdetap;
+          invApJ[1][0] = -dx1_domega0[1][0]*invdetap;
+          for(int i=0;i<2;i++)
+          {
+            dx += invApJ[0][i]*delta_ap[i];
+            dy += invApJ[1][i]*delta_ap[i];
+          }
+          out[0] =  + 49.8032 *begin_dx + 0.0143226 *begin_x*begin_y*begin_dy + 0.0149205 *lens_ipow(begin_x, 2)*begin_dx + -20.8277 *lens_ipow(begin_dx, 3) + -21.2379 *begin_dx*lens_ipow(begin_dy, 2) + -0.000546669 *begin_x*lens_ipow(begin_y, 2) + -0.00103006 *lens_ipow(begin_x, 3) + 0.300221 *begin_x*lens_ipow(begin_dx, 2) + 0.00687478 *lens_ipow(begin_y, 2)*begin_dx + 0.556502 *begin_x*lens_ipow(begin_dx, 2)*begin_lambda + 1.14168 *begin_x*lens_ipow(begin_dy, 2)*begin_lambda + 0.000347782 *begin_x*lens_ipow(begin_y, 2)*begin_lambda + 0.00191234 *lens_ipow(begin_x, 3)*begin_lambda + 0.0160337 *lens_ipow(begin_x, 2)*begin_dx*begin_lambda + -0.00119575 *lens_ipow(begin_x, 3)*lens_ipow(begin_lambda, 2) + 0.00142374 *lens_ipow(begin_x, 3)*lens_ipow(begin_dy, 2) + -0.632997 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.000748107 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -0.00165018 *lens_ipow(begin_x, 3)*lens_ipow(begin_dy, 2)*begin_lambda + -3.27465e-05 *lens_ipow(begin_x, 4)*begin_dx*lens_ipow(begin_lambda, 2) + -1.81354e-09 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 2) + -7.07079e-10 *begin_x*lens_ipow(begin_y, 6) + -1.95349 *begin_x*lens_ipow(begin_dx, 4)*lens_ipow(begin_lambda, 2) + -2.73806 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + -3.13846e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*begin_lambda + 0.0657627 *begin_x*begin_y*lens_ipow(begin_dy, 3)*lens_ipow(begin_lambda, 3) + -2.56873e-09 *lens_ipow(begin_x, 7)*lens_ipow(begin_lambda, 2) + -0.000182029 *lens_ipow(begin_y, 5)*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 3);
+          out[1] =  + -0.141503 *begin_y + 49.4365 *begin_dy + 0.548589 *begin_dy*begin_lambda + 0.41489 *begin_y*begin_lambda + 0.0244066 *lens_ipow(begin_y, 2)*begin_dy + 0.0146213 *begin_x*begin_y*begin_dx + -20.9484 *lens_ipow(begin_dx, 2)*begin_dy + -0.297076 *begin_y*lens_ipow(begin_lambda, 2) + -0.000312083 *lens_ipow(begin_x, 2)*begin_y + -0.000250017 *lens_ipow(begin_y, 3) + 0.00729085 *lens_ipow(begin_x, 2)*begin_dy + -20.3828 *lens_ipow(begin_dy, 3) + 3.33439 *begin_y*lens_ipow(begin_dy, 2)*begin_lambda + 2.51912 *begin_y*lens_ipow(begin_dx, 2)*begin_lambda + -3.78891 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + -1.13034e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + 0.00048002 *lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2) + -0.807166 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + -5.2979e-07 *lens_ipow(begin_y, 5) + -5.07164 *begin_y*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + -2.56011e-05 *lens_ipow(begin_y, 4)*begin_dy*begin_lambda + 1.06779e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_lambda + -1.08743e-09 *lens_ipow(begin_x, 6)*begin_y + 2.24155 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 4) + 3.04667 *begin_y*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 4) + 0.0920095 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 5) + 3.60861e-06 *lens_ipow(begin_x, 4)*begin_y*lens_ipow(begin_dx, 2)*begin_lambda + -6.55673e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5);
+          out[2] =  + -0.910038 *begin_dx + -0.0193261 *begin_x + -0.00125658 *begin_x*begin_lambda + -0.000251218 *begin_x*begin_y*begin_dy + -0.000174838 *lens_ipow(begin_x, 2)*begin_dx + 0.4129 *lens_ipow(begin_dx, 3) + 0.0963517 *begin_dx*lens_ipow(begin_dy, 2) + 8.84115e-06 *begin_x*lens_ipow(begin_y, 2) + 2.17952e-05 *lens_ipow(begin_x, 3) + -0.0273656 *begin_x*lens_ipow(begin_dy, 2)*begin_lambda + -4.84779e-05 *lens_ipow(begin_x, 3)*begin_lambda + 6.32952e-05 *lens_ipow(begin_y, 2)*begin_dx*begin_lambda + 2.10771e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + -2.16392e-07 *lens_ipow(begin_x, 4)*begin_dx + 4.52445e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_lambda, 2) + -3.78941e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_dy, 2) + 2.33559e-05 *lens_ipow(begin_x, 2)*begin_y*begin_dx*begin_dy + 0.0814277 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 3) + -2.28441e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_lambda + -3.87632e-06 *begin_x*lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2)*begin_dy + -0.0687767 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 4) + 0.00341197 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + 2.89162e-11 *lens_ipow(begin_x, 7)*begin_lambda + -0.00400648 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 3) + 1.58178e-13 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4) + 3.50375e-14 *begin_x*lens_ipow(begin_y, 8) + -6.49335e-09 *lens_ipow(begin_y, 6)*begin_dx*lens_ipow(begin_dy, 2) + -5.95238e-08 *lens_ipow(begin_x, 5)*lens_ipow(begin_lambda, 6);
+          out[3] =  + -0.0178342 *begin_y + -0.908344 *begin_dy + -0.00663163 *begin_y*begin_lambda + -0.007604 *begin_y*lens_ipow(begin_dx, 2) + -0.000187248 *lens_ipow(begin_y, 2)*begin_dy + 0.0159022 *begin_x*begin_dx*begin_dy + -0.000243681 *begin_x*begin_y*begin_dx + 0.761103 *lens_ipow(begin_dx, 2)*begin_dy + 0.00492946 *begin_y*lens_ipow(begin_lambda, 2) + 7.69502e-06 *lens_ipow(begin_x, 2)*begin_y + 7.76167e-06 *lens_ipow(begin_y, 3) + 0.40198 *lens_ipow(begin_dy, 3) + 4.60293e-05 *lens_ipow(begin_x, 2)*begin_dy*begin_lambda + 0.000907222 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_dy + -5.04469e-07 *lens_ipow(begin_y, 4)*begin_dy + 3.23617e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -6.79163e-06 *lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2) + 7.16848e-09 *lens_ipow(begin_x, 4)*begin_y + 6.51238e-09 *lens_ipow(begin_y, 5) + 0.000381824 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 3) + 1.13086e-05 *lens_ipow(begin_x, 3)*begin_dx*begin_dy + -0.383626 *lens_ipow(begin_dx, 4)*begin_dy + 6.49928e-07 *lens_ipow(begin_y, 4)*begin_dy*begin_lambda + -3.25634e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_lambda + 2.0029e-06 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*begin_dy + -3.86222e-06 *begin_x*lens_ipow(begin_y, 3)*begin_dx*lens_ipow(begin_dy, 2) + -4.87562e-12 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 2)*begin_dy + -1.16396e-11 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 6)*begin_dy*lens_ipow(begin_lambda, 2);
+          float pred_out_cs[7] = {0.0f};
+          lens_sphereToCs(out, out+2, pred_out_cs, pred_out_cs+3, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          float view[3] =
+          {
+            scene_x - pred_out_cs[0],
+            scene_y - pred_out_cs[1],
+            scene_z - pred_out_cs[2]
+          };
+          normalise(view);
+          float out_new[5];
+          lens_csToSphere(pred_out_cs, view, out_new, out_new+2, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          const float delta_out[] = {out_new[2] - out[2], out_new[3] - out[3]};
+          sqr_err = delta_out[0]*delta_out[0]+delta_out[1]*delta_out[1];
+          float domega2_dx0[2][2];
+          domega2_dx0[0][0] =  + -0.0193261  + -0.00125658 *begin_lambda + -0.000251218 *begin_y*begin_dy + -0.000349677 *begin_x*begin_dx + 8.84115e-06 *lens_ipow(begin_y, 2) + 6.53857e-05 *lens_ipow(begin_x, 2) + -0.0273656 *lens_ipow(begin_dy, 2)*begin_lambda + -0.000145434 *lens_ipow(begin_x, 2)*begin_lambda + 6.32312e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -8.65567e-07 *lens_ipow(begin_x, 3)*begin_dx + 0.000135734 *lens_ipow(begin_x, 2)*lens_ipow(begin_lambda, 2) + -1.13682e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + 4.67118e-05 *begin_x*begin_y*begin_dx*begin_dy + 0.0814277 *lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 3) + -6.85322e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_lambda + -3.87632e-06 *lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2)*begin_dy + -0.0687767 *lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 4) + 2.02414e-10 *lens_ipow(begin_x, 6)*begin_lambda + 7.90889e-13 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4) + 3.50375e-14 *lens_ipow(begin_y, 8) + -2.97619e-07 *lens_ipow(begin_x, 4)*lens_ipow(begin_lambda, 6)+0.0f;
+          domega2_dx0[0][1] =  + -0.000251218 *begin_x*begin_dy + 1.76823e-05 *begin_x*begin_y + 0.00012659 *begin_y*begin_dx*begin_lambda + 4.21541e-08 *lens_ipow(begin_x, 3)*begin_y + 2.33559e-05 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -4.56882e-08 *lens_ipow(begin_x, 3)*begin_y*begin_lambda + -1.1629e-05 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*begin_dy + 0.00682395 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + -0.00801296 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 3) + 6.32711e-13 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 3) + 2.803e-13 *begin_x*lens_ipow(begin_y, 7) + -3.89601e-08 *lens_ipow(begin_y, 5)*begin_dx*lens_ipow(begin_dy, 2)+0.0f;
+          domega2_dx0[1][0] =  + 0.0159022 *begin_dx*begin_dy + -0.000243681 *begin_y*begin_dx + 1.539e-05 *begin_x*begin_y + 9.20586e-05 *begin_x*begin_dy*begin_lambda + 0.00181444 *begin_x*lens_ipow(begin_dx, 2)*begin_dy + 6.47233e-08 *begin_x*lens_ipow(begin_y, 3) + 2.86739e-08 *lens_ipow(begin_x, 3)*begin_y + 0.000763648 *begin_x*lens_ipow(begin_dy, 3) + 3.39258e-05 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -6.51267e-08 *begin_x*lens_ipow(begin_y, 3)*begin_lambda + -3.86222e-06 *lens_ipow(begin_y, 3)*begin_dx*lens_ipow(begin_dy, 2) + -2.92537e-11 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 2)*begin_dy + -2.32792e-11 *begin_x*lens_ipow(begin_y, 6)*begin_dy*lens_ipow(begin_lambda, 2)+0.0f;
+          domega2_dx0[1][1] =  + -0.0178342  + -0.00663163 *begin_lambda + -0.007604 *lens_ipow(begin_dx, 2) + -0.000374496 *begin_y*begin_dy + -0.000243681 *begin_x*begin_dx + 0.00492946 *lens_ipow(begin_lambda, 2) + 7.69502e-06 *lens_ipow(begin_x, 2) + 2.3285e-05 *lens_ipow(begin_y, 2) + -2.01788e-06 *lens_ipow(begin_y, 3)*begin_dy + 9.70849e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -2.03749e-05 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + 7.16848e-09 *lens_ipow(begin_x, 4) + 3.25619e-08 *lens_ipow(begin_y, 4) + 2.59971e-06 *lens_ipow(begin_y, 3)*begin_dy*begin_lambda + -9.76901e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_lambda + 8.01162e-06 *lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2)*begin_dy + -1.15867e-05 *begin_x*lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_dy, 2) + -9.75123e-12 *lens_ipow(begin_x, 6)*begin_y*begin_dy + -6.98377e-11 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 5)*begin_dy*lens_ipow(begin_lambda, 2)+0.0f;
+          float invJ[2][2];
+          const float invdet = 1.0f/(domega2_dx0[0][0]*domega2_dx0[1][1] - domega2_dx0[0][1]*domega2_dx0[1][0]);
+          invJ[0][0] =  domega2_dx0[1][1]*invdet;
+          invJ[1][1] =  domega2_dx0[0][0]*invdet;
+          invJ[0][1] = -domega2_dx0[0][1]*invdet;
+          invJ[1][0] = -domega2_dx0[1][0]*invdet;
+          for(int i=0;i<2;i++)
+          {
+            x += invJ[0][i]*delta_out[i];
+            y += invJ[1][i]*delta_out[i];
+          }
+          if(sqr_err>prev_sqr_err) error |= 1;
+          if(sqr_ap_err>prev_sqr_ap_err) error |= 2;
+          if(out[0]!=out[0]) error |= 4;
+          if(out[1]!=out[1]) error |= 8;
+
+          // reset error code for first few iterations.
+          if(k<10) error = 0;
+        }
+      }
+      else
+        error = 128;
+      if(out[0]*out[0]+out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius) error |= 16;
+      const float begin_x = x;
+      const float begin_y = y;
+      const float begin_dx = dx;
+      const float begin_dy = dy;
+      const float begin_lambda = lambda;
+      if(error==0)
+        out[4] =  + 2.13553 *begin_lambda + -4.72826 *lens_ipow(begin_lambda, 2) + -0.00103031 *begin_y*begin_dy*begin_lambda + -0.00102465 *begin_x*begin_dx*begin_lambda + -1.11271e-05 *lens_ipow(begin_x, 2)*begin_lambda + -1.11545e-05 *lens_ipow(begin_y, 2)*begin_lambda + 4.91467 *lens_ipow(begin_lambda, 3) + -1.97319 *lens_ipow(begin_lambda, 4) + -0.361162 *lens_ipow(begin_dx, 4) + -0.0189262 *begin_y*lens_ipow(begin_dy, 3) + -0.00017862 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + -0.0190907 *begin_x*lens_ipow(begin_dx, 3) + -0.918305 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + -0.35869 *lens_ipow(begin_dy, 4) + -9.73633e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -0.000498028 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2) + -0.0192091 *begin_y*lens_ipow(begin_dx, 2)*begin_dy + -0.000495702 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -0.0193094 *begin_x*begin_dx*lens_ipow(begin_dy, 2) + -0.000651255 *begin_x*begin_y*begin_dx*begin_dy + -0.000179837 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + -0.169861 *lens_ipow(begin_dx, 4)*begin_lambda + -0.17091 *lens_ipow(begin_dy, 4)*begin_lambda + 1.62928e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_lambda + -4.02531e-16 *lens_ipow(begin_y, 10) + -2.37748e-15 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 8) + -7.81748e-15 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 4) + -5.03842e-16 *lens_ipow(begin_x, 10);
+      else
+        out[4] = 0.0f;
+
+    } break;
+
+
+    case zeiss_biotar_1927:
+    {
+      float view[3] =
+      {
+        scene_x,
+        scene_y,
+        scene_z + camera_data->lens_outer_pupil_curvature_radius
+      };
+      normalise(view);
+      int error = 0;
+      if(1 || view[2] >= camera_data->lens_field_of_view)
+      {
+        const float eps = 1e-8;
+        float sqr_err = 1e30, sqr_ap_err = 1e30;
+        float prev_sqr_err = 1e32, prev_sqr_ap_err = 1e32;
+        for(int k=0;k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0;k++)
+        {
+          prev_sqr_err = sqr_err, prev_sqr_ap_err = sqr_ap_err;
+          const float begin_x = x;
+          const float begin_y = y;
+          const float begin_dx = dx;
+          const float begin_dy = dy;
+          const float begin_lambda = lambda;
+          const float pred_ap[2] = {
+             + 36.5996 *begin_dx + 0.454717 *begin_x + 0.041798 *begin_x*begin_lambda + 1.8289 *begin_dx*begin_lambda + -0.005327 *lens_ipow(begin_x, 2)*begin_dx + -22.4015 *lens_ipow(begin_dx, 3) + -23.0927 *begin_dx*lens_ipow(begin_dy, 2) + -0.000160418 *begin_x*lens_ipow(begin_y, 2) + -0.000163105 *lens_ipow(begin_x, 3) + -0.216495 *begin_x*lens_ipow(begin_dy, 2) + -0.462226 *begin_x*lens_ipow(begin_dx, 2) + -0.00111586 *lens_ipow(begin_y, 2)*begin_dx + -0.0170951 *begin_x*begin_y*begin_dy*begin_lambda + -0.603514 *begin_y*begin_dx*begin_dy*begin_lambda + -3.98252e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + 0.0316894 *begin_x*begin_y*lens_ipow(begin_dx, 2)*begin_dy + -1.29849e-07 *begin_x*lens_ipow(begin_y, 4) + -1.6084e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dx + -0.426172 *begin_y*begin_dx*lens_ipow(begin_dy, 3) + 0.0202469 *begin_x*begin_y*begin_dy*lens_ipow(begin_lambda, 3) + -7.04916e-08 *lens_ipow(begin_x, 6)*begin_dx + -1.97483e-06 *lens_ipow(begin_x, 5)*lens_ipow(begin_dx, 2) + 0.830881 *begin_y*begin_dx*begin_dy*lens_ipow(begin_lambda, 4) + -7.23502e-10 *lens_ipow(begin_x, 7) + -2.65605e-08 *lens_ipow(begin_x, 5)*begin_y*begin_dy*begin_lambda + -3.26686e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 3)*begin_lambda + -6.91074e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dy*begin_lambda + -2.27346e-12 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4),
+             + 0.456094 *begin_y + 36.6078 *begin_dy + 1.85026 *begin_dy*begin_lambda + 0.0401649 *begin_y*begin_lambda + -0.218319 *begin_y*lens_ipow(begin_dx, 2) + -0.00569834 *lens_ipow(begin_y, 2)*begin_dy + -0.479457 *begin_y*lens_ipow(begin_dy, 2) + -23.1138 *lens_ipow(begin_dx, 2)*begin_dy + -0.000170969 *lens_ipow(begin_x, 2)*begin_y + -0.000164487 *lens_ipow(begin_y, 3) + -0.00134042 *lens_ipow(begin_x, 2)*begin_dy + -22.5954 *lens_ipow(begin_dy, 3) + -0.0143399 *begin_x*begin_y*begin_dx*begin_lambda + -0.610815 *begin_x*begin_dx*begin_dy*begin_lambda + -0.441549 *begin_x*lens_ipow(begin_dx, 3)*begin_dy + -3.59301e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -1.05117e-07 *lens_ipow(begin_x, 4)*begin_y + 0.000261591 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dy, 2) + -1.86206e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dy*begin_lambda + 0.0593064 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -7.67347e-10 *lens_ipow(begin_y, 7) + -7.31072e-08 *lens_ipow(begin_y, 6)*begin_dy + -2.04157e-06 *lens_ipow(begin_y, 5)*lens_ipow(begin_dy, 2) + -3.34223e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx + 0.0196232 *begin_x*begin_y*begin_dx*lens_ipow(begin_lambda, 4) + 0.903883 *begin_x*begin_dx*begin_dy*lens_ipow(begin_lambda, 4) + -3.19105e-08 *begin_x*lens_ipow(begin_y, 5)*begin_dx*begin_lambda + -2.10282e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5)
+          };
+          const float delta_ap[] = {ap_x - pred_ap[0], ap_y - pred_ap[1]};
+          sqr_ap_err = delta_ap[0]*delta_ap[0]+delta_ap[1]*delta_ap[1];
+          float dx1_domega0[2][2];
+          dx1_domega0[0][0] =  + 36.5996  + 1.8289 *begin_lambda + -0.005327 *lens_ipow(begin_x, 2) + -67.2044 *lens_ipow(begin_dx, 2) + -23.0927 *lens_ipow(begin_dy, 2) + -0.924453 *begin_x*begin_dx + -0.00111586 *lens_ipow(begin_y, 2) + -0.603514 *begin_y*begin_dy*begin_lambda + 0.0633788 *begin_x*begin_y*begin_dx*begin_dy + -1.6084e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -0.426172 *begin_y*lens_ipow(begin_dy, 3) + -7.04916e-08 *lens_ipow(begin_x, 6) + -3.94966e-06 *lens_ipow(begin_x, 5)*begin_dx + 0.830881 *begin_y*begin_dy*lens_ipow(begin_lambda, 4) + -9.80058e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*begin_lambda+0.0f;
+          dx1_domega0[0][1] =  + -46.1854 *begin_dx*begin_dy + -0.432989 *begin_x*begin_dy + -0.0170951 *begin_x*begin_y*begin_lambda + -0.603514 *begin_y*begin_dx*begin_lambda + 0.0316894 *begin_x*begin_y*lens_ipow(begin_dx, 2) + -1.27852 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + 0.0202469 *begin_x*begin_y*lens_ipow(begin_lambda, 3) + 0.830881 *begin_y*begin_dx*lens_ipow(begin_lambda, 4) + -2.65605e-08 *lens_ipow(begin_x, 5)*begin_y*begin_lambda + -6.91074e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_lambda+0.0f;
+          dx1_domega0[1][0] =  + -0.436637 *begin_y*begin_dx + -46.2276 *begin_dx*begin_dy + -0.0143399 *begin_x*begin_y*begin_lambda + -0.610815 *begin_x*begin_dy*begin_lambda + -1.32465 *begin_x*lens_ipow(begin_dx, 2)*begin_dy + 0.0593064 *begin_x*begin_y*lens_ipow(begin_dy, 2)*begin_lambda + -3.34223e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3) + 0.0196232 *begin_x*begin_y*lens_ipow(begin_lambda, 4) + 0.903883 *begin_x*begin_dy*lens_ipow(begin_lambda, 4) + -3.19105e-08 *begin_x*lens_ipow(begin_y, 5)*begin_lambda+0.0f;
+          dx1_domega0[1][1] =  + 36.6078  + 1.85026 *begin_lambda + -0.00569834 *lens_ipow(begin_y, 2) + -0.958913 *begin_y*begin_dy + -23.1138 *lens_ipow(begin_dx, 2) + -0.00134042 *lens_ipow(begin_x, 2) + -67.7861 *lens_ipow(begin_dy, 2) + -0.610815 *begin_x*begin_dx*begin_lambda + -0.441549 *begin_x*lens_ipow(begin_dx, 3) + 0.000523182 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -1.86206e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_lambda + 0.118613 *begin_x*begin_y*begin_dx*begin_dy*begin_lambda + -7.31072e-08 *lens_ipow(begin_y, 6) + -4.08314e-06 *lens_ipow(begin_y, 5)*begin_dy + 0.903883 *begin_x*begin_dx*lens_ipow(begin_lambda, 4)+0.0f;
+          float invApJ[2][2];
+          const float invdetap = 1.0f/(dx1_domega0[0][0]*dx1_domega0[1][1] - dx1_domega0[0][1]*dx1_domega0[1][0]);
+          invApJ[0][0] =  dx1_domega0[1][1]*invdetap;
+          invApJ[1][1] =  dx1_domega0[0][0]*invdetap;
+          invApJ[0][1] = -dx1_domega0[0][1]*invdetap;
+          invApJ[1][0] = -dx1_domega0[1][0]*invdetap;
+          for(int i=0;i<2;i++)
+          {
+            dx += invApJ[0][i]*delta_ap[i];
+            dy += invApJ[1][i]*delta_ap[i];
+          }
+          out[0] =  + 57.1689 *begin_dx + 0.193146 *begin_x + 0.0484321 *begin_x*begin_lambda + 0.389705 *begin_y*begin_dx*begin_dy + 0.0233441 *begin_x*begin_y*begin_dy + 0.0310786 *lens_ipow(begin_x, 2)*begin_dx + -23.7113 *lens_ipow(begin_dx, 3) + -23.7666 *begin_dx*lens_ipow(begin_dy, 2) + -8.51031e-05 *lens_ipow(begin_x, 3) + 1.06525 *begin_x*lens_ipow(begin_dx, 2) + 0.00892956 *lens_ipow(begin_y, 2)*begin_dx + 1.01113 *begin_dx*lens_ipow(begin_lambda, 2) + 2.53406 *begin_x*lens_ipow(begin_dy, 2)*begin_lambda + 0.000108935 *lens_ipow(begin_x, 3)*begin_lambda + -1.85433e-06 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2) + 0.10017 *begin_x*begin_y*lens_ipow(begin_dx, 2)*begin_dy + -6.25497e-05 *lens_ipow(begin_x, 4)*begin_dx + 0.06383 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 3) + -9.03315e-07 *lens_ipow(begin_x, 5) + -9.64335e-07 *begin_x*lens_ipow(begin_y, 4) + -7.09054e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dx + -5.51919e-05 *lens_ipow(begin_x, 3)*begin_y*begin_dy + -5.40607e-05 *begin_x*lens_ipow(begin_y, 3)*begin_dy + 0.0395167 *lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_dy, 2) + -2.25422 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.0239359 *begin_x*begin_y*lens_ipow(begin_dy, 3) + 0.052306 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_dy, 2)*begin_lambda + -1.71832e-05 *lens_ipow(begin_y, 4)*begin_dx*begin_lambda;
+          out[1] =  + 0.223232 *begin_y + 57.5672 *begin_dy + 0.691113 *begin_y*lens_ipow(begin_dx, 2) + 0.017258 *lens_ipow(begin_y, 2)*begin_dy + 0.843734 *begin_y*lens_ipow(begin_dy, 2) + 0.39208 *begin_x*begin_dx*begin_dy + 0.0232544 *begin_x*begin_y*begin_dx + -23.9144 *lens_ipow(begin_dx, 2)*begin_dy + -0.000545388 *lens_ipow(begin_y, 3) + 0.00915536 *lens_ipow(begin_x, 2)*begin_dy + -25.0805 *lens_ipow(begin_dy, 3) + 0.000785302 *lens_ipow(begin_y, 3)*begin_lambda + 0.0413811 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_dy + -1.07207e-05 *lens_ipow(begin_x, 4)*begin_dy + -5.43478e-05 *begin_x*lens_ipow(begin_y, 3)*begin_dx + 0.0238682 *begin_x*begin_y*lens_ipow(begin_dx, 3) + 0.0188301 *lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 2) + 0.100844 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 2) + 0.0275789 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*begin_dy + -1.83776e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -5.44981e-05 *lens_ipow(begin_x, 3)*begin_y*begin_dx + -1.19686e-06 *lens_ipow(begin_x, 4)*begin_y + -7.01775e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*begin_dy + 0.00737572 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 2)*begin_lambda + 4.09626e-07 *lens_ipow(begin_x, 4)*begin_y*begin_lambda + 0.348138 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 3)*begin_lambda + -1.64278e-06 *lens_ipow(begin_y, 5)*lens_ipow(begin_lambda, 2) + 5.19554 *begin_y*lens_ipow(begin_dy, 4)*lens_ipow(begin_lambda, 2);
+          out[2] =  + -1.19429 *begin_dx + -0.0217102 *begin_x + -0.000720481 *begin_x*begin_lambda + -0.00940156 *begin_y*begin_dx*begin_dy + -0.000254619 *begin_x*begin_y*begin_dy + -0.000118977 *lens_ipow(begin_x, 2)*begin_dx + 0.587852 *lens_ipow(begin_dx, 3) + -0.204803 *begin_dx*lens_ipow(begin_dy, 2) + 7.50277e-06 *begin_x*lens_ipow(begin_y, 2) + 6.29155e-06 *lens_ipow(begin_x, 3) + -0.00442155 *begin_x*lens_ipow(begin_dx, 2) + 7.82376e-05 *lens_ipow(begin_y, 2)*begin_dx + -0.0537613 *begin_x*lens_ipow(begin_dy, 2)*begin_lambda + 7.1261e-09 *lens_ipow(begin_x, 5) + 0.0496316 *begin_x*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 1.09726e-06 *lens_ipow(begin_x, 4)*begin_dx*begin_lambda + 3.78813e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 2)*begin_lambda + -1.66454e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_dy, 2)*begin_lambda + -0.0135048 *begin_x*begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 17.0903 *lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 4) + -1.76629e-06 *lens_ipow(begin_y, 4)*begin_dx*lens_ipow(begin_dy, 2) + 0.00015555 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -0.00160529 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 4.71609e-07 *begin_x*lens_ipow(begin_y, 3)*begin_dy*lens_ipow(begin_lambda, 3) + 2.08345e-11 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4)*begin_dx + 3.06727e-13 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4) + 2.98578e-14 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 5)*begin_dy + -3.77699e-14 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 6)*begin_dx;
+          out[3] =  + -0.0221765 *begin_y + -1.19483 *begin_dy + 0.0266626 *begin_x*begin_dx*begin_dy + -0.000118529 *begin_x*begin_y*begin_dx + 1.31992 *lens_ipow(begin_dx, 2)*begin_dy + 6.74637e-06 *lens_ipow(begin_x, 2)*begin_y + 1.16569e-05 *lens_ipow(begin_y, 3) + 0.00019251 *lens_ipow(begin_x, 2)*begin_dy + 0.605434 *lens_ipow(begin_dy, 3) + -0.0134873 *begin_y*lens_ipow(begin_dx, 2)*begin_lambda + -7.33135e-06 *lens_ipow(begin_y, 3)*begin_lambda + 1.41568 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 0.0329062 *begin_x*begin_dx*lens_ipow(begin_dy, 3) + -1.03815e-05 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 2) + 1.06567e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3) + -3.06289e-05 *lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2) + 4.87314e-09 *lens_ipow(begin_x, 4)*begin_y + 1.3886e-09 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 4)*begin_dy + 0.00190446 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 5) + 0.0885763 *begin_y*lens_ipow(begin_dx, 4)*lens_ipow(begin_lambda, 3) + 2.64595e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx*begin_lambda + 1.23741e-07 *lens_ipow(begin_y, 5)*lens_ipow(begin_dx, 2)*begin_lambda + -0.0933092 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3)*lens_ipow(begin_lambda, 2) + 9.98314e-14 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5) + -2.22296 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 4)*lens_ipow(begin_lambda, 3) + 2.72843e-08 *lens_ipow(begin_y, 5)*lens_ipow(begin_lambda, 5) + -3.78021e-06 *lens_ipow(begin_y, 5)*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.000607305 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 8);
+          float pred_out_cs[7] = {0.0f};
+          lens_sphereToCs(out, out+2, pred_out_cs, pred_out_cs+3, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          float view[3] =
+          {
+            scene_x - pred_out_cs[0],
+            scene_y - pred_out_cs[1],
+            scene_z - pred_out_cs[2]
+          };
+          normalise(view);
+          float out_new[5];
+          lens_csToSphere(pred_out_cs, view, out_new, out_new+2, - camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+          const float delta_out[] = {out_new[2] - out[2], out_new[3] - out[3]};
+          sqr_err = delta_out[0]*delta_out[0]+delta_out[1]*delta_out[1];
+          float domega2_dx0[2][2];
+          domega2_dx0[0][0] =  + -0.0217102  + -0.000720481 *begin_lambda + -0.000254619 *begin_y*begin_dy + -0.000237953 *begin_x*begin_dx + 7.50277e-06 *lens_ipow(begin_y, 2) + 1.88747e-05 *lens_ipow(begin_x, 2) + -0.00442155 *lens_ipow(begin_dx, 2) + -0.0537613 *lens_ipow(begin_dy, 2)*begin_lambda + 3.56305e-08 *lens_ipow(begin_x, 4) + 0.0496316 *lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 4.38904e-06 *lens_ipow(begin_x, 3)*begin_dx*begin_lambda + 0.000113644 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2)*begin_lambda + -4.99363e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2)*begin_lambda + -0.0135048 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 0.000311099 *begin_x*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -0.00321059 *begin_x*begin_dx*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 4.71609e-07 *lens_ipow(begin_y, 3)*begin_dy*lens_ipow(begin_lambda, 3) + 8.3338e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 4)*begin_dx + 1.53363e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4) + 1.49289e-13 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5)*begin_dy + -1.5108e-13 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 6)*begin_dx+0.0f;
+          domega2_dx0[0][1] =  + -0.00940156 *begin_dx*begin_dy + -0.000254619 *begin_x*begin_dy + 1.50055e-05 *begin_x*begin_y + 0.000156475 *begin_y*begin_dx + -0.0135048 *begin_x*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + -7.06517e-06 *lens_ipow(begin_y, 3)*begin_dx*lens_ipow(begin_dy, 2) + 0.00015555 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 3)*begin_dy + 1.41483e-06 *begin_x*lens_ipow(begin_y, 2)*begin_dy*lens_ipow(begin_lambda, 3) + 8.3338e-11 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 3)*begin_dx + 1.22691e-12 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 3) + 1.49289e-13 *lens_ipow(begin_x, 5)*lens_ipow(begin_y, 4)*begin_dy + -2.2662e-13 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 5)*begin_dx+0.0f;
+          domega2_dx0[1][0] =  + 0.0266626 *begin_dx*begin_dy + -0.000118529 *begin_y*begin_dx + 1.34927e-05 *begin_x*begin_y + 0.000385019 *begin_x*begin_dy + 0.0329062 *begin_dx*lens_ipow(begin_dy, 3) + -2.07631e-05 *begin_x*begin_y*lens_ipow(begin_dx, 2) + 2.13134e-08 *begin_x*lens_ipow(begin_y, 3) + 1.94926e-08 *lens_ipow(begin_x, 3)*begin_y + 2.7772e-09 *begin_x*lens_ipow(begin_y, 4)*begin_dy + 0.00380891 *begin_x*lens_ipow(begin_dy, 5) + 7.93784e-09 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dx*begin_lambda + 3.99326e-13 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 5)+0.0f;
+          domega2_dx0[1][1] =  + -0.0221765  + -0.000118529 *begin_x*begin_dx + 6.74637e-06 *lens_ipow(begin_x, 2) + 3.49706e-05 *lens_ipow(begin_y, 2) + -0.0134873 *lens_ipow(begin_dx, 2)*begin_lambda + -2.19941e-05 *lens_ipow(begin_y, 2)*begin_lambda + -1.03815e-05 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 2) + 3.19701e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -9.18866e-05 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + 4.87314e-09 *lens_ipow(begin_x, 4) + 5.5544e-09 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 3)*begin_dy + 0.0885763 *lens_ipow(begin_dx, 4)*lens_ipow(begin_lambda, 3) + 7.93784e-09 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dx*begin_lambda + 6.18705e-07 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*begin_lambda + -0.186618 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3)*lens_ipow(begin_lambda, 2) + 4.99157e-13 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4) + -2.22296 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 4)*lens_ipow(begin_lambda, 3) + 1.36422e-07 *lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 5) + -1.89011e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2)*lens_ipow(begin_lambda, 2) + 0.00182192 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 8)+0.0f;
+          float invJ[2][2];
+          const float invdet = 1.0f/(domega2_dx0[0][0]*domega2_dx0[1][1] - domega2_dx0[0][1]*domega2_dx0[1][0]);
+          invJ[0][0] =  domega2_dx0[1][1]*invdet;
+          invJ[1][1] =  domega2_dx0[0][0]*invdet;
+          invJ[0][1] = -domega2_dx0[0][1]*invdet;
+          invJ[1][0] = -domega2_dx0[1][0]*invdet;
+          for(int i=0;i<2;i++)
+          {
+            x += invJ[0][i]*delta_out[i];
+            y += invJ[1][i]*delta_out[i];
+          }
+          if(sqr_err>prev_sqr_err) error |= 1;
+          if(sqr_ap_err>prev_sqr_ap_err) error |= 2;
+          if(out[0]!=out[0]) error |= 4;
+          if(out[1]!=out[1]) error |= 8;
+
+          // reset error code for first few iterations.
+          if(k<10) error = 0;
+        }
+      }
+      else
+        error = 128;
+      if(out[0]*out[0]+out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius) error |= 16;
+      const float begin_x = x;
+      const float begin_y = y;
+      const float begin_dx = dx;
+      const float begin_dy = dy;
+      const float begin_lambda = lambda;
+      if(error==0)
+        out[4] =  + 0.445415  + 0.703675 *begin_lambda + -0.00105712 *begin_x*begin_dx + -1.95963e-05 *lens_ipow(begin_x, 2) + -0.0406648 *lens_ipow(begin_dx, 2) + -0.968706 *lens_ipow(begin_lambda, 2) + 0.4698 *lens_ipow(begin_lambda, 3) + -0.0454226 *begin_y*lens_ipow(begin_dy, 3) + -1.65054 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + -1.23797e-05 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -0.885696 *lens_ipow(begin_dy, 4) + -1.25888e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + -1.09325e-07 *lens_ipow(begin_y, 4) + -0.0373244 *begin_y*lens_ipow(begin_dx, 2)*begin_dy + -4.93975e-06 *lens_ipow(begin_x, 3)*begin_dx + -0.00131154 *lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -0.0374354 *begin_x*begin_dx*lens_ipow(begin_dy, 2) + -0.00129105 *begin_x*begin_y*begin_dx*begin_dy + -0.000344897 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 2) + -1.8055e-05 *lens_ipow(begin_y, 3)*begin_dy + -2.18263e-05 *begin_x*lens_ipow(begin_y, 2)*begin_dx*begin_lambda + -0.000617129 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*begin_lambda + -5.14691 *lens_ipow(begin_dx, 6) + -0.419065 *begin_x*lens_ipow(begin_dx, 5) + -0.0184877 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 4) + -3.62468e-06 *lens_ipow(begin_x, 4)*lens_ipow(begin_dx, 2) + -0.000379881 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 3) + -2.20816e-12 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 4)*lens_ipow(begin_lambda, 2);
       else
         out[4] = 0.0f;
 

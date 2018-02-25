@@ -2,18 +2,17 @@ BASE RELEASE:
 
 	compile and package for windows and osx
 	render comparison image
-	.mtd for sample_bokeh
 	sample_bokeh not working on windows? Check differences
-	why are the infinity focuses so off?
+	why are some of the infinity focuses so off? might have to adjust them
 	previous focus made nicer bokeh with petzval.. Why? Which one is the most correct?
+
+	compute focal length before lens generation so I can properly match the lenses
 
 
 POINT RELEASES:
-	figure out why trying to shoot ray multiple times degrades image sampling
 	fix nans of double gauss angenieux
 	check for intersections along P->Lens path
 	come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
-	investigate fitted polynomial speed, fit lenses with lower coefficients/terms?
 	add more lens descriptions (different focal lengths)
 	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10

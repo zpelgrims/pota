@@ -131,7 +131,8 @@ node_finish
 
    delete bokeh_data;
 }
- 
+
+
 shader_evaluate
 {
    PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
@@ -198,8 +199,8 @@ shader_evaluate
 
       // ideally would be cool to write to an aov but not sure if I can access the different pixels other than
       // the one related to the current sample
-      AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y+1, sg->x+1)]; // IS THE +1 CORRECT? 
-      AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value);
+      // AtRGBA aov_value = bokeh_data->image[bokeh_data->xres * (sg->y+1, sg->x+1)]; // IS THE +1 CORRECT? 
+      // AiAOVSetRGBA(sg, bokeh_data->aov_name, aov_value);
    }
 }
  

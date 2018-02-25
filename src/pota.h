@@ -9,6 +9,8 @@
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
+    takumar_1969,
+    zeiss_biotar_1927,
     fisheye,
     fisheye_aspherical,
     double_gauss,
@@ -53,6 +55,8 @@ struct MyCameraData
 
     bool run_intersection_tests;
     int count;
+
+    bool proper_ray_derivatives;
 };
 
 extern struct MyCameraData camera_data;
