@@ -1,6 +1,8 @@
 #include <ai.h>
 #include "pota.h"
 #include "lens.h"
+#include <vector>
+#include <cmath>
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
@@ -142,6 +144,20 @@ float camera_set_focus_infinity(MyCameraData *camera_data)
 }
 
 
+std::vector<float> logarithmic_values (){
+    float min = 0.0;
+    float max = 45.0;
+    float exponent = 2.0; // Sharpness
+    std::vector<float> log;
+
+    for(float i = -1.0; i <= 1.0; i += 0.0001) {
+        log.push_back(std::pow(i, exponent) * (max - min) + min);
+    }
+
+    return log;
+}
+
+
 
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
 AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
@@ -202,10 +218,11 @@ bool camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
 
 // focus_distance is in mm
-void brute_force_focus_search(const float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
+void logarithmic_focus_search(const float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
     float distance = 0.0;
+    std::vector<float> log = logarithmic_values();
 
-    for (float sensorshift = -5.0f; sensorshift <= 5.0f; sensorshift += 0.001f){
+    for (auto sensorshift : log){
         float intersection_distance = 0.0;
 
         if( camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data) ){
@@ -411,6 +428,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 }
 
 
+
 node_parameters
 {
     AiParameterEnum("lensModel", petzval, LensModelNames);
@@ -483,7 +501,7 @@ node_update
 	// dumb linear brute force focus search, replace with quicker, more precise method
     float best_sensor_shift = 0.0f;
     float closest_distance = AI_BIG;
-    brute_force_focus_search(camera_data->focus_distance, best_sensor_shift, closest_distance, camera_data);
+    logarithmic_focus_search(camera_data->focus_distance, best_sensor_shift, closest_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
@@ -495,7 +513,7 @@ node_update
 	// brute force infinity focus search
 	float best_sensor_shift_infinity = 0.0f;
 	float closest_distance_infinity = AI_BIG;
-    brute_force_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera_data);
+    logarithmic_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera_data);
     AiMsgInfo("[POTA] sensor_shift [brute force forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
     
     // bidirectional parallel infinity focus search
@@ -507,6 +525,9 @@ node_update
     if(!trace_ray_focus_check(camera_data->sensor_shift, camera_data)){
         AiMsgWarning("[POTA] focus check failed");
     }
+
+
+    logarithmic_values();
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);

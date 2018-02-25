@@ -1,3 +1,5 @@
 # compile using following command on x64 windows developer prompt:
 
-cl /LD /I T:\Tools\Maya\Plug-ins\Arnold-5.0.1.0-windows\include /EHsc /O2 /std:c++11 pota.cpp /link /LIBPATH:T:\Tools\Maya\Plug-ins\Arnold-5.0.1.0-windows\lib ai.lib
+cl /LD /I T:\Tools\Maya\Plug-ins\Arnold-5.0.1.0-windows\include /EHsc /O2 pota.cpp /link /LIBPATH:T:\Tools\Maya\Plug-ins\Arnold-5.0.1.0-windows\lib ai.lib
+
+C:\solidangle\mtoadeploy\2018\bin\kick.exe -l C:\solidangle\mtoadeploy\2018\shaders C:\Users\Zeno\Desktop\lens_testScene.ass

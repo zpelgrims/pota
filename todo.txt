@@ -3,9 +3,8 @@ BASE RELEASE:
 	compile and package for windows and osx
 	render comparison image
 	sample_bokeh not working on windows? Check differences
-	why are some of the infinity focuses so off? might have to adjust them
-	previous focus made nicer bokeh with petzval.. Why? Which one is the most correct?
-
+	
+	calculate accurate infinity focus before lens generation
 	compute focal length before lens generation so I can properly match the lenses
 
 
