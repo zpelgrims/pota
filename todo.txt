@@ -3,7 +3,9 @@ BASE RELEASE:
 	compile and package for windows and osx
 	render comparison image
 	sample_bokeh not working on windows? Check differences
-	
+
+	brute force logarithmic infinity search not working
+
 	calculate accurate infinity focus before lens generation
 	compute focal length before lens generation so I can properly match the lenses
 

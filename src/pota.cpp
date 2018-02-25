@@ -95,7 +95,6 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
 			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
         	return -limit;
 		} else {
-			AiMsgInfo("[POTA] sensor offset inside of limits: %f", offset);
 			return offset; // in mm
 		}
     }
@@ -169,7 +168,7 @@ AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
 }
 
 
-bool camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, MyCameraData *camera_data)
+void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, MyCameraData *camera_data)
 {
 	float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
@@ -183,21 +182,6 @@ bool camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 	sensor[1] += sensor[3] * sensor_shift;
 
 	float transmittance = lens_evaluate(sensor, out, camera_data);
-    if(transmittance <= 0.0f){
-        return false;
-    }
-
-    // crop out by outgoing pupil
-    if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
-        return false;
-    }
-
-    // crop at inward facing pupil
-    const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-    const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length;
-    if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
-        return false;
-    }
 
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
@@ -212,8 +196,6 @@ bool camera_get_y0_intersection_distance(float sensor_shift, float &intersection
     ray_origin *= -0.1;
     ray_dir *= -0.1;
 
-    
-    return true;
 }
 
 
@@ -222,17 +204,20 @@ void logarithmic_focus_search(const float focus_distance, float &best_sensor_shi
     float distance = 0.0;
     std::vector<float> log = logarithmic_values();
 
-    for (auto sensorshift : log){
+    for (float sensorshift : log){
         float intersection_distance = 0.0;
 
-        if( camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data) ){
-            //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
-            float new_distance = focus_distance - intersection_distance;
+        AiMsgInfo("sensorshift: %f", sensorshift);
 
-            if (new_distance < closest_distance && new_distance > 0.0){
-                closest_distance = new_distance;
-                best_sensor_shift = sensorshift;
-            }
+        camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data);
+        //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
+        float new_distance = focus_distance - intersection_distance;
+
+        if (new_distance < closest_distance && new_distance > 0.0){
+            closest_distance = new_distance;
+            best_sensor_shift = sensorshift;
+
+            AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
         }
     }
 }
@@ -285,7 +270,7 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
     AtVector direction ( camera_space_omega[0], camera_space_omega[1], camera_space_omega[2] );
 
     float y0 = line_plane_intersection(origin, direction).z;
-    AiMsgInfo("[POTA] y=0 intersection: %f", y0);
+    AiMsgInfo("[POTA] y=0 ray plane intersection: %f", y0);
 
 	origin *= -0.1; // convert to cm
     direction *= -0.1; //reverse rays and convert to cm
@@ -505,11 +490,12 @@ node_update
 	AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
+    /*
 	// average guesses infinity focus search
     float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
     AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
-    
-    
+    */
+
 	// logarithmic infinity focus search
 	float best_sensor_shift_infinity = 0.0f;
 	float closest_distance_infinity = AI_BIG;
@@ -525,9 +511,6 @@ node_update
     if(!trace_ray_focus_check(camera_data->sensor_shift, camera_data)){
         AiMsgWarning("[POTA] focus check failed");
     }
-
-
-    logarithmic_values();
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
