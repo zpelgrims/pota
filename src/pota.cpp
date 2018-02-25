@@ -36,9 +36,7 @@ static const char* LensModelNames[] =
     "double_gauss",
     "double_gauss_angenieux",
     "petzval",
-    "tessar_anamorphic",
     "wideangle",
-    "canon_anamorphic",
     NULL
 };
 

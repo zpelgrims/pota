@@ -9,6 +9,13 @@ BASE RELEASE:
 	calculate accurate infinity focus before lens generation
 	compute focal length before lens generation so I can properly match the lenses
 
+	wideangle: 14mm -> 22 mm
+
+	fisheye focus is off, is this because of the lens offset?
+
+	petzval: 66mm, look up what this is supposed to be
+	double_gauss: 103mm
+
 
 
 POINT RELEASES:
