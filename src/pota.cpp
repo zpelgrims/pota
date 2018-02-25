@@ -491,6 +491,7 @@ node_update
     float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
     AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
     
+    
 	// brute force infinity focus search
 	float best_sensor_shift_infinity = 0.0f;
 	float closest_distance_infinity = AI_BIG;
