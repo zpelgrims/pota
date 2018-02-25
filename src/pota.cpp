@@ -153,14 +153,13 @@ AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection) {
 }
 
 
-float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *camera_data)
+bool camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, MyCameraData *camera_data)
 {
 	float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
-
     sensor[4] = camera_data->lambda;
-    aperture[1] = camera_data->lens_aperture_housing_radius * 0.2;
+    aperture[1] = camera_data->lens_aperture_housing_radius * 0.1;
 
     lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -168,6 +167,21 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
 	sensor[1] += sensor[3] * sensor_shift;
 
 	float transmittance = lens_evaluate(sensor, out, camera_data);
+    if(transmittance <= 0.0f){
+        return false;
+    }
+
+    // crop out by outgoing pupil
+    if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
+        return false;
+    }
+
+    // crop at inward facing pupil
+    const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+    const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length;
+    if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
+        return false;
+    }
 
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
@@ -177,53 +191,45 @@ float camera_get_y0_intersection_distance(float sensor_shift, MyCameraData *came
 	AtVector ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	AtVector ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
-    return line_plane_intersection(ray_origin * -0.1, ray_dir * -0.1).z;
+    intersection_distance = line_plane_intersection(ray_origin, ray_dir).z;
+
+    ray_origin *= -0.1;
+    ray_dir *= -0.1;
+
+    
+    return true;
 }
 
 
-void brute_force_focus_search(float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
+// focus_distance is in mm
+void brute_force_focus_search(const float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
     float distance = 0.0;
 
-    for (float sensorshift = -45.0f; sensorshift <= 45.0f; sensorshift += 0.001f){
-        distance = camera_get_y0_intersection_distance(sensorshift, camera_data);
-        float new_distance = focus_distance - distance;
+    for (float sensorshift = -5.0f; sensorshift <= 5.0f; sensorshift += 0.001f){
+        float intersection_distance = 0.0;
 
-        if (new_distance < closest_distance && new_distance > 0.0){
-            closest_distance = new_distance;
-            best_sensor_shift = sensorshift;
+        if( camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data) ){
+            //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
+            float new_distance = focus_distance - intersection_distance;
+
+            if (new_distance < closest_distance && new_distance > 0.0){
+                closest_distance = new_distance;
+                best_sensor_shift = sensorshift;
+            }
         }
     }
 }
 
 
 
-inline void trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
+inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 {
 
     float sensor[5] = {0.0f};
     float aperture[5] = {0.0f};
     float out[5] = {0.0f};
     sensor[4] = camera_data->lambda;
-
-
-	// set sensor position coords
-    sensor[0] = 0.0f;
-    sensor[1] = 0.0f;
-	sensor[2] = 0.0f;
-	sensor[3] = 0.0f;
-    sensor[4] = camera_data->lambda;
-
-    aperture[0] = 0.0f;
     aperture[1] = camera_data->lens_aperture_housing_radius * 0.2;
-    aperture[2] = 0.0f;
-    aperture[3] = 0.0f;
-    aperture[4] = 0.0f;
-
-    out[0] = 0.0f;
-    out[1] = 0.0f;
-    out[2] = 0.0f;
-    out[3] = 0.0f;
-    out[4] = 0.0f;
 
 	lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera_data);
 
@@ -234,6 +240,23 @@ inline void trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 
 	// propagate ray from sensor to outer lens element
     float transmittance = lens_evaluate(sensor, out, camera_data);
+    if(transmittance <= 0.0f){
+        return false;
+    }
+
+
+    // crop out by outgoing pupil
+    if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
+        return false;
+    }
+
+
+    // crop at inward facing pupil
+    const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+    const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length;
+    if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
+        return false;
+    }
 
 
 	// convert from sphere/sphere space to camera space
@@ -241,23 +264,16 @@ inline void trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
-	AtVector origin;
-	AtVector direction;
+    AtVector origin ( camera_space_pos[0], camera_space_pos[1], camera_space_pos[2] );
+    AtVector direction ( camera_space_omega[0], camera_space_omega[1], camera_space_omega[2] );
 
-    origin.x = camera_space_pos[0];
-    origin.y = camera_space_pos[1];
-    origin.z = camera_space_pos[2];
-    direction.x = camera_space_omega[0];
-    direction.y = camera_space_omega[1];
-    direction.z = camera_space_omega[2];
-
+    float y0 = line_plane_intersection(origin, direction).z;
+    AiMsgInfo("[POTA] y=0 intersection: %f", y0);
 
 	origin *= -0.1; // convert to cm
     direction *= -0.1; //reverse rays and convert to cm
 
-    float y0 = line_plane_intersection(origin, direction).z;
-
-    AiMsgInfo("[POTA] y=0 intersection: %f", y0);
+    return true;
 }
 
 
@@ -379,16 +395,10 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
+    origin = {camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]};
+    direction = {camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]};
 
-    origin.x = camera_space_pos[0];
-    origin.y = camera_space_pos[1];
-    origin.z = camera_space_pos[2];
-    direction.x = camera_space_omega[0];
-    direction.y = camera_space_omega[1];
-    direction.z = camera_space_omega[2];
-
-
-	origin *= -0.1; // convert to cm
+	origin *= -0.1; // reverse rays and convert to cm
     direction *= -0.1; //reverse rays and convert to cm
 
     // Nan bailout
@@ -464,38 +474,38 @@ node_update
 
 	AiMsgInfo("[POTA] focus distance: %f", camera_data->focus_distance);
 
-    
+    /*
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-	//camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
+	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
-    
-
+    */
 
 	// dumb linear brute force focus search, replace with quicker, more precise method
     float best_sensor_shift = 0.0f;
     float closest_distance = AI_BIG;
-    brute_force_focus_search(AiNodeGetFlt(node, "focus_distance"), best_sensor_shift, closest_distance, camera_data);
+    brute_force_focus_search(camera_data->focus_distance, best_sensor_shift, closest_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift using brute force search: %f", best_sensor_shift);
-	camera_data->sensor_shift = -best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
 	// average guesses infinity focus search
     float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera_data);
     AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
-
+    
 	// brute force infinity focus search
 	float best_sensor_shift_infinity = 0.0f;
 	float closest_distance_infinity = AI_BIG;
     brute_force_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera_data);
     AiMsgInfo("[POTA] sensor_shift [brute force forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
-
+    
     // bidirectional parallel infinity focus search
     float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera_data);
     AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
 
 
     // double check where y=0 intersection point is, should be the same as focus distance
-    trace_ray_focus_check(camera_data->sensor_shift, camera_data);
-
+    if(!trace_ray_focus_check(camera_data->sensor_shift, camera_data)){
+        AiMsgWarning("[POTA] focus check failed");
+    }
 
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
