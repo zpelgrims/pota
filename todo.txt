@@ -1,29 +1,38 @@
 BASE RELEASE:
 
-	compile and package for windows and osx
-	render comparison image
-	sample_bokeh not working on windows? Check differences
-
-	brute force logarithmic infinity search not working
-
-	calculate accurate infinity focus before lens generation
-	compute focal length before lens generation so I can properly match the lenses
+	create htoa / c4dtoa / maxtoa interface files
 
 	wideangle: 14mm -> 22 mm
-
 	fisheye focus is off, is this because of the lens offset?
 
 	petzval: 66mm, look up what this is supposed to be
-	double_gauss: 103mm
+	double_gauss: 103mm, look up what this is supposed to be
 
 
 
-POINT RELEASES:
+ROADMAP:
+	
+	1.1:
+		brute force logarithmic infinity search not working
+		calculate accurate infinity focus before lens generation
+		compute focal length before lens generation so I can properly match the lenses
+		fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
 
-	add support for x and y cylinders for newer anamorphic lenses
-	fix nans of double gauss angenieux
-	check for intersections along P->Lens path
-	come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
-	implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
-	add more lens descriptions (different focal lengths)
-	fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
+	2.0:
+		add bidirectional sampling (aov shader)
+		aov shader not working on windows? Check differences
+		fix nans of double gauss angenieux (aov shader)
+
+		implement ray-reverse function to support viewport tessellation, adaptive subdivision, etc
+
+
+	2.1:
+		check for intersections along P->Lens path
+		come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
+
+
+	2.2:
+		add support for x and y cylinders for newer anamorphic lenses
+	
+	
+.. always add more lens descriptions
