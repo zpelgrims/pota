@@ -10,6 +10,7 @@
 /bin/*
 /polynomialOptics/*
 /tests/*
+/src/*.dll
 
 !releases/*.dll
 !releases/*.dylib
