@@ -116,7 +116,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
   switch (camera_data->lensModel){
     case NONE:
     {
-      camera_data->lens_name = "petzval"; // descriptive name of the lens
+      camera_data->lens_name = "Petzval (1900), 66mm"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 11.250000; // scene facing radius in mm
       camera_data->lens_inner_pupil_radius = 6.750000; // sensor facing radius in mm
       camera_data->lens_length = 82.800003; // overall lens length in mm
@@ -128,9 +128,9 @@ inline void load_lens_constants (MyCameraData *camera_data)
 
     } break;
 
-    case petzval:
+    case petzval_1900_66mm:
     {
-      camera_data->lens_name = "petzval"; // descriptive name of the lens
+      camera_data->lens_name = "Petzval (1900), 66mm"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 11.250000; // scene facing radius in mm
       camera_data->lens_inner_pupil_radius = 6.750000; // sensor facing radius in mm
       camera_data->lens_length = 82.800003; // overall lens length in mm
@@ -143,7 +143,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
     } break;
 
 
-    case double_gauss:
+    case doublegauss_100mm:
     {
       camera_data->lens_name = "double gauss"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 20.000000; // scene facing radius in mm
@@ -157,7 +157,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
     } break;
 
 
-    case double_gauss_angenieux:
+    case angenieux_doublegauss_1953_49mm:
     {
       camera_data->lens_name = "double gauss angenieux"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 27.000000; // scene facing radius in mm
@@ -213,7 +213,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
     } break;
 
 
-    case takumar_1969:
+    case takumar_1969_50mm:
     {
       camera_data->lens_name = "1969 pentax takumar 50mm"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 21.000000; // scene facing radius in mm
@@ -228,7 +228,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
     } break;
 
 
-    case zeiss_biotar_1927:
+    case zeiss_biotar_1927_58mm:
     {
       camera_data->lens_name = "1927 zeiss biotar 58mm"; // descriptive name of the lens
       camera_data->lens_outer_pupil_radius = 20.299999; // scene facing radius in mm
@@ -280,7 +280,7 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
     } break;
 
 
-    case petzval:
+    case petzval_1900_66mm:
     {
       out[0] =  + 61.6861 *dx + 0.516318 *x + 0.239174 *x*lambda + 6.09756 *dx*lambda + 0.0418018 *y*dx*dy + 0.0291763 *x*y*dy + 0.0384633 *lens_ipow(x, 2)*dx + -41.8684 *lens_ipow(dx, 3) + -0.16516 *x*lens_ipow(lambda, 2) + -41.0878 *dx*lens_ipow(dy, 2) + 0.000319801 *x*lens_ipow(y, 2) + 0.000310337 *lens_ipow(x, 3) + 0.431597 *x*lens_ipow(dy, 2) + 0.417681 *x*lens_ipow(dx, 2) + 0.0106198 *lens_ipow(y, 2)*dx + -4.03513 *dx*lens_ipow(lambda, 3) + 1.11768e-05 *x*lens_ipow(y, 2)*lambda + -0.000382566 *lens_ipow(x, 2)*dx*lambda + -8.637e-05 *lens_ipow(x, 2)*y*dx*dy*lambda + 5.14981e-06 *lens_ipow(x, 7)*lens_ipow(dx, 2)*lens_ipow(lambda, 2) + 13819.6 *lens_ipow(dx, 9)*lens_ipow(lambda, 2) + 1.71189e-08 *lens_ipow(x, 5)*lens_ipow(y, 3)*lens_ipow(dx, 2)*dy + 3.21537e-10 *lens_ipow(x, 9)*lens_ipow(lambda, 2) + 0.00130788 *lens_ipow(x, 3)*lens_ipow(y, 2)*lens_ipow(dx, 4)*lens_ipow(dy, 2) + 0.000150672 *lens_ipow(x, 6)*lens_ipow(dx, 3)*lens_ipow(lambda, 2) + 5.82064e-14 *lens_ipow(x, 7)*lens_ipow(y, 4) + -0.0568649 *lens_ipow(x, 4)*lens_ipow(dx, 5)*lens_ipow(lambda, 2) + 6.75549e-08 *lens_ipow(x, 8)*dx*lens_ipow(lambda, 2);
       out[1] =  + 0.453506 *y + 59.1587 *dy + 19.1364 *dy*lambda + 0.592232 *y*lambda + 0.411922 *y*lens_ipow(dx, 2) + 0.0392662 *lens_ipow(y, 2)*dy + 0.451829 *y*lens_ipow(dy, 2) + 0.0283685 *x*y*dx + -42.1243 *lens_ipow(dx, 2)*dy + -0.817315 *y*lens_ipow(lambda, 2) + 0.000312315 *lens_ipow(x, 2)*y + -19.7228 *dy*lens_ipow(lambda, 2) + 0.000313434 *lens_ipow(y, 3) + 0.0101854 *lens_ipow(x, 2)*dy + -41.478 *lens_ipow(dy, 3) + 0.395356 *y*lens_ipow(lambda, 3) + 1.6101e-05 *lens_ipow(y, 3)*lambda + 8.49311e-06 *lens_ipow(x, 2)*y*lambda + 7.11498 *dy*lens_ipow(lambda, 4) + -7.43062e-05 *lens_ipow(y, 3)*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -9.90812e-06 *lens_ipow(y, 5)*lens_ipow(dx, 2)*lens_ipow(dy, 2) + 1.08674e-14 *lens_ipow(x, 2)*lens_ipow(y, 9) + 2.57069e-11 *lens_ipow(y, 9)*lens_ipow(dx, 2) + 2.33768e-09 *lens_ipow(x, 4)*lens_ipow(y, 4)*lens_ipow(dx, 2)*dy + 1.52162e-14 *lens_ipow(x, 6)*lens_ipow(y, 5) + -0.313837 *lens_ipow(x, 2)*y*lens_ipow(dy, 8) + 4.28086e-05 *x*lens_ipow(y, 5)*dx*lens_ipow(dy, 4) + 0.00203743 *x*lens_ipow(y, 4)*dx*lens_ipow(dy, 5);
@@ -290,7 +290,7 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
     } break;
 
 
-    case double_gauss:
+    case doublegauss_100mm:
     {
       out[0] =  + 100.12 *dx + 0.592582 *x + 0.0499465 *x*lambda + -0.811097 *dx*lambda + 0.0323359 *x*y*dy + 0.0379048 *lens_ipow(x, 2)*dx + -42.7325 *lens_ipow(dx, 3) + -0.0389817 *x*lens_ipow(lambda, 2) + 0.000142213 *x*lens_ipow(y, 2) + 0.000142435 *lens_ipow(x, 3) + 1.67656 *x*lens_ipow(dy, 2) + 1.81407 *x*lens_ipow(dx, 2) + 0.00570726 *lens_ipow(y, 2)*dx + -209.372 *dx*lens_ipow(dy, 2)*lambda + 0.677473 *y*dx*dy*lambda + -0.536195 *y*dx*dy*lens_ipow(lambda, 2) + 299.926 *dx*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.0713542 *x*y*lens_ipow(dy, 3)*lambda + 0.00125855 *x*lens_ipow(y, 2)*lens_ipow(dy, 2)*lambda + -3.55319 *x*lens_ipow(dx, 4)*lambda + 222.317 *lens_ipow(dx, 3)*lens_ipow(dy, 2)*lambda + -0.000266069 *lens_ipow(y, 3)*dx*dy*lambda + -5.3226e-06 *lens_ipow(x, 3)*y*dy*lambda + 0.00102282 *lens_ipow(x, 3)*lens_ipow(dx, 2)*lambda + -168.54 *dx*lens_ipow(dy, 2)*lens_ipow(lambda, 4) + -3.93679e-10 *lens_ipow(x, 3)*lens_ipow(y, 4)*lambda + 1.32918e-08 *lens_ipow(x, 6)*dx*lambda + -2.70347e-08 *lens_ipow(x, 2)*lens_ipow(y, 4)*dx*lambda;
       out[1] =  + 0.588556 *y + 99.6889 *dy + 0.0557925 *y*lambda + 1.62675 *y*lens_ipow(dx, 2) + 0.045876 *lens_ipow(y, 2)*dy + 2.49363 *y*lens_ipow(dy, 2) + 0.153878 *x*dx*dy + 0.0314574 *x*y*dx + -42.0967 *lens_ipow(dx, 2)*dy + -0.0358604 *y*lens_ipow(lambda, 2) + 0.000141395 *lens_ipow(x, 2)*y + 0.000178882 *lens_ipow(y, 3) + 0.00572629 *lens_ipow(x, 2)*dy + -1.35881 *y*lens_ipow(dy, 2)*lambda + -135.315 *lens_ipow(dy, 3)*lambda + -0.0168528 *lens_ipow(y, 2)*dy*lambda + -6.88134e-05 *lens_ipow(y, 3)*lambda + 120.172 *lens_ipow(dx, 2)*lens_ipow(dy, 3) + 9.10801e-06 *lens_ipow(y, 4)*dy + 0.0748529 *lens_ipow(y, 2)*lens_ipow(dy, 3) + 106.566 *lens_ipow(dy, 3)*lens_ipow(lambda, 2) + 0.000223543 *lens_ipow(y, 3)*lens_ipow(dx, 2) + 0.00161417 *lens_ipow(y, 3)*lens_ipow(dy, 2) + 0.000235019 *lens_ipow(x, 2)*y*lens_ipow(dy, 2)*lambda + 0.681351 *lens_ipow(y, 2)*lens_ipow(dx, 4)*dy + -0.000143401 *lens_ipow(x, 2)*lens_ipow(y, 2)*lens_ipow(dx, 2)*dy + -9.81214e-11 *lens_ipow(x, 4)*lens_ipow(y, 3) + -56.6549 *lens_ipow(dy, 3)*lens_ipow(lambda, 6);
@@ -300,7 +300,7 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
     } break;
 
 
-    case double_gauss_angenieux:
+    case angenieux_doublegauss_1953_49mm:
     {
       out[0] =  + 49.6109 *dx + -0.621577 *x + 0.674235 *x*lambda + 0.214431 *y*dx*dy + 0.00612017 *x*y*dy + 0.0185352 *lens_ipow(x, 2)*dx + -19.0762 *lens_ipow(dx, 3) + -0.526696 *x*lens_ipow(lambda, 2) + -19.997 *dx*lens_ipow(dy, 2) + -0.00135091 *x*lens_ipow(y, 2) + -0.00120413 *lens_ipow(x, 3) + 0.265561 *x*lens_ipow(dy, 2) + 0.547505 *x*lens_ipow(dx, 2) + 0.000620579 *x*lens_ipow(y, 2)*lambda + 0.000501355 *lens_ipow(x, 3)*lambda + 0.00915562 *lens_ipow(y, 2)*dx*lambda + 0.0777405 *x*y*lens_ipow(dx, 2)*dy + -4.20841e-05 *lens_ipow(x, 4)*dx + -0.00108756 *lens_ipow(y, 3)*dx*dy + 0.0289986 *lens_ipow(y, 2)*dx*lens_ipow(dy, 2) + -0.00208955 *lens_ipow(x, 3)*lens_ipow(dx, 2) + -4.49517e-06 *x*lens_ipow(y, 4)*lens_ipow(dx, 2) + -9.51913e-09 *lens_ipow(x, 3)*lens_ipow(y, 4) + -3.46111e-09 *lens_ipow(x, 7) + -7.05762e-12 *x*lens_ipow(y, 8) + -6.20338e-11 *lens_ipow(x, 7)*lens_ipow(y, 2) + 0.0285076 *lens_ipow(y, 3)*lens_ipow(dx, 3)*dy*lens_ipow(lambda, 4) + 1.33412e-13 *lens_ipow(x, 9)*lens_ipow(y, 2);
       out[1] =  + -0.613564 *y + 49.7175 *dy + 0.669005 *y*lambda + 0.246172 *y*lens_ipow(dx, 2) + 0.0126827 *lens_ipow(y, 2)*dy + 0.232757 *y*lens_ipow(dy, 2) + 0.00701796 *x*y*dx + -19.0477 *lens_ipow(dx, 2)*dy + -0.524051 *y*lens_ipow(lambda, 2) + -0.00133375 *lens_ipow(x, 2)*y + -0.00127186 *lens_ipow(y, 3) + -21.4258 *lens_ipow(dy, 3) + 0.0105956 *lens_ipow(x, 2)*dy*lambda + 0.000544614 *lens_ipow(y, 3)*lambda + 0.333688 *x*dx*dy*lambda + 0.000640797 *lens_ipow(x, 2)*y*lambda + -1.70371e-05 *lens_ipow(y, 4)*dy + 0.156726 *x*y*dx*lens_ipow(dy, 2)*lambda + 2.94679 *y*lens_ipow(dy, 4)*lambda + 0.128866 *lens_ipow(y, 2)*lens_ipow(dy, 3)*lambda + -3.102e-09 *lens_ipow(y, 7) + 0.000269581 *lens_ipow(x, 4)*lens_ipow(dx, 2)*dy + -1.5407e-07 *lens_ipow(x, 3)*lens_ipow(y, 3)*dx + -2.72774e-09 *lens_ipow(x, 6)*y + 5.47118 *y*lens_ipow(dx, 4)*lens_ipow(dy, 2) + -8.15344e-09 *lens_ipow(x, 2)*lens_ipow(y, 5) + -8.67539e-09 *lens_ipow(x, 4)*lens_ipow(y, 3) + 67.1056 *lens_ipow(dy, 7)*lambda;
@@ -340,7 +340,7 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
     } break;
 
 
-    case takumar_1969:
+    case takumar_1969_50mm:
     {
       out[0] =  + 49.8032 *dx + 0.0143226 *x*y*dy + 0.0149205 *lens_ipow(x, 2)*dx + -20.8277 *lens_ipow(dx, 3) + -21.2379 *dx*lens_ipow(dy, 2) + -0.000546669 *x*lens_ipow(y, 2) + -0.00103006 *lens_ipow(x, 3) + 0.300221 *x*lens_ipow(dx, 2) + 0.00687478 *lens_ipow(y, 2)*dx + 0.556502 *x*lens_ipow(dx, 2)*lambda + 1.14168 *x*lens_ipow(dy, 2)*lambda + 0.000347782 *x*lens_ipow(y, 2)*lambda + 0.00191234 *lens_ipow(x, 3)*lambda + 0.0160337 *lens_ipow(x, 2)*dx*lambda + -0.00119575 *lens_ipow(x, 3)*lens_ipow(lambda, 2) + 0.00142374 *lens_ipow(x, 3)*lens_ipow(dy, 2) + -0.632997 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.000748107 *x*lens_ipow(y, 2)*lens_ipow(dy, 2) + -0.00165018 *lens_ipow(x, 3)*lens_ipow(dy, 2)*lambda + -3.27465e-05 *lens_ipow(x, 4)*dx*lens_ipow(lambda, 2) + -1.81354e-09 *lens_ipow(x, 5)*lens_ipow(y, 2) + -7.07079e-10 *x*lens_ipow(y, 6) + -1.95349 *x*lens_ipow(dx, 4)*lens_ipow(lambda, 2) + -2.73806 *x*lens_ipow(dx, 2)*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -3.13846e-09 *lens_ipow(x, 3)*lens_ipow(y, 4)*lambda + 0.0657627 *x*y*lens_ipow(dy, 3)*lens_ipow(lambda, 3) + -2.56873e-09 *lens_ipow(x, 7)*lens_ipow(lambda, 2) + -0.000182029 *lens_ipow(y, 5)*lens_ipow(dx, 3)*lens_ipow(dy, 3);
       out[1] =  + -0.141503 *y + 49.4365 *dy + 0.548589 *dy*lambda + 0.41489 *y*lambda + 0.0244066 *lens_ipow(y, 2)*dy + 0.0146213 *x*y*dx + -20.9484 *lens_ipow(dx, 2)*dy + -0.297076 *y*lens_ipow(lambda, 2) + -0.000312083 *lens_ipow(x, 2)*y + -0.000250017 *lens_ipow(y, 3) + 0.00729085 *lens_ipow(x, 2)*dy + -20.3828 *lens_ipow(dy, 3) + 3.33439 *y*lens_ipow(dy, 2)*lambda + 2.51912 *y*lens_ipow(dx, 2)*lambda + -3.78891 *y*lens_ipow(dx, 2)*lens_ipow(lambda, 2) + -1.13034e-06 *lens_ipow(x, 2)*lens_ipow(y, 3) + 0.00048002 *lens_ipow(y, 3)*lens_ipow(dx, 2) + -0.807166 *y*lens_ipow(dx, 2)*lens_ipow(dy, 2) + -5.2979e-07 *lens_ipow(y, 5) + -5.07164 *y*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + -2.56011e-05 *lens_ipow(y, 4)*dy*lambda + 1.06779e-06 *lens_ipow(x, 2)*lens_ipow(y, 3)*lambda + -1.08743e-09 *lens_ipow(x, 6)*y + 2.24155 *y*lens_ipow(dx, 2)*lens_ipow(lambda, 4) + 3.04667 *y*lens_ipow(dy, 2)*lens_ipow(lambda, 4) + 0.0920095 *lens_ipow(y, 2)*lens_ipow(dy, 5) + 3.60861e-06 *lens_ipow(x, 4)*y*lens_ipow(dx, 2)*lambda + -6.55673e-12 *lens_ipow(x, 4)*lens_ipow(y, 5);
@@ -350,7 +350,7 @@ static inline float lens_evaluate(const float *in, float *out, MyCameraData *cam
     } break;
 
 
-    case zeiss_biotar_1927:
+    case zeiss_biotar_1927_58mm:
     {
       out[0] =  + 57.1689 *dx + 0.193146 *x + 0.0484321 *x*lambda + 0.389705 *y*dx*dy + 0.0233441 *x*y*dy + 0.0310786 *lens_ipow(x, 2)*dx + -23.7113 *lens_ipow(dx, 3) + -23.7666 *dx*lens_ipow(dy, 2) + -8.51031e-05 *lens_ipow(x, 3) + 1.06525 *x*lens_ipow(dx, 2) + 0.00892956 *lens_ipow(y, 2)*dx + 1.01113 *dx*lens_ipow(lambda, 2) + 2.53406 *x*lens_ipow(dy, 2)*lambda + 0.000108935 *lens_ipow(x, 3)*lambda + -1.85433e-06 *lens_ipow(x, 3)*lens_ipow(y, 2) + 0.10017 *x*y*lens_ipow(dx, 2)*dy + -6.25497e-05 *lens_ipow(x, 4)*dx + 0.06383 *lens_ipow(x, 2)*lens_ipow(dx, 3) + -9.03315e-07 *lens_ipow(x, 5) + -9.64335e-07 *x*lens_ipow(y, 4) + -7.09054e-05 *lens_ipow(x, 2)*lens_ipow(y, 2)*dx + -5.51919e-05 *lens_ipow(x, 3)*y*dy + -5.40607e-05 *x*lens_ipow(y, 3)*dy + 0.0395167 *lens_ipow(y, 2)*dx*lens_ipow(dy, 2) + -2.25422 *x*lens_ipow(dy, 2)*lens_ipow(lambda, 2) + 0.0239359 *x*y*lens_ipow(dy, 3) + 0.052306 *lens_ipow(x, 2)*dx*lens_ipow(dy, 2)*lambda + -1.71832e-05 *lens_ipow(y, 4)*dx*lambda;
       out[1] =  + 0.223232 *y + 57.5672 *dy + 0.691113 *y*lens_ipow(dx, 2) + 0.017258 *lens_ipow(y, 2)*dy + 0.843734 *y*lens_ipow(dy, 2) + 0.39208 *x*dx*dy + 0.0232544 *x*y*dx + -23.9144 *lens_ipow(dx, 2)*dy + -0.000545388 *lens_ipow(y, 3) + 0.00915536 *lens_ipow(x, 2)*dy + -25.0805 *lens_ipow(dy, 3) + 0.000785302 *lens_ipow(y, 3)*lambda + 0.0413811 *lens_ipow(x, 2)*lens_ipow(dx, 2)*dy + -1.07207e-05 *lens_ipow(x, 4)*dy + -5.43478e-05 *x*lens_ipow(y, 3)*dx + 0.0238682 *x*y*lens_ipow(dx, 3) + 0.0188301 *lens_ipow(y, 2)*dy*lens_ipow(lambda, 2) + 0.100844 *x*y*dx*lens_ipow(dy, 2) + 0.0275789 *lens_ipow(y, 2)*lens_ipow(dx, 2)*dy + -1.83776e-06 *lens_ipow(x, 2)*lens_ipow(y, 3) + -5.44981e-05 *lens_ipow(x, 3)*y*dx + -1.19686e-06 *lens_ipow(x, 4)*y + -7.01775e-05 *lens_ipow(x, 2)*lens_ipow(y, 2)*dy + 0.00737572 *lens_ipow(y, 3)*lens_ipow(dy, 2)*lambda + 4.09626e-07 *lens_ipow(x, 4)*y*lambda + 0.348138 *lens_ipow(y, 2)*lens_ipow(dy, 3)*lambda + -1.64278e-06 *lens_ipow(y, 5)*lens_ipow(lambda, 2) + 5.19554 *y*lens_ipow(dy, 4)*lens_ipow(lambda, 2);
@@ -433,7 +433,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
 
 
 
-    case petzval:
+    case petzval_1900_66mm:
     {
       float pred_x;
       float pred_y;
@@ -475,7 +475,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
     } break;
 
 
-    case double_gauss:
+    case doublegauss_100mm:
     {
       float pred_x;
       float pred_y;
@@ -517,7 +517,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
     } break;
 
 
-    case double_gauss_angenieux:
+    case angenieux_doublegauss_1953_49mm:
     {
       float pred_x;
       float pred_y;
@@ -685,7 +685,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
     } break;
 
 
-    case zeiss_biotar_1927:
+    case zeiss_biotar_1927_58mm:
     {
       float pred_x;
       float pred_y;
@@ -727,7 +727,7 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, My
 
     } break;
 
-    case takumar_1969:
+    case takumar_1969_50mm:
     {
       float pred_x;
       float pred_y;
@@ -905,7 +905,7 @@ static inline float lens_lt_sample_aperture(
     } break;
 
 
-    case petzval:
+    case petzval_1900_66mm:
     {
       float view[3] =
       {
@@ -1006,7 +1006,7 @@ static inline float lens_lt_sample_aperture(
     } break;
 
 
-    case double_gauss:
+    case doublegauss_100mm:
     {
       float view[3] = { scene_x, scene_y, scene_z + camera_data->lens_outer_pupil_curvature_radius};
       normalise(view);
@@ -1102,7 +1102,7 @@ static inline float lens_lt_sample_aperture(
     } break;
 
 
-    case double_gauss_angenieux:
+    case angenieux_doublegauss_1953_49mm:
     {
       float view[3] = { scene_x, scene_y, scene_z + camera_data->lens_outer_pupil_curvature_radius};
       normalise(view);
@@ -1502,7 +1502,7 @@ static inline float lens_lt_sample_aperture(
     } break;
 
 
-    case takumar_1969:
+    case takumar_1969_50mm:
     {
       float view[3] =
       {
@@ -1605,7 +1605,7 @@ static inline float lens_lt_sample_aperture(
     } break;
 
 
-    case zeiss_biotar_1927:
+    case zeiss_biotar_1927_58mm:
     {
       float view[3] =
       {

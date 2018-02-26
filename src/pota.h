@@ -9,13 +9,13 @@
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
-    takumar_1969,
-    zeiss_biotar_1927,
+    takumar_1969_50mm,
+    zeiss_biotar_1927_58mm,
     fisheye,
     fisheye_aspherical,
-    double_gauss,
-    double_gauss_angenieux,
-    petzval,
+    doublegauss_100mm,
+    angenieux_doublegauss_1953_49mm,
+    petzval_1900_66mm,
     wideangle,
     NONE
 };

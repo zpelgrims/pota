@@ -29,13 +29,13 @@ enum
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] =
 {
-    "takumar_1969",
-    "zeiss_biotar_1927",
+    "takumar_1969_50mm",
+    "zeiss_biotar_1927_58mm",
     "fisheye",
     "fisheye_aspherical",
-    "double_gauss",
-    "double_gauss_angenieux",
-    "petzval",
+    "doublegauss_100mm",
+    "angenieux_doublegauss_1953_49mm",
+    "petzval_1900_66mm",
     "wideangle",
     NULL
 };
@@ -398,7 +398,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 node_parameters
 {
-    AiParameterEnum("lensModel", petzval, LensModelNames);
+    AiParameterEnum("lensModel", petzval_1900_66mm, LensModelNames);
     AiParameterFlt("sensor_width", 36.0); // 35mm film
     AiParameterFlt("wavelength", 550.0); // wavelength in nm
     AiParameterBool("dof", true);
