@@ -1,18 +1,17 @@
-*.DS_STORE
+*.DS_Store
 *.exr
 *.png
-*.dylib
 *.pyc
-*.dll
 *.exp
 *.lib
 *.obj
 
 /include/*
-
+/bin/*
 /polynomialOptics/*
-/tests/statues/*
-/tests/grid/*
-/tests/image/*
+/tests/*
 
-!releases/**
+!releases/*.dll
+!releases/*.dylib
+!releases/*.ae
+!releases/*.mtd
