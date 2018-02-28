@@ -106,32 +106,3 @@
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
         houdini.label       STRING  "Proper ray derivatives"
-
-
-#    [attr backward_samples]
-#        maya.name           STRING  "aiBackwardSamples"
-#        default             INT     3
-#        min                 INT     1
-#        max                 INT     100
-#        desc                STRING  "Multiplier on the bidirectional samples in the AOV shader"
-#
-#        houdini.label       STRING  "AOV Backwards Samples"
-#
-#
-#    [attr minimum_rgb]
-#        maya.name           STRING  "aiMinimumRgb"
-#        default             FLOAT   4.0
-#        min                 FLOAT   0.0
-#        max                 FLOAT   100.0
-#        desc                STRING  "Minimum r, g or b of the sample to trigger the backwards tracing in the AOV shader."
-#
-#        houdini.label       STRING  "AOV Minimum RGB"
-#
-#
-#    [attr bokeh_exr_path]
-#        maya.name           STRING  "aiBokehEXRPath"
-#        default             STRING  ""
-#        desc                STRING  "EXR path for backwards traced samples"
-#        linkable            BOOL    FALSE
-#
-#        houdini.label       STRING  "Bokeh EXR Path"
