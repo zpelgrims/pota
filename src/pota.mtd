@@ -1,7 +1,7 @@
 [node pota]
     desc STRING "Polynomial optics camera shader"
     maya.name               STRING  "camera"
-    maya.id                 INT     0x00070102
+    maya.id                 INT     0x00070506
     maya.classification     STRING  "shader/surface"
     maya.type               STRING  "camera"
     maya.translator         STRING  "pota"
@@ -11,7 +11,6 @@
     houdini.icon            STRING  "SHOP_surface"
     houdini.label           STRING  "pota"
     houdini.help_url        STRING  "http://www.zenopelgrims.com/polynomial-optics-arnold"
-    houdini.order           STRING  "lensModel sensor_width wavelength dof fstop focus_distance extra_sensor_shift vignetting_retries aperture_blades backwards_samples minimum_rgb bokeh_exr_path"
 
 
     [attr lensModel]
@@ -29,7 +28,7 @@
         default             FLOAT   36
         desc                STRING  "Width of the sensor in mm. Default value is the width of a full frame sensor."
 
-        houdini.label       STRING  "Sensor Width"
+        houdini.label       STRING  "Sensor Width (mm)"
 
 
     [attr wavelength]
@@ -39,7 +38,7 @@
         default             FLOAT   550.0
         desc                STRING  "Wavelength in nanometers."
 
-        houdini.label       STRING  "Wavelength"
+        houdini.label       STRING  "Wavelength (nm)"
 
 
     [attr dof]
@@ -76,9 +75,9 @@
         min                 FLOAT   -10.0
         max                 FLOAT   10.0
         default             FLOAT   0.0
-        desc                STRING  "Additional Sensor shift in mm"
+        desc                STRING  "Additional Sensor shift (mm)"
 
-        houdini.label       STRING  "Additional Sensor shift in mm"
+        houdini.label       STRING  "Additional Sensor shift (mm)"
 
 
     [attr vignetting_retries]
@@ -96,7 +95,7 @@
         default             INT     0
         min                 INT     0
         max                 INT     8
-        desc                STRING  "Number of aperture blades. 0 is perfectly circular."
+        desc                STRING  "Number of aperture blades. < 3 is perfectly circular."
 
         houdini.label       STRING  "Aperture Blades"
 
