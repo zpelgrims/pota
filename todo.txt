@@ -1,11 +1,10 @@
 BASE RELEASE:
 
-	create htoa / c4dtoa / maxtoa interface files
+	create htoa / c4dtoa
 
 	wideangle: 14mm -> 22 mm
 	fisheye focus is off, is this because of the lens offset?
 
-	petzval: 66mm, look up what this is supposed to be
 	double_gauss: 103mm, look up what this is supposed to be
 
 

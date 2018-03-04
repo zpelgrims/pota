@@ -5,6 +5,7 @@
 *.exp
 *.lib
 *.obj
+*.pdf
 
 /include/*
 /bin/*
