@@ -1,7 +1,7 @@
 ROADMAP:
 	
 	1.2:
-		htoa focus distance in meters?.. maybe arnold is doing something odd with the translation of aiFocusDistance?
+		htoa focus distance in meters?.. maybe htoa is doing something odd with the translation of aiFocusDistance?
 		c4dtoa
 		wideangle: 14mm -> 22 mm
 		fisheye focus is off, is this because of the lens offset?
