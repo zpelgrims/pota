@@ -1,17 +1,11 @@
-BASE RELEASE:
-
-	create htoa / c4dtoa
-
-	wideangle: 14mm -> 22 mm
-	fisheye focus is off, is this because of the lens offset?
-
-	double_gauss: 103mm, look up what this is supposed to be
-
-
-
 ROADMAP:
 	
-	1.1:
+	1.2:
+		htoa focus distance in meters?.. maybe arnold is doing something odd with the translation of aiFocusDistance?
+		c4dtoa
+		wideangle: 14mm -> 22 mm
+		fisheye focus is off, is this because of the lens offset?
+		double_gauss: 103mm, look up what this is supposed to be
 		brute force logarithmic infinity search not working
 		calculate accurate infinity focus before lens generation
 		compute focal length before lens generation so I can properly match the lenses
@@ -26,8 +20,8 @@ ROADMAP:
 
 
 	2.1:
-		check for intersections along P->Lens path
-		come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
+		bidirectional: check for intersections along P->Lens path
+		bidirectional: come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
 
 
 	2.2:

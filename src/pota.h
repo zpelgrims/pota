@@ -42,7 +42,7 @@ struct MyCameraData
 	float sensor_width;
 	float fstop;
     float max_fstop;
-	float focus_distance;
+	float focal_distance;
 	float aperture_radius;
 	float sensor_shift;
     int vignetting_retries;
