@@ -148,7 +148,8 @@ std::vector<float> logarithmic_values ()
     std::vector<float> log;
 
     for(float i = -1.0; i <= 1.0; i += 0.0001) {
-        log.push_back(std::pow(i, exponent) * (max - min) + min);
+        log.push_back((i < 0 ? -1 : 1) * std::pow(i, exponent) * (max - min) + min);
+        // AiMsgInfo("logvalue: %f at i = %f", std::pow(i, exponent), i);
     }
 
     return log;
@@ -203,14 +204,16 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
     std::vector<float> log = logarithmic_values();
 
     for (float sensorshift : log){
-    	float intersection_distance = 0.0;
+    	float intersection_distance = 0.0f;
         //AiMsgInfo("sensorshift: %f", sensorshift);
 
         camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data);
         //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
         float new_distance = focal_distance - intersection_distance;
+        //AiMsgInfo("new_distance: %f", new_distance);
 
-        if (new_distance < closest_distance && new_distance > 0.0){
+
+        if (new_distance < closest_distance && new_distance > 0.0f){
             closest_distance = new_distance;
             best_sensor_shift = sensorshift;
             //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
