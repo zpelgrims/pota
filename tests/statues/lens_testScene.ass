@@ -32,7 +32,7 @@ pota
 
  fstop 2.8
  aperture_blades 0
- lensModel zeiss_biotar_1927
+ lensModel primoplan_1936_58mm
 }
 
 #pota
