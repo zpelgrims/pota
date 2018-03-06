@@ -4,7 +4,7 @@ import maya.cmds as cmds
 import mtoa.ui.ae.utils as aeUtils
 
 class aiPotaTemplate(templates.AttributeTemplate):
-
+    """
     def filenameEditBokeh(self, mData) :
         attr = self.nodeAttr('aiBokehEXRPath')
         cmds.setAttr(attr,mData,type="string")
@@ -25,6 +25,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
     def filenameReplaceBokeh(self, nodeName):
         cmds.textFieldButtonGrp("filenameBokehGrp", edit=True, text=cmds.getAttr(nodeName) )
 
+    """
 
     def setup(self):
         self.beginLayout("Polynomial Optics", collapse=False)
@@ -33,13 +34,19 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiWavelength", label="Wavelength (nm)")
         self.addControl("aiDof", label="Enable depth of field")
         self.addControl("aiFstop", label="F-stop")
-        self.addControl("aiFocusDistance", label="Focus distance (cm)")
+        self.addControl("aiFocalDistance", label="Focus distance (cm)")
         self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
         self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
+
+
+        self.suppress('normalCamera') 
+        self.suppress('hardwareColor')
+        
         
         self.endLayout()
+
         
         """
         self.addSeparator()

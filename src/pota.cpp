@@ -15,7 +15,7 @@ enum
 	p_wavelength,
 	p_dof,
     p_fstop,
-    p_focus_distance,
+    p_focal_distance,
     p_extra_sensor_shift,
     p_vignetting_retries,
     p_aperture_blades,
@@ -198,8 +198,8 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 }
 
 
-// focus_distance is in mm
-void logarithmic_focus_search(const float focus_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
+// focal_distance is in mm
+void logarithmic_focus_search(const float focal_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
     std::vector<float> log = logarithmic_values();
 
     for (float sensorshift : log){
@@ -208,7 +208,7 @@ void logarithmic_focus_search(const float focus_distance, float &best_sensor_shi
 
         camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera_data);
         //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
-        float new_distance = focus_distance - intersection_distance;
+        float new_distance = focal_distance - intersection_distance;
 
         if (new_distance < closest_distance && new_distance > 0.0){
             closest_distance = new_distance;
@@ -405,7 +405,7 @@ node_parameters
     AiParameterFlt("wavelength", 550.0); // wavelength in nm
     AiParameterBool("dof", true);
     AiParameterFlt("fstop", 0.0);
-    AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+    AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
     AiParameterFlt("extra_sensor_shift", 0.0); // tmp remove
     AiParameterInt("vignetting_retries", 15);
     AiParameterInt("aperture_blades", 0);
@@ -429,7 +429,7 @@ node_update
 
 	camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
 	camera_data->fstop = AiNodeGetFlt(node, "fstop");
-	camera_data->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f;
+	camera_data->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f;
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
@@ -459,18 +459,18 @@ node_update
 	AiMsgInfo("[POTA] --------------------------------------");
 
 
-	AiMsgInfo("[POTA] focus distance: %f", camera_data->focus_distance);
+	AiMsgInfo("[POTA] focus distance: %f", camera_data->focal_distance);
 
     /*
     AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-	camera_data->sensor_shift = camera_set_focus(camera_data->focus_distance, camera_data);
-	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focus_distance, camera_data->sensor_shift);
+	camera_data->sensor_shift = camera_set_focus(camera_data->focal_distance, camera_data);
+	AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera_data->focal_distance, camera_data->sensor_shift);
     */
 
 	// logartihmic focus search
     float best_sensor_shift = 0.0f;
     float closest_distance = AI_BIG;
-    logarithmic_focus_search(camera_data->focus_distance, best_sensor_shift, closest_distance, camera_data);
+    logarithmic_focus_search(camera_data->focal_distance, best_sensor_shift, closest_distance, camera_data);
 	AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
 	camera_data->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
