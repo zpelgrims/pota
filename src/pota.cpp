@@ -19,9 +19,9 @@ enum
     p_extra_sensor_shift,
     p_vignetting_retries,
     p_aperture_blades,
-    p_backward_samples,
-    p_minimum_rgb,
-    p_bokeh_exr_path,
+//    p_backward_samples,
+//    p_minimum_rgb,
+//    p_bokeh_exr_path,
     p_proper_ray_derivatives
 };
 
@@ -31,6 +31,8 @@ static const char* LensModelNames[] =
 {
     "takumar_1969_50mm",
     "zeiss_biotar_1927_58mm",
+    "zeiss_flektagon_1954_35mm",
+    "primoplan_1936_58mm",
     "fisheye",
     "fisheye_aspherical",
     "doublegauss_100mm",
@@ -407,9 +409,9 @@ node_parameters
     AiParameterFlt("extra_sensor_shift", 0.0); // tmp remove
     AiParameterInt("vignetting_retries", 15);
     AiParameterInt("aperture_blades", 0);
-    AiParameterInt("backward_samples", 3);
-    AiParameterFlt("minimum_rgb", 3.0f);
-    AiParameterStr("bokeh_exr_path", "");
+    // AiParameterInt("backward_samples", 3);
+    // AiParameterFlt("minimum_rgb", 3.0f);
+    // AiParameterStr("bokeh_exr_path", "");
     AiParameterBool("proper_ray_derivatives", true);
 }
 
@@ -432,9 +434,9 @@ node_update
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
     camera_data->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-	camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
-	camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-	camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+	// camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
+	// camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
+	// camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 	camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 	camera_data->sensor_shift = 0.0;
 

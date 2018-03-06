@@ -11,6 +11,8 @@
 enum LensModel{
     takumar_1969_50mm,
     zeiss_biotar_1927_58mm,
+    zeiss_flektagon_1954_35mm,
+    primoplan_1936_58mm,
     fisheye,
     fisheye_aspherical,
     doublegauss_100mm,
