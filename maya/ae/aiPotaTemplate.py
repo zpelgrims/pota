@@ -28,6 +28,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
     """
 
     def setup(self):
+
         self.beginLayout("Polynomial Optics", collapse=False)
         self.addControl("aiLensModel", label="Lens Model")
         self.addControl("aiSensorWidth", label="Sensor Width (mm)")
@@ -39,10 +40,10 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
         self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
-
-
-        self.suppress('normalCamera') 
-        self.suppress('hardwareColor')
+        
+        # add these in the aovshader template instead
+        # self.suppress('normalCamera') 
+        # self.suppress('hardwareColor')
         
         
         self.endLayout()

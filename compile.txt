@@ -1,6 +1,7 @@
 # compile using following command on x64 windows developer prompt (x64 native tools command prompt for VS 2017):
 
 cl /LD /I C:\Users\Zeno\Arnold-5.0.2.0-windows\include /EHsc /O2 pota.cpp /link /LIBPATH:C:\Users\Zeno\Arnold-5.0.2.0-windows\lib ai.lib
+cl /LD /I C:\Users\Zeno\Arnold-5.0.2.0-windows\include /EHsc /O2 potabokehAOV.cpp /link /LIBPATH:C:\Users\Zeno\Arnold-5.0.2.0-windows\lib ai.lib
 
 # test render, ignore
 C:\solidangle\mtoadeploy\2018\bin\kick.exe -l C:\solidangle\mtoadeploy\2018\shaders C:\Users\Zeno\Desktop\lens_testScene.ass

@@ -307,7 +307,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 	    	aperture[0] = aperture[1] = 0.0;
 
 	    } 
-	    else if (camera_data->dof && camera_data->aperture_blades < 2)
+	    else if (camera_data->dof && camera_data->aperture_blades <= 2)
 	    {
 			// transform unit square to unit disk
 		    AtVector2 unit_disk(0.0f, 0.0f);
