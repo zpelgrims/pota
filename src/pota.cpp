@@ -611,8 +611,9 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
    float out[5] =       {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
    float aperture[2] =  {0.0f, 0.0f};
 
-   //aperture[0] = camera_data->random1 * camera_data->aperture_radius;
-   //aperture[1] = camera_data->random2 * camera_data->aperture_radius;
+   //randoms are always 0?
+   aperture[0] = camera_data->random1 * camera_data->aperture_radius;
+   aperture[1] = camera_data->random2 * camera_data->aperture_radius;
 
    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data) <= 0.0f) return false;
 
