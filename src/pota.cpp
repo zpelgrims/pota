@@ -628,8 +628,6 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
 
-   AiMsgInfo("sensorposition: %f \t %f", sensor_position.x, sensor_position.y);
-
    return true;
 }
 
@@ -642,6 +640,10 @@ camera_reverse_ray
 
     //AiMsgInfo("Po = %f, %f, %f", Po.x, Po.y, Po.z);
 
+    int xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+    int yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+    const float frame_aspect_ratio = (float)xres/(float)yres;
+
     // convert sample world space position to camera space
     AtMatrix world_to_camera_matrix;
     AtVector2 sensor_position;
@@ -650,12 +652,16 @@ camera_reverse_ray
 
     if( trace_backwards( -camera_space_sample_position * 10.0, sensor_position, camera_data) )
     {
-       Ps.x = sensor_position.x;
-       Ps.y = sensor_position.y;
+        AtVector2 s(sensor_position.x / (camera_data->sensor_width * 0.5), 
+                    sensor_position.y / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
 
-       return true;
-    }
-    else {
+        AiMsgInfo("sensorposition: %f \t %f", s.x, s.y);
+
+        Ps.x = s.x;
+        Ps.y = s.y;
+
+        return true;
+    } else {
         return false;
     }
 }
