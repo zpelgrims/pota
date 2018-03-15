@@ -506,6 +506,10 @@ node_update
         AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
     }
 
+
+    camera_data->tan_fov = tanf(camera_data->lens_field_of_view / 2.0f);
+
+
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
 }
@@ -633,9 +637,9 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
 }
 
 
-
+/*
 // solve Ps.xy with Po.xyz
-// IDEA: do this with a pinhole camera instead, matching the FOV of the actual lens
+// fully backtraced
 camera_reverse_ray
 {
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
@@ -666,7 +670,21 @@ camera_reverse_ray
     } else {
         return false;
     }
+}*/
+
+
+// approximation using pinhole camera FOV
+camera_reverse_ray
+{
+	const MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
+
+	float coeff = 1.0 / AiMax(fabsf(Po.z * camera_data->tan_fov), 1e-3f);
+    Ps.x = Po.x * coeff;
+    Ps.y = Po.y * coeff;
+
+    return true;
 }
+
 
 node_loader
 {

@@ -60,6 +60,9 @@ struct MyCameraData
 
     float random1;
     float random2;
+
+    //camera_reverse_ray
+    float tan_fov;
 };
 
 extern struct MyCameraData camera_data;

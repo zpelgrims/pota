@@ -12,27 +12,12 @@
 
 options
 {
- AA_samples 6
+ AA_samples 4
  outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
  xres 960
  yres 540
- texture_per_file_stats on
- texture_searchpath "C:/Users/Zeno/Documents/maya/projects/default/sourceimages"
- texture_automip off
- texture_specular_blur 0
  camera "rendercamShape"
  atmosphere "aiAtmosphereVolume"
- color_manager "defaultColorMgtGlobals"
- procedural_searchpath "C:/Users/Zeno/Documents/maya/projects/default/"
- GI_diffuse_depth 1
- GI_specular_depth 1
- GI_transmission_depth 8
- declare frame constant FLOAT
- frame 1
- declare render_layer constant STRING
- render_layer "defaultRenderLayer"
- declare fps constant FLOAT
- fps 24
 }
 
 gaussian_filter
@@ -68,13 +53,6 @@ atmosphere_volume
  rgb_attenuation 1 1 1
 }
 
-color_manager_syncolor
-{
- name defaultColorMgtGlobals
- native_catalog_path "C:/Program Files/Autodesk/Maya2017/synColor"
- custom_catalog_path "C:/Users/Zeno/Documents/maya/synColor/Shared/"
- rendering_color_space "scene-linear Rec 709/sRGB"
-}
 
 pota
 {
@@ -232,10 +210,10 @@ bHeMsb4Zr:8hvsRbCYJcb4Zr:8hvsRbHeMsaoMoY8hvsRbCYJcaoMoY8hvsRbHeMsaoMoYatgO(bCYJc
  smoothing on
  subdiv_type "catclark"
  subdiv_iterations 5
- subdiv_adaptive_error 10
+ subdiv_adaptive_error 0
  subdiv_adaptive_metric "auto"
  subdiv_adaptive_space "raster"
- subdiv_frustum_ignore off
+ subdiv_frustum_ignore on
  subdiv_uv_smoothing "pin_corners"
  subdiv_smooth_derivs off
  step_size 0
