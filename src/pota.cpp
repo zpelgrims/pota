@@ -561,8 +561,8 @@ camera_create_ray
     }
 
     // write random samples for camera_reverse_ray
-    camera_data->random1 = random1;
-    camera_data->random2 = random2;
+    //camera_data->random1 = random1;
+    //camera_data->random2 = random2;
 
 
 
@@ -605,6 +605,7 @@ camera_create_ray
 } 
 
 
+/*
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_position, MyCameraData *camera_data)
 {
@@ -637,7 +638,7 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
 }
 
 
-/*
+
 // solve Ps.xy with Po.xyz
 // fully backtraced
 camera_reverse_ray
