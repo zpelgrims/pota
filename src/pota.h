@@ -57,6 +57,12 @@ struct MyCameraData
     int count;
 
     bool proper_ray_derivatives;
+
+    float random1;
+    float random2;
+
+    //camera_reverse_ray
+    float tan_fov;
 };
 
 extern struct MyCameraData camera_data;
