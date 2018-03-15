@@ -401,6 +401,13 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 
+
+
+
+
+
+
+
 node_parameters
 {
     AiParameterEnum("lensModel", petzval_1900_66mm, LensModelNames);
@@ -499,6 +506,10 @@ node_update
         AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
     }
 
+
+    camera_data->tan_fov = tanf(camera_data->lens_field_of_view / 2.0f);
+
+
     AiMsgInfo("");
 	AiCameraUpdate(node, false);
 }
@@ -549,6 +560,10 @@ camera_create_ray
 		}
     }
 
+    // write random samples for camera_reverse_ray
+    camera_data->random1 = random1;
+    camera_data->random2 = random2;
+
 
 
 	/* 
@@ -590,11 +605,86 @@ camera_create_ray
 } 
 
 
+// given camera space scene point, return point on sensor
+inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_position, MyCameraData *camera_data)
+{
+   const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
+
+   // initialize 5d light fields
+   float sensor[5] =    {0.0f, 0.0f, 0.0f, 0.0f, camera_data->lambda};
+   float out[5] =       {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+   float aperture[2] =  {0.0f, 0.0f};
+
+   //randoms are always 0?
+   aperture[0] = camera_data->random1 * camera_data->aperture_radius;
+   aperture[1] = camera_data->random2 * camera_data->aperture_radius;
+
+   if(lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data) <= 0.0f) return false;
+
+   // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
+   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
+   const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius) return false;
+
+   // shift sensor
+   sensor[0] += sensor[2] * -camera_data->sensor_shift;
+   sensor[1] += sensor[3] * -camera_data->sensor_shift;
+
+   sensor_position.x = sensor[0];
+   sensor_position.y = sensor[1];
+
+   return true;
+}
+
+
+/*
+// solve Ps.xy with Po.xyz
+// fully backtraced
 camera_reverse_ray
 {
-	// const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
-	return false;
+	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
+
+    //AiMsgInfo("Po = %f, %f, %f", Po.x, Po.y, Po.z);
+
+    int xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+    int yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+    const float frame_aspect_ratio = (float)xres/(float)yres;
+
+    // convert sample world space position to camera space
+    AtMatrix world_to_camera_matrix;
+    AtVector2 sensor_position;
+    AiWorldToCameraMatrix(AiUniverseGetCamera(), relative_time, world_to_camera_matrix);
+    AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, Po);
+
+    if( trace_backwards( -camera_space_sample_position * 10.0, sensor_position, camera_data) )
+    {
+        AtVector2 s(sensor_position.x / (camera_data->sensor_width * 0.5), 
+                    sensor_position.y / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
+
+        AiMsgInfo("sensorposition: %f \t %f", s.x, s.y);
+
+        Ps.x = s.x;
+        Ps.y = s.y;
+
+        return true;
+    } else {
+        return false;
+    }
+}*/
+
+
+// approximation using pinhole camera FOV
+camera_reverse_ray
+{
+	const MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
+
+	float coeff = 1.0 / AiMax(fabsf(Po.z * camera_data->tan_fov), 1e-3f);
+    Ps.x = Po.x * coeff;
+    Ps.y = Po.y * coeff;
+
+    return true;
 }
+
 
 node_loader
 {

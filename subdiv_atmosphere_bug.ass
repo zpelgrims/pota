@@ -1,0 +1,234 @@
+### exported: Tue Mar 13 20:17:30 2018
+### from:     Arnold 5.0.2.3 [d2dbe434] windows icc-17.0.2 oiio-1.7.17 osl-1.9.0 vdb-4.0.0 clm-1.0.3.513 rlm-12.2.2 2017/12/21 17:47:20
+### host app: MtoA 2.1.0.2 3ca62bd9 (master) Maya 2018
+### bounds: -48.176357 -16.515472 -6.022638 47.047024 -4.470196 6.022638
+### user: Zeno
+### fps: 24.000000
+### render_layer: defaultRenderLayer
+### frame: 1.000000
+### scene: D:/projects/pota/tests/subdiv_atmosphere_bug/subdiv_atmosphere_bug.ma
+
+
+
+options
+{
+ AA_samples 4
+ outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
+ xres 960
+ yres 540
+ camera "rendercamShape"
+ atmosphere "aiAtmosphereVolume"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+ width 2
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.RGBA
+ filename "C:/Users/Zeno/Documents/maya/projects/default/images/rendercam/subdiv_atmosphere_bug.exr"
+ compression "zip"
+ half_precision off
+ tiled off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+atmosphere_volume
+{
+ name aiAtmosphereVolume
+ density 0.00100000005
+ samples 5
+ eccentricity 0
+ attenuation 0
+ affect_camera 1
+ affect_diffuse 0
+ affect_specular 1
+ rgb_density 1 1 1
+ rgb_attenuation 1 1 1
+}
+
+
+pota
+{
+ name rendercamShape
+ matrix
+ 0.99999392 0 0.00349065149 0
+ 0.000201256262 0.998336494 -0.0576554388 0
+ -0.0034848447 0.057655789 0.998330414 0
+ 0.0960460678 7.89857674 130.887939 1
+ handedness "right"
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ lensModel "zeiss_biotar_1927_58mm"
+ sensor_width 36
+ wavelength 550
+ dof on
+ fstop 32
+ focal_distance 131
+ extra_sensor_shift 0
+ vignetting_retries 15
+ aperture_blades 0
+ proper_ray_derivatives on
+}
+
+quad_light
+{
+ name aiAreaLightShape1
+ matrix
+ 0.452020079 0 0 0
+ 0 -2.0073724e-16 -0.452020079 0
+ 0 0.452020079 -2.0073724e-16 0
+ 0 20.1606865 0 1
+ color 0.460388392 0.582226098 1
+ intensity 1
+ exposure 12
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ shadow_color 0 0 0
+ samples 1
+ normalize on
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ vertices 4 1 b85VECTOR
+yaRT=dzaRT=daRT=dzaRT=dyzyyz
+ resolution 512
+ roundness 0
+ soft_edge 0
+ spread 0.399548531
+}
+
+point_light
+{
+ name pointLightShape1
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -24.2582436 19.2340488 0 1
+ color 1 0.102298886 0
+ intensity 1
+ exposure 8
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ shadow_color 0 0 0
+ samples 2
+ normalize on
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0
+}
+
+spot_light
+{
+ name spotLightShape1
+ matrix
+ 0.999161124 -0.0403383188 0.0070636184 0
+ -0.0351437889 -0.933145285 -0.357777566 0
+ 0.0210235268 0.357229203 -0.933780134 0
+ 24.8317318 19.2340488 0 1
+ color 1 0.102334231 0
+ intensity 1
+ exposure 11.7570496
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ shadow_color 0 0 0
+ samples 2
+ normalize on
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0
+ lens_radius 0
+ cone_angle 40
+ penumbra_angle 0
+ cosine_power 0
+ aspect_ratio 1
+ roundness 1
+}
+
+polymesh
+{
+ name cube7Shape
+ visibility 255
+ sidedness 255
+ receive_shadows on
+ self_shadows on
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 0 1
+ shader "aiUtility1"
+ opaque on
+ matte off
+ use_light_group off
+ id 3305146004
+ nsides 42 1 b85UINT
+B!%<_l4$$$$.%<_
+ vidxs 168 1 b85UINT
+B$ZuK*%<ho2%s\>:$$-?2$vMr4%<MT0'7C1J'n6UR(P*$Z&UP%R'RpXT'mp:P)helj*JY;r+,L`%)1r`r*/>>t*J=up,E3S5-'&w=-]oFE+c@G=,`a%?-&`\;.vV9U/XI]]0:=,e.?c-]/=.`_/X.B[1Rxtu24lD(2k_h00q0i(1nQG*24Q)&4/F[@4f:*H5H-NP3MSOH4Jt-J4esdF
+ uvidxs 168 1 b85UINT
+B$ZuK*%<ho2%s\>:&UObB$w/J=(3BP?)M/Kb*.wlj*ek;r+G^`%)2f>t,_HSx.$,IE.ZtjM/<h9U/s[]]-^c<W16EQ[2P)G(31qh03he784JX[@25`::5bBO>7'&D`7]neh8?b4p8vUXx6a]7r:9?Lv;RxBC<4kcK<k_2S=MRV[;8Z5U>e<JY@)u@&@`ha.AB\06B$OT>?dW38C<9H<
+ vlist 56 1 b85VECTOR
+bHeMsb4Zr:8hvsRbCYJcb4Zr:8hvsRbHeMsaoMoY8hvsRbCYJcaoMoY8hvsRbHeMsaoMoYatgO(bCYJcaoMoYatgO(bHeMsb4Zr:atgO(bCYJcb4Zr:atgO(bBQ)=b4Zr:8hvsRb8qLqb4Zr:8hvsRbBQ)=aoMoY8hvsRb8qLqaoMoY8hvsRbBQ)=aoMoYatgO(b8qLqaoMoYatgO(bBQ)=b4Zr:atgO(b8qLqb4Zr:atgO(b7WRlb4Zr:8hvsRb&@G$b4Zr:8hvsRb7WRlaoMoY8hvsRb&@G$aoMoY8hvsRb7WRlaoMoYatgO(b&@G$aoMoYatgO(b7WRlb4Zr:atgO(b&@G$b4Zr:atgO(atgO(b4Zr:8hvsR8hvsRb4Zr:8hvsRatgO(aoMoY8hvsR8hvsRaoMoY8hvsRatgO(aoMoYatgO(8hvsRaoMoYatgO(atgO(b4Zr:atgO(8hvsRb4Zr:atgO(9->Vlb4Zr:8hvsR96ik%b4Zr:8hvsR9->VlaoMoY8hvsR96ik%aoMoY8hvsR9->VlaoMoYatgO(96ik%aoMoYatgO(9->Vlb4Zr:atgO(96ik%b4Zr:atgO(8pUuFb4Zr:8hvsR9,;&7b4Zr:8hvsR8pUuFaoMoY8hvsR9,;&7aoMoY8hvsR8pUuFaoMoYatgO(9,;&7aoMoYatgO(8pUuFb4Zr:atgO(9,;&7b4Zr:atgO(97?q?b4Zr:8hvsR9<KtOb4Zr:8hvsR97?q?aoMoY8hvsR9<KtOaoMoY8hvsR97?q?aoMoYatgO(9<KtOaoMoYatgO(97?q?b4Zr:atgO(9<KtOb4Zr:atgO(
+ uvlist 98 1 b85VECTOR2
+82:0xz8<Nt.z82:0x8+HY88<Nt.8+HY882:0x89+]c8<Nt.89+]c82:0x8?r5N8<Nt.8?r5N82:0xy8<Nt.y8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY882:0xz8<Nt.z8<Nt.8+HY882:0x8+HY88<Nt.89+]c82:0x89+]c8<Nt.8?r5N82:0x8?r5N8<Nt.y82:0xy8C@Knz8C@Kn8+HY87reTbz7reTb8+HY8
+ smoothing on
+ subdiv_type "catclark"
+ subdiv_iterations 5
+ subdiv_adaptive_error 0
+ subdiv_adaptive_metric "auto"
+ subdiv_adaptive_space "raster"
+ subdiv_frustum_ignore on
+ subdiv_uv_smoothing "pin_corners"
+ subdiv_smooth_derivs off
+ step_size 0
+ volume_padding 0
+}
+
+utility
+{
+ name aiUtility1
+ color_mode "polywire"
+ shade_mode "lambert"
+ overlay_mode "none"
+ color 1 1 1
+ ao_distance 100
+ roughness 0.200000003
+ normal 0 0 0
+}
+
