@@ -635,6 +635,7 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
 
 
 // solve Ps.xy with Po.xyz
+// IDEA: do this with a pinhole camera instead, matching the FOV of the actual lens
 camera_reverse_ray
 {
 	MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
