@@ -390,6 +390,8 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 	origin *= -0.1; // reverse rays and convert to cm
     direction *= -0.1; //reverse rays and convert to cm
 
+    direction = AiV3Normalize(direction);
+
     // Nan bailout
     if (origin.x != origin.x || origin.y != origin.y || origin.z != origin.z || 
         direction.x != direction.x || direction.y != direction.y || direction.z != direction.z)

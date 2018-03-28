@@ -1,10 +1,10 @@
 ROADMAP:
 	
-	1.2:
+	1.3:
 
 		Volumes not rendering properly?
 		
-		htoa focus distance in meters?.. maybe htoa is doing something odd with the translation of aiFocusDistance?
+		htoa focus distance in meters?.. maybe htoa is doing something odd with the translation of aiFocusDistance? test with houdini install
 		c4dtoa
 
 		wideangle: 14mm -> 22 mm
