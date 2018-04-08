@@ -30,12 +30,13 @@ class aiPotaTemplate(templates.AttributeTemplate):
     def setup(self):
 
         self.beginLayout("Polynomial Optics", collapse=False)
+        self.addControl("aiUnitModel", label="Units")
         self.addControl("aiLensModel", label="Lens Model")
         self.addControl("aiSensorWidth", label="Sensor Width (mm)")
         self.addControl("aiWavelength", label="Wavelength (nm)")
         self.addControl("aiDof", label="Enable depth of field")
         self.addControl("aiFstop", label="F-stop")
-        self.addControl("aiFocalDistance", label="Focus distance (cm)")
+        self.addControl("aiFocalDistance", label="Focus distance (units)")
         self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
