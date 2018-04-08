@@ -18,14 +18,22 @@ enum LensModel{
     doublegauss_100mm,
     angenieux_doublegauss_1953_49mm,
     petzval_1900_66mm,
-    wideangle,
-    NONE
+    wideangle
+};
+
+// enum to switch between units in interface dropdown
+enum UnitModel{
+    mm,
+    cm,
+    dm,
+    m
 };
 
 
 struct MyCameraData
 {
 	LensModel lensModel;
+    UnitModel unitModel;
 
     // lens constants
     const char* lens_name;

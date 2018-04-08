@@ -10,6 +10,7 @@ AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 enum
 {
+    p_unitModel,
 	p_lensModel,
 	p_sensor_width,
 	p_wavelength,
@@ -39,6 +40,16 @@ static const char* LensModelNames[] =
     "angenieux_doublegauss_1953_49mm",
     "petzval_1900_66mm",
     "wideangle",
+    NULL
+};
+
+// to switch between units in interface dropdown
+static const char* UnitModelNames[] =
+{
+    "mm",
+    "cm",
+    "dm",
+    "m",
     NULL
 };
 
@@ -193,8 +204,8 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
     intersection_distance = line_plane_intersection(ray_origin, ray_dir).z;
 
-    ray_origin *= -0.1;
-    ray_dir *= -0.1;
+    //ray_origin *= -0.1;
+    //ray_dir *= -0.1;
 
 }
 
@@ -387,8 +398,29 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
     origin = {camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]};
     direction = {camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]};
 
-	origin *= -0.1; // reverse rays and convert to cm
-    direction *= -0.1; //reverse rays and convert to cm
+
+    switch (camera_data->unitModel){
+        case mm:
+        {
+            origin *= -1.0; // reverse rays and convert to cm
+            direction *= -1.0; //reverse rays and convert to cm
+        } break;
+        case cm:
+        { 
+            origin *= -0.1; // reverse rays and convert to cm
+            direction *= -0.1; //reverse rays and convert to cm
+        } break;
+        case dm:
+        {
+            origin *= -0.01; // reverse rays and convert to cm
+            direction *= -0.01; //reverse rays and convert to cm
+        } break;
+        case m:
+        {
+            origin *= -0.001; // reverse rays and convert to cm
+            direction *= -0.001; //reverse rays and convert to cm
+        }
+    }
 
     direction = AiV3Normalize(direction);
 
@@ -404,14 +436,9 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 
-
-
-
-
-
-
 node_parameters
 {
+    AiParameterEnum("unitModel", cm, UnitModelNames);
     AiParameterEnum("lensModel", petzval_1900_66mm, LensModelNames);
     AiParameterFlt("sensor_width", 36.0); // 35mm film
     AiParameterFlt("wavelength", 550.0); // wavelength in nm
@@ -443,6 +470,7 @@ node_update
 	camera_data->fstop = AiNodeGetFlt(node, "fstop");
 	camera_data->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f;
 	camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
+    camera_data->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
 	camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
 	camera_data->dof = AiNodeGetBool(node, "dof");
     camera_data->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
@@ -451,6 +479,22 @@ node_update
 	// camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 	camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 	camera_data->sensor_shift = 0.0;
+
+    // convert to cm
+    switch (camera_data->unitModel){
+        case mm:
+        {
+            camera_data->focal_distance *= 0.1f;
+        } break;
+        case dm:
+        {
+            camera_data->focal_distance *= 10.0f;
+        } break;
+        case m:
+        {
+            camera_data->focal_distance *= 100.0f;
+        }
+    }
 
 
     AiMsgInfo("");
