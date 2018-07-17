@@ -2,6 +2,7 @@
 #include <vector>
 #include "pota.h"
 #include "lens.h"
+#include "evaluate.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
@@ -26,6 +27,7 @@ enum SampleBokehParams
 };
 
 
+// MOVE THIS FUNCTION TO LENS.h
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift, MyCameraData *camera_data)
 {

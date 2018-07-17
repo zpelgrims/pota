@@ -1,6 +1,7 @@
 #include <ai.h>
 #include "pota.h"
 #include "lens.h"
+#include "evaluate.h"
 #include <vector>
 #include <cmath>
 
@@ -28,6 +29,7 @@ enum
 
 
 // to switch between lens models in interface dropdown
+// this will need to be automatically filled somehow
 static const char* LensModelNames[] =
 {
     "takumar_1969_50mm",
@@ -54,119 +56,8 @@ static const char* UnitModelNames[] =
 };
 
 
-// returns sensor offset in mm
-// traces rays backwards through the lens
-float camera_set_focus(float dist, MyCameraData *camera_data)
-{
-    const float target[3] = { 0.0, 0.0, dist};
-    float sensor[5] = {0.0f};
-    float out[5] = {0.0f};
-    sensor[4] = camera_data->lambda;
-    float offset = 0.0f;
-    int count = 0;
-    float scale_samples = 0.1f;
-    float aperture[2] = {0.0f, 0.0f};
 
-    const int S = 4;
-
-    // trace a couple of adjoint rays from there to the sensor and
-    // see where we need to put the sensor plane.
-    for(int s=1; s<=S; s++){
-      for(int k=0; k<2; k++){
-      	
-        // reset aperture
-        aperture[0] = aperture[1] = 0.0f;
-
-        aperture[k] = camera_data->lens_aperture_housing_radius * (s/(S+1.0f) * scale_samples); // (1to4)/(4+1) = (.2, .4, .6, .8) * scale_samples
-
-        lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
-
-        if(sensor[2+k] > 0){
-            offset += sensor[k]/sensor[2+k];
-            AiMsgInfo("\t[POTA] raytraced sensor shift at aperture[%f, %f]: %f", aperture[0], aperture[1], sensor[k]/sensor[2+k]);
-            count ++;
-        }
-      }
-    }
-
-    // average guesses
-    offset /= count; 
-    
-    // the focus plane/sensor offset:
-    // negative because of reverse direction
-    if(offset == offset){ // check NaN cases
-		const float limit = 45.0f;
-		if(offset > limit){
-			AiMsgInfo("[POTA] sensor offset bigger than maxlimit: %f > %f", offset, limit);
-          	return limit;
-		} else if(offset < -limit){
-			AiMsgInfo("[POTA] sensor offset smaller than minlimit: %f < %f", offset, -limit);
-        	return -limit;
-		} else {
-			return offset; // in mm
-		}
-    }
-}
-
-
-
-// returns sensor offset in mm
-float camera_set_focus_infinity(MyCameraData *camera_data)
-{
-	float parallel_ray_height = camera_data->lens_aperture_housing_radius * 0.1;
-    const float target[3] = { 0.0, parallel_ray_height, AI_BIG};
-    float sensor[5] = {0.0f};
-    float out[5] = {0.0f};
-    sensor[4] = camera_data->lambda;
-    float offset = 0.0f;
-    int count = 0;
-
-    // just point through center of aperture
-    float aperture[2] = {0.0f, parallel_ray_height};
-
-    const int S = 4;
-
-    // trace a couple of adjoint rays from there to the sensor and
-    // see where we need to put the sensor plane.
-    for(int s=1; s<=S; s++){
-      for(int k=0; k<2; k++){
-      	
-        // reset aperture
-        aperture[0] = 0.0f;
-        aperture[1] = parallel_ray_height;
-
-        lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data);
-
-        if(sensor[2+k] > 0){
-            offset += sensor[k]/sensor[2+k];
-            count ++;
-        }
-      }
-    }
-
-    offset /= count; 
-    
-    // check NaN cases
-    if(offset == offset) return offset;
-}
-
-
-std::vector<float> logarithmic_values ()
-{
-    float min = 0.0;
-    float max = 45.0;
-    float exponent = 2.0; // sharpness
-    std::vector<float> log;
-
-    for(float i = -1.0; i <= 1.0; i += 0.0001) {
-        log.push_back((i < 0 ? -1 : 1) * std::pow(i, exponent) * (max - min) + min);
-        // AiMsgInfo("logvalue: %f at i = %f", std::pow(i, exponent), i);
-    }
-
-    return log;
-}
-
-
+// ------------------------- MOVE ALL THESE FUNCTIONS INTO A HEADER FILE FOR REUSABILITY, REMOVE AI.H DEPENDENCY ---------------------------
 
 // line plane intersection with fixed intersection at y = 0, for finding the focal length and sensor shift
 AtVector line_plane_intersection(AtVector rayOrigin, AtVector rayDirection)
@@ -435,6 +326,10 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 
+// -------------------------------------------- END MOVE ----------------------------------------------
+
+
+
 
 node_parameters
 {
@@ -500,6 +395,18 @@ node_update
     AiMsgInfo("");
 
 	load_lens_constants(camera_data);
+    AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
+    AiMsgInfo("[POTA] lens_name: %s", camera_data->lens_name);
+    AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", camera_data->lens_outer_pupil_radius);
+    AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", camera_data->lens_inner_pupil_radius);
+    AiMsgInfo("[POTA] lens_length: %f", camera_data->lens_length);
+    AiMsgInfo("[POTA] lens_focal_length: %f", camera_data->lens_focal_length);
+    AiMsgInfo("[POTA] lens_aperture_pos: %f", camera_data->lens_aperture_pos);
+    AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera_data->lens_aperture_housing_radius);
+    AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera_data->lens_outer_pupil_curvature_radius);
+    AiMsgInfo("[POTA] lens_field_of_view: %f", camera_data->lens_field_of_view);
+    AiMsgInfo("[POTA] --------------------------------------");
+
 
 	camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
 	AiMsgInfo("[POTA] wavelength: %f", camera_data->lambda);
