@@ -11,7 +11,7 @@
 
 **Compile instructions:**
 
-Base requirement: Arnold >5.0.2.0
+Base requirement: Arnold >5.0.2.0, Eigen
 
 >OSX:
 ```

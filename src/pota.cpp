@@ -209,9 +209,9 @@ camera_create_ray
   float random1 = 0.0;
   float random2 = 0.0;
 
-  Eigen::vector3d weight;
-  Eigen::vector3d origin;
-  Eigen::vector3d direction;
+  Eigen::Vector3d weight;
+  Eigen::Vector3d origin;
+  Eigen::Vector3d direction;
   for(int i = 0; i < 3; i++){
     weight(i) = output.weight[i];
     origin(i) = output.origin[i];
@@ -239,12 +239,12 @@ camera_create_ray
       input_dx.sx += input.dsx * step;
       input_dy.sy += input.dsy * step;
 
-      Eigen::vector3d out_dx_weight;
-      Eigen::vector3d out_dx_origin;
-      Eigen::vector3d out_dx_dir;
-      Eigen::vector3d out_dy_weight;
-      Eigen::vector3d out_dy_origin;
-      Eigen::vector3d out_dy_dir;
+      Eigen::Vector3d out_dx_weight;
+      Eigen::Vector3d out_dx_origin;
+      Eigen::Vector3d out_dx_dir;
+      Eigen::Vector3d out_dy_weight;
+      Eigen::Vector3d out_dy_origin;
+      Eigen::Vector3d out_dy_dir;
       for (int i=0; i<3; i++){
         out_dx_weight(i) = output_dx.weight[i];
         out_dx_origin(i) = output_dx.origin[i];
@@ -257,17 +257,24 @@ camera_create_ray
       trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera_data);
       trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera_data);
 
-      output.dOdx = (out_dx_origin - origin) / step;
-      output.dOdy = (out_dy_origin - origin) / step;
-      output.dDdx = (out_dx_dir - direction) / step;
-      output.dDdy = (out_dy_dir - direction) / step;
+      Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
+      Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
+      Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
+      Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
+
+      for (int i = 0; i<3; i++){
+        output.dOdx[i] = out_d0dx(i);
+        output.dOdy[i] = out_dOdy(i);
+        output.dDdx[i] = out_dDdx(i);
+        output.dDdy[i] = out_dDdy(i);
+      }
     }
   }
 
   // eigen->arnold
   for (int i = 0; i<3; i++){
     output.origin[i] = origin(i);
-    output.direction[i] = direction(i);
+    output.dir[i] = direction(i);
     output.weight[i] = weight(i);
   }
 
