@@ -128,7 +128,7 @@ shader_evaluate
 
          // convert sample world space position to camera space
          AtMatrix world_to_camera_matrix;
-         Eigen::vector2d sensor_position;
+         Eigen::Vector2d sensor_position;
 
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          // improve this, too much copying

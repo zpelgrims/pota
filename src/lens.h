@@ -1,7 +1,9 @@
 #pragma once
 #include <math.h>
+#include "common.h"
+#include "evaluate.h"
 #include <vector>
-#include "../../Eigen/Eigen/Dense"
+#include "../../Eigen/Eigen/Core"
 
 
 // xorshift fast random number generator
@@ -68,116 +70,6 @@ inline void concentric_disk_sample(const float ox, const float oy, Eigen::Vector
     lens(0) = r * fastCos(phi);
     lens(1) = r * fastSin(phi);
   }
-}
-
-// these are duplicates, lens.h is double in lentil repo
-static inline float raytrace_dot(const float *u, const float *v)
-{
-  return ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2]);
-}
-
-// these are duplicates, lens.h is double in lentil repo
-static inline void raytrace_cross(float *r, const float *u, const float *v)
-{
-  r[0] = u[1]*v[2]-u[2]*v[1];
-  r[1] = u[2]*v[0]-u[0]*v[2];
-  r[2] = u[0]*v[1]-u[1]*v[0];
-}
-
-
-static inline void raytrace_normalise(float *v)
-{
-  const float ilen = 1.0f/sqrtf(raytrace_dot(v,v));
-  for(int k=0;k<3;k++) v[k] *= ilen;
-}
-
-
-static inline float dotproduct(float *u, float *v)
-{
-  return raytrace_dot(u, v);
-}
-
-
-static inline void crossproduct(const float *r, const float *u, float *v)
-{
-  return raytrace_cross(v, r, u);
-}
-
-
-static inline void normalise(float *v)
-{
-  return raytrace_normalise(v);
-}
-
-
-static inline float MAX(float a, float b)
-{
-  return a>b?a:b;
-}
-
-
-static inline void common_sincosf(float phi, float* sin, float* cos)
-{
-  *sin = std::sin(phi);
-  *cos = std::cos(phi);
-}
-
-
-// helper function for dumped polynomials to compute integer powers of x:
-static inline float lens_ipow(const float x, const int exp)
-{
-  if(exp == 0) return 1.0f;
-  if(exp == 1) return x;
-  if(exp == 2) return x*x;
-  const float p2 = lens_ipow(x, exp/2);
-  if(exp &  1) return x * p2 * p2;
-  return p2 * p2;
-}
-
-
-static inline void lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
-{
-  const float normal[3] =
-  {
-  inpos[0]/sphereRad,
-  inpos[1]/sphereRad,
-  sqrtf(MAX(0, sphereRad*sphereRad-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(sphereRad)
-  };
-  const float tempDir[3] = {indir[0], indir[1], sqrtf(MAX(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
-
-  float ex[3] = {normal[2], 0, -normal[0]};
-  normalise(ex);
-  float ey[3];
-  crossproduct(normal, ex, ey);
-
-  outdir[0] = tempDir[0] * ex[0] + tempDir[1] * ey[0] + tempDir[2] * normal[0];
-  outdir[1] = tempDir[0] * ex[1] + tempDir[1] * ey[1] + tempDir[2] * normal[1];
-  outdir[2] = tempDir[0] * ex[2] + tempDir[1] * ey[2] + tempDir[2] * normal[2];
-  outpos[0] = inpos[0];
-  outpos[1] = inpos[1];
-  outpos[2] = normal[2] * sphereRad + sphereCenter;
-}
-
-
-static inline void lens_csToSphere(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
-{
-  const float normal[3] =
-  {
-  inpos[0]/sphereRad,
-  inpos[1]/sphereRad,
-  fabsf((inpos[2]-sphereCenter)/sphereRad)
-  };
-  float tempDir[3] = {indir[0], indir[1], indir[2]};
-  normalise(tempDir);
-
-  float ex[3] = {normal[2], 0, -normal[0]};
-  normalise(ex);
-  float ey[3];
-  crossproduct(normal, ex, ey);
-  outdir[0] = dotproduct(tempDir, ex);
-  outdir[1] = dotproduct(tempDir, ey);
-  outpos[0] = inpos[0];
-  outpos[1] = inpos[1];
 }
 
 
@@ -387,7 +279,7 @@ Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector
   Eigen::Vector3d planeNormal(0.0, 1.0, 0.0);
   rayDirection.normalize();
   coord.normalize();
-  return rayOrigin + (rayDirection * (coord.dot(planeNormal) - planenormal.dot(rayOrigin)) / planeNormal.dot(rayDirection));
+  return rayOrigin + (rayDirection * (coord.dot(planeNormal) - planeNormal.dot(rayOrigin)) / planeNormal.dot(rayDirection));
 }
 
 
