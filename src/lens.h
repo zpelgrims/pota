@@ -6,6 +6,11 @@
 #include "../../Eigen/Eigen/Core"
 
 
+#ifndef M_PI
+#  define M_PI 3.14159265358979323846
+#endif
+
+
 // xorshift fast random number generator
 inline uint32_t xor128(void){
   static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
@@ -14,12 +19,12 @@ inline uint32_t xor128(void){
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
 }
 
-
+/*
 inline float Lerp(float t, float v1, float v2)
 {
   return (1.0f - t) * v1 + t * v2;
 }
-
+*/
 
 // sin approximation, not completely accurate but faster than std::sin
 inline float fastSin(float x){
@@ -254,7 +259,6 @@ float camera_set_focus_infinity(MyCameraData *camera_data)
 }
 
 
-
 std::vector<float> logarithmic_values()
 {
   float min = 0.0;
@@ -268,7 +272,6 @@ std::vector<float> logarithmic_values()
 
   return log;
 }
-
 
 
 // line plane intersection with fixed intersection at y = 0

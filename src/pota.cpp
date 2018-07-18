@@ -209,14 +209,9 @@ camera_create_ray
   float random1 = 0.0;
   float random2 = 0.0;
 
-  Eigen::Vector3d weight;
-  Eigen::Vector3d origin;
-  Eigen::Vector3d direction;
-  for(int i = 0; i < 3; i++){
-    weight(i) = output.weight[i];
-    origin(i) = output.origin[i];
-    direction(i) = output.dir[i];
-  }
+  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
+  Eigen::Vector3d origin(output.origin[0], output.origin[1], output.origin[2]);
+  Eigen::Vector3d direction(output.dir[0], output.dir[1], output.dir[2]);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera_data);
 
@@ -239,20 +234,13 @@ camera_create_ray
       input_dx.sx += input.dsx * step;
       input_dy.sy += input.dsy * step;
 
-      Eigen::Vector3d out_dx_weight;
-      Eigen::Vector3d out_dx_origin;
-      Eigen::Vector3d out_dx_dir;
-      Eigen::Vector3d out_dy_weight;
-      Eigen::Vector3d out_dy_origin;
-      Eigen::Vector3d out_dy_dir;
-      for (int i=0; i<3; i++){
-        out_dx_weight(i) = output_dx.weight[i];
-        out_dx_origin(i) = output_dx.origin[i];
-        out_dx_dir(i) = output_dx.dir[i];
-        out_dy_weight(i) = output_dy.weight[i];
-        out_dy_origin(i) = output_dy.origin[i];
-        out_dy_dir(i) = output_dy.dir[i];
-      }
+      // copy vectors
+      Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
+      Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
+      Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+      Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
+      Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
+      Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
 
       trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera_data);
       trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera_data);
