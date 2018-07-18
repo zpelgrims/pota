@@ -230,16 +230,15 @@ camera_create_ray
         output.dOdy[i] = origin(i);
         output.dDdy[i] = direction(i);
       }
-  } else {
-  float step = 0.001;
-    AtCameraInput input_dx = input;
-    AtCameraInput input_dy = input;
-    AtCameraOutput output_dx;
-    AtCameraOutput output_dy;
+    } else {
+      float step = 0.001;
+      AtCameraInput input_dx = input;
+      AtCameraInput input_dy = input;
+      AtCameraOutput output_dx;
+      AtCameraOutput output_dy;
 
-    input_dx.sx += input.dsx * step;
-    input_dy.sy += input.dsy * step;
-
+      input_dx.sx += input.dsx * step;
+      input_dy.sy += input.dsy * step;
 
       Eigen::vector3d out_dx_weight;
       Eigen::vector3d out_dx_origin;
@@ -256,14 +255,14 @@ camera_create_ray
         out_dy_dir(i) = output_dy.dir[i];
       }
 
-    trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera_data);
-    trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera_data);
+      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera_data);
+      trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera_data);
 
-    output.dOdx = (out_dx_origin - origin) / step;
-  output.dOdy = (out_dy_origin - origin) / step;
-  output.dDdx = (out_dx_dir - direction) / step;
-  output.dDdy = (out_dy_dir - direction) / step;
-  }
+      output.dOdx = (out_dx_origin - origin) / step;
+      output.dOdy = (out_dy_origin - origin) / step;
+      output.dDdx = (out_dx_dir - direction) / step;
+      output.dDdy = (out_dy_dir - direction) / step;
+    }
   }
 
   // eigen->arnold
