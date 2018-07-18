@@ -44,7 +44,7 @@ inline float fastCos(float x){
 
 
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(const float ox, const float oy, AtVector2 &lens, bool fast_trigo)
+inline void concentric_disk_sample(const float ox, const float oy, Eigen::Vector2d &lens, bool fast_trigo)
 {
   float phi, r;
 
@@ -62,11 +62,11 @@ inline void concentric_disk_sample(const float ox, const float oy, AtVector2 &le
   }
 
   if (!fast_trigo){
-    lens.x = r * std::cos(phi);
-    lens.y = r * std::sin(phi);
+    lens(0) = r * std::cos(phi);
+    lens(1) = r * std::sin(phi);
   } else {
-    lens.x = r * fastCos(phi);
-    lens.y = r * fastSin(phi);
+    lens(0) = r * fastCos(phi);
+    lens(1) = r * fastSin(phi);
   }
 }
 
@@ -381,10 +381,10 @@ std::vector<float> logarithmic_values()
 
 // line plane intersection with fixed intersection at y = 0
 // used for finding the focal length and sensor shift
-Eigen::vector3d line_plane_intersection(Eigen::vector3d rayOrigin, Eigen::vector3d rayDirection)
+Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector3d rayDirection)
 {
-  Eigen::vector3d coord(100.0, 0.0, 100.0);
-  Eigen::vector3d planeNormal(0.0, 1.0, 0.0);
+  Eigen::Vector3d coord(100.0, 0.0, 100.0);
+  Eigen::Vector3d planeNormal(0.0, 1.0, 0.0);
   rayDirection.normalize();
   coord.normalize();
   return rayOrigin + (rayDirection * (coord.dot(planeNormal) - planenormal.dot(rayOrigin)) / planeNormal.dot(rayDirection));
@@ -411,8 +411,8 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
-	Eigen::vector3d ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
-	Eigen::vector3d ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
+	Eigen::Vector3d ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
+	Eigen::Vector3d ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
   intersection_distance = line_plane_intersection(ray_origin, ray_dir)(2);
 
@@ -488,8 +488,8 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 	float camera_space_omega[3];
 	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
-  Eigen::vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
-  Eigen::vector3d direction(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
+  Eigen::Vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
+  Eigen::Vector3d direction(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
   float y0 = line_plane_intersection(origin, direction)(2);
   //printf("[LENTIL] y=0 ray plane intersection: %f", y0);
@@ -504,7 +504,7 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 
 
 
-inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::vector3d &weight, Eigen::vector3d &origin, Eigen::vector3d &direction, MyCameraData *camera_data)
+inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, MyCameraData *camera_data)
 {
 
   bool ray_succes = false;
@@ -529,7 +529,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 	  else if (camera_data->dof && camera_data->aperture_blades <= 2)
 	  {
 			// transform unit square to unit disk
-		  Eigen::vector2d unit_disk(0.0f, 0.0f);
+		  Eigen::Vector2d unit_disk(0.0f, 0.0f);
 		  if (tries == 0) concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
 		  else {
 		  	if (original_ray){
@@ -605,7 +605,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
   for (int i=0; i<3; i++){
     origin(i) = camera_space_pos[i];
-    direction(i) = camera_space_omega[i]
+    direction(i) = camera_space_omega[i];
   }
 
 
@@ -647,7 +647,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(Eigen::vector3d sample_position, const float aperture_radius, const float lambda, Eigen::vector2d &sensor_position, const float sensor_shift, MyCameraData *camera_data)
+inline bool trace_backwards(Eigen::Vector3d sample_position, const float aperture_radius, const float lambda, Eigen::Vector2d &sensor_position, const float sensor_shift, MyCameraData *camera_data)
 {
    const float target[3] = {sample_position(0), sample_position(1), sample_position(2)};
 
@@ -656,7 +656,7 @@ inline bool trace_backwards(Eigen::vector3d sample_position, const float apertur
    float out[5] =    {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
    float aperture[2] =  {0.0f, 0.0f};
 
-   Eigen::vector2d lens;
+   Eigen::Vector2d lens;
    concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, lens, true);
    aperture[0] = lens(0) * aperture_radius;
    aperture[1] = lens(1) * aperture_radius;

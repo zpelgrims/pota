@@ -133,7 +133,7 @@ shader_evaluate
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
          // improve this, too much copying
          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
-         Eigen::vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
+         Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
          
 
          for(int count=0; count<bokeh_data->samples; count++)
@@ -144,7 +144,7 @@ shader_evaluate
             }
 
             // convert sensor position to pixel position
-            Eigen::vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
 
             const float pixel_x = ((s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
