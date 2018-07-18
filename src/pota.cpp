@@ -2,7 +2,6 @@
 #include "pota.h"
 #include "lens.h"
 #include "evaluate.h"
-#include <vector>
 #include <cmath>
 
 
