@@ -27,41 +27,6 @@ enum SampleBokehParams
 };
 
 
-// MOVE THIS FUNCTION TO LENS.h
-// given camera space scene point, return point on sensor
-inline bool trace_backwards(const AtVector sample_position, const float aperture_radius, const float lambda, AtVector2 &sensor_position, const float sensor_shift, MyCameraData *camera_data)
-{
-   const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
-
-   // initialize 5d light fields
-   float sensor[5] =    {0.0f, 0.0f, 0.0f, 0.0f, lambda};
-   float out[5] =       {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-   float aperture[2] =  {0.0f, 0.0f};
-
-   AtVector2 lens;
-   concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, lens, true);
-   aperture[0] = lens.x * aperture_radius;
-   aperture[1] = lens.y * aperture_radius;
-
-   if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data) <= 0.0f) return false;
-
-   // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-   const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-   if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius) return false;
-
-   // shift sensor
-   sensor[0] += sensor[2] * -sensor_shift;
-   sensor[1] += sensor[3] * -sensor_shift;
-
-   sensor_position.x = sensor[0];
-   sensor_position.y = sensor[1];
-
-   return true;
-}
-
-
- 
 node_parameters
 {
    AiParameterStr("aov_name", "");
@@ -163,10 +128,13 @@ shader_evaluate
 
          // convert sample world space position to camera space
          AtMatrix world_to_camera_matrix;
-         AtVector2 sensor_position;
+         Eigen::vector2d sensor_position;
 
          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
-         AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
+         // improve this, too much copying
+         AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
+         Eigen::vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
+         
 
          for(int count=0; count<bokeh_data->samples; count++)
          {
@@ -176,11 +144,10 @@ shader_evaluate
             }
 
             // convert sensor position to pixel position
-            AtVector2 s(sensor_position.x / (camera_data->sensor_width * 0.5), 
-                        sensor_position.y / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
+            Eigen::vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio);
 
-            const float pixel_x = ((s.x + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s.y + 1.0) / 2.0) * yres;
+            const float pixel_x = ((s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
             //figure out why sometimes pixel is nan, can't just skip it
             if ((pixel_x > xres) || 
