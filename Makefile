@@ -16,8 +16,8 @@ ifeq ($(OS), Linux)
 endif
 
 
-CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include
-LDFLAGS=-L${ARNOLD_PATH}/bin -lai
+CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen
+LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
 HEADERS= src/lens.h src/pota.h src/tinyexr.h 
 
