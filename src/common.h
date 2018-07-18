@@ -9,7 +9,7 @@ static inline float raytrace_dot(const float *u, const float *v)
   return ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2]);
 }
 
-// these are duplicates, lens.h is double in lentil repo
+
 static inline void raytrace_cross(float *r, const float *u, const float *v)
 {
   r[0] = u[1]*v[2]-u[2]*v[1];
