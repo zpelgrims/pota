@@ -31,16 +31,18 @@ enum
 // this will need to be automatically filled somehow
 static const char* LensModelNames[] =
 {
-  "takumar_1969_50mm",
-  "zeiss_biotar_1927_58mm",
-  "zeiss_flektagon_1954_35mm",
-  "primoplan_1936_58mm",
-  "fisheye",
-  "fisheye_aspherical",
-  "doublegauss_100mm",
-  "angenieux_doublegauss_1953_49mm",
-  "petzval_1900_66mm",
-  "wideangle",
+  #ifdef LENS_ID_FREE
+    "1969_asahi_takumar_50mm",
+    "1927_zeiss_biotar_58mm",
+    "1954_zeiss_flektagon_35mm",
+    "1936_meyer_optik_goerlitz_primoplan_58mm",
+    "fisheye",
+    "fisheye_aspherical",
+    "doublegauss_100mm",
+    "1953_angenieux_doublegauss_49mm",
+    "1900_petzval_66mm",
+    "wideangle",
+  #endif
   NULL
 };
 
