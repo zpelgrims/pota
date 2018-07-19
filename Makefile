@@ -16,6 +16,10 @@ ifeq ($(OS), Linux)
 endif
 
 
+LENSES = -DLENS_ID_FREE
+#for i in lens list, LENSES += LENS_ID_X
+
+
 CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
@@ -27,17 +31,17 @@ all: pota potabokehAOV
 
 ifeq ($(OS), Darwin)
 pota: Makefile src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
 
 potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/potabokehAOV.cpp -o bin/potabokehAOV.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.dylib ${LDFLAGS}
 endif
 ifeq ($(OS), Linux)
 pota: Makefile src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/pota.cpp -o bin/pota.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.so ${LDFLAGS}
 
 pota_bokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
 endif
 
 
