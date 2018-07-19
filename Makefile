@@ -19,27 +19,27 @@ endif
 CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
-HEADERS= src/lens.h src/pota.h src/tinyexr.h 
+HEADERS= src/lens.h src/pota.h src/tinyexr.h src/common.h src/evaluate.h
 
 .PHONY=all clean
 
-all: pota pota_bokehAOV
+all: pota potabokehAOV
 
 ifeq ($(OS), Darwin)
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
 
-pota_bokehAOV: Makefile src/pota_bokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/pota_bokehAOV.cpp -o bin/pota_bokehAOV.dylib ${LDFLAGS}
+potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} src/potabokehAOV.cpp -o bin/potabokehAOV.dylib ${LDFLAGS}
 endif
 ifeq ($(OS), Linux)
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} src/pota.cpp -o bin/pota.so ${LDFLAGS}
 
-pota_bokehAOV: Makefile src/pota_bokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} src/pota_bokehAOV.cpp -o bin/pota_bokehAOV.so ${LDFLAGS}
+pota_bokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
 endif
 
 
 clean:
-	rm -f pota pota_bokehAOV
+	rm -f pota potabokehAOV
