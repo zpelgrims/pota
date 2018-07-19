@@ -1,9 +1,12 @@
-// this is the auto-generated file, should be renderer agnostic
-
 #pragma once
 #include <math.h>
 #include "common.h"
 
+/*
+#ifdef LENS_ID_1
+  include some code
+#endif
+*/
 
 inline void load_lens_constants (MyCameraData *camera_data)
 {
