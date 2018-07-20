@@ -1,0 +1,30 @@
+[node potabokehAOV]
+    desc STRING "Bidirectional component of POTA, to provide extra sampling for highlights"
+    maya.name               STRING  "potabokehAOV"
+    maya.id                 INT     0x00070507
+    maya.classification     STRING  "shader/surface"
+    maya.translator         STRING  "potabokehAOV"
+
+    c4d.classification      STRING  "texture"
+    c4d.menu                STRING  "texture"
+
+    houdini.icon            STRING  "VOP_shadinglayer"
+    houdini.label           STRING  "potabokehAOV"
+    houdini.category        STRING  "AOV"
+    houdini.help_url        STRING  "http://www.zenopelgrims.com/polynomial-optics-arnold"
+    houdini.order           STRING  ""
+
+
+    [attr bokeh_aov_name]
+        maya.name           STRING  "aiPotaBokehAOVName"
+        desc                STRING  "POTA bokeh AOV name"
+        default             STRING  ""
+
+        houdini.label       STRING  "POTA bokeh AOV name"
+
+    [attr discarded_samples_aov_name]
+        maya.name           STRING  "aiDiscardedSamplesAOVName"
+        desc                STRING  "POTA discarded samples AOV name"
+        default             STRING  ""
+
+        houdini.label       STRING  "POTA discarded samples AOV name"
