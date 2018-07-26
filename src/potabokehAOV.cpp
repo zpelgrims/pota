@@ -2,7 +2,6 @@
 #include <vector>
 #include "pota.h"
 #include "lens.h"
-#include "evaluate.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"

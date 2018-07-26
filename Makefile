@@ -23,8 +23,7 @@ LENSES = -DLENS_ID_FREE
 CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
-HEADERS= src/lens.h src/pota.h src/tinyexr.h src/common.h src/evaluate.h
-
+HEADERS= src/lens.h src/pota.h src/tinyexr.h src/common.h
 .PHONY=all clean
 
 all: pota potabokehAOV
@@ -40,7 +39,7 @@ ifeq ($(OS), Linux)
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.so ${LDFLAGS}
 
-pota_bokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
+potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
 endif
 
