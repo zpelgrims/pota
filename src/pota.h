@@ -8,18 +8,7 @@
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
-    #ifdef LENS_ID_FREE
-        1969_asahi_takumar_50mm,
-        1927_zeiss_biotar_58mm,
-        1954_zeiss_flektagon_35mm,
-        1936_meyer_optik_goerlitz_primoplan_58mm,
-        fisheye,
-        fisheye_aspherical,
-        doublegauss_100mm,
-        1953_angenieux_doublegauss_49mm,
-        1900_petzval_66mm,
-        wideangle
-    #endif
+    #include "auto_generated_lens_includes/pota_h_lenses.h"
 };
 
 

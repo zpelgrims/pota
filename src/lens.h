@@ -1,7 +1,6 @@
 #pragma once
 #include <math.h>
 #include "common.h"
-#include "evaluate.h"
 #include <vector>
 #include "../../Eigen/Eigen/Core"
 
@@ -9,6 +8,146 @@
 #ifndef M_PI
 #  define M_PI 3.14159265358979323846
 #endif
+
+
+inline void load_lens_constants (MyCameraData *camera_data)
+{
+  switch (camera_data->lensModel){
+    #include "auto_generated_lens_includes/load_lens_constants.h"
+  }
+}
+
+// evaluates from sensor (in) to outer pupil (out).
+// input arrays are 5d [x,y,dx,dy,lambda] where dx and dy are the direction in
+// two-plane parametrization (that is the third component of the direction would be 1.0).
+// units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
+// returns the transmittance computed from the polynomial.
+static inline float lens_evaluate(const float *in, float *out, MyCameraData *camera_data)
+{
+  const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+
+  float out_transmittance = 0.0f;
+  switch (camera_data->lensModel){
+    #include "auto_generated_lens_includes/load_pt_evaluate.h"
+  }
+
+  return MAX(0.0f, out_transmittance);
+}
+
+/*
+// evaluates from the sensor (in) to the aperture (out) only
+// returns the transmittance.
+static inline float lens_evaluate_aperture(const float *in, float *out)
+{
+  const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+#include "pt_evaluate_aperture.h"
+  out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
+  return MAX(0.0f, out_transmittance);
+}
+*/
+
+
+// solves for the two directions [dx,dy], keeps the two positions [x,y] and the
+// wavelength, such that the path through the lens system will be valid, i.e.
+// lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
+// in: point on sensor. out: point on aperture.
+static inline void lens_pt_sample_aperture(float *in, float *out, float dist, MyCameraData *camera_data)
+{
+  float out_x = out[0], out_y = out[1], out_dx = out[2], out_dy = out[3], out_transmittance = 1.0f;
+  float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+
+  switch (camera_data->lensModel){
+    #include "auto_generated_lens_includes/load_pt_sample_aperture.h"
+  }
+
+  // directions may have changed, copy all to be sure.
+  out[0] = out_x;
+  out[1] = out_y;
+  out[2] = out_dx;
+  out[3] = out_dy;
+
+  in[0] = x;
+  in[1] = y;
+  in[2] = dx;
+  in[3] = dy;
+}
+
+
+
+// solves for a sensor position given a scene point and an aperture point
+// returns transmittance from sensor to outer pupil
+static inline float lens_lt_sample_aperture(
+    const float *scene,   // 3d point in scene in camera space
+    const float *ap,      // 2d point on aperture (in camera space, z is known)
+    float *sensor,        // output point and direction on sensor plane/plane
+    float *out,           // output point and direction on outer pupil
+    const float lambda,   // wavelength
+    MyCameraData *camera_data)   
+{
+  const float scene_x = scene[0], scene_y = scene[1], scene_z = scene[2];
+  const float ap_x = ap[0], ap_y = ap[1];
+  float x = 0, y = 0, dx = 0, dy = 0;
+
+  switch (camera_data->lensModel){
+    #include "auto_generated_lens_includes/load_lt_sample_aperture.h"    
+  }
+
+  sensor[0] = x; sensor[1] = y; sensor[2] = dx; sensor[3] = dy; sensor[4] = lambda;
+  return MAX(0.0f, out[4]);
+
+}
+
+/*
+// jacobian of polynomial mapping sensor to outer pupil. in[]: sensor point/direction/lambda.
+static inline void lens_evaluate_jacobian(const float *in, float *J)
+{
+  const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+#include "pt_evaluate_jacobian.h"
+  J[0]  = dx00; J[1]  = dx01; J[2]  = dx02; J[3]  = dx03; J[4]  = dx04;
+  J[5]  = dx10; J[6]  = dx11; J[7]  = dx12; J[8]  = dx13; J[9]  = dx14;
+  J[10] = dx20; J[11] = dx21; J[12] = dx22; J[13] = dx23; J[14] = dx24;
+  J[15] = dx30; J[16] = dx31; J[17] = dx32; J[18] = dx33; J[19] = dx34;
+  J[20] = dx40; J[21] = dx41; J[22] = dx42; J[23] = dx43; J[24] = dx44;
+}*/
+
+/*
+static inline float lens_det_sensor_to_outer_pupil(const float *sensor, const float *out, const float focus)
+{
+  float J[25];
+  lens_evaluate_jacobian(sensor, J);
+  // only interested in how the direction density at the sensor changes wrt the vertex area on the output
+  float T[25] = {
+    1., 0., focus, 0., 0.,
+    0., 1., 0., focus, 0.,
+    0., 0., 1., 0., 0.,
+    0., 0., 0., 1., 0.,
+    0., 0., 0., 0., 1.};
+  float JT[25] = {0.};
+  for(int i=2;i<4;i++) // only interested in 2x2 subblock.
+    for(int j=0;j<2;j++)
+      for(int k=0;k<4;k++)
+        JT[i+5*j] += J[k + 5*j] * T[i + 5*k];
+  const float det = JT[2] * JT[5+3] - JT[3] * JT[5+2];
+
+  // convert from projected disk to point on hemi-sphere
+  const float R = lens_outer_pupil_curvature_radius;
+  const float deto = sqrtf(R*R-out[0]*out[0]-out[1]*out[1])/R;
+  // there are two spatial components which need conversion to dm:
+  const float dm2mm = 100.0f;
+  return fabsf(det * deto) / (dm2mm*dm2mm);
+}*/
+
+/*
+static inline void lens_evaluate_aperture_jacobian(const float *in, float *J)
+{
+  const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
+#include "pt_evaluate_aperture_jacobian.h"
+  J[0]  = dx00; J[1]  = dx01; J[2]  = dx02; J[3]  = dx03; J[4]  = dx04;
+  J[5]  = dx10; J[6]  = dx11; J[7]  = dx12; J[8]  = dx13; J[9]  = dx14;
+  J[10] = dx20; J[11] = dx21; J[12] = dx22; J[13] = dx23; J[14] = dx24;
+  J[15] = dx30; J[16] = dx31; J[17] = dx32; J[18] = dx33; J[19] = dx34;
+  J[20] = dx40; J[21] = dx41; J[22] = dx42; J[23] = dx43; J[24] = dx44;
+}*/
 
 
 // xorshift fast random number generator

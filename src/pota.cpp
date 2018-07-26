@@ -1,7 +1,6 @@
 #include <ai.h>
 #include "pota.h"
 #include "lens.h"
-#include "evaluate.h"
 #include <cmath>
 
 
@@ -31,18 +30,7 @@ enum
 // this will need to be automatically filled somehow
 static const char* LensModelNames[] =
 {
-  #ifdef LENS_ID_FREE
-    "1969_asahi_takumar_50mm",
-    "1927_zeiss_biotar_58mm",
-    "1954_zeiss_flektagon_35mm",
-    "1936_meyer_optik_goerlitz_primoplan_58mm",
-    "fisheye",
-    "fisheye_aspherical",
-    "doublegauss_100mm",
-    "1953_angenieux_doublegauss_49mm",
-    "1900_petzval_66mm",
-    "wideangle",
-  #endif
+  #include "auto_generated_lens_includes/pota_cpp_lenses.h"
   NULL
 };
 
@@ -61,7 +49,7 @@ static const char* UnitModelNames[] =
 node_parameters
 {
   AiParameterEnum("unitModel", cm, UnitModelNames);
-  AiParameterEnum("lensModel", petzval_1900_66mm, LensModelNames);
+  AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
