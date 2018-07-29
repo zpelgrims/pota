@@ -22,13 +22,13 @@ inline void replace_frame_numbering(std::string &original_string){
 
 struct PotaBokehAOVData
 {
-   AtString bokeh_aov_name;
-   AtString discarded_samples_aov_name;
-   int aa_samples;
-   int xres;
-   int yres;
-   int samples;
-   std::vector<AtRGBA> image;
+  AtString bokeh_aov_name;
+  AtString discarded_samples_aov_name;
+  int aa_samples;
+  int xres;
+  int yres;
+  int samples;
+  std::vector<AtRGBA> image;
 };
  
 
@@ -113,7 +113,6 @@ shader_evaluate
    // why does this need to be in shader_evaluate to work? returns 0 in _update_?
    bokeh_data->samples = camera_data->backward_samples * (bokeh_data->aa_samples * bokeh_data->aa_samples);
 
-
    const float xres = (float)bokeh_data->xres;
    const float yres = (float)bokeh_data->yres;
    const float frame_aspect_ratio = xres/yres;
@@ -129,8 +128,7 @@ shader_evaluate
       {
         // write discarded samples into separate AOV to be able to difference
         if (AiAOVEnabled(bokeh_data->discarded_samples_aov_name, AI_TYPE_RGBA)){
-          AtRGBA discarded_aov_value = sg->out.RGBA();
-          AiAOVSetRGBA(sg, bokeh_data->discarded_samples_aov_name, discarded_aov_value);
+          AiAOVSetRGBA(sg, bokeh_data->discarded_samples_aov_name, sg->out.RGBA());
         }
         
         sample_energy = sg->out.RGBA();
@@ -160,13 +158,13 @@ shader_evaluate
           const float pixel_x = ((s(0) + 1.0) / 2.0) * xres;
           const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-          //figure out why sometimes pixel is nan, can't just skip it
+//figure out why sometimes pixel is nan, can't just skip it
           if ((pixel_x > xres) || 
               (pixel_x < 0)    || 
               (pixel_y > yres) || 
-              (pixel_y < 0))//    || 
-              //(pixel_x != pixel_x) ||  //nan checking
-              //(pixel_y != pixel_y)) // nan checking
+              (pixel_y < 0)    || 
+              (pixel_x != pixel_x) ||  //nan checking
+              (pixel_y != pixel_y)) // nan checking
           {
             continue;
             --count;
