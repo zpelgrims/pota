@@ -199,9 +199,9 @@ camera_create_ray
   float random1 = 0.0;
   float random2 = 0.0;
 
-  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
   Eigen::Vector3d origin(output.origin[0], output.origin[1], output.origin[2]);
   Eigen::Vector3d direction(output.dir[0], output.dir[1], output.dir[2]);
+  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera_data);
 
@@ -255,16 +255,10 @@ camera_create_ray
     output.dir[i] = direction(i);
     output.weight[i] = weight(i);
   }
-
-
-  // write random samples for camera_reverse_ray
-  //camera_data->random1 = random1;
-  //camera_data->random2 = random2;
-
+  
 
 
   /* 
-
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
   // initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
