@@ -9,6 +9,17 @@
 AI_SHADER_NODE_EXPORT_METHODS(PotaBokehAOVMtd);
 
 
+inline void replace_frame_numbering(std::string &original_string){
+  std::string substring = "";
+  size_t numberofhashes = std::count(original_string.begin(), original_string.end(), '#');
+  for (int i = 0; i < numberofhashes; i++) substring.insert(0, "#");
+
+  std::string framestring = std::to_string(static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame")));
+  framestring.insert(0, substring.length() - framestring.length(), '0');
+  original_string.replace(original_string.find(substring), substring.length(), framestring);
+}
+
+
 struct PotaBokehAOVData
 {
    AtString bokeh_aov_name;
@@ -45,63 +56,52 @@ node_initialize
  
 node_update
 {
-   PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
-   //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+  PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
+  //const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-   // register AOVs
-   bokeh_data->bokeh_aov_name = AiNodeGetStr(node, "bokeh_aov_name");
-   AiAOVRegister(bokeh_data->bokeh_aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
-   bokeh_data->discarded_samples_aov_name = AiNodeGetStr(node, "discarded_samples_aov_name");
-   AiAOVRegister(bokeh_data->discarded_samples_aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
-   
-   // get general options
-   bokeh_data->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-   bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-   bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  // register AOVs
+  bokeh_data->bokeh_aov_name = AiNodeGetStr(node, "bokeh_aov_name");
+  AiAOVRegister(bokeh_data->bokeh_aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
+  bokeh_data->discarded_samples_aov_name = AiNodeGetStr(node, "discarded_samples_aov_name");
+  AiAOVRegister(bokeh_data->discarded_samples_aov_name, AI_TYPE_RGBA, AI_AOV_BLEND_OPACITY);
 
-   bokeh_data->image.clear();
-   bokeh_data->image.reserve(bokeh_data->xres * bokeh_data->yres);
+  // get general options
+  bokeh_data->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  bokeh_data->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+  bokeh_data->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
+  bokeh_data->image.clear();
+  bokeh_data->image.reserve(bokeh_data->xres * bokeh_data->yres);
 }
 
 
 node_finish
 {
-   PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
-   const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
+  PotaBokehAOVData *bokeh_data = (PotaBokehAOVData*)AiNodeGetLocalData(node);
+  const MyCameraData *camera_data = (MyCameraData*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-   // fill exr
-   std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
-   int offset = -1;
-   int pixelnumber = 0;
-   int aa_square = bokeh_data->aa_samples * bokeh_data->aa_samples;
+  // fill exr
+  std::vector<float> image(bokeh_data->yres * bokeh_data->xres * 4);
+  int offset = -1;
+  int pixelnumber = 0;
+  int aa_square = bokeh_data->aa_samples * bokeh_data->aa_samples;
 
-   for(auto i = 0; i < bokeh_data->xres * bokeh_data->yres; i++){
-      image[++offset] = bokeh_data->image[pixelnumber].r / (float)aa_square;
-      image[++offset] = bokeh_data->image[pixelnumber].g / (float)aa_square;
-      image[++offset] = bokeh_data->image[pixelnumber].b / (float)aa_square;
-      image[++offset] = bokeh_data->image[pixelnumber].a / (float)aa_square;
-      ++pixelnumber;
-   }
+  for(auto i = 0; i < bokeh_data->xres * bokeh_data->yres; i++){
+    image[++offset] = bokeh_data->image[pixelnumber].r / (float)aa_square;
+    image[++offset] = bokeh_data->image[pixelnumber].g / (float)aa_square;
+    image[++offset] = bokeh_data->image[pixelnumber].b / (float)aa_square;
+    image[++offset] = bokeh_data->image[pixelnumber].a / (float)aa_square;
+    ++pixelnumber;
+  }
 
 
-   // replace frame numbering
-   std::string original_string = camera_data->bokeh_exr_path.c_str();
+  // replace frame numbering
+  std::string original_string = camera_data->bokeh_exr_path.c_str();
+  replace_frame_numbering(original_string);
+  SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, original_string.c_str());
+  AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string.c_str());
 
-   std::string substring = "";
-   size_t numberofhashes = std::count(original_string.begin(), original_string.end(), '#');
-   for (int i = 0; i < numberofhashes; i++){
-      substring.insert(0, "#");
-   }
-
-   std::string framestring = std::to_string(static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame")));
-   framestring.insert(0, substring.length() - framestring.length(), '0');
-   original_string.replace(original_string.find(substring), substring.length(), framestring);
-
-   SaveEXR(image.data(), bokeh_data->xres, bokeh_data->yres, 4, 0, original_string.c_str());
-   AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string.c_str());
-
-   delete bokeh_data;
+  delete bokeh_data;
 }
 
 
@@ -128,7 +128,10 @@ shader_evaluate
       if ((sg->out.RGBA().r > camera_data->minimum_rgb) || (sg->out.RGBA().g > camera_data->minimum_rgb) || (sg->out.RGBA().b > camera_data->minimum_rgb))
       {
         // write discarded samples into separate AOV to be able to difference
-        AiAOVSetRGBA(sg, bokeh_data->discarded_samples_aov_name, sg->out.RGBA());
+        if (AiAOVEnabled(bokeh_data->discarded_samples_aov_name, AI_TYPE_RGBA)){
+          AtRGBA discarded_aov_value = sg->out.RGBA();
+          AiAOVSetRGBA(sg, bokeh_data->discarded_samples_aov_name, discarded_aov_value);
+        }
         
         sample_energy = sg->out.RGBA();
         sample_energy.a = 1.0f;
@@ -143,12 +146,12 @@ shader_evaluate
         AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
         Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
          
-
         for(int count=0; count<bokeh_data->samples; count++)
         {
           if(!trace_backwards( -camera_space_sample_position * 10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift, camera_data))
           {
             continue;
+            --count;
           }
 
           // convert sensor position to pixel position
@@ -161,11 +164,12 @@ shader_evaluate
           if ((pixel_x > xres) || 
               (pixel_x < 0)    || 
               (pixel_y > yres) || 
-              (pixel_y < 0)    || 
-              (pixel_x != pixel_x) ||  //nan checking
-              (pixel_y != pixel_y)) // nan checking
+              (pixel_y < 0))//    || 
+              //(pixel_x != pixel_x) ||  //nan checking
+              //(pixel_y != pixel_y)) // nan checking
           {
             continue;
+            --count;
           }
 
           // write sample to image
