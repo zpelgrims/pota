@@ -19,9 +19,9 @@ enum
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
-//  p_backward_samples,
-//  p_minimum_rgb,
-//  p_bokeh_exr_path,
+  p_backward_samples,
+  p_minimum_rgb,
+  p_bokeh_exr_path,
   p_proper_ray_derivatives
 };
 
@@ -49,18 +49,18 @@ static const char* UnitModelNames[] =
 node_parameters
 {
   AiParameterEnum("unitModel", cm, UnitModelNames);
-  AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..?
+  AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
   AiParameterFlt("fstop", 0.0);
   AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
-  AiParameterFlt("extra_sensor_shift", 0.0); // tmp remove
+  AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
-  // AiParameterInt("backward_samples", 3);
-  // AiParameterFlt("minimum_rgb", 3.0f);
-  // AiParameterStr("bokeh_exr_path", "");
+  AiParameterInt("backward_samples", 3);
+  AiParameterFlt("minimum_rgb", 3.0f);
+  AiParameterStr("bokeh_exr_path", "");
   AiParameterBool("proper_ray_derivatives", true);
 }
 
@@ -84,9 +84,9 @@ node_update
   camera_data->aperture_blades = AiNodeGetInt(node, "aperture_blades");
   camera_data->dof = AiNodeGetBool(node, "dof");
   camera_data->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  // camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
-  // camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-  // camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+  camera_data->backward_samples = AiNodeGetInt(node, "backward_samples");
+  camera_data->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
+  camera_data->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera_data->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
   camera_data->sensor_shift = 0.0;
 
@@ -199,9 +199,9 @@ camera_create_ray
   float random1 = 0.0;
   float random2 = 0.0;
 
-  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
   Eigen::Vector3d origin(output.origin[0], output.origin[1], output.origin[2]);
   Eigen::Vector3d direction(output.dir[0], output.dir[1], output.dir[2]);
+  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera_data);
 
@@ -255,16 +255,10 @@ camera_create_ray
     output.dir[i] = direction(i);
     output.weight[i] = weight(i);
   }
-
-
-  // write random samples for camera_reverse_ray
-  //camera_data->random1 = random1;
-  //camera_data->random2 = random2;
-
+  
 
 
   /* 
-
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
   // initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
 
