@@ -25,8 +25,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
 static inline float lens_evaluate(const float *in, float *out, MyCameraData *camera_data)
 {
   const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
-
-  float out_transmittance = 0.0f;
+  float out_transmittance = 0.0;
   switch (camera_data->lensModel){
     #include "auto_generated_lens_includes/load_pt_evaluate.h"
   }
@@ -495,19 +494,16 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 	sensor[0] += sensor[2] * sensor_shift;
 	sensor[1] += sensor[3] * sensor_shift;
 
-
 	// propagate ray from sensor to outer lens element
   float transmittance = lens_evaluate(sensor, out, camera_data);
   if(transmittance <= 0.0f){
     return false;
   }
 
-
   // crop out by outgoing pupil
   if( out[0]*out[0] + out[1]*out[1] > camera_data->lens_outer_pupil_radius*camera_data->lens_outer_pupil_radius){
     return false;
   }
-
 
   // crop at inward facing pupil
   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
@@ -515,7 +511,6 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
   if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
     return false;
   }
-
 
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
@@ -525,7 +520,7 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
   Eigen::Vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
   Eigen::Vector3d direction(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
-  float y0 = line_plane_intersection(origin, direction)(2);
+  //float y0 = line_plane_intersection(origin, direction)(2);
   //printf("[LENTIL] y=0 ray plane intersection: %f", y0);
 
 	origin *= -0.1; // convert to cm
