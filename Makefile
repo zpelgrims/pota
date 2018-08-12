@@ -9,7 +9,7 @@ endif
 
 # make sure to modify the path to the arnold SDK
 ifeq ($(OS), Darwin)
-	ARNOLD_PATH=/Users/zeno/Arnold-5.0.2.0-darwin
+	ARNOLD_PATH=/Users/zeno/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
 	ARNOLD_PATH=/home/users/zenop/Arnold-5.1.1.1-linux
