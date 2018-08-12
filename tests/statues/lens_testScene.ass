@@ -9,7 +9,7 @@ options
  AA_samples 5
  xres 1500
  yres 1000
- camera "renderCam_35mm_150cmShape"
+ camera "renderCam_105mm_450cmShape"
 
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -19,7 +19,7 @@ options
  GI_specular_samples 1
 }
 
-pota
+#pota
 {
  name renderCam_35mm_150cmShape
  matrix
@@ -35,7 +35,7 @@ pota
  lensModel primoplan_1936_58mm
 }
 
-#pota
+pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -47,7 +47,7 @@ pota
  focus_distance 452.15
  fstop 2.8
  aperture_blades 0
- lensModel double_gauss_angenieux
+ lensModel Panavision_Angenieux_rear_anamorph_double_gauss_2006_100mm
 }
 
 #pota
