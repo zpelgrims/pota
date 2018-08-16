@@ -119,6 +119,7 @@ node_update
   AiMsgInfo("[POTA] lens_aperture_pos: %f", camera_data->lens_aperture_pos);
   AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera_data->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera_data->lens_outer_pupil_curvature_radius);
+  AiMsgInfo("[POTA] lens_outer_pupil_geometry: %s", camera_data->lens_outer_pupil_geometry.c_str());
   AiMsgInfo("[POTA] lens_field_of_view: %f", camera_data->lens_field_of_view);
   AiMsgInfo("[POTA] --------------------------------------");
 
