@@ -36,6 +36,7 @@ struct MyCameraData
     float lens_aperture_housing_radius;
     float lens_outer_pupil_curvature_radius;
     float lens_field_of_view;
+    std::string lens_outer_pupil_geometry;
 
 
 	float sensor_width;
