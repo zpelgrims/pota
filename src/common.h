@@ -112,3 +112,64 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
   outpos[0] = inpos[0];
   outpos[1] = inpos[1];
 }
+
+
+// untested and probably wrong
+static inline void lens_csToCylinder(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
+{
+  const float normal[3] = {0.0f};
+  if (cyl_y){
+    normal[0] = inpos[0]/R;
+    normal[1] = 0.0f;
+    normal[2] = fabsf((inpos[2] - center)/R);
+  } else {
+    normal[0] = 0.0f;
+    normal[1] = inpos[1]/R;
+    normal[2] = fabsf((inpos[2] - center)/R);
+  }
+  float tempDir[3] = {indir[0], indir[1], indir[2]};
+  raytrace_normalise(tempDir);
+
+  // tangent
+  float ex[3] = {normal[2], 0, -normal[0]};
+  raytrace_normalise(ex);
+  
+  // bitangent
+  float ey[3];
+  raytrace_cross(ey, normal, ex);
+  
+  // store ray direction as projected position on unit disk perpendicular to the normal
+  outdir[0] = raytrace_dot(tempDir, ex);
+  outdir[1] = raytrace_dot(tempDir, ey);
+  outpos[0] = inpos[0];
+  outpos[1] = inpos[1];
+}
+
+// untested and probably wrong
+static inline void lens_cylinderToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
+{
+  const float normal[3] = {0.0f};
+  if (cyl_y){
+    normal[0] = inpos[0]/R;
+    normal[1] = 0.0f;
+    normal[2] = sqrtf(max(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
+  } else {
+    normal[0] = 0.0f;
+    normal[1] = inpos[1]/R;
+    normal[2] = sqrtf(max(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
+  }
+
+  const float tempDir[3] = {indir[0], indir[1], sqrtf(max(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
+
+  float ex[3] = {normal[2], 0, -normal[0]};
+  raytrace_normalise(ex);
+  float ey[3];
+  raytrace_cross(ey, normal, ex);
+
+  outdir[0] = tempDir[0] * ex[0] + tempDir[1] * ey[0] + tempDir[2] * normal[0];
+  outdir[1] = tempDir[0] * ex[1] + tempDir[1] * ey[1] + tempDir[2] * normal[1];
+  outdir[2] = tempDir[0] * ex[2] + tempDir[1] * ey[2] + tempDir[2] * normal[2];
+  outpos[0] = inpos[0];
+  outpos[1] = inpos[1];
+  outpos[2] = normal[2] * R + center;
+}

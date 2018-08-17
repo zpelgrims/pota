@@ -442,7 +442,9 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+  if (camera_data->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, true);
+	else if (camera_data->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, false);
+  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
 	Eigen::Vector3d ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	Eigen::Vector3d ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
@@ -515,7 +517,10 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+  if (camera_data->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, true);
+	else if (camera_data->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, false);
+  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+
 
   Eigen::Vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
   Eigen::Vector3d direction(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
@@ -630,7 +635,9 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-	lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
+  if (camera_data->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, true);
+	else if (camera_data->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius, false);
+  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera_data->lens_outer_pupil_curvature_radius, camera_data->lens_outer_pupil_curvature_radius);
 
   for (int i=0; i<3; i++){
     origin(i) = camera_space_pos[i];
