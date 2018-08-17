@@ -117,7 +117,7 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
 // untested and probably wrong
 static inline void lens_csToCylinder(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
 {
-  const float normal[3] = {0.0f};
+  float normal[3] = {0.0f};
   if (cyl_y){
     normal[0] = inpos[0]/R;
     normal[1] = 0.0f;
@@ -148,7 +148,7 @@ static inline void lens_csToCylinder(const float *inpos, const float *indir, flo
 // untested and probably wrong
 static inline void lens_cylinderToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
 {
-  const float normal[3] = {0.0f};
+  float normal[3] = {0.0f};
   if (cyl_y){
     normal[0] = inpos[0]/R;
     normal[1] = 0.0f;
