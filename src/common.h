@@ -152,14 +152,14 @@ static inline void lens_cylinderToCs(const float *inpos, const float *indir, flo
   if (cyl_y){
     normal[0] = inpos[0]/R;
     normal[1] = 0.0f;
-    normal[2] = sqrtf(max(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
+    normal[2] = sqrtf(MAX(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
   } else {
     normal[0] = 0.0f;
     normal[1] = inpos[1]/R;
-    normal[2] = sqrtf(max(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
+    normal[2] = sqrtf(MAX(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
   }
 
-  const float tempDir[3] = {indir[0], indir[1], sqrtf(max(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
+  const float tempDir[3] = {indir[0], indir[1], sqrtf(MAX(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
 
   float ex[3] = {normal[2], 0, -normal[0]};
   raytrace_normalise(ex);
