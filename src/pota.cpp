@@ -77,7 +77,7 @@ node_update
   MyCameraData* camera_data = (MyCameraData*)AiNodeGetLocalData(node);
 
   camera_data->sensor_width = AiNodeGetFlt(node, "sensor_width");
-  camera_data->fstop = AiNodeGetFlt(node, "fstop");
+  camera_data->input_fstop = AiNodeGetFlt(node, "fstop");
   camera_data->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f;
   camera_data->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera_data->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
@@ -122,17 +122,18 @@ node_update
   AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera_data->lens_outer_pupil_curvature_radius);
   AiMsgInfo("[POTA] lens_outer_pupil_geometry: %s", camera_data->lens_outer_pupil_geometry.c_str());
   AiMsgInfo("[POTA] lens_field_of_view: %f", camera_data->lens_field_of_view);
+  AiMsgInfo("[POTA] lens_fstop: %f", camera_data->lens_fstop);
   AiMsgInfo("[POTA] --------------------------------------");
 
 
   camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   AiMsgInfo("[POTA] wavelength: %f", camera_data->lambda);
 
-  camera_data->max_fstop = camera_data->lens_effective_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
-  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera_data->max_fstop);
+  //camera_data->max_fstop = camera_data->lens_effective_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
+  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera_data->lens_fstop);
 
-  if (camera_data->fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
-  else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_effective_focal_length / (2.0f * camera_data->fstop));
+  if (camera_data->input_fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
+  else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_effective_focal_length / (2.0f * camera_data->input_fstop));
 
   AiMsgInfo("[POTA] full aperture radius: %f", camera_data->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
