@@ -115,7 +115,8 @@ node_update
   AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", camera_data->lens_outer_pupil_radius);
   AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", camera_data->lens_inner_pupil_radius);
   AiMsgInfo("[POTA] lens_length: %f", camera_data->lens_length);
-  AiMsgInfo("[POTA] lens_focal_length: %f", camera_data->lens_focal_length);
+  AiMsgInfo("[POTA] lens_back_focal_length: %f", camera_data->lens_back_focal_length);
+  AiMsgInfo("[POTA] lens_effective_focal_length: %f", camera_data->lens_effective_focal_length);
   AiMsgInfo("[POTA] lens_aperture_pos: %f", camera_data->lens_aperture_pos);
   AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera_data->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera_data->lens_outer_pupil_curvature_radius);
@@ -127,11 +128,11 @@ node_update
   camera_data->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   AiMsgInfo("[POTA] wavelength: %f", camera_data->lambda);
 
-  camera_data->max_fstop = camera_data->lens_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
+  camera_data->max_fstop = camera_data->lens_effective_focal_length / (camera_data->lens_aperture_housing_radius * 2.0f);
   AiMsgInfo("[POTA] lens wide open f-stop: %f", camera_data->max_fstop);
 
   if (camera_data->fstop == 0.0f) camera_data->aperture_radius = camera_data->lens_aperture_housing_radius;
-  else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_focal_length / (2.0f * camera_data->fstop));
+  else camera_data->aperture_radius = fminf(camera_data->lens_aperture_housing_radius, camera_data->lens_effective_focal_length / (2.0f * camera_data->fstop));
 
   AiMsgInfo("[POTA] full aperture radius: %f", camera_data->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera_data->aperture_radius);
@@ -315,8 +316,8 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data) <= 0.0f) return false;
 
    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-   const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   const float px = sensor[0] + sensor[2] * camera_data->lens_back_focal_length;
+   const float py = sensor[1] + sensor[3] * camera_data->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius) return false;
 
    // shift sensor
