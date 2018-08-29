@@ -28,7 +28,7 @@ options
  0 -0.135715574 0.990747869 0
  0 21.7935295 51.8878098 1
  fov 54.4322243
- focus_distance 150
+ focal_distance 150
 
  fstop 2.8
  aperture_blades 0
@@ -44,10 +44,11 @@ pota
  0 -0.041875653 0.999122858 0
  1.1199075 20.9187965 355.673157 1
  fov 19.4551582
- focus_distance 452.15
+ focal_distance 452.15
  fstop 2.8
  aperture_blades 0
- lensModel Panavision_Angenieux_rear_anamorph_double_gauss_2006_100mm
+ lensModel cooke_anamorphic_1954_100mm
+ #lensModel Panavision_Angenieux_rear_anamorph_double_gauss_2006_100mm
 }
 
 #pota
@@ -59,7 +60,7 @@ pota
  0 -0.041875653 0.999122858 0
  1.1199075 23.2897511 253.581589 1
  fov 26.9914665
- focus_distance 350
+ focal_distance 350
 }
 
 #pota
@@ -71,7 +72,7 @@ pota
  0 -0.135715574 0.990747869 0
  0 35.368679 -47.213192 1
  fov 93.2731552
- focus_distance 50
+ focal_distance 50
  lensModel fisheye
 }
 
