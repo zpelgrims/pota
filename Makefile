@@ -20,17 +20,36 @@ LENSES = -DLENS_ID_FREE
 #for i in lens list, LENSES += LENS_ID_X
 
 
-CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen -DDEBUG_LOG
+CXXFLAGS=\
+	-Wall\
+	-std=c++11\
+	-O3\
+	-shared\
+	-fPIC\
+	-Wno-narrowing\
+	-I${ARNOLD_PATH}/include\
+	-I/../Eigen/Eigen\
+	-I/../polynomial-optics/src\
+	-DDEBUG_LOG
+
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
-HEADERS= src/lens.h src/pota.h src/tinyexr.h src/common.h
+HEADERS=\
+	src/lens.h\
+	src/pota.h\
+	src/tinyexr.h\
+	src/common.h
+
 .PHONY=all clean
 
-all: pota potabokehAOV
+all: pota pota_raytraced potabokehAOV
 
 ifeq ($(OS), Darwin)
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
+
+pota_raytraced: Makefile src/pota_raytraced.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o bin/pota_raytraced.dylib ${LDFLAGS}
 
 potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.dylib ${LDFLAGS}
@@ -39,10 +58,13 @@ ifeq ($(OS), Linux)
 pota: Makefile src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.so ${LDFLAGS}
 
+pota_raytraced: Makefile src/pota_raytraced.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o bin/pota_raytraced.so ${LDFLAGS}
+
 potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
 endif
 
 
 clean:
-	rm -f pota potabokehAOV
+	rm -f pota pota_raytraced potabokehAOV
