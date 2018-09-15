@@ -10,7 +10,7 @@
 #endif
 
 
-inline void load_lens_constants (MyCameraData *camera_data)
+inline void load_lens_constants (Camera *camera_data)
 {
   switch (camera_data->lensModel){
     #include "auto_generated_lens_includes/load_lens_constants.h"
@@ -22,7 +22,7 @@ inline void load_lens_constants (MyCameraData *camera_data)
 // two-plane parametrization (that is the third component of the direction would be 1.0).
 // units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
 // returns the transmittance computed from the polynomial.
-static inline float lens_evaluate(const float *in, float *out, MyCameraData *camera_data)
+static inline float lens_evaluate(const float *in, float *out, Camera *camera_data)
 {
   const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
   float out_transmittance = 0.0;
@@ -50,7 +50,7 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
 // wavelength, such that the path through the lens system will be valid, i.e.
 // lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
 // in: point on sensor. out: point on aperture.
-static inline void lens_pt_sample_aperture(float *in, float *out, float dist, MyCameraData *camera_data)
+static inline void lens_pt_sample_aperture(float *in, float *out, float dist, Camera *camera_data)
 {
   float out_x = out[0], out_y = out[1], out_dx = out[2], out_dy = out[3], out_transmittance = 1.0f;
   float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
@@ -81,7 +81,7 @@ static inline float lens_lt_sample_aperture(
     float *sensor,        // output point and direction on sensor plane/plane
     float *out,           // output point and direction on outer pupil
     const float lambda,   // wavelength
-    MyCameraData *camera_data)   
+    Camera *camera_data)   
 {
   const float scene_x = scene[0], scene_y = scene[1], scene_z = scene[2];
   const float ap_x = ap[0], ap_y = ap[1];
@@ -300,7 +300,7 @@ static inline float lens_aperture_area(const float radius, const int blades)
 
 // returns sensor offset in mm
 // traces rays backwards through the lens
-float camera_set_focus(float dist, MyCameraData *camera_data)
+float camera_set_focus(float dist, Camera *camera_data)
 {
   const float target[3] = { 0.0, 0.0, dist};
   float sensor[5] = {0.0f};
@@ -355,7 +355,7 @@ float camera_set_focus(float dist, MyCameraData *camera_data)
 
 
 // returns sensor offset in mm
-float camera_set_focus_infinity(MyCameraData *camera_data)
+float camera_set_focus_infinity(Camera *camera_data)
 {
 	float parallel_ray_height = camera_data->lens_aperture_housing_radius * 0.1;
   const float target[3] = { 0.0, parallel_ray_height, AI_BIG};
@@ -424,7 +424,7 @@ Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector
 }
 
 
-void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, MyCameraData *camera_data)
+void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, Camera *camera_data)
 {
 	float sensor[5] = {0.0f};
   float aperture[5] = {0.0f};
@@ -458,7 +458,7 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
 
 // focal_distance is in mm
-void logarithmic_focus_search(const float focal_distance, float &best_sensor_shift, float &closest_distance, MyCameraData *camera_data){
+void logarithmic_focus_search(const float focal_distance, float &best_sensor_shift, float &closest_distance, Camera *camera_data){
   std::vector<float> log = logarithmic_values();
 
   for (float sensorshift : log){
@@ -481,7 +481,7 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
 
 
 
-inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
+inline bool trace_ray_focus_check(float sensor_shift, Camera *camera_data)
 {
 
   float sensor[5] = {0.0f};
@@ -508,8 +508,8 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
   }
 
   // crop at inward facing pupil
-  const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-  const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length;
+  const float px = sensor[0] + sensor[2] * camera_data->lens_back_focal_length;
+  const float py = sensor[1] + sensor[3] * camera_data->lens_back_focal_length;
   if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
     return false;
   }
@@ -538,7 +538,7 @@ inline bool trace_ray_focus_check(float sensor_shift, MyCameraData *camera_data)
 
 
 
-inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, MyCameraData *camera_data)
+inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, Camera *camera_data)
 {
 
   bool ray_succes = false;
@@ -619,8 +619,8 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 		// crop at inward facing pupil
-		const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-		const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+		const float px = sensor[0] + sensor[2] * camera_data->lens_back_focal_length;
+		const float py = sensor[1] + sensor[3] * camera_data->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
 		if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius){
 			++tries;
 			continue;
@@ -683,7 +683,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(Eigen::Vector3d sample_position, const float aperture_radius, const float lambda, Eigen::Vector2d &sensor_position, const float sensor_shift, MyCameraData *camera_data)
+inline bool trace_backwards(Eigen::Vector3d sample_position, const float aperture_radius, const float lambda, Eigen::Vector2d &sensor_position, const float sensor_shift, Camera *camera_data)
 {
    const float target[3] = {sample_position(0), sample_position(1), sample_position(2)};
 
@@ -700,8 +700,8 @@ inline bool trace_backwards(Eigen::Vector3d sample_position, const float apertur
    if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera_data) <= 0.0f) return false;
 
    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const float px = sensor[0] + sensor[2] * camera_data->lens_focal_length;
-   const float py = sensor[1] + sensor[3] * camera_data->lens_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   const float px = sensor[0] + sensor[2] * camera_data->lens_back_focal_length;
+   const float py = sensor[1] + sensor[3] * camera_data->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > camera_data->lens_inner_pupil_radius*camera_data->lens_inner_pupil_radius) return false;
 
    // shift sensor
@@ -712,4 +712,37 @@ inline bool trace_backwards(Eigen::Vector3d sample_position, const float apertur
    sensor_position(1) = sensor[1];
 
    return true;
+}
+
+
+// not implemented yet! should return fstop
+float get_raytraced_fstop(Camera *camera_data)
+{
+  const int maxrays = 100;
+  for (int i = maxrays; i != 0; i--)
+  {
+    float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera_data->lens_outer_pupil_radius;
+    const float target[3] = {0.0, parallel_ray_height, AI_BIG};
+    float sensor[5] = {0.0f};
+    sensor[4] = camera_data->lambda;
+    float out[5] = {0.0f};
+    float y0_intersection = 0.0f;
+
+    // just point through center of aperture
+    float aperture[2] = {0.0f, parallel_ray_height};
+
+    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera_data->lambda, camera_data) <= 0.0f)
+    {
+      break;
+    }
+
+    // crop at inner pupil
+    const float py = sensor[1] + (sensor[3] * camera_data->lens_back_focal_length);
+    if (py > camera_data->lens_inner_pupil_radius) break;
+
+    y0_intersection = sensor[0]/sensor[2];
+
+    
+  }
+  
 }

@@ -21,7 +21,7 @@ enum UnitModel{
 };
 
 
-struct MyCameraData
+struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
@@ -66,4 +66,4 @@ struct MyCameraData
     float tan_fov;
 };
 
-extern struct MyCameraData camera_data;
+extern struct Camera camera;

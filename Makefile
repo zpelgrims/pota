@@ -20,7 +20,7 @@ LENSES = -DLENS_ID_FREE
 #for i in lens list, LENSES += LENS_ID_X
 
 
-CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen
+CXXFLAGS=-Wall -std=c++11 -O3 -shared -fPIC -Wno-narrowing -I${ARNOLD_PATH}/include -I/../Eigen/Eigen -DDEBUG_LOG
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
 HEADERS= src/lens.h src/pota.h src/tinyexr.h src/common.h

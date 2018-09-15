@@ -12,7 +12,7 @@ enum
     p_focus_distance
 };
 
-struct MyCameraData
+struct Camera
 {
     float fov;
     float tan_fov;
@@ -62,13 +62,13 @@ node_parameters
 node_initialize
 {
     AiCameraInitialize(node);
-    AiNodeSetLocalData(node, new MyCameraData());
+    AiNodeSetLocalData(node, new Camera());
 }
 
 
 node_update
 {
-    MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+    Camera* data = (Camera*)AiNodeGetLocalData(node);
 
     data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
     data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
@@ -88,13 +88,13 @@ node_update
 
 node_finish
 {
-    MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+    Camera* data = (Camera*)AiNodeGetLocalData(node);
     delete data;
 }
 
 camera_create_ray
 {
-    const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+    const Camera* data = (Camera*)AiNodeGetLocalData(node);
 
     // create point on lens
     AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
@@ -126,7 +126,7 @@ camera_create_ray
 
 camera_reverse_ray
 {
-    // const MyCameraData* data = (MyCameraData*)AiNodeGetLocalData(node);
+    // const Camera* data = (Camera*)AiNodeGetLocalData(node);
     return false;
 }
 
