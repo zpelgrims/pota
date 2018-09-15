@@ -4,42 +4,24 @@
 #include <math.h>
 
 
-static inline float raytrace_dot(const float *u, const float *v)
+static inline float dotproduct(float *u, float *v)
 {
   return ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2]);
 }
 
 
-static inline void raytrace_cross(float *r, const float *u, const float *v)
+static inline void crossproduct(float *r, const float *u, float *v)
 {
-  r[0] = u[1]*v[2]-u[2]*v[1];
-  r[1] = u[2]*v[0]-u[0]*v[2];
-  r[2] = u[0]*v[1]-u[1]*v[0];
-}
-
-
-static inline void raytrace_normalise(float *v)
-{
-  const float ilen = 1.0f/sqrtf(raytrace_dot(v,v));
-  for(int k=0;k<3;k++) v[k] *= ilen;
-}
-
-
-static inline float dotproduct(float *u, float *v)
-{
-  return raytrace_dot(u, v);
-}
-
-
-static inline void crossproduct(const float *r, const float *u, float *v)
-{
-  return raytrace_cross(v, r, u);
+    r[0] = u[1]*v[2]-u[2]*v[1];
+    r[1] = u[2]*v[0]-u[0]*v[2];
+    r[2] = u[0]*v[1]-u[1]*v[0];
 }
 
 
 static inline void normalise(float *v)
 {
-  return raytrace_normalise(v);
+  const float ilen = 1.0f/sqrtf(dotproduct(v,v));
+  for(int k=0;k<3;k++) v[k] *= ilen;
 }
 
 
@@ -70,7 +52,7 @@ static inline float lens_ipow(const float x, const int exp)
 
 static inline void lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
 {
-  const float normal[3] =
+  float normal[3] =
   {
   inpos[0]/sphereRad,
   inpos[1]/sphereRad,
@@ -94,7 +76,7 @@ static inline void lens_sphereToCs(const float *inpos, const float *indir, float
 
 static inline void lens_csToSphere(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
 {
-  const float normal[3] =
+  float normal[3] =
   {
   inpos[0]/sphereRad,
   inpos[1]/sphereRad,
@@ -128,19 +110,19 @@ static inline void lens_csToCylinder(const float *inpos, const float *indir, flo
     normal[2] = fabsf((inpos[2] - center)/R);
   }
   float tempDir[3] = {indir[0], indir[1], indir[2]};
-  raytrace_normalise(tempDir);
+  normalise(tempDir);
 
   // tangent
   float ex[3] = {normal[2], 0, -normal[0]};
-  raytrace_normalise(ex);
+  normalise(ex);
   
   // bitangent
   float ey[3];
-  raytrace_cross(ey, normal, ex);
+  crossproduct(ey, normal, ex);
   
   // store ray direction as projected position on unit disk perpendicular to the normal
-  outdir[0] = raytrace_dot(tempDir, ex);
-  outdir[1] = raytrace_dot(tempDir, ey);
+  outdir[0] = dotproduct(tempDir, ex);
+  outdir[1] = dotproduct(tempDir, ey);
   outpos[0] = inpos[0];
   outpos[1] = inpos[1];
 }
@@ -162,9 +144,9 @@ static inline void lens_cylinderToCs(const float *inpos, const float *indir, flo
   const float tempDir[3] = {indir[0], indir[1], sqrtf(MAX(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
 
   float ex[3] = {normal[2], 0, -normal[0]};
-  raytrace_normalise(ex);
+  normalise(ex);
   float ey[3];
-  raytrace_cross(ey, normal, ex);
+  crossproduct(ey, normal, ex);
 
   outdir[0] = tempDir[0] * ex[0] + tempDir[1] * ey[0] + tempDir[2] * normal[0];
   outdir[1] = tempDir[0] * ex[1] + tempDir[1] * ey[1] + tempDir[2] * normal[1];

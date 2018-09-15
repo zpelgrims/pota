@@ -1,14 +1,9 @@
-// Still needs to be implemented!
-
 #include <ai.h>
 #include "pota.h"
 #include "lens.h"
 #include <cmath>
-
-//json parsing
-#include "../ext/json.hpp"
-#include <fstream>
-using json = nlohmann::json;
+#include "../../polynomial-optics/src/lenssystem.h"
+#include "../../polynomial-optics/src/raytrace.h"
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
@@ -17,13 +12,13 @@ struct CameraRaytraced
 {
   const char *id;
 	int lenses_cnt;
-  static lens_element_t lenses[50];
+  lens_element_t lenses[50];
   float p_dist;
   float p_rad;
   float zoom;
   float lens_focal_length;
   json lens_database;
-} camera_rt_data;
+} camera_rt;
 
 
 enum
@@ -240,27 +235,48 @@ camera_create_ray
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
   int tries = 0;
-  float random1 = 0.0;
-  float random2 = 0.0;
-
-  // need to implement the sensor shift
-
-  const float u = drand48(), v = drand48(), w = drand48(), x = drand48(), y = drand48();
-  float ray_in[] = {
-    input.sx, input.sy,
-    camera_rt->p_rad/camera_rt->p_dist * cosf(2.0f*M_PI*u)*sqrtf(v), //randomly over first lens element
-    camera_rt->p_rad/camera_rt->p_dist * sinf(2.0f*M_PI*u)*sqrtf(v), //randomly over first lens element
-    camera->lambda
-  };
-
-  ray_in[2] -= ray_in[0] / camera_rt->p_dist;
-  ray_in[3] -= ray_in[1] / camera_rt->p_dist;
-  float out[5];
+  bool ray_success = false;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
-  int error = evaluate_for_pos_dir(camera->lenses, camera->lenses_cnt, zoom, ray_in, out, aspheric_elements, pos, dir);
 
+  while(ray_success == false && tries <= camera->vignetting_retries)
+  {
+    // reset pos&dir
+    for(int i = 0; i<3; i++){
+      pos[i] = 0.0;
+      dir[i] = 0.0;
+    }
+
+    // need to implement the sensor shift
+    // need to implement multiple tries
+    const float random1 = drand48(), random2 = drand48();
+    float ray_in[] = {
+      input.sx, input.sy,
+      camera_rt->p_rad/camera_rt->p_dist * cosf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
+      camera_rt->p_rad/camera_rt->p_dist * sinf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
+      camera->lambda
+    };
+
+    ray_in[2] -= ray_in[0] / camera_rt->p_dist;
+    ray_in[3] -= ray_in[1] / camera_rt->p_dist;
+    float out[5];
+
+    static int aspheric_elements = 1;
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, aspheric_elements, pos, dir);
+    if(error){
+      ++tries;
+      continue;
+    }
+
+    ray_success = true;
+  }
+
+  if (!ray_success){
+    output.weight = {0.0, 0.0, 0.0};
+    return;
+  }
+  
   
   for (int i = 0; i<3; i++){
     output.origin[i] = pos[i];
@@ -277,8 +293,8 @@ camera_create_ray
         output.dOdy[i] = output.origin[i];
         output.dDdy[i] = output.dir[i];
       }
+    }
   }
-
 } 
 
 
