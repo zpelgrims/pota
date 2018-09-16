@@ -2,6 +2,7 @@
 #include "pota.h"
 #include "lens.h"
 #include <cmath>
+#include <string>
 #include "../../polynomial-optics/src/lenssystem.h"
 #include "../../polynomial-optics/src/raytrace.h"
 
@@ -10,14 +11,13 @@ AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
 struct CameraRaytraced
 {
-  const char *id;
+  std::string id;
 	int lenses_cnt;
   lens_element_t lenses[50];
   float p_dist;
   float p_rad;
   float zoom;
   float lens_focal_length;
-  json lens_database;
 } camera_rt;
 
 
@@ -92,11 +92,12 @@ node_update
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
-
-  camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id, camera_rt->lens_focal_length);
+  camera_rt->lens_focal_length = 100;
+  camera_rt->id = "0001";
+  camera_rt->zoom = 0.0f;
+  camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
   camera_rt->p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
-
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
@@ -110,7 +111,7 @@ node_update
   camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
-  camera->sensor_shift = 0.0;
+  camera->sensor_shift = 0.0f;
 
   // convert to cm
   switch (camera->unitModel){
@@ -131,6 +132,8 @@ node_update
 
   AiMsgInfo("");
 
+
+/*
   //load_lens_constants(camera);
   AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
   AiMsgInfo("[POTA] Lens Name: %s", camera->lens_name);
@@ -148,11 +151,11 @@ node_update
   AiMsgInfo("[POTA] lens_field_of_view: %f", camera->lens_field_of_view);
 #endif
   AiMsgInfo("[POTA] --------------------------------------");
-
+*/
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
-
+/*
   //camera->max_fstop = camera->lens_effective_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
   AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
 
@@ -163,29 +166,29 @@ node_update
   AiMsgInfo("[POTA] full aperture radius: %f", camera->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera->aperture_radius);
   AiMsgInfo("[POTA] --------------------------------------");
-
+*/
 
   AiMsgInfo("[POTA] focus distance: %f", camera->focal_distance);
 
-  /*
+  /* was already commented out
   AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
   camera->sensor_shift = camera_set_focus(camera->focal_distance, camera);
   AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focal_distance, camera->sensor_shift);
   */
-
+/*
   // logartihmic focus search
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
   logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
-
-  /*
+*/
+  /* was already commented out
   // average guesses infinity focus search
   float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
   AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
   */
-
+/*
   // logarithmic infinity focus search
   float best_sensor_shift_infinity = 0.0f;
   float closest_distance_infinity = AI_BIG;
@@ -204,7 +207,7 @@ node_update
 
 
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
-
+*/
 
   /*
   need to implement:
@@ -236,23 +239,25 @@ camera_create_ray
 
   int tries = 0;
   bool ray_success = false;
+  camera->vignetting_retries = 1;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
 
+  for (int i = 0; i<3; i++) output.weight[i] = 1.0;
+
   while(ray_success == false && tries <= camera->vignetting_retries)
   {
-    // reset pos&dir
+    // reset pos&dir, is this needed?
     for(int i = 0; i<3; i++){
       pos[i] = 0.0;
       dir[i] = 0.0;
     }
 
     // need to implement the sensor shift
-    // need to implement multiple tries
     const float random1 = drand48(), random2 = drand48();
     float ray_in[] = {
-      input.sx, input.sy,
+      input.sx * (camera->sensor_width * 0.5f), input.sy * (camera->sensor_width * 0.5f),
       camera_rt->p_rad/camera_rt->p_dist * cosf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
       camera_rt->p_rad/camera_rt->p_dist * sinf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
       camera->lambda
@@ -272,6 +277,9 @@ camera_create_ray
     ray_success = true;
   }
 
+  //AiMsgInfo("pos: %f %f %f", pos[0], pos[1], pos[2]);
+  //AiMsgInfo("dir: %f %f %f", dir[0], dir[1], dir[2]);
+
   if (!ray_success){
     output.weight = {0.0, 0.0, 0.0};
     return;
@@ -281,12 +289,36 @@ camera_create_ray
   for (int i = 0; i<3; i++){
     output.origin[i] = pos[i];
     output.dir[i] = dir[i];
-    output.weight[i] = 1.0;
+    //output.weight[i] = 1.0;
   }
 
+
+  switch (camera->unitModel){
+    case mm:
+    {
+      output.origin *= -1.0; // reverse rays and convert to cm
+      output.dir *= -1.0; //reverse rays and convert to cm
+    } break;
+    case cm:
+    { 
+      output.origin *= -0.1; // reverse rays and convert to cm
+      output.dir *= -0.1; //reverse rays and convert to cm
+    } break;
+    case dm:
+    {
+      output.origin *= -0.01; // reverse rays and convert to cm
+      output.dir *= -0.01; //reverse rays and convert to cm
+    } break;
+    case m:
+    {
+      output.origin *= -0.001; // reverse rays and convert to cm
+      output.dir *= -0.001; //reverse rays and convert to cm
+    }
+  }
+
+  AiV3Normalize(output.dir);
+
   // calculate new ray derivatives
-  // sucks a bit to have to trace 3 rays.. Bit slow
-  // is there an analytical solution to this?..
   if (tries > 0){
     if (!camera->proper_ray_derivatives){
       for(int i=0; i<3; i++){
