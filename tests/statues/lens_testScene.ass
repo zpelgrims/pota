@@ -7,8 +7,8 @@
 options
 {
  AA_samples 5
- xres 1500
- yres 1000
+ xres 750
+ yres 500
  camera "renderCam_105mm_450cmShape"
 
  GI_diffuse_depth 1

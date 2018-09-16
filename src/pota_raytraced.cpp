@@ -239,12 +239,10 @@ camera_create_ray
 
   int tries = 0;
   bool ray_success = false;
-  camera->vignetting_retries = 1;
+  camera->vignetting_retries = 0;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
-
-  for (int i = 0; i<3; i++) output.weight[i] = 1.0;
 
   while(ray_success == false && tries <= camera->vignetting_retries)
   {
@@ -255,16 +253,13 @@ camera_create_ray
     }
 
     // need to implement the sensor shift
-    const float random1 = drand48(), random2 = drand48();
-    float ray_in[] = {
-      input.sx * (camera->sensor_width * 0.5f), input.sy * (camera->sensor_width * 0.5f),
-      camera_rt->p_rad/camera_rt->p_dist * cosf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
-      camera_rt->p_rad/camera_rt->p_dist * sinf(2.0f*M_PI*random1)*sqrtf(random2), //randomly over first lens element
-      camera->lambda
-    };
+    float ray_in[5] = {0.0};
+    ray_in[0] = input.sx * (camera->sensor_width * 0.5f);
+    ray_in[1] = input.sy * (camera->sensor_width * 0.5f);
+    ray_in[2] = (camera_rt->p_rad/camera_rt->p_dist * (2.0*input.lensx-1.0)) - (ray_in[0] / camera_rt->p_dist);
+    ray_in[3] = (camera_rt->p_rad/camera_rt->p_dist * (2.0*input.lensy-1.0)) - (ray_in[1] / camera_rt->p_dist);
+    ray_in[4] = camera->lambda;
 
-    ray_in[2] -= ray_in[0] / camera_rt->p_dist;
-    ray_in[3] -= ray_in[1] / camera_rt->p_dist;
     float out[5];
 
     static int aspheric_elements = 1;
@@ -277,21 +272,21 @@ camera_create_ray
     ray_success = true;
   }
 
-  //AiMsgInfo("pos: %f %f %f", pos[0], pos[1], pos[2]);
-  //AiMsgInfo("dir: %f %f %f", dir[0], dir[1], dir[2]);
-
   if (!ray_success){
     output.weight = {0.0, 0.0, 0.0};
     return;
   }
   
-  
   for (int i = 0; i<3; i++){
     output.origin[i] = pos[i];
     output.dir[i] = dir[i];
-    //output.weight[i] = 1.0;
   }
 
+  // why do i have to divide by 10 only for raytraced model?
+  for (int i = 0; i<3; i++){
+    output.origin[i] *= 0.1;
+    output.dir[i] *= 0.1;
+  }
 
   switch (camera->unitModel){
     case mm:
