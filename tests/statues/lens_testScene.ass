@@ -35,7 +35,7 @@ options
  lensModel primoplan_1936_58mm
 }
 
-pota_raytraced
+pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -45,10 +45,10 @@ pota_raytraced
  1.1199075 20.9187965 355.673157 1
  fov 19.4551582
  focal_distance 452.15
- fstop 2.8
+ fstop 0.0
  aperture_blades 0
  lensModel angenieux_double_gauss_1953_100mm
- #lensModel Panavision_Angenieux_rear_anamorph_double_gauss_2006_100mm
+ dof 0
 }
 
 #pota

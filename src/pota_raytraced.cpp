@@ -193,7 +193,7 @@ node_update
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 */
-
+/*
 // need to implement all this for raytraced scenario..
 float best_sensor_shift = 0.0f;
 float closest_distance = AI_BIG;
@@ -204,8 +204,8 @@ void rt_logarithmic_focus_search(const float focal_distance, float &best_sensor_
   for (float sensorshift : log){
   	float intersection_distance = 0.0f;
     //AiMsgInfo("sensorshift: %f", sensorshift);
-
-    camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
+    float in[5], out[5];
+    float intersection_distance = evaluate_reverse_intersection_y0(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, in, out, 1, 1);
     //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
@@ -219,7 +219,7 @@ void rt_logarithmic_focus_search(const float focal_distance, float &best_sensor_
   }
 }
 
-
+*/
   /* was already commented out
   // average guesses infinity focus search
   float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);

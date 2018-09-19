@@ -131,12 +131,13 @@ node_update
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
 
-  //camera->max_fstop = camera->lens_effective_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
-  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
+
+// this whole section will need to be updated to use raytraced fstop and it's inverse calculations.
+  camera->max_fstop = camera->lens_back_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
+  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->max_fstop);
 
   if (camera->input_fstop == 0.0f) camera->aperture_radius = camera->lens_aperture_housing_radius;
-  // how do i get to proper aperture radius..?
-  else camera->aperture_radius = fminf(camera->lens_aperture_housing_radius, camera->lens_effective_focal_length / (2.0f * camera->input_fstop));
+  else camera->aperture_radius = fminf(camera->lens_aperture_housing_radius, camera->lens_back_focal_length / (2.0f * camera->input_fstop));
 
   AiMsgInfo("[POTA] full aperture radius: %f", camera->lens_aperture_housing_radius);
   AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera->aperture_radius);
