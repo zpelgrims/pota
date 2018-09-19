@@ -43,6 +43,10 @@ struct Camera
 
 	float sensor_width;
 	float input_fstop;
+    
+    //debug
+    float max_fstop;
+
 	float focal_distance;
 	float aperture_radius;
 	float sensor_shift;
