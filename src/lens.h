@@ -488,7 +488,7 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
     //AiMsgInfo("sensorshift: %f", sensorshift);
 
     camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
-    AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
+    //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
 
