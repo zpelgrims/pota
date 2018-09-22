@@ -47,8 +47,7 @@ pota
  focal_distance 452.15
  fstop 0.0
  aperture_blades 0
- lensModel angenieux_double_gauss_1953_50mm
- dof 0
+ lensModel angenieux_double_gauss_1953_100mm
 }
 
 #pota

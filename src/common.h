@@ -10,11 +10,11 @@ static inline float dotproduct(float *u, float *v)
 }
 
 
-static inline void crossproduct(float *r, const float *u, float *v)
+static inline void crossproduct(const float *r, const float *u, float *v)
 {
-    r[0] = u[1]*v[2]-u[2]*v[1];
-    r[1] = u[2]*v[0]-u[0]*v[2];
-    r[2] = u[0]*v[1]-u[1]*v[0];
+  v[0] = r[1]*u[2]-r[2]*u[1];
+  v[1] = r[2]*u[0]-r[0]*u[2];
+  v[2] = r[0]*u[1]-r[1]*u[0];
 }
 
 
