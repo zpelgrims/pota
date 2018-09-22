@@ -434,11 +434,25 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
   lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera);
 
+  /*
+  for (int i = 0; i<5; i++) printf("----------------------------------\n");
+  printf("lens_evaluate:\n");
+  printf("sensor: [\n%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
+  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
+  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
+  printf("----------------------------------\n");
+  */
   sensor[0] += sensor[2] * sensor_shift;
 	sensor[1] += sensor[3] * sensor_shift;
 
 	float transmittance = lens_evaluate(sensor, out, camera);
-
+  /*
+  printf("lens_evaluate:\n");
+  printf("sensor: [%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
+  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
+  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
+  printf("----------------------------------\n");
+  */
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
@@ -446,6 +460,14 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
+  /*
+  printf("lens_xxToCs:\n");
+  printf("sensor: [%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
+  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
+  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
+  printf("----------------------------------\n");
+
+  */
 	Eigen::Vector3d ray_origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 	Eigen::Vector3d ray_dir(camera_space_omega[0], camera_space_omega[1], camera_space_omega[2]);
 
@@ -466,7 +488,7 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
     //AiMsgInfo("sensorshift: %f", sensorshift);
 
     camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
-    //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
+    AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
 
