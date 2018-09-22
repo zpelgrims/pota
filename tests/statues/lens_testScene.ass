@@ -35,7 +35,7 @@ options
  lensModel primoplan_1936_58mm
 }
 
-pota
+pota_raytraced
 {
  name renderCam_105mm_450cmShape
  matrix

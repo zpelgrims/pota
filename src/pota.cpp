@@ -88,7 +88,6 @@ node_update
   camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
-  camera->sensor_shift = 0.0;
 
   // convert to cm
   switch (camera->unitModel){
@@ -183,6 +182,9 @@ node_update
 
 
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
+
+  // tmp for testing comparison to raytraced, remove!
+  //camera->sensor_shift = 0.0f;
 
 
   AiMsgInfo("");

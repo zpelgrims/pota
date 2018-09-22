@@ -18,6 +18,7 @@ struct CameraRaytraced
   float p_rad;
   float zoom;
   float lens_focal_length;
+  float thickness_original;
 } camera_rt;
 
 
@@ -63,6 +64,52 @@ static const char* UnitModelNames[] =
 };
 
 
+// focal_distance is in mm
+void rt_logarithmic_focus_search(
+  const float focal_distance, 
+  float &best_sensor_shift, 
+  float &closest_distance, 
+  const float thickness_original, 
+  CameraRaytraced *camera_rt)
+{
+
+  std::vector<float> log = logarithmic_values();
+
+  for (float sensorshift : log){
+  	float intersection_distance = 0.0f;
+    AiMsgInfo("----------------------");
+
+    add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, thickness_original);
+    const float p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
+
+    AiMsgInfo("p_dist: %f", p_dist);
+
+    float pos[3] = {0.0f};
+    float dir[3] = {0.0f};
+    float ray_in[5] = {0.0};
+    ray_in[2] = (camera_rt->p_rad*0.1 / p_dist) - (ray_in[0] / p_dist);
+    ray_in[3] = (camera_rt->p_rad*0.1 / p_dist) - (ray_in[1] / p_dist);
+    ray_in[4] = 0.55f;
+    float out[5]; // can probably be removed if i don't need fresnel transmittance?
+    
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, 1, pos, dir);
+    
+  // need to fill this out!!
+    //intersection_distance = ;
+
+    AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
+    float new_distance = focal_distance - intersection_distance;
+    AiMsgInfo("new_distance: %f", new_distance);
+
+
+    if (new_distance < closest_distance && new_distance > 0.0f){
+      closest_distance = new_distance;
+      best_sensor_shift = sensorshift;
+      AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
+    }
+  }
+}
+
 
 node_parameters
 {
@@ -104,6 +151,7 @@ node_update
   camera_rt->lens_focal_length = AiNodeGetInt(node, "rt_lens_focal_length");
   camera_rt->id = AiNodeGetStr(node, "rt_lens_id");
   camera_rt->zoom = AiNodeGetFlt(node, "rt_lens_zoom");
+  memset(camera_rt->lenses, 0, sizeof(camera_rt->lenses)); // not sure if the resetting is necessary?
   camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
   camera_rt->p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
@@ -120,7 +168,6 @@ node_update
   camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
-  camera->sensor_shift = 0.0f;
 
   // convert to cm
   switch (camera->unitModel){
@@ -142,25 +189,11 @@ node_update
   AiMsgInfo("");
 
 
-/*
   //load_lens_constants(camera);
   AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
   AiMsgInfo("[POTA] Lens Name: %s", camera->lens_name);
   AiMsgInfo("[POTA] Lens F-Stop: %f", camera->lens_fstop);
-#ifdef DEBUG_LOG
-  AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", camera->lens_outer_pupil_radius);
-  AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", camera->lens_inner_pupil_radius);
-  AiMsgInfo("[POTA] lens_length: %f", camera->lens_length);
-  AiMsgInfo("[POTA] lens_back_focal_length: %f", camera->lens_back_focal_length);
-  AiMsgInfo("[POTA] lens_effective_focal_length: %f", camera->lens_effective_focal_length);
-  AiMsgInfo("[POTA] lens_aperture_pos: %f", camera->lens_aperture_pos);
-  AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera->lens_aperture_housing_radius);
-  AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera->lens_outer_pupil_curvature_radius);
-  AiMsgInfo("[POTA] lens_outer_pupil_geometry: %s", camera->lens_outer_pupil_geometry.c_str());
-  AiMsgInfo("[POTA] lens_field_of_view: %f", camera->lens_field_of_view);
-#endif
   AiMsgInfo("[POTA] --------------------------------------");
-*/
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
@@ -185,41 +218,20 @@ node_update
   AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focal_distance, camera->sensor_shift);
   */
  
-/*
+
   // logartihmic focus search
+  // logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
-  logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
+  const float thickness_original = camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short;
+  //rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, thickness_original, camera_rt);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
-*/
-/*
-// need to implement all this for raytraced scenario..
-float best_sensor_shift = 0.0f;
-float closest_distance = AI_BIG;
-// focal_distance is in mm
-void rt_logarithmic_focus_search(const float focal_distance, float &best_sensor_shift, float &closest_distance, Camera *camera){
-  std::vector<float> log = logarithmic_values();
+  add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, thickness_original); //is this needed or already set by log focus search?
 
-  for (float sensorshift : log){
-  	float intersection_distance = 0.0f;
-    //AiMsgInfo("sensorshift: %f", sensorshift);
-    float in[5], out[5];
-    float intersection_distance = evaluate_reverse_intersection_y0(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, in, out, 1, 1);
-    //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
-    float new_distance = focal_distance - intersection_distance;
-    //AiMsgInfo("new_distance: %f", new_distance);
+  camera->sensor_shift = 0.0;
+  add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, thickness_original); //is this needed or already set by log focus search?
 
-
-    if (new_distance < closest_distance && new_distance > 0.0f){
-      closest_distance = new_distance;
-      best_sensor_shift = sensorshift;
-      //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
-    }
-  }
-}
-
-*/
   /* was already commented out
   // average guesses infinity focus search
   float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
@@ -246,14 +258,6 @@ void rt_logarithmic_focus_search(const float focal_distance, float &best_sensor_
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
 */
 
-  /*
-  need to implement:
-    - sensorshift (autofocus)
-
-  */
-
-
-
   AiMsgInfo("");
   AiCameraUpdate(node, false);
 }
@@ -276,7 +280,7 @@ camera_create_ray
 
   int tries = 0;
   bool ray_success = false;
-  camera->vignetting_retries = 0;
+  camera->vignetting_retries = 15;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
@@ -293,8 +297,13 @@ camera_create_ray
     float ray_in[5] = {0.0};
     ray_in[0] = input.sx * (camera->sensor_width * 0.5f);
     ray_in[1] = input.sy * (camera->sensor_width * 0.5f);
-    ray_in[2] = (camera_rt->p_rad*(2.0*input.lensx-1.0) / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
-    ray_in[3] = (camera_rt->p_rad*(2.0*input.lensy-1.0) / camera_rt->p_dist) - (ray_in[1] / camera_rt->p_dist);
+    float random_aperture[2] = {input.lensx, input.lensy};
+    if (tries > 0){
+      random_aperture[0] = drand48();
+      random_aperture[1] = drand48();
+    }
+    ray_in[2] = (camera_rt->p_rad*(2.0*random_aperture[0]-1.0) / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
+    ray_in[3] = (camera_rt->p_rad*(2.0*random_aperture[1]-1.0) / camera_rt->p_dist) - (ray_in[1] / camera_rt->p_dist);
     ray_in[4] = camera->lambda;
 
     static int aspheric_elements = 1;
