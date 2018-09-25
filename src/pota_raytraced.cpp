@@ -5,6 +5,7 @@
 #include <string>
 #include "../../polynomial-optics/src/lenssystem.h"
 #include "../../polynomial-optics/src/raytrace.h"
+#include "../../Eigen/Eigen/Dense"
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
@@ -19,6 +20,12 @@ struct CameraRaytraced
   float zoom;
   float lens_focal_length;
   float thickness_original;
+
+  //test
+  int test_cnt;
+  int test_maxcnt;
+  float test_intersection_distance;
+
 } camera_rt;
 
 
@@ -77,12 +84,12 @@ void rt_logarithmic_focus_search(
 
   for (float sensorshift : log){
   	float intersection_distance = 0.0f;
-    AiMsgInfo("----------------------");
+    //AiMsgInfo("----------------------");
 
     add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, thickness_original);
     const float p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
 
-    AiMsgInfo("p_dist: %f", p_dist);
+    //AiMsgInfo("p_dist: %f", p_dist);
 
     float pos[3] = {0.0f};
     float dir[3] = {0.0f};
@@ -94,18 +101,19 @@ void rt_logarithmic_focus_search(
     
     int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, 1, pos, dir);
     
-  // need to fill this out!!
-    //intersection_distance = ;
 
+    Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
+    Eigen::Vector3d dir_eigen(dir[0], dir[1], dir[2]);
+    intersection_distance = line_plane_intersection(pos_eigen, dir_eigen)(2);
     AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
-    AiMsgInfo("new_distance: %f", new_distance);
+    //AiMsgInfo("new_distance: %f", new_distance);
 
 
     if (new_distance < closest_distance && new_distance > 0.0f){
       closest_distance = new_distance;
       best_sensor_shift = sensorshift;
-      AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
+      //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
     }
   }
 }
@@ -219,19 +227,17 @@ node_update
   */
  
 
+ camera->sensor_shift = 0.0;
   // logartihmic focus search
   // logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
   const float thickness_original = camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short;
-  //rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, thickness_original, camera_rt);
+  rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, thickness_original, camera_rt);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
-  camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
-  add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, thickness_original); //is this needed or already set by log focus search?
-
-  camera->sensor_shift = 0.0;
-  add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, thickness_original); //is this needed or already set by log focus search?
-
+  //camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+  //add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, thickness_original); //is this needed or already set by log focus search?
+  
   /* was already commented out
   // average guesses infinity focus search
   float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
@@ -258,6 +264,17 @@ node_update
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
 */
 
+
+
+  camera_rt->test_cnt = 0;
+  camera_rt->test_maxcnt = 10000;
+  camera_rt->test_intersection_distance = 0.0f;
+
+
+
+
+
+
   AiMsgInfo("");
   AiCameraUpdate(node, false);
 }
@@ -280,7 +297,7 @@ camera_create_ray
 
   int tries = 0;
   bool ray_success = false;
-  camera->vignetting_retries = 15;
+  camera->vignetting_retries = 0;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
@@ -297,6 +314,11 @@ camera_create_ray
     float ray_in[5] = {0.0};
     ray_in[0] = input.sx * (camera->sensor_width * 0.5f);
     ray_in[1] = input.sy * (camera->sensor_width * 0.5f);
+
+    //tmp testing
+    ray_in[0] = 0.0f;
+    ray_in[1] = 0.0f;
+
     float random_aperture[2] = {input.lensx, input.lensy};
     if (tries > 0){
       random_aperture[0] = drand48();
@@ -325,6 +347,16 @@ camera_create_ray
   for (int i = 0; i<3; i++){
     output.origin[i] = pos[i];
     output.dir[i] = dir[i];
+  }
+
+    Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
+  Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
+  camera_rt->test_intersection_distance += line_plane_intersection(pos_eigen, dir_eigen)(2);
+  ++camera_rt->test_cnt;
+  if (camera_rt->test_cnt == camera_rt->test_maxcnt){
+    AiMsgInfo("average intersection distance: %f", camera_rt->test_intersection_distance/static_cast<float>(camera_rt->test_maxcnt));
+    camera_rt->test_cnt = 0;
+    camera_rt->test_intersection_distance = 0.0f;
   }
 
   // why do i have to divide by 10 only for raytraced model?
@@ -357,6 +389,8 @@ camera_create_ray
   }
 
   AiV3Normalize(output.dir);
+
+
 
   // calculate new ray derivatives
   if (tries > 0){
