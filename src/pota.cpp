@@ -78,7 +78,7 @@ node_update
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f;
+  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f; //converting to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
