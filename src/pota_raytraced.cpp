@@ -230,7 +230,6 @@ node_update
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
-  
 /*
   // logarithmic infinity focus search
   float best_sensor_shift_infinity = 0.0f;
@@ -289,6 +288,7 @@ camera_create_ray
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
 
+
   while(ray_success == false && tries <= camera->vignetting_retries)
   {
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
@@ -299,27 +299,28 @@ camera_create_ray
       dir[i] = 0.0;
     }
 
-    // need to implement the sensor shift
-    float ray_in[5] = {0.0};
-    ray_in[0] = input.sx * (camera->sensor_width * 0.5f);
-    ray_in[1] = input.sy * (camera->sensor_width * 0.5f);
 
-    //tmp testing
-    //ray_in[0] = 0.0f;
-    //ray_in[1] = 0.0f;
+    // transform unit square to unit disk
+    Eigen::Vector2d unit_disk(0.0f, 0.0f);
+    if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
+    else concentric_disk_sample(drand48(), drand48(), unit_disk, false);
 
-    float random_aperture[2] = {input.lensx, input.lensy};
-    if (tries > 0){
-      random_aperture[0] = drand48();
-      random_aperture[1] = drand48();
-    }
     float aperture_tmp_mult = 1.0f;//0.4f;
-    ray_in[2] = (camera_rt->p_rad*aperture_tmp_mult*(2.0*random_aperture[0]-1.0) / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
-    ray_in[3] = (camera_rt->p_rad*aperture_tmp_mult*(2.0*random_aperture[1]-1.0) / camera_rt->p_dist) - (ray_in[1] / camera_rt->p_dist);
-    //ray_in[2] = (camera_rt->p_rad*0.1 / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
-    //ray_in[3] = (camera_rt->p_rad*0.1 / camera_rt->p_dist) - (ray_in[1] / camera_rt->p_dist);
-    ray_in[4] = camera->lambda;
-    //ray_in[4] = 0.55f;
+    
+    Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+                               input.sy * (camera->sensor_width * 0.5f),
+                               0.0
+    );
+    
+    Eigen::Vector3d aperture_pos(camera_rt->p_rad * aperture_tmp_mult * unit_disk(0),
+                                 camera_rt->p_rad * aperture_tmp_mult * unit_disk(1),
+                                 lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom)
+    );
+
+    Eigen::Vector3d direction = aperture_pos - sensor_pos;
+    direction.normalize(); 
+    
+    float ray_in[5] = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
 
     static int aspheric_elements = 1;
     float out[5]; // can probably be removed if i don't need fresnel transmittance?
