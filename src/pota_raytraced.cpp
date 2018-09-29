@@ -135,7 +135,7 @@ node_parameters
   AiParameterInt("backward_samples", 3);
   AiParameterFlt("minimum_rgb", 3.0f);
   AiParameterStr("bokeh_exr_path", "");
-  AiParameterBool("proper_ray_derivatives", true);
+  AiParameterBool("proper_ray_derivatives", false);
 
   AiParameterInt("rt_lens_focal_length", 100);
   AiParameterStr("rt_lens_id", "0001");
@@ -168,7 +168,7 @@ node_update
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f;
+  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
@@ -222,16 +222,8 @@ node_update
 
   AiMsgInfo("[POTA] focus distance: %f", camera->focal_distance);
 
-  /* was already commented out
-  AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-  camera->sensor_shift = camera_set_focus(camera->focal_distance, camera);
-  AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focal_distance, camera->sensor_shift);
-  */
- 
 
- camera->sensor_shift = 0.0;
   // logartihmic focus search
-  // logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
   rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera_rt->thickness_original, camera_rt);
@@ -239,11 +231,6 @@ node_update
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
   
-  /* was already commented out
-  // average guesses infinity focus search
-  float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
-  AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
-  */
 /*
   // logarithmic infinity focus search
   float best_sensor_shift_infinity = 0.0f;
@@ -287,7 +274,7 @@ node_finish
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
   delete camera;
-  delete camera_rt;
+  //delete camera_rt;
 }
 
 
@@ -298,7 +285,6 @@ camera_create_ray
 
   int tries = 0;
   bool ray_success = false;
-  camera->vignetting_retries = 0;
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
@@ -327,7 +313,7 @@ camera_create_ray
       random_aperture[0] = drand48();
       random_aperture[1] = drand48();
     }
-    float aperture_tmp_mult = 0.5f;
+    float aperture_tmp_mult = 1.0f;//0.4f;
     ray_in[2] = (camera_rt->p_rad*aperture_tmp_mult*(2.0*random_aperture[0]-1.0) / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
     ray_in[3] = (camera_rt->p_rad*aperture_tmp_mult*(2.0*random_aperture[1]-1.0) / camera_rt->p_dist) - (ray_in[1] / camera_rt->p_dist);
     //ray_in[2] = (camera_rt->p_rad*0.1 / camera_rt->p_dist) - (ray_in[0] / camera_rt->p_dist);
@@ -366,16 +352,8 @@ camera_create_ray
     AiMsgInfo("average intersection distance: %f", camera_rt->test_intersection_distance/static_cast<double>(camera_rt->test_maxcnt));
     camera_rt->test_cnt = 0;
     camera_rt->test_intersection_distance = 0.0f;
-  }
-  */
-  /*
-  // why do i have to divide by 10 only for raytraced model?
-  for (int i = 0; i<3; i++){
-    output.origin[i] *= 0.1;
-    output.dir[i] *= 0.1;
-  }
-  */
-
+  }*/
+  
   switch (camera->unitModel){
     case mm:
     {

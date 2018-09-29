@@ -6,7 +6,7 @@
 
 options
 {
- AA_samples 10
+ AA_samples 5
  xres 1000
  yres 750
  camera "renderCam_105mm_450cmShape"
