@@ -15,7 +15,6 @@ struct CameraRaytraced
   std::string id;
 	int lenses_cnt;
   lens_element_t lenses[50];
-  float p_dist;
   float p_rad;
   float zoom;
   float lens_focal_length;
@@ -25,6 +24,8 @@ struct CameraRaytraced
   int test_cnt;
   int test_maxcnt;
   double test_intersection_distance;
+
+  float total_lens_length;
 
 } camera_rt;
 
@@ -71,6 +72,16 @@ static const char* UnitModelNames[] =
 };
 
 
+float get_lens_length(CameraRaytraced *camera_rt) {
+  float total_length = 0.0f;
+  for (int i = 0; i < camera_rt->lenses_cnt; i++) {
+    total_length += camera_rt->lenses[i].thickness_short;
+  }
+
+  return total_length;
+}
+
+
 // focal_distance is in mm
 void rt_logarithmic_focus_search(
   const float focal_distance, 
@@ -100,7 +111,7 @@ void rt_logarithmic_focus_search(
     ray_in[4] = 0.55f;
     float out[5]; // can probably be removed if i don't need fresnel transmittance?
     
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, 1, pos, dir);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, 1, pos, dir, camera_rt->total_lens_length);
     
 
     Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
@@ -157,13 +168,14 @@ node_update
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
-  camera_rt->lens_focal_length = AiNodeGetInt(node, "rt_lens_focal_length");
+  camera_rt->lens_focal_length = 0;//AiNodeGetInt(node, "rt_lens_focal_length");
   camera_rt->id = AiNodeGetStr(node, "rt_lens_id");
   camera_rt->zoom = AiNodeGetFlt(node, "rt_lens_zoom");
   memset(camera_rt->lenses, 0, sizeof(camera_rt->lenses)); // not sure if the resetting is necessary?
   camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
-  camera_rt->p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
+  camera_rt->total_lens_length = get_lens_length(camera_rt);
+  camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short -= camera_rt->total_lens_length;
   camera_rt->thickness_original = camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short;
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
@@ -201,7 +213,7 @@ node_update
 
   //load_lens_constants(camera);
   AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA] Lens Name: %s", camera->lens_name);
+  AiMsgInfo("[POTA] Lens Name: %s", camera_rt->id.c_str());
   AiMsgInfo("[POTA] Lens F-Stop: %f", camera->lens_fstop);
   AiMsgInfo("[POTA] --------------------------------------");
 
@@ -257,7 +269,7 @@ node_update
   camera_rt->test_maxcnt = 1000;
   camera_rt->test_intersection_distance = 0.0f;
 
-
+  AiMsgInfo("total lens length: %f", get_lens_length(camera_rt));
 
 
 
@@ -324,7 +336,7 @@ camera_create_ray
 
     static int aspheric_elements = 1;
     float out[5]; // can probably be removed if i don't need fresnel transmittance?
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, aspheric_elements, pos, dir);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, aspheric_elements, pos, dir, camera_rt->total_lens_length);
     if(error){
       ++tries;
       continue;
@@ -343,6 +355,10 @@ camera_create_ray
     output.dir[i] = dir[i];
   }
 
+  // test
+  // output.origin[2] -= get_lens_length(camera_rt);
+  
+  
   /*
   Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
   Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
