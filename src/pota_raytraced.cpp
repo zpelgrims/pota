@@ -8,9 +8,7 @@
 #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
 
-
 #define TIMING
-
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
@@ -23,13 +21,12 @@ struct CameraRaytraced
   float zoom;
   float lens_focal_length;
   float thickness_original;
+  float total_lens_length;
 
   //test
   int test_cnt;
   int test_maxcnt;
   double test_intersection_distance;
-
-  float total_lens_length;
 
 #ifdef TIMING
   long long int total_duration;
@@ -214,11 +211,7 @@ node_update
     }
   }
 
-
   AiMsgInfo("");
-
-
-  //load_lens_constants(camera);
   AiMsgInfo("[POTA RT] ----------  LENS CONSTANTS  -----------");
   AiMsgInfo("[POTA RT] Lens Name: %s", camera_rt->id.c_str());
   AiMsgInfo("[POTA RT] Lens F-Stop: %f", camera->lens_fstop);
@@ -241,7 +234,6 @@ node_update
 
   AiMsgInfo("[POTA RT] focus distance (mm): %f", camera->focal_distance);
 
-
   // logartihmic focus search
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
@@ -249,6 +241,7 @@ node_update
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
+
 /*
   // logarithmic infinity focus search
   float best_sensor_shift_infinity = 0.0f;
@@ -296,6 +289,9 @@ node_finish
 #endif
 
   delete camera;
+
+  // why can't i delete camera_rt without getting "pointer being freed was not allocated" error?
+  // should be deleting my resources to avoid memory leaks...
   //delete camera_rt;
 }
 
@@ -366,7 +362,6 @@ camera_create_ray
     output.dir[i] = dir[i];
   }
   
-  
   /*
   Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
   Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
@@ -379,7 +374,7 @@ camera_create_ray
     camera_rt->test_intersection_distance = 0.0f;
   }*/
   
-  switch (camera->unitModel){
+  switch (camera->unitModel) {
     case mm:
     {
       output.origin *= -1.0; // reverse rays and convert to cm
@@ -403,8 +398,6 @@ camera_create_ray
   }
 
   AiV3Normalize(output.dir);
-
-
 
   // calculate new ray derivatives
   if (tries > 0){

@@ -737,33 +737,42 @@ inline bool trace_backwards(Eigen::Vector3d sample_position, const float apertur
 
 
 // not implemented yet! should return fstop
-float get_raytraced_fstop(Camera *camera)
+// note that this is all with an unshifted sensor
+float trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &aperture_radius)
 {
   const int maxrays = 100;
   for (int i = maxrays; i != 0; i--)
   {
-    float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera->lens_outer_pupil_radius;
+    const float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera->lens_outer_pupil_radius;
     const float target[3] = {0.0, parallel_ray_height, AI_BIG};
-    float sensor[5] = {0.0f};
-    sensor[4] = camera->lambda;
+    float sensor[5] = {0.0f, 0.0f, 0.0f, 0.0f, camera->lambda};
     float out[5] = {0.0f};
     float y0_intersection = 0.0f;
+    float positiondata[2] = {0.0f};
 
     // just point through center of aperture
     float aperture[2] = {0.0f, parallel_ray_height};
 
-    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0f)
-    {
-      break;
-    }
+    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0f) continue;
 
     // crop at inner pupil
+    const float px = sensor[0] + (sensor[2] * camera->lens_back_focal_length);
     const float py = sensor[1] + (sensor[3] * camera->lens_back_focal_length);
-    if (py > camera->lens_inner_pupil_radius) break;
+    if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) continue;
 
     y0_intersection = sensor[0]/sensor[2];
 
-    
+    // somehow need to get last vertex positiondata.. don't think what i currently have is correct
+    positiondata[0] = y0_intersection;
+    positiondata[1] = py;
+    printf("Last valid exit vertex position: %f, %f\n", positiondata[0], positiondata[1]);
+    printf("Failed at try %d of 100\n", i);
+
+    const float theta = std::atan(positiondata[1] / positiondata[0]);
+    const float fstop_calculated = 1.0 / (std::sin(theta)* 2.0);
+
+    if (fstop_calculated < fstop_target) {
+      return fstop_calculated;
+    }
   }
-  
 }
