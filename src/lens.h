@@ -403,7 +403,7 @@ std::vector<float> logarithmic_values()
   float max = 45.0;
   float exponent = 2.0; // sharpness
   std::vector<float> log;
-  for(float i = -1.0; i <= 1.0; i += 0.0001) { // reset back to this after testing
+  for(float i = -1.0; i <= 1.0; i += 0.0001) {
     log.push_back((i < 0 ? -1 : 1) * std::pow(i, exponent) * (max - min) + min);
   }
 
