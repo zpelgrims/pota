@@ -219,13 +219,13 @@ node_update
 
 
   //load_lens_constants(camera);
-  AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA] Lens Name: %s", camera_rt->id.c_str());
-  AiMsgInfo("[POTA] Lens F-Stop: %f", camera->lens_fstop);
-  AiMsgInfo("[POTA] --------------------------------------");
+  AiMsgInfo("[POTA RT] ----------  LENS CONSTANTS  -----------");
+  AiMsgInfo("[POTA RT] Lens Name: %s", camera_rt->id.c_str());
+  AiMsgInfo("[POTA RT] Lens F-Stop: %f", camera->lens_fstop);
+  AiMsgInfo("[POTA RT] --------------------------------------");
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-  AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
+  AiMsgInfo("[POTA RT] wavelength: %f", camera->lambda);
 /*
   //camera->max_fstop = camera->lens_effective_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
   AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
@@ -239,7 +239,7 @@ node_update
   AiMsgInfo("[POTA] --------------------------------------");
 */
 
-  AiMsgInfo("[POTA] focus distance (mm): %f", camera->focal_distance);
+  AiMsgInfo("[POTA RT] focus distance (mm): %f", camera->focal_distance);
 
 
   // logartihmic focus search
@@ -292,8 +292,7 @@ node_finish
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
 #ifdef TIMING
-  std::cout << "[POTA] Average execution time: " << camera_rt->total_duration / camera_rt->execution_counter 
-            << " nanoseconds over " << camera_rt->execution_counter << " camera rays" << std::endl;
+  AiMsgInfo("[POTA RT] Average execution time: %lld nanoseconds over %lld camera rays", camera_rt->total_duration / camera_rt->execution_counter, camera_rt->execution_counter);
 #endif
 
   delete camera;
