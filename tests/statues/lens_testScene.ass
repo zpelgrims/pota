@@ -48,6 +48,9 @@ pota_raytraced
  fstop 0.0
  aperture_blades 0
  lensModel angenieux_double_gauss_1953_100mm
+ rt_lens_id "0001"
+ rt_lens_focal_length 100
+ extra_sensor_shift 0.0
 }
 
 #pota

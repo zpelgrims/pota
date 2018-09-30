@@ -3,9 +3,13 @@
 #include "lens.h"
 #include <cmath>
 #include <string>
+#include <chrono>
 #include "../../polynomial-optics/src/lenssystem.h"
 #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
+
+
+#define TIMING
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
@@ -27,7 +31,12 @@ struct CameraRaytraced
 
   float total_lens_length;
 
+#ifdef TIMING
+  long long int total_duration;
+  long long int execution_counter;
+#endif
 } camera_rt;
+
 
 
 enum
@@ -86,8 +95,8 @@ float get_lens_length(CameraRaytraced *camera_rt) {
 void rt_logarithmic_focus_search(
   const float focal_distance, 
   float &best_sensor_shift, 
-  float &closest_distance, 
-  const float thickness_original, 
+  float &closest_distance,
+  const float lambda,
   CameraRaytraced *camera_rt)
 {
 
@@ -97,22 +106,18 @@ void rt_logarithmic_focus_search(
   	float intersection_distance = 0.0f;
     //AiMsgInfo("----------------------");
 
-    //sensorshift = 0.0f;
-    add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, thickness_original);
+    add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, camera_rt->thickness_original);
     const float p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
-
-    //AiMsgInfo("p_dist: %f", p_dist);
 
     float pos[3] = {0.0f};
     float dir[3] = {0.0f};
     float ray_in[5] = {0.0};
-    ray_in[2] = (camera_rt->p_rad*0.1 / p_dist) - (ray_in[0] / p_dist);
-    ray_in[3] = (camera_rt->p_rad*0.1 / p_dist) - (ray_in[1] / p_dist);
-    ray_in[4] = 0.55f;
-    float out[5]; // can probably be removed if i don't need fresnel transmittance?
+    ray_in[2] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[0] / p_dist);
+    ray_in[3] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[1] / p_dist);
+    ray_in[4] = lambda;
     
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, 1, pos, dir, camera_rt->total_lens_length);
-    
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length);
+    if (error) continue;
 
     Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
     Eigen::Vector3d dir_eigen(dir[0], dir[1], dir[2]);
@@ -168,12 +173,14 @@ node_update
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
-  camera_rt->lens_focal_length = 0;//AiNodeGetInt(node, "rt_lens_focal_length");
+  camera_rt->lens_focal_length = AiNodeGetInt(node, "rt_lens_focal_length");
   camera_rt->id = AiNodeGetStr(node, "rt_lens_id");
   camera_rt->zoom = AiNodeGetFlt(node, "rt_lens_zoom");
   memset(camera_rt->lenses, 0, sizeof(camera_rt->lenses)); // not sure if the resetting is necessary?
   camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
+  
+  // shift lens backwards by lens length so exit pupil vertex is at origin
   camera_rt->total_lens_length = get_lens_length(camera_rt);
   camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short -= camera_rt->total_lens_length;
   camera_rt->thickness_original = camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short;
@@ -232,13 +239,13 @@ node_update
   AiMsgInfo("[POTA] --------------------------------------");
 */
 
-  AiMsgInfo("[POTA] focus distance: %f", camera->focal_distance);
+  AiMsgInfo("[POTA] focus distance (mm): %f", camera->focal_distance);
 
 
   // logartihmic focus search
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
-  rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera_rt->thickness_original, camera_rt);
+  rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera->lambda, camera_rt);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
@@ -264,15 +271,15 @@ node_update
 */
 
 
-
+  // remove
   camera_rt->test_cnt = 0;
   camera_rt->test_maxcnt = 1000;
   camera_rt->test_intersection_distance = 0.0f;
 
-  AiMsgInfo("total lens length: %f", get_lens_length(camera_rt));
-
-
-
+#ifdef TIMING
+  camera_rt->total_duration = 0;
+  camera_rt->execution_counter = 0;
+#endif
 
   AiMsgInfo("");
   AiCameraUpdate(node, false);
@@ -284,6 +291,11 @@ node_finish
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
+#ifdef TIMING
+  std::cout << "[POTA] Average execution time: " << camera_rt->total_duration / camera_rt->execution_counter 
+            << " nanoseconds over " << camera_rt->execution_counter << " camera rays" << std::endl;
+#endif
+
   delete camera;
   //delete camera_rt;
 }
@@ -293,6 +305,10 @@ camera_create_ray
 {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
+
+#ifdef TIMING
+  std::chrono::high_resolution_clock::time_point timer_start = std::chrono::high_resolution_clock::now();
+#endif
 
   int tries = 0;
   bool ray_success = false;
@@ -311,32 +327,28 @@ camera_create_ray
       dir[i] = 0.0;
     }
 
-
     // transform unit square to unit disk
     Eigen::Vector2d unit_disk(0.0f, 0.0f);
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
     else concentric_disk_sample(drand48(), drand48(), unit_disk, false);
-
-    float aperture_tmp_mult = 1.0f;//0.4f;
     
     Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
                                input.sy * (camera->sensor_width * 0.5f),
                                0.0
     );
     
-    Eigen::Vector3d aperture_pos(camera_rt->p_rad * aperture_tmp_mult * unit_disk(0),
-                                 camera_rt->p_rad * aperture_tmp_mult * unit_disk(1),
-                                 lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom)
+    Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad * unit_disk(0),
+                                 camera_rt->p_rad * unit_disk(1),
+                                 camera_rt->thickness_original
+                                 //lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom)
     );
 
-    Eigen::Vector3d direction = aperture_pos - sensor_pos;
+    Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
     direction.normalize(); 
     
     float ray_in[5] = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
-
-    static int aspheric_elements = 1;
-    float out[5]; // can probably be removed if i don't need fresnel transmittance?
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, out, aspheric_elements, pos, dir, camera_rt->total_lens_length);
+  
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length);
     if(error){
       ++tries;
       continue;
@@ -354,9 +366,6 @@ camera_create_ray
     output.origin[i] = pos[i];
     output.dir[i] = dir[i];
   }
-
-  // test
-  // output.origin[2] -= get_lens_length(camera_rt);
   
   
   /*
@@ -407,6 +416,12 @@ camera_create_ray
       }
     }
   }
+
+#ifdef TIMING
+  std::chrono::high_resolution_clock::time_point timer_end = std::chrono::high_resolution_clock::now();
+  camera_rt->total_duration += static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>( timer_end - timer_start ).count());
+  camera_rt->execution_counter += 1;
+#endif
 } 
 
 
