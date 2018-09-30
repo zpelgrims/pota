@@ -35,7 +35,6 @@ struct CameraRaytraced
 } camera_rt;
 
 
-
 enum
 {
   p_unitModel,
@@ -187,13 +186,13 @@ node_update
   camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
-  camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
-  camera->dof = AiNodeGetBool(node, "dof");
+  //camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
+  //camera->dof = AiNodeGetBool(node, "dof");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  camera->backward_samples = AiNodeGetInt(node, "backward_samples");
-  camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-  camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
-  camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
+  //camera->backward_samples = AiNodeGetInt(node, "backward_samples");
+  //camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
+  //camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+  //camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 
   // convert to cm
   switch (camera->unitModel){
@@ -213,8 +212,8 @@ node_update
 
   AiMsgInfo("");
   AiMsgInfo("[POTA RT] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA RT] Lens Name: %s", camera_rt->id.c_str());
-  AiMsgInfo("[POTA RT] Lens F-Stop: %f", camera->lens_fstop);
+  AiMsgInfo("[POTA RT] Lens Name: %s", camera_rt->id.c_str()); //not sure why this isn't printing out.. weird
+  //AiMsgInfo("[POTA RT] Lens F-Stop: %f", camera->lens_fstop);
   AiMsgInfo("[POTA RT] --------------------------------------");
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
