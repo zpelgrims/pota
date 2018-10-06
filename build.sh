@@ -1,9 +1,6 @@
 #!/bin/bash
 
-
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
-
 
 echo ""
 echo "Setting environment variables: "
@@ -12,8 +9,6 @@ echo "Setting environment variables: "
     export LENTIL_PATH=$CURRENT_DIR/../polynomial-optics/
     echo -e "\t LENTIL_PATH: " $LENTIL_PATH
 echo ""
-
-
 
 # reset text formatting
 tput sgr0

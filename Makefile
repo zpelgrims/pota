@@ -7,12 +7,12 @@ ifeq ($(OS), Linux)
 	CXX=g++
 endif
 
-# make sure to modify the path to the arnold SDK
+# these ned to be changed to the envvar
 ifeq ($(OS), Darwin)
-	ARNOLD_PATH=/Users/zeno/Arnold-5.1.1.2-darwin
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH=/home/users/zenop/Arnold-5.1.1.1-linux
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-linux
 endif
 
 
