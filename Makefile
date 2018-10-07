@@ -46,23 +46,23 @@ all: pota pota_raytraced potabokehAOV
 
 ifeq ($(OS), Darwin)
 pota: Makefile src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o ${user_build_folder}/bin/pota.dylib ${LDFLAGS}
 
 pota_raytraced: Makefile src/pota_raytraced.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o bin/pota_raytraced.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.dylib ${LDFLAGS}
 
 potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.dylib ${LDFLAGS}
 endif
 ifeq ($(OS), Linux)
 pota: Makefile src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o bin/pota.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota.cpp -o ${user_build_folder}/bin/pota.so ${LDFLAGS}
 
 pota_raytraced: Makefile src/pota_raytraced.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o bin/pota_raytraced.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.so ${LDFLAGS}
 
 potabokehAOV: Makefile src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o bin/potabokehAOV.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.so ${LDFLAGS}
 endif
 
 
