@@ -34,5 +34,7 @@ make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER
 rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/
 
 # zip it up
+zip -r9 $USER_BUILD_FOLDER.zip $USER_BUILD_FOLDER
 
-# upload to server
+# sync file to server hosting website
+# rsync something something something
