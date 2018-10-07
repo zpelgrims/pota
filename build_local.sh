@@ -13,4 +13,4 @@ echo ""
 # reset text formatting
 tput sgr0
 
-make
+make user_build_folder=.
