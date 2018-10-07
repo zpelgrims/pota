@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # needs to be passed:
 #   username
 #   lens list
@@ -6,9 +8,8 @@
 DATE="$( date +"%y%m%d-%H%M" )"
 USER="zpelgrims"
 USER_BUILD_FOLDER=$DATE-$USER
-mkdir $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER
+mkdir $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/bin
 
-#!/bin/bash
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
