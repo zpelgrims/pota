@@ -8,7 +8,7 @@
 DATE="$( date +"%y%m%d-%H%M" )"
 USER="zpelgrims"
 USER_BUILD_FOLDER=$DATE-$USER
-mkdir $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/bin
+mkdir -p $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/bin
 
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -31,8 +31,7 @@ make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER
 
 
 # collect files into directories
-
-# rsync -ah --progress source destination
+rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/
 
 # zip it up
 
