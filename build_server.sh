@@ -4,9 +4,12 @@
 #   username
 #   lens list
 
+# placeholder
+lenses=.1001.1002
+
 # create folder for user build
 DATE="$( date +"%y%m%d-%H%M" )"
-USER="zpelgrims"
+USER=$1
 USER_BUILD_FOLDER=$DATE-$USER
 mkdir -p $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/bin
 
@@ -27,7 +30,7 @@ tput sgr0
 # build the plugin
 # will need to pass the lens list
 # will need to build to custom location
-make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER
+make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=lenses
 
 
 # collect files into directories
@@ -36,5 +39,5 @@ rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/buil
 # zip it up
 zip -r9 $USER_BUILD_FOLDER.zip $USER_BUILD_FOLDER
 
-# sync file to server hosting website
+# sync .zip to server hosting website
 # rsync something something something

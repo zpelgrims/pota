@@ -17,7 +17,10 @@ endif
 
 
 LENSES = -DLENS_ID_FREE
-#for i in lens list, LENSES += LENS_ID_X
+# lens list is expected in following format: lens_list=.1001.2001.2002.2003 (first dot is important)
+LENSES += $(subst ., -DLENS_ID_, ${lens_list})
+$(info    LENSES: $(LENSES))
+
 
 
 CXXFLAGS=\
