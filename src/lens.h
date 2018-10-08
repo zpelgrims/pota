@@ -561,6 +561,7 @@ inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 
 inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, Camera *camera)
 {
+  Draw &draw = camera->draw;
 
   bool ray_succes = false;
   tries = 0;
@@ -648,6 +649,13 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 		}
 		
 		ray_succes = true;
+    
+    // THIS IS NOT THREAD SAFE!! DRAWING CAN ONLY BE RAN ON ONE THREAD
+    if (draw.enabled) {
+      draw.sensor.push_back(std::vector<float> {sensor[0], sensor[1], sensor[2], sensor[3]});
+      draw.aperture.push_back(std::vector<float> {aperture[0], aperture[1], aperture[2], aperture[3]});
+      draw.out_ss.push_back(std::vector<float> {out[0], out[1], out[2], out[3]});
+    }
 	}
 
 	if (ray_succes == false) weight << 0.0, 0.0, 0.0;
@@ -659,6 +667,11 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
   if (camera->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  
+  // THIS IS NOT THREAD SAFE!! DRAWING CAN ONLY BE RAN ON ONE THREAD
+  if (draw.enabled) {
+    draw.out_cs.push_back(std::vector<float> {camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]});
+  }
 
   for (int i=0; i<3; i++){
     origin(i) = camera_space_pos[i];

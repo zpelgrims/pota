@@ -2,6 +2,12 @@
 #include "pota.h"
 #include "lens.h"
 #include <cmath>
+#include <vector>
+
+//json parsing
+#include "../../polynomial-optics/ext/json.hpp"
+#include <fstream>
+using json = nlohmann::json;
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
@@ -73,8 +79,15 @@ node_initialize
 
 
 node_update
-{   
+{ 
+  AiCameraUpdate(node, false);
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  Draw &draw = camera->draw;
+  draw.out_cs.clear();
+  draw.out_ss.clear();
+  draw.aperture.clear();
+  draw.sensor.clear();
+  draw.counter = 0;
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
@@ -188,7 +201,6 @@ node_update
 
 
   AiMsgInfo("");
-  AiCameraUpdate(node, false);
 }
 
 
@@ -196,6 +208,17 @@ node_finish
 {
 
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  Draw &draw = camera->draw;
+
+  json point_data;
+  point_data["out_cs"] = draw.out_cs;
+  point_data["out_ss"] = draw.out_ss;
+  point_data["sensor"] = draw.sensor;
+  point_data["aperture"] = draw.aperture;
+  std::ofstream out_json("/Users/zeno/lentil/pota/point_data.json");
+  out_json << std::setw(2) << point_data << std::endl;
+  AiMsgInfo("Written point data json");
+
   delete camera;
 }
 
@@ -203,6 +226,8 @@ node_finish
 camera_create_ray
 {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  Draw &draw = camera->draw;
+  draw.enabled = true;
 
   int tries = 0;
   float random1 = 0.0;
@@ -213,7 +238,7 @@ camera_create_ray
   Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera);
-
+  
   // calculate new ray derivatives
   // sucks a bit to have to trace 3 rays.. Bit slow
   // is there an analytical solution to this?..

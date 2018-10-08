@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <fstream>
+#include <vector>
 
 
 // enum to switch between lens models in interface dropdown
@@ -21,10 +22,26 @@ enum UnitModel{
 };
 
 
+struct Draw
+{
+    std::vector<std::vector<float>> sensor;
+    std::vector<std::vector<float>> aperture;
+    std::vector<std::vector<float>> out_ss;
+    std::vector<std::vector<float>> out_cs;
+    bool enabled;
+    int counter;
+    const int max_counter;
+
+    Draw() : enabled(true), counter(0), max_counter(50000){}
+};
+
+
 struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
+
+    Draw draw;
 
     // lens constants
     const char* lens_name;
