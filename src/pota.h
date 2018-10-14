@@ -26,8 +26,9 @@ struct Draw
 {
     std::vector<std::vector<float>> sensor;
     std::vector<std::vector<float>> aperture;
-    std::vector<std::vector<float>> out_ss;
-    std::vector<std::vector<float>> out_cs;
+    std::vector<std::vector<float>> pxpy;
+    std::vector<std::vector<float>> out;
+    std::vector<std::vector<float>> sensor_shifted;
     bool enabled;
     int counter;
     const int max_counter;
@@ -52,9 +53,12 @@ struct Camera
     float lens_effective_focal_length;
     float lens_aperture_pos;
     float lens_aperture_housing_radius;
+    float lens_inner_pupil_curvature_radius;
     float lens_outer_pupil_curvature_radius;
     float lens_field_of_view;
     float lens_fstop;
+    float lens_aperture_radius_at_fstop;
+    std::string lens_inner_pupil_geometry;
     std::string lens_outer_pupil_geometry;
 
 

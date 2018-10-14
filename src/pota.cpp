@@ -4,10 +4,6 @@
 #include <cmath>
 #include <vector>
 
-//json parsing
-#include "../../polynomial-optics/ext/json.hpp"
-#include <fstream>
-using json = nlohmann::json;
 
 
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
@@ -82,12 +78,6 @@ node_update
 { 
   AiCameraUpdate(node, false);
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
-  Draw &draw = camera->draw;
-  draw.out_cs.clear();
-  draw.out_ss.clear();
-  draw.aperture.clear();
-  draw.sensor.clear();
-  draw.counter = 0;
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
@@ -133,9 +123,12 @@ node_update
   AiMsgInfo("[POTA] lens_effective_focal_length: %f", camera->lens_effective_focal_length);
   AiMsgInfo("[POTA] lens_aperture_pos: %f", camera->lens_aperture_pos);
   AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera->lens_aperture_housing_radius);
+  AiMsgInfo("[POTA] lens_inner_pupil_curvature_radius: %f", camera->lens_inner_pupil_curvature_radius);
   AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera->lens_outer_pupil_curvature_radius);
+  AiMsgInfo("[POTA] lens_inner_pupil_geometry: %s", camera->lens_inner_pupil_geometry.c_str());
   AiMsgInfo("[POTA] lens_outer_pupil_geometry: %s", camera->lens_outer_pupil_geometry.c_str());
   AiMsgInfo("[POTA] lens_field_of_view: %f", camera->lens_field_of_view);
+  AiMsgInfo("[POTA] lens_aperture_radius_at_fstop: %f", camera->lens_aperture_radius_at_fstop);
 #endif
   AiMsgInfo("[POTA] --------------------------------------");
 
@@ -144,14 +137,21 @@ node_update
   AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
 
 
-// this whole section will need to be updated to use raytraced fstop and it's inverse calculations.
-  camera->max_fstop = camera->lens_back_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
-  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->max_fstop);
+  if (camera->input_fstop == 0.0f) {
+    camera->aperture_radius = camera->lens_aperture_radius_at_fstop;
+  } else {
+    float calculated_fstop = 0.0f;
+    float calculated_aperture_radius = 0.0f;
+    trace_backwards_for_fstop(camera, camera->input_fstop, calculated_fstop, calculated_aperture_radius);
+    
+    AiMsgInfo("[POTA] calculated fstop: %f", calculated_fstop);
+    AiMsgInfo("[POTA] calculated aperture radius: %f", calculated_aperture_radius);
+    
+    camera->aperture_radius = fminf(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
+  }
 
-  if (camera->input_fstop == 0.0f) camera->aperture_radius = camera->lens_aperture_housing_radius;
-  else camera->aperture_radius = fminf(camera->lens_aperture_housing_radius, camera->lens_back_focal_length / (2.0f * camera->input_fstop));
-
-  AiMsgInfo("[POTA] full aperture radius: %f", camera->lens_aperture_housing_radius);
+  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
+  AiMsgInfo("[POTA] lens wide open aperture radius: %f", camera->lens_aperture_radius_at_fstop);
   AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera->aperture_radius);
   AiMsgInfo("[POTA] --------------------------------------");
 
@@ -208,16 +208,6 @@ node_finish
 {
 
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
-  Draw &draw = camera->draw;
-
-  json point_data;
-  point_data["out_cs"] = draw.out_cs;
-  point_data["out_ss"] = draw.out_ss;
-  point_data["sensor"] = draw.sensor;
-  point_data["aperture"] = draw.aperture;
-  std::ofstream out_json("/Users/zeno/lentil/pota/point_data.json");
-  out_json << std::setw(2) << point_data << std::endl;
-  AiMsgInfo("Written point data json");
 
   delete camera;
 }
@@ -226,8 +216,6 @@ node_finish
 camera_create_ray
 {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
-  Draw &draw = camera->draw;
-  draw.enabled = true;
 
   int tries = 0;
   float random1 = 0.0;
