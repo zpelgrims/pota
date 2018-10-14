@@ -6,6 +6,12 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
+//json parsing
+// #include "../../polynomial-optics/ext/json.hpp"
+// #include <fstream>
+// using json = nlohmann::json;
+
+
 AI_SHADER_NODE_EXPORT_METHODS(PotaBokehAOVMtd);
 
 
@@ -57,7 +63,7 @@ node_initialize
 node_update
 {
   PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
-  //const Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  // Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // register AOVs
   bokeh->bokeh_aov_name = AiNodeGetStr(node, "bokeh_aov_name");
@@ -72,13 +78,22 @@ node_update
 
   bokeh->image.clear();
   bokeh->image.reserve(bokeh->xres * bokeh->yres);
+
+
+  // Draw &draw = camera->draw;
+  // draw.pxpy.clear();
+  // draw.sensor_shifted.clear();
+  // draw.aperture.clear();
+  // draw.out.clear();
+  // draw.sensor.clear();
+  // draw.counter = 0;
 }
 
 
 node_finish
 {
   PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
-  const Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  // Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // fill exr
   std::vector<float> image(bokeh->yres * bokeh->xres * 4);
@@ -101,6 +116,19 @@ node_finish
   SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, original_string.c_str());
   AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string.c_str());
 
+
+
+  // Draw &draw = camera->draw;
+  // json point_data;
+  // point_data["pxpy"] = draw.pxpy;
+  // point_data["sensor_shifted"] = draw.sensor_shifted;
+  // point_data["sensor"] = draw.sensor;
+  // point_data["out"] = draw.out;
+  // point_data["aperture"] = draw.aperture;
+  // std::ofstream out_json("/Users/zeno/lentil/pota/point_data.json");
+  // out_json << std::setw(2) << point_data << std::endl;
+  // AiMsgInfo("Written point data json");
+
   delete bokeh;
 }
 
@@ -109,6 +137,9 @@ shader_evaluate
 {
    PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
    Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  // Draw &draw = camera->draw;
+  // draw.enabled = true;
 
    // why does this need to be in shader_evaluate to work? returns 0 in _update_?
    bokeh->samples = camera->backward_samples * (bokeh->aa_samples * bokeh->aa_samples);

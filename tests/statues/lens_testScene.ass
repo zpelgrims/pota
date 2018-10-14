@@ -35,7 +35,7 @@ options
  lensModel primoplan_1936_58mm
 }
 
-pota_raytraced
+pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -51,6 +51,8 @@ pota_raytraced
  rt_lens_id "0001"
  rt_lens_focal_length 100
  extra_sensor_shift 0.0
+ vignetting_retries 0
+ camera_proper_ray_derivatives 0
 }
 
 #pota

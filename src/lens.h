@@ -559,7 +559,15 @@ inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 
 
 
-inline void trace_ray(bool original_ray, int &tries, const float input_sx, const float input_sy, const float input_lensx, const float input_lensy, float &r1, float &r2, Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, Camera *camera)
+inline void trace_ray(bool original_ray, 
+                      int &tries, 
+                      const float input_sx, const float input_sy, 
+                      const float input_lensx, const float input_lensy, 
+                      float &r1, float &r2, 
+                      Eigen::Vector3d &weight, 
+                      Eigen::Vector3d &origin, 
+                      Eigen::Vector3d &direction, 
+                      Camera *camera)
 {
 
   bool ray_succes = false;
@@ -659,6 +667,7 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
   if (camera->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  
 
   for (int i=0; i<3; i++){
     origin(i) = camera_space_pos[i];
@@ -704,7 +713,12 @@ inline void trace_ray(bool original_ray, int &tries, const float input_sx, const
 
 
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(Eigen::Vector3d sample_position, const float aperture_radius, const float lambda, Eigen::Vector2d &sensor_position, const float sensor_shift, Camera *camera)
+inline bool trace_backwards(Eigen::Vector3d sample_position, 
+                            const float aperture_radius, 
+                            const float lambda, 
+                            Eigen::Vector2d &sensor_position, 
+                            const float sensor_shift, 
+                            Camera *camera)
 {
    const float target[3] = {sample_position(0), sample_position(1), sample_position(2)};
 
@@ -725,9 +739,26 @@ inline bool trace_backwards(Eigen::Vector3d sample_position, const float apertur
    const float py = sensor[1] + sensor[3] * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) return false;
 
+
+
+  Draw &draw = camera->draw;
+  // THIS IS NOT THREAD SAFE!! DRAWING CAN ONLY BE RAN ON ONE THREAD
+  if (draw.enabled) {
+    draw.sensor.push_back(std::vector<float> {sensor[0], sensor[1], sensor[2], sensor[3]});
+    draw.aperture.push_back(std::vector<float> {aperture[0], aperture[1], aperture[2], aperture[3]});
+    draw.out.push_back(std::vector<float> {out[0], out[1], out[2], out[3]});
+    draw.pxpy.push_back(std::vector<float> {px, py});
+  }
+
+
+
    // shift sensor
    sensor[0] += sensor[2] * -sensor_shift;
    sensor[1] += sensor[3] * -sensor_shift;
+
+  if (draw.enabled) {
+    draw.sensor_shifted.push_back(std::vector<float> {sensor[0], sensor[1]});
+  }
 
    sensor_position(0) = sensor[0];
    sensor_position(1) = sensor[1];
@@ -736,22 +767,22 @@ inline bool trace_backwards(Eigen::Vector3d sample_position, const float apertur
 }
 
 
-// not implemented yet! should return fstop
 // note that this is all with an unshifted sensor
-float trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &aperture_radius)
+void trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &calculated_fstop, float &calculated_aperture_radius)
 {
-  const int maxrays = 100;
-  for (int i = maxrays; i != 0; i--)
+  const int maxrays = 1000;
+  float best_valid_fstop = 0.0f;
+  float best_valid_aperture_radius = 0.0f;
+
+  for (int i = 1; i < maxrays; i++)
   {
     const float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera->lens_outer_pupil_radius;
     const float target[3] = {0.0, parallel_ray_height, AI_BIG};
     float sensor[5] = {0.0f, 0.0f, 0.0f, 0.0f, camera->lambda};
     float out[5] = {0.0f};
-    float y0_intersection = 0.0f;
-    float positiondata[2] = {0.0f};
 
     // just point through center of aperture
-    float aperture[2] = {0.0f, parallel_ray_height};
+    float aperture[2] = {0.01f, parallel_ray_height};
 
     if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0f) continue;
 
@@ -760,19 +791,27 @@ float trace_backwards_for_fstop(Camera *camera, const float fstop_target, float 
     const float py = sensor[1] + (sensor[3] * camera->lens_back_focal_length);
     if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) continue;
 
-    y0_intersection = sensor[0]/sensor[2];
-
     // somehow need to get last vertex positiondata.. don't think what i currently have is correct
-    positiondata[0] = y0_intersection;
-    positiondata[1] = py;
-    printf("Last valid exit vertex position: %f, %f\n", positiondata[0], positiondata[1]);
-    printf("Failed at try %d of 100\n", i);
+    float out_cs_pos[3] = {0.0f, 0.0f, 0.0f};
+    float out_cs_dir[3] = {0.0f, 0.0f, 0.0f}; 
+    if (camera->lens_inner_pupil_geometry == "cyl-y") {
+      lens_cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, true);
+    }
+    else if (camera->lens_inner_pupil_geometry == "cyl-x") {
+      lens_cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, false);
+    }
+    else lens_sphereToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius);
 
-    const float theta = std::atan(positiondata[1] / positiondata[0]);
-    const float fstop_calculated = 1.0 / (std::sin(theta)* 2.0);
+    const float theta = std::atan(out_cs_pos[1] / out_cs_pos[2]);
+    const float fstop = 1.0 / (std::sin(theta)* 2.0);
 
-    if (fstop_calculated < fstop_target) {
-      return fstop_calculated;
+    if (fstop < fstop_target) {
+      calculated_fstop = best_valid_fstop;
+      calculated_aperture_radius = best_valid_aperture_radius;
+      break;
+    } else {
+      best_valid_fstop = fstop;
+      best_valid_aperture_radius = parallel_ray_height;
     }
   }
 }
