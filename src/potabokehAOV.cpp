@@ -93,7 +93,7 @@ node_update
 node_finish
 {
   PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
-  // Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // fill exr
   std::vector<float> image(bokeh->yres * bokeh->xres * 4);

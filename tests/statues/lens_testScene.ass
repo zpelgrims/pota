@@ -45,7 +45,7 @@ pota
  1.1199075 20.9187965 355.673157 1
  fov 19.4551582
  focal_distance 452.15
- fstop 0.0
+ fstop 1.4
  aperture_blades 0
  lensModel angenieux_double_gauss_1953_100mm
  rt_lens_id "0001"
