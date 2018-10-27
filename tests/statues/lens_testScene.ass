@@ -6,7 +6,7 @@
 
 options
 {
- AA_samples 5
+ AA_samples 10
  xres 1000
  yres 750
  camera "renderCam_105mm_450cmShape"
@@ -35,7 +35,7 @@ options
  lensModel primoplan_1936_58mm
 }
 
-pota
+pota_raytraced
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -45,11 +45,11 @@ pota
  1.1199075 20.9187965 355.673157 1
  fov 19.4551582
  focal_distance 452.15
- fstop 1.4
+ fstop 0.0
  aperture_blades 0
  lensModel angenieux_double_gauss_1953_100mm
- rt_lens_id "0001"
- rt_lens_focal_length 100
+ rt_lens_id 2004
+ rt_lens_focal_length 31
  extra_sensor_shift 0.0
  vignetting_retries 0
  camera_proper_ray_derivatives 0

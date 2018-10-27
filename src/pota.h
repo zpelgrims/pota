@@ -89,6 +89,8 @@ struct Camera
 
     //camera_reverse_ray
     float tan_fov;
+
+    float anamorphic_stretch;
 };
 
 extern struct Camera camera;

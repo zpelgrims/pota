@@ -54,7 +54,9 @@ enum
 
   p_rt_lens_focal_length,
   p_rt_lens_id,
-  p_rt_lens_zoom
+  p_rt_lens_zoom,
+
+  p_anamorphic_stretch
 };
 
 
@@ -153,6 +155,8 @@ node_parameters
   AiParameterStr("rt_lens_id", "0001");
   AiParameterFlt("rt_lens_zoom", 0.0f);
 
+  AiParameterFlt("anamorphic_stretch", 2.0f);
+
 }
 
 
@@ -193,6 +197,8 @@ node_update
   //camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   //camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   //camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
+
+  camera->anamorphic_stretch = AiNodeGetFlt(node, "anamorphic_stretch");
 
   // convert to cm
   switch (camera->unitModel){
@@ -395,6 +401,9 @@ camera_create_ray
       output.dir *= -0.001; //reverse rays and convert to cm
     }
   }
+
+  // anamorphics
+  output.dir[0] /= camera->anamorphic_stretch;
 
   AiV3Normalize(output.dir);
 
