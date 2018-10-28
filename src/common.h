@@ -4,43 +4,37 @@
 #include <math.h>
 
 
-static inline float dotproduct(float *u, float *v)
-{
+static inline float dotproduct(float *u, float *v) {
   return ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2]);
 }
 
 
-static inline void crossproduct(const float *r, const float *u, float *v)
-{
+static inline void crossproduct(const float *r, const float *u, float *v) {
   v[0] = r[1]*u[2]-r[2]*u[1];
   v[1] = r[2]*u[0]-r[0]*u[2];
   v[2] = r[0]*u[1]-r[1]*u[0];
 }
 
 
-static inline void normalise(float *v)
-{
+static inline void normalise(float *v) {
   const float ilen = 1.0f/sqrtf(dotproduct(v,v));
   for(int k=0;k<3;k++) v[k] *= ilen;
 }
 
 
-static inline float MAX(float a, float b)
-{
+static inline float MAX(float a, float b) {
   return a>b?a:b;
 }
 
 
-static inline void common_sincosf(float phi, float* sin, float* cos)
-{
+static inline void common_sincosf(float phi, float* sin, float* cos) {
   *sin = std::sin(phi);
   *cos = std::cos(phi);
 }
 
 
 // helper function for dumped polynomials to compute integer powers of x:
-static inline float lens_ipow(const float x, const int exp)
-{
+static inline float lens_ipow(const float x, const int exp) {
   if(exp == 0) return 1.0f;
   if(exp == 1) return x;
   if(exp == 2) return x*x;
@@ -50,8 +44,7 @@ static inline float lens_ipow(const float x, const int exp)
 }
 
 
-static inline void lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
-{
+static inline void lens_sphereToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad) {
   float normal[3] =
   {
   inpos[0]/sphereRad,
@@ -74,14 +67,13 @@ static inline void lens_sphereToCs(const float *inpos, const float *indir, float
 }
 
 
-static inline void lens_csToSphere(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad)
-{
-  float normal[3] =
-  {
-  inpos[0]/sphereRad,
-  inpos[1]/sphereRad,
-  fabsf((inpos[2]-sphereCenter)/sphereRad)
+static inline void lens_csToSphere(const float *inpos, const float *indir, float *outpos, float *outdir, const float sphereCenter, const float sphereRad) {
+  float normal[3] = {
+    inpos[0]/sphereRad,
+    inpos[1]/sphereRad,
+    fabsf((inpos[2]-sphereCenter)/sphereRad)
   };
+
   float tempDir[3] = {indir[0], indir[1], indir[2]};
   normalise(tempDir);
 
@@ -96,19 +88,13 @@ static inline void lens_csToSphere(const float *inpos, const float *indir, float
 }
 
 
-// untested and probably wrong
-static inline void lens_csToCylinder(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
-{
-  float normal[3] = {0.0f};
-  if (cyl_y){
-    normal[0] = inpos[0]/R;
-    normal[1] = 0.0f;
-    normal[2] = fabsf((inpos[2] - center)/R);
-  } else {
-    normal[0] = 0.0f;
-    normal[1] = inpos[1]/R;
-    normal[2] = fabsf((inpos[2] - center)/R);
-  }
+static inline void lens_csToCylinder(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y) {
+  float normal[3] = {
+    cyl_y ? inpos[0]/R : 0.0f,
+    cyl_y ? 0.0f : inpos[1]/R,
+    fabsf((inpos[2] - center)/R)
+  };
+
   float tempDir[3] = {indir[0], indir[1], indir[2]};
   normalise(tempDir);
 
@@ -127,19 +113,12 @@ static inline void lens_csToCylinder(const float *inpos, const float *indir, flo
   outpos[1] = inpos[1];
 }
 
-// untested and probably wrong
-static inline void lens_cylinderToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y)
-{
-  float normal[3] = {0.0f};
-  if (cyl_y){
-    normal[0] = inpos[0]/R;
-    normal[1] = 0.0f;
-    normal[2] = sqrtf(MAX(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
-  } else {
-    normal[0] = 0.0f;
-    normal[1] = inpos[1]/R;
-    normal[2] = sqrtf(MAX(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R);
-  }
+static inline void lens_cylinderToCs(const float *inpos, const float *indir, float *outpos, float *outdir, const float center, const float R, bool cyl_y) {
+  float normal[3] = {
+    cyl_y ? inpos[0]/R : 0.0f,
+    cyl_y ? 0.0f : inpos[1]/R,
+    sqrtf(MAX(0, R*R-inpos[0]*inpos[0]-inpos[1]*inpos[1]))/fabsf(R)
+  };
 
   const float tempDir[3] = {indir[0], indir[1], sqrtf(MAX(0.0, 1.0f-indir[0]*indir[0]-indir[1]*indir[1]))};
 

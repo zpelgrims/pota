@@ -403,7 +403,7 @@ camera_create_ray
   }
 
   // anamorphics
-  output.dir[0] /= camera->anamorphic_stretch;
+  //output.dir[0] /= camera->anamorphic_stretch;
 
   AiV3Normalize(output.dir);
 
