@@ -35,7 +35,8 @@ options
  lensModel primoplan_1936_58mm
 }
 
-pota_raytraced
+#pota_raytraced
+pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -47,7 +48,8 @@ pota_raytraced
  focal_distance 452.15
  fstop 0.0
  aperture_blades 0
- lensModel angenieux_double_gauss_1953_100mm
+ lensModel schneider_anamorphic_2001_31mm
+ #lensModel angenieux_double_gauss_1953_100mm
  rt_lens_id 2004
  rt_lens_focal_length 31
  extra_sensor_shift 0.0

@@ -28,10 +28,10 @@ struct CameraRaytraced
   int test_maxcnt;
   double test_intersection_distance;
 
-#ifdef TIMING
-  long long int total_duration;
-  long long int execution_counter;
-#endif
+  #ifdef TIMING
+    long long int total_duration;
+    long long int execution_counter;
+  #endif
 } camera_rt;
 
 
@@ -217,33 +217,33 @@ node_update
   }
 
   AiMsgInfo("");
-  AiMsgInfo("[POTA RT] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA RT] Lens Name: %s", camera_rt->id.c_str()); //not sure why this isn't printing out.. weird
-  //AiMsgInfo("[POTA RT] Lens F-Stop: %f", camera->lens_fstop);
-  AiMsgInfo("[POTA RT] --------------------------------------");
+  AiMsgInfo("[lentil raytraced] ----------  LENS CONSTANTS  -----------");
+  AiMsgInfo("[lentil raytraced] lens name: %s", camera_rt->id.c_str()); //not sure why this isn't printing out.. weird
+  //AiMsgInfo("[lentil raytraced] lens f-stop: %f", camera->lens_fstop);
+  AiMsgInfo("[lentil raytraced] --------------------------------------");
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-  AiMsgInfo("[POTA RT] wavelength: %f", camera->lambda);
+  AiMsgInfo("[lentil raytraced] wavelength: %f", camera->lambda);
 /*
   //camera->max_fstop = camera->lens_effective_focal_length / (camera->lens_aperture_housing_radius * 2.0f);
-  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
+  AiMsgInfo("[lentil raytraced] lens wide open f-stop: %f", camera->lens_fstop);
 
   if (camera->input_fstop == 0.0f) camera->aperture_radius = camera->lens_aperture_housing_radius;
   // how do i get to proper aperture radius..?
   else camera->aperture_radius = fminf(camera->lens_aperture_housing_radius, camera->lens_effective_focal_length / (2.0f * camera->input_fstop));
 
-  AiMsgInfo("[POTA] full aperture radius: %f", camera->lens_aperture_housing_radius);
-  AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera->aperture_radius);
-  AiMsgInfo("[POTA] --------------------------------------");
+  AiMsgInfo("[lentil raytraced] full aperture radius: %f", camera->lens_aperture_housing_radius);
+  AiMsgInfo("[lentil raytraced] fstop-calculated aperture radius: %f", camera->aperture_radius);
+  AiMsgInfo("[lentil raytraced] --------------------------------------");
 */
 
-  AiMsgInfo("[POTA RT] focus distance (mm): %f", camera->focal_distance);
+  AiMsgInfo("[lentil raytraced] focus distance (mm): %f", camera->focal_distance);
 
   // logartihmic focus search
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
   rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera->lambda, camera_rt);
-  AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
+  AiMsgInfo("[lentil raytraced] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
 
@@ -252,16 +252,16 @@ node_update
   float best_sensor_shift_infinity = 0.0f;
   float closest_distance_infinity = AI_BIG;
   logarithmic_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera);
-  AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
+  AiMsgInfo("[lentil raytraced] sensor_shift [logarithmic forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
       
   // bidirectional parallel infinity focus search
   float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
-  AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
+  AiMsgInfo("[lentil raytraced] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
 
 
   // double check where y=0 intersection point is, should be the same as focus distance
   if(!trace_ray_focus_check(camera->sensor_shift, camera)){
-    AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
+    AiMsgWarning("[lentil raytraced] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
   }
 
 
@@ -290,7 +290,7 @@ node_finish
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
 #ifdef TIMING
-  AiMsgInfo("[POTA RT] Average execution time: %lld nanoseconds over %lld camera rays", camera_rt->total_duration / camera_rt->execution_counter, camera_rt->execution_counter);
+  AiMsgInfo("[lentil raytraced] Average execution time: %lld nanoseconds over %lld camera rays", camera_rt->total_duration / camera_rt->execution_counter, camera_rt->execution_counter);
 #endif
 
   delete camera;
@@ -321,12 +321,6 @@ camera_create_ray
   {
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
-    // reset pos&dir, is this needed?
-    for(int i = 0; i<3; i++){
-      pos[i] = 0.0;
-      dir[i] = 0.0;
-    }
-
     // transform unit square to unit disk
     Eigen::Vector2d unit_disk(0.0f, 0.0f);
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
@@ -336,11 +330,14 @@ camera_create_ray
                                input.sy * (camera->sensor_width * 0.5f),
                                0.0
     );
+    // Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
+    //                            0.0,//input.sy * (camera->sensor_width * 0.5f),
+    //                            0.0
+    // );
     
     Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad * unit_disk(0),
                                  camera_rt->p_rad * unit_disk(1),
                                  camera_rt->thickness_original
-                                 //lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom)
     );
 
     Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
@@ -349,7 +346,7 @@ camera_create_ray
     float ray_in[5] = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
   
     int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length);
-    if(error){
+    if (error){
       ++tries;
       continue;
     }
@@ -366,7 +363,7 @@ camera_create_ray
     output.origin[i] = pos[i];
     output.dir[i] = dir[i];
   }
-  
+
   /*
   Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
   Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
@@ -403,7 +400,7 @@ camera_create_ray
   }
 
   // anamorphics
-  //output.dir[0] /= camera->anamorphic_stretch;
+  // output.dir[0] /= camera->anamorphic_stretch;
 
   AiV3Normalize(output.dir);
 
@@ -417,11 +414,14 @@ camera_create_ray
     }
   }
 
-#ifdef TIMING
-  std::chrono::high_resolution_clock::time_point timer_end = std::chrono::high_resolution_clock::now();
-  camera_rt->total_duration += static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>( timer_end - timer_start ).count());
-  camera_rt->execution_counter += 1;
-#endif
+  //printf("[%f, %f, %f],", output.origin[0], output.origin[1], output.origin[2]);
+  
+
+  #ifdef TIMING
+    std::chrono::high_resolution_clock::time_point timer_end = std::chrono::high_resolution_clock::now();
+    camera_rt->total_duration += static_cast<long long int>(std::chrono::duration_cast<std::chrono::nanoseconds>( timer_end - timer_start ).count());
+    camera_rt->execution_counter += 1;
+  #endif
 } 
 
 
