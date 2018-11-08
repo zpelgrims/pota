@@ -455,9 +455,9 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
   /*
   printf("lens_xxToCs:\n");
@@ -538,9 +538,9 @@ inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
 
   Eigen::Vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
@@ -664,9 +664,9 @@ inline void trace_ray(bool original_ray,
 	// convert from sphere/sphere space to camera space
 	float camera_space_pos[3];
 	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") lens_cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else lens_sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
   
 
   for (int i=0; i<3; i++){
@@ -795,12 +795,12 @@ void trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &
     float out_cs_pos[3] = {0.0f, 0.0f, 0.0f};
     float out_cs_dir[3] = {0.0f, 0.0f, 0.0f}; 
     if (camera->lens_inner_pupil_geometry == "cyl-y") {
-      lens_cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, true);
+      cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, true);
     }
     else if (camera->lens_inner_pupil_geometry == "cyl-x") {
-      lens_cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, false);
+      cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, false);
     }
-    else lens_sphereToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius);
+    else sphereToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius);
 
     const float theta = std::atan(out_cs_pos[1] / out_cs_pos[2]);
     const float fstop = 1.0 / (std::sin(theta)* 2.0);
