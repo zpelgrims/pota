@@ -30,7 +30,7 @@ static inline float lens_evaluate(const float *in, float *out, Camera *camera)
     #include "auto_generated_lens_includes/load_pt_evaluate.h"
   }
 
-  return MAX(0.0f, out_transmittance);
+  return max(0.0f, out_transmittance);
 }
 
 /*
@@ -92,7 +92,7 @@ static inline float lens_lt_sample_aperture(
   }
 
   sensor[0] = x; sensor[1] = y; sensor[2] = dx; sensor[3] = dy; sensor[4] = lambda;
-  return MAX(0.0f, out[4]);
+  return max(0.0f, out[4]);
 
 }
 
@@ -740,7 +740,7 @@ inline bool trace_backwards(Eigen::Vector3d sample_position,
    if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) return false;
 
 
-
+/*
   Draw &draw = camera->draw;
   // THIS IS NOT THREAD SAFE!! DRAWING CAN ONLY BE RAN ON ONE THREAD
   if (draw.enabled) {
@@ -749,17 +749,17 @@ inline bool trace_backwards(Eigen::Vector3d sample_position,
     draw.out.push_back(std::vector<float> {out[0], out[1], out[2], out[3]});
     draw.pxpy.push_back(std::vector<float> {px, py});
   }
-
+*/
 
 
    // shift sensor
    sensor[0] += sensor[2] * -sensor_shift;
    sensor[1] += sensor[3] * -sensor_shift;
-
+/*
   if (draw.enabled) {
     draw.sensor_shifted.push_back(std::vector<float> {sensor[0], sensor[1]});
   }
-
+*/
    sensor_position(0) = sensor[0];
    sensor_position(1) = sensor[1];
 

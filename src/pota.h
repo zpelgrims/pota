@@ -21,7 +21,7 @@ enum UnitModel{
     m
 };
 
-
+/*
 struct Draw
 {
     std::vector<std::vector<float>> sensor;
@@ -35,14 +35,14 @@ struct Draw
 
     Draw() : enabled(true), counter(0), max_counter(50000){}
 };
-
+*/
 
 struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
 
-    Draw draw;
+    //Draw draw;
 
     // lens constants
     const char* lens_name;

@@ -34,7 +34,8 @@ CXXFLAGS=\
 	-I/../Eigen/Eigen\
 	-I/../polynomial-optics/src\
 	-DDEBUG_LOG\
-	-DFMT_HEADER_ONLY
+	-DFMT_HEADER_ONLY\
+	-g
 
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 

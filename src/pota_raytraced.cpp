@@ -8,7 +8,7 @@
 #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
 
-#define TIMING
+//#define TIMING
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
@@ -179,7 +179,8 @@ node_update
   memset(camera_rt->lenses, 0, sizeof(camera_rt->lenses)); // not sure if the resetting is necessary?
   camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
-  
+
+
   // shift lens backwards by lens length so exit pupil vertex is at origin
   camera_rt->total_lens_length = get_lens_length(camera_rt);
   camera_rt->lenses[camera_rt->lenses_cnt-1].thickness_short -= camera_rt->total_lens_length;
@@ -305,7 +306,7 @@ camera_create_ray
 {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
-
+  
 #ifdef TIMING
   std::chrono::high_resolution_clock::time_point timer_start = std::chrono::high_resolution_clock::now();
 #endif
@@ -315,7 +316,6 @@ camera_create_ray
 
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
-
 
   while(ray_success == false && tries <= camera->vignetting_retries)
   {
@@ -414,8 +414,6 @@ camera_create_ray
     }
   }
 
-  //printf("[%f, %f, %f],", output.origin[0], output.origin[1], output.origin[2]);
-  
 
   #ifdef TIMING
     std::chrono::high_resolution_clock::time_point timer_end = std::chrono::high_resolution_clock::now();

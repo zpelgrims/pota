@@ -6,10 +6,10 @@
 
 options
 {
- AA_samples 10
+ AA_samples 4
  xres 1000
  yres 750
- camera "renderCam_105mm_450cmShape"
+ camera "renderCam_35mm_150cmShape"
 
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -20,6 +20,7 @@ options
 }
 
 #pota
+pota_raytraced
 {
  name renderCam_35mm_150cmShape
  matrix
@@ -30,13 +31,19 @@ options
  fov 54.4322243
  focal_distance 150
 
- fstop 2.8
+ fstop 0.0
  aperture_blades 0
- lensModel primoplan_1936_58mm
+ #lensModel primoplan_1936_58mm
+
+ lensModel schneider_anamorphic_2001_31mm
+ rt_lens_id 2004
+ rt_lens_focal_length 31
+ extra_sensor_shift 0.0
+ vignetting_retries 0
 }
 
 #pota_raytraced
-pota
+#pota
 {
  name renderCam_105mm_450cmShape
  matrix
@@ -50,8 +57,6 @@ pota
  aperture_blades 0
  lensModel schneider_anamorphic_2001_31mm
  #lensModel angenieux_double_gauss_1953_100mm
- rt_lens_id 2004
- rt_lens_focal_length 31
  extra_sensor_shift 0.0
  vignetting_retries 0
  camera_proper_ray_derivatives 0
