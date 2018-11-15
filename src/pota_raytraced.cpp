@@ -311,18 +311,18 @@ camera_create_ray {
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
     else concentric_disk_sample(drand48(), drand48(), unit_disk, false);
     
-    Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
-                               input.sy * (camera->sensor_width * 0.5f),
-                               0.0
-    );
-    // Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
-    //                            0.0,//input.sy * (camera->sensor_width * 0.5f),
+    // Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+    //                            input.sy * (camera->sensor_width * 0.5f),
     //                            0.0
     // );
+    Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
+                               0.0,//input.sy * (camera->sensor_width * 0.5f),
+                               0.0
+    );
     
     Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad * unit_disk(0),
-                                 camera_rt->p_rad * unit_disk(1),
-                                 camera_rt->thickness_original
+                                           camera_rt->p_rad * unit_disk(1),
+                                           camera_rt->thickness_original
     );
 
     Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
