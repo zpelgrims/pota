@@ -4,13 +4,10 @@
 #include <cmath>
 #include <vector>
 
-
-
 AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 
-enum
-{
+enum {
   p_unitModel,
   p_lensModel,
   p_sensor_width,
@@ -30,22 +27,13 @@ enum
 
 // to switch between lens models in interface dropdown
 // this will need to be automatically filled somehow
-static const char* LensModelNames[] =
-{
+static const char* LensModelNames[] = {
   #include "auto_generated_lens_includes/pota_cpp_lenses.h"
   NULL
 };
 
 // to switch between units in interface dropdown
-static const char* UnitModelNames[] =
-{
-  "mm",
-  "cm",
-  "dm",
-  "m",
-  NULL
-};
-
+static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
 
 
 node_parameters
@@ -218,12 +206,10 @@ camera_create_ray
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
   int tries = 0;
-  float random1 = 0.0;
-  float random2 = 0.0;
-
-  Eigen::Vector3d origin(output.origin[0], output.origin[1], output.origin[2]);
-  Eigen::Vector3d direction(output.dir[0], output.dir[1], output.dir[2]);
-  Eigen::Vector3d weight(output.weight[0], output.weight[1], output.weight[2]);
+  float random1 = 0.0f, random2 = 0.0f; 
+  Eigen::Vector3d origin(0, 0, 0);
+  Eigen::Vector3d direction(0, 0, 0);
+  Eigen::Vector3d weight(1, 1, 1);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera);
   
@@ -233,7 +219,9 @@ camera_create_ray
   if (tries > 0){
     if (!camera->proper_ray_derivatives){
       for(int i=0; i<3; i++){
+        output.dOdx[i] = origin(i); // is this necessary?
         output.dOdy[i] = origin(i);
+        output.dDdx[i] = direction(i); // is this necessary?
         output.dDdy[i] = direction(i);
       }
     } else {
@@ -246,15 +234,14 @@ camera_create_ray
       input_dx.sx += input.dsx * step;
       input_dy.sy += input.dsy * step;
 
-      // copy vectors
       Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
       Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
       Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera);
+
       Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
       Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
       Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-
-      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera);
       trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera);
 
       Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
@@ -271,7 +258,6 @@ camera_create_ray
     }
   }
 
-  // eigen->arnold
   for (int i = 0; i<3; i++){
     output.origin[i] = origin(i);
     output.dir[i] = direction(i);
