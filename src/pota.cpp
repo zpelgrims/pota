@@ -181,8 +181,8 @@ node_update {
 
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
 
-  // tmp for testing comparison to raytraced, remove!
-  //camera->sensor_shift = 0.0f;
+  // tmp debug, remove!
+  camera->sensor_shift = 0.0f;
 
 
   AiMsgInfo("");

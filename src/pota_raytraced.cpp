@@ -12,8 +12,7 @@
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
-struct CameraRaytraced
-{
+struct CameraRaytraced {
   std::string id;
 	int lenses_cnt;
   lens_element_t lenses[50];
@@ -35,8 +34,7 @@ struct CameraRaytraced
 } camera_rt;
 
 
-enum
-{
+enum {
   p_unitModel,
   p_lensModel,
   p_sensor_width,
@@ -62,21 +60,13 @@ enum
 
 // to switch between lens models in interface dropdown
 // this will need to be automatically filled somehow
-static const char* LensModelNames[] =
-{
+static const char* LensModelNames[] = {
   #include "auto_generated_lens_includes/pota_cpp_lenses.h"
   NULL
 };
 
 // to switch between units in interface dropdown
-static const char* UnitModelNames[] =
-{
-  "mm",
-  "cm",
-  "dm",
-  "m",
-  NULL
-};
+static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
 
 
 float get_lens_length(CameraRaytraced *camera_rt) {
@@ -134,8 +124,7 @@ void rt_logarithmic_focus_search(
 }
 
 
-node_parameters
-{
+node_parameters {
   AiParameterEnum("unitModel", cm, UnitModelNames);
   AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
@@ -156,20 +145,17 @@ node_parameters
   AiParameterFlt("rt_lens_zoom", 0.0f);
 
   AiParameterFlt("anamorphic_stretch", 2.0f);
-
 }
 
 
-node_initialize
-{
+node_initialize {
   AiCameraInitialize(node);
   AiNodeSetLocalData(node, new Camera());
   AiNodeSetLocalData(node, new CameraRaytraced());
 }
 
 
-node_update
-{   
+node_update {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
@@ -269,6 +255,8 @@ node_update
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
 */
 
+  // tmp debug
+  camera->sensor_shift = 0.0;
 
   // remove
   camera_rt->test_cnt = 0;
@@ -285,8 +273,7 @@ node_update
 }
 
 
-node_finish
-{
+node_finish {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
 
@@ -302,8 +289,7 @@ node_finish
 }
 
 
-camera_create_ray
-{
+camera_create_ray {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
   
@@ -317,8 +303,7 @@ camera_create_ray
   float pos[3] = {0.0f};
   float dir[3] = {0.0f};
 
-  while(ray_success == false && tries <= camera->vignetting_retries)
-  {
+  while(ray_success == false && tries <= camera->vignetting_retries) {
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
     // transform unit square to unit disk
