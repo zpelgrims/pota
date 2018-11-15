@@ -216,9 +216,10 @@ inline void concentric_disk_sample(const float ox, const float oy, Eigen::Vector
 }
 
 
-static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, const float radius, const int blades)
+static inline void lens_sample_aperture(float &x, float &y, float r1, float r2, const float radius, const int blades)
 {
   const int tri = (int)(r1*blades);
+
   // rescale:
   r1 = r1*blades - tri;
 
@@ -232,8 +233,8 @@ static inline void lens_sample_aperture(float *x, float *y, float r1, float r2, 
   common_sincosf(2.0f*M_PI/blades * (tri+1), p1, p1+1);
   common_sincosf(2.0f*M_PI/blades * tri, p2, p2+1);
 
-  *x = radius * (b * p1[1] + c * p2[1]);
-  *y = radius * (b * p1[0] + c * p2[0]);
+  x = radius * (b * p1[1] + c * p2[1]);
+  y = radius * (b * p1[0] + c * p2[0]);
 }
 
 
@@ -600,7 +601,7 @@ inline void trace_ray(bool original_ray,
 		  Eigen::Vector2d unit_disk(0.0f, 0.0f);
 		  if (tries == 0) concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
 		  else {
-		  	if (original_ray){
+		  	if (original_ray) {
 				  r1 = xor128() / 4294967296.0f;
 				  r2 = xor128() / 4294967296.0f;
 			  }
@@ -611,22 +612,19 @@ inline void trace_ray(bool original_ray,
       aperture[0] = unit_disk(0) * camera->aperture_radius;
       aperture[1] = unit_disk(1) * camera->aperture_radius;
 	  } 
-	  else if (camera->dof && camera->aperture_blades > 2)
-	  {
-	  	if (tries == 0) lens_sample_aperture(&aperture[0], &aperture[1], input_lensx, input_lensy, camera->aperture_radius, camera->aperture_blades);
+	  else if (camera->dof && camera->aperture_blades > 2) {
+	  	if (tries == 0) lens_sample_aperture(aperture[0], aperture[1], input_lensx, input_lensy, camera->aperture_radius, camera->aperture_blades);
 	  	else {
-	  		if (original_ray)
-	  		{
+	  		if (original_ray) {
 		  		r1 = xor128() / 4294967296.0f;
 		  		r2 = xor128() / 4294967296.0f;
 	  		}
 
-	  		lens_sample_aperture(&aperture[0], &aperture[1], r1, r2, camera->aperture_radius, camera->aperture_blades);
+	  		lens_sample_aperture(aperture[0], aperture[1], r1, r2, camera->aperture_radius, camera->aperture_blades);
 	  	}
 	  }
 
-	  if (camera->dof)
-	  {
+	  if (camera->dof) {
 	  	// aperture sampling, to make sure ray is able to propagate through whole lens system
 	  	lens_pt_sample_aperture(sensor, aperture, camera->sensor_shift, camera);
 	  }
@@ -639,7 +637,7 @@ inline void trace_ray(bool original_ray,
 
 		// propagate ray from sensor to outer lens element
 	  float transmittance = lens_evaluate(sensor, out, camera);
-		if(transmittance <= 0.0f){
+		if(transmittance <= 0.0f) {
 			++tries;
 			continue;
 		}
@@ -655,7 +653,7 @@ inline void trace_ray(bool original_ray,
 		// crop at inward facing pupil
 		const float px = sensor[0] + sensor[2] * camera->lens_back_focal_length;
 		const float py = sensor[1] + sensor[3] * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-		if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius){
+		if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) {
 			++tries;
 			continue;
 		}
@@ -674,7 +672,7 @@ inline void trace_ray(bool original_ray,
   else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
   
 
-  for (int i=0; i<3; i++){
+  for (int i=0; i<3; i++) {
     origin(i) = camera_space_pos[i];
     direction(i) = camera_space_omega[i];
   }
