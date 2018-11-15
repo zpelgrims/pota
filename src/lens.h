@@ -581,6 +581,11 @@ inline void trace_ray(bool original_ray,
   	// set sensor position coords
 	  sensor[0] = input_sx * (camera->sensor_width * 0.5f);
 	  sensor[1] = input_sy * (camera->sensor_width * 0.5f);
+
+    // tmp debug
+    sensor[0] = 0.0f;
+    sensor[1] = 0.0f;
+
   	sensor[2] = sensor[3] = 0.0f;
 	  sensor[4] = camera->lambda;
 

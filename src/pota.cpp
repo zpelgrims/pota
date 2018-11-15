@@ -36,8 +36,7 @@ static const char* LensModelNames[] = {
 static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
 
 
-node_parameters
-{
+node_parameters {
   AiParameterEnum("unitModel", cm, UnitModelNames);
   AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
@@ -55,15 +54,13 @@ node_parameters
 }
 
 
-node_initialize
-{
+node_initialize {
   AiCameraInitialize(node);
   AiNodeSetLocalData(node, new Camera());
 }
 
 
-node_update
-{ 
+node_update { 
   AiCameraUpdate(node, false);
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
@@ -192,17 +189,13 @@ node_update
 }
 
 
-node_finish
-{
-
+node_finish {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
-
   delete camera;
 }
 
 
-camera_create_ray
-{
+camera_create_ray {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
   int tries = 0;
@@ -263,6 +256,9 @@ camera_create_ray
     output.dir[i] = direction(i);
     output.weight[i] = weight(i);
   }
+
+  // tmp debug
+  printf("[%f, %f, %f],", origin(0), origin(1), origin(2));
   
 
 
@@ -374,8 +370,7 @@ camera_reverse_ray
 
 
 // approximation using pinhole camera FOV
-camera_reverse_ray
-{
+camera_reverse_ray {
   const Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
   float coeff = 1.0 / AiMax(fabsf(Po.z * camera->tan_fov), 1e-3f);
@@ -386,8 +381,7 @@ camera_reverse_ray
 }
 
 
-node_loader
-{
+node_loader {
   if (i != 0) return false;
   node->methods = potaMethods;
   node->output_type = AI_TYPE_UNDEFINED;
