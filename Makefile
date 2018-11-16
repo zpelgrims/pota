@@ -7,12 +7,12 @@ ifeq ($(OS), Linux)
 	CXX=g++
 endif
 
-# these ned to be changed to the envvar
+# these need to be changed to the envvar
 ifeq ($(OS), Darwin)
 	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-linux
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.1.0-linux
 endif
 
 
@@ -42,8 +42,7 @@ LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 HEADERS=\
 	src/lens.h\
 	src/pota.h\
-	src/tinyexr.h\
-	src/common.h
+	src/tinyexr.h
 
 .PHONY=all clean
 

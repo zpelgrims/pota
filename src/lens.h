@@ -1,13 +1,31 @@
 #pragma once
-#include <math.h>
-#include "common.h"
+#include <cmath>
 #include <vector>
+#include <algorithm>
 #include "../../Eigen/Eigen/Core"
 
+#include "../../polynomial-optics/src/raytrace.h"
 
 #ifndef M_PI
 #  define M_PI 3.14159265358979323846
 #endif
+
+
+static inline void common_sincosf(float phi, float* sin, float* cos) {
+  *sin = std::sin(phi);
+  *cos = std::cos(phi);
+}
+
+
+// helper function for dumped polynomials to compute integer powers of x:
+static inline float lens_ipow(const float x, const int exp) {
+  if(exp == 0) return 1.0f;
+  if(exp == 1) return x;
+  if(exp == 2) return x*x;
+  const float p2 = lens_ipow(x, exp/2);
+  if(exp &  1) return x * p2 * p2;
+  return p2 * p2;
+}
 
 
 inline void load_lens_constants (Camera *camera)
@@ -30,7 +48,7 @@ static inline float lens_evaluate(const float *in, float *out, Camera *camera)
     #include "auto_generated_lens_includes/load_pt_evaluate.h"
   }
 
-  return max(0.0f, out_transmittance);
+  return std::max(0.0f, out_transmittance);
 }
 
 /*
@@ -41,7 +59,7 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
   const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
 #include "pt_evaluate_aperture.h"
   out[0] = out_x; out[1] = out_y; out[2] = out_dx; out[3] = out_dy;
-  return MAX(0.0f, out_transmittance);
+  return std::max(0.0f, out_transmittance);
 }
 */
 
@@ -92,7 +110,7 @@ static inline float lens_lt_sample_aperture(
   }
 
   sensor[0] = x; sensor[1] = y; sensor[2] = dx; sensor[3] = dy; sensor[4] = lambda;
-  return max(0.0f, out[4]);
+  return std::max(0.0f, out[4]);
 
 }
 
@@ -130,7 +148,7 @@ static inline float lens_det_sensor_to_outer_pupil(const float *sensor, const fl
 
   // convert from projected disk to point on hemi-sphere
   const float R = lens_outer_pupil_curvature_radius;
-  const float deto = sqrtf(R*R-out[0]*out[0]-out[1]*out[1])/R;
+  const float deto = std::sqrt(R*R-out[0]*out[0]-out[1]*out[1])/R;
   // there are two spatial components which need conversion to dm:
   const float dm2mm = 100.0f;
   return fabsf(det * deto) / (dm2mm*dm2mm);
@@ -158,8 +176,7 @@ inline uint32_t xor128(void){
 }
 
 /*
-inline float Lerp(float t, float v1, float v2)
-{
+inline float Lerp(float t, float v1, float v2) {
   return (1.0f - t) * v1 + t * v2;
 }
 */
@@ -224,7 +241,7 @@ static inline void lens_sample_aperture(float &x, float &y, float r1, float r2, 
   r1 = r1*blades - tri;
 
   // sample triangle:
-  float a = sqrtf(r1);
+  float a = std::sqrt(r1);
   float b = (1.0f-r2)*a;
   float c = r2*a;
 
@@ -595,8 +612,7 @@ inline void trace_ray(bool original_ray,
 
 	  // no dof, all rays through single aperture point
 	  if (!camera->dof) aperture[0] = aperture[1] = 0.0;
-	  else if (camera->dof && camera->aperture_blades <= 2)
-	  {
+	  else if (camera->dof && camera->aperture_blades <= 2) {
 			// transform unit square to unit disk
 		  Eigen::Vector2d unit_disk(0.0f, 0.0f);
 		  if (tries == 0) concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
