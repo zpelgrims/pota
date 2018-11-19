@@ -10,6 +10,7 @@
 
 //#define TIMING
 
+
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
 struct CameraRaytraced {
@@ -306,22 +307,25 @@ camera_create_ray {
   while(ray_success == false && tries <= camera->vignetting_retries) {
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
+    Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+                               input.sy * (camera->sensor_width * 0.5f),
+                               0.0
+    );
+    // Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
+    //                            0.0,//input.sy * (camera->sensor_width * 0.5f),
+    //                            0.0
+    // );
+
+
     // transform unit square to unit disk
     Eigen::Vector2d unit_disk(0.0f, 0.0f);
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
-    else concentric_disk_sample(drand48(), drand48(), unit_disk, false);
+    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
     
-    // Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
-    //                            input.sy * (camera->sensor_width * 0.5f),
-    //                            0.0
-    // );
-    Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
-                               0.0,//input.sy * (camera->sensor_width * 0.5f),
-                               0.0
-    );
-    
-    Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad * unit_disk(0),
-                                           camera_rt->p_rad * unit_disk(1),
+
+    // p_rad should cover -1, 1 in this config.. not sure why i have to scale it up further.. debug
+    Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad*3.0f * unit_disk(0),
+                                           camera_rt->p_rad*3.0f * unit_disk(1),
                                            camera_rt->thickness_original
     );
 
@@ -389,6 +393,7 @@ camera_create_ray {
 
   AiV3Normalize(output.dir);
 
+
   // calculate new ray derivatives
   if (tries > 0){
     if (!camera->proper_ray_derivatives){
@@ -398,6 +403,10 @@ camera_create_ray {
       }
     }
   }
+
+
+  // tmp debug
+  //printf("[%f, %f, %f],", output.origin[0], output.origin[1], output.origin[2]);
 
 
   #ifdef TIMING

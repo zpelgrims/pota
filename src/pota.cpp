@@ -183,7 +183,8 @@ node_update {
 
   // tmp debug, remove!
   camera->sensor_shift = 0.0f;
-
+  //camera->aperture_radius = camera->lens_aperture_housing_radius;
+  //printf("first element radius: %f\n", camera->aperture_radius);
 
   AiMsgInfo("");
 }
@@ -258,7 +259,7 @@ camera_create_ray {
   }
 
   // tmp debug
-  printf("[%f, %f, %f],", origin(0), origin(1), origin(2));
+  //printf("[%f, %f, %f],", origin(0), origin(1), origin(2));
   
 
 

@@ -78,13 +78,13 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, Ca
   }
 
   // directions may have changed, copy all to be sure.
-  out[0] = out_x;
-  out[1] = out_y;
+  out[0] = out_x; // dont think this is needed
+  out[1] = out_y; // dont think this is needed
   out[2] = out_dx;
   out[3] = out_dy;
 
-  in[0] = x;
-  in[1] = y;
+  in[0] = x; // dont think this is needed
+  in[1] = y; // dont think this is needed
   in[2] = dx;
   in[3] = dy;
 }
@@ -588,8 +588,9 @@ inline void trace_ray(bool original_ray,
                       Camera *camera)
 {
 
-  bool ray_succes = false;
   tries = 0;
+  bool ray_succes = false;
+
   float sensor[5] = {0.0f};
   float aperture[5] = {0.0f};
   float out[5] = {0.0f};
@@ -601,8 +602,8 @@ inline void trace_ray(bool original_ray,
 	  sensor[1] = input_sy * (camera->sensor_width * 0.5f);
 
     // tmp debug
-    sensor[0] = 0.0f;
-    sensor[1] = 0.0f;
+    // sensor[0] = 0.0f;
+    // sensor[1] = 0.0f;
 
   	sensor[2] = sensor[3] = 0.0f;
 	  sensor[4] = camera->lambda;
@@ -644,6 +645,8 @@ inline void trace_ray(bool original_ray,
 	  	// aperture sampling, to make sure ray is able to propagate through whole lens system
 	  	lens_pt_sample_aperture(sensor, aperture, camera->sensor_shift, camera);
 	  }
+
+    //printf("[%f, %f, %f],", aperture[0], aperture[1], -camera->lens_aperture_pos);
 	  
 
 	  // move to beginning of polynomial
@@ -668,7 +671,7 @@ inline void trace_ray(bool original_ray,
 
 		// crop at inward facing pupil
 		const float px = sensor[0] + sensor[2] * camera->lens_back_focal_length;
-		const float py = sensor[1] + sensor[3] * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+		const float py = sensor[1] + sensor[3] * camera->lens_back_focal_length; //(note that lens_back_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
 		if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) {
 			++tries;
 			continue;
@@ -692,6 +695,8 @@ inline void trace_ray(bool original_ray,
     origin(i) = camera_space_pos[i];
     direction(i) = camera_space_omega[i];
   }
+
+  //printf("[%f,%f,%f],", camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 
 
   switch (camera->unitModel){
