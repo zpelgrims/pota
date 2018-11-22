@@ -7,6 +7,11 @@
 #include <vector>
 
 
+#include "../../polynomial-optics/src/lenssystem.h"
+#include "../../polynomial-optics/src/raytrace.h"
+#include "../../Eigen/Eigen/Dense"
+
+
 // enum to switch between lens models in interface dropdown
 enum LensModel{
     #include "auto_generated_lens_includes/pota_h_lenses.h"

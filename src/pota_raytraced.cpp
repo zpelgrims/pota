@@ -13,9 +13,10 @@
 
 AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 
+
 struct CameraRaytraced {
   std::string id;
-	int lenses_cnt;
+  int lenses_cnt;
   lens_element_t lenses[50];
   float p_rad;
   float zoom;
@@ -32,8 +33,12 @@ struct CameraRaytraced {
     long long int total_duration;
     long long int execution_counter;
   #endif
-} camera_rt;
 
+
+  std::vector<std::vector<float>> position_list;
+  std::vector<std::vector<float>> direction_list;
+
+} camera_rt;
 
 enum {
   p_unitModel,
@@ -104,8 +109,12 @@ void rt_logarithmic_focus_search(
     ray_in[2] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[0] / p_dist);
     ray_in[3] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[1] / p_dist);
     ray_in[4] = lambda;
+
+    //remove
+    std::vector<std::vector<float>> tmpdir1;
+    std::vector<std::vector<float>> tmppos1;
     
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1);
     if (error) continue;
 
     Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
@@ -263,11 +272,14 @@ node_update {
   camera_rt->test_cnt = 0;
   camera_rt->test_maxcnt = 1000;
   camera_rt->test_intersection_distance = 0.0f;
+  camera_rt->position_list.clear();
+  camera_rt->direction_list.clear();
 
 #ifdef TIMING
   camera_rt->total_duration = 0;
   camera_rt->execution_counter = 0;
 #endif
+
 
   AiMsgInfo("");
   AiCameraUpdate(node, false);
@@ -277,6 +289,28 @@ node_update {
 node_finish {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
+
+  std::ofstream fout_pos("/Users/zeno/lentil/pota/tests/pos_dir_writeout/positions.txt");
+  std::ofstream fout_dir("/Users/zeno/lentil/pota/tests/pos_dir_writeout/directions.txt");
+  fout_pos << "[";
+  for (auto i : camera_rt->position_list){
+    fout_pos << "[";
+    fout_pos << i[0] << ", ";
+    fout_pos << i[1] << ", ";
+    fout_pos << i[2] << "], ";
+  }
+  fout_pos << "]" << std::endl;
+  fout_dir << "[";
+  for (auto i : camera_rt->direction_list){
+    fout_dir << "[";
+    fout_dir << i[0] << ", ";
+    fout_dir << i[1] << ", ";
+    fout_dir << i[2] << ", ";
+    fout_dir << i[3] << ", ";
+    fout_dir << i[4] << ", ";
+    fout_dir << i[5] << "], ";
+  }
+  fout_dir << "]" << std::endl;
 
 #ifdef TIMING
   AiMsgInfo("[lentil raytraced] Average execution time: %lld nanoseconds over %lld camera rays", camera_rt->total_duration / camera_rt->execution_counter, camera_rt->execution_counter);
@@ -305,16 +339,15 @@ camera_create_ray {
   float dir[3] = {0.0f};
 
   while(ray_success == false && tries <= camera->vignetting_retries) {
-    add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
-
-    Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
-                               input.sy * (camera->sensor_width * 0.5f),
-                               0.0
-    );
-    // Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
-    //                            0.0,//input.sy * (camera->sensor_width * 0.5f),
+    
+    // Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+    //                            input.sy * (camera->sensor_width * 0.5f),
     //                            0.0
     // );
+    Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
+                               0.0,//input.sy * (camera->sensor_width * 0.5f),
+                               0.0
+    );
 
 
     // transform unit square to unit disk
@@ -322,7 +355,6 @@ camera_create_ray {
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
     else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
     
-
     // p_rad should cover -1, 1 in this config.. not sure why i have to scale it up further.. debug
     Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad*3.0f * unit_disk(0),
                                            camera_rt->p_rad*3.0f * unit_disk(1),
@@ -333,8 +365,10 @@ camera_create_ray {
     direction.normalize(); 
     
     float ray_in[5] = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
-  
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length);
+
+    add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
+
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, camera_rt->position_list, camera_rt->direction_list);
     if (error){
       ++tries;
       continue;
