@@ -11,9 +11,9 @@
 #endif
 
 
-static inline void common_sincosf(float phi, float &sin, float &cos) {
-  sin = std::sin(phi);
-  cos = std::cos(phi);
+static inline void common_sincosf(float phi, float *sin, float *cos) {
+  *sin = std::sin(phi);
+  *cos = std::cos(phi);
 }
 
 
@@ -40,7 +40,7 @@ inline void load_lens_constants (Camera *camera)
 // two-plane parametrization (that is the third component of the direction would be 1.0).
 // units are millimeters for lengths and micrometers for the wavelength (so visible light is about 0.4--0.7)
 // returns the transmittance computed from the polynomial.
-static inline float lens_evaluate(const float *in, float *out, Camera *camera)
+static inline float lens_evaluate(const std::vector<float> in, std::vector<float> &out, Camera *camera)
 {
   const float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
   float out_transmittance = 0.0;
@@ -68,7 +68,7 @@ static inline float lens_evaluate_aperture(const float *in, float *out)
 // wavelength, such that the path through the lens system will be valid, i.e.
 // lens_evaluate_aperture(in, out) will yield the same out given the solved for in.
 // in: point on sensor. out: point on aperture.
-static inline void lens_pt_sample_aperture(float *in, float *out, float dist, Camera *camera)
+static inline void lens_pt_sample_aperture(std::vector<float> &in, std::vector<float> &out, float dist, Camera *camera)
 {
   float out_x = out[0], out_y = out[1], out_dx = out[2], out_dy = out[3], out_transmittance = 1.0f;
   float x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
@@ -94,10 +94,10 @@ static inline void lens_pt_sample_aperture(float *in, float *out, float dist, Ca
 // solves for a sensor position given a scene point and an aperture point
 // returns transmittance from sensor to outer pupil
 static inline float lens_lt_sample_aperture(
-    const float *scene,   // 3d point in scene in camera space
-    const float *ap,      // 2d point on aperture (in camera space, z is known)
-    float *sensor,        // output point and direction on sensor plane/plane
-    float *out,           // output point and direction on outer pupil
+    const std::vector<float> scene,   // 3d point in scene in camera space
+    const std::vector<float> ap,      // 2d point on aperture (in camera space, z is known)
+    std::vector<float> &sensor,        // output point and direction on sensor plane/plane
+    std::vector<float> &out,           // output point and direction on outer pupil
     const float lambda,   // wavelength
     Camera *camera)   
 {
@@ -320,14 +320,14 @@ static inline float lens_aperture_area(const float radius, const int blades)
 // traces rays backwards through the lens
 float camera_set_focus(float dist, Camera *camera)
 {
-  const float target[3] = { 0.0, 0.0, dist};
-  float sensor[5] = {0.0f};
-  float out[5] = {0.0f};
+  const std::vector<float> target = { 0.0, 0.0, dist};
+  std::vector<float> sensor(5);
+  std::vector<float> out(5);
   sensor[4] = camera->lambda;
   float offset = 0.0f;
   int count = 0;
-  float scale_samples = 0.1f;
-  float aperture[2] = {0.0f, 0.0f};
+  const float scale_samples = 0.1f;
+  std::vector<float> aperture = {0.0f, 0.0f};
 
   const int S = 4;
 
@@ -376,15 +376,15 @@ float camera_set_focus(float dist, Camera *camera)
 float camera_set_focus_infinity(Camera *camera)
 {
 	float parallel_ray_height = camera->lens_aperture_housing_radius * 0.1;
-  const float target[3] = { 0.0, parallel_ray_height, AI_BIG};
-  float sensor[5] = {0.0f};
-  float out[5] = {0.0f};
+  const std::vector<float> target = { 0.0, parallel_ray_height, AI_BIG};
+  std::vector<float> sensor(5);
+  std::vector<float> out(5);
   sensor[4] = camera->lambda;
   float offset = 0.0f;
   int count = 0;
 
   // just point through center of aperture
-  float aperture[2] = {0.0f, parallel_ray_height};
+  std::vector<float> aperture = {0.0f, parallel_ray_height};
 
   const int S = 4;
 
@@ -443,9 +443,9 @@ Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector
 
 void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, Camera *camera)
 {
-	float sensor[5] = {0.0f};
-  float aperture[5] = {0.0f};
-  float out[5] = {0.0f};
+  std::vector<float> sensor(5);
+  std::vector<float> aperture(5);
+  std::vector<float> out(5);
   sensor[4] = camera->lambda;
   aperture[1] = camera->lens_aperture_housing_radius * 0.1;
 
@@ -471,11 +471,13 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
   printf("----------------------------------\n");
   */
 	// convert from sphere/sphere space to camera space
-	float camera_space_pos[3];
-	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  std::vector<float> outpos = {out[0], out[1]};
+  std::vector<float> outdir = {out[2], out[3]};
+	std::vector<float> camera_space_pos(3);
+	std::vector<float> camera_space_omega(3);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
   /*
   printf("lens_xxToCs:\n");
@@ -522,10 +524,9 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
 
 inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 {
-
-  float sensor[5] = {0.0f};
-  float aperture[5] = {0.0f};
-  float out[5] = {0.0f};
+  std::vector<float> sensor(5);
+  std::vector<float> aperture(5);
+  std::vector<float> out(5);
   sensor[4] = camera->lambda;
   aperture[1] = camera->lens_aperture_housing_radius * 0.1;
 
@@ -554,11 +555,13 @@ inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
   }
 
 	// convert from sphere/sphere space to camera space
-	float camera_space_pos[3];
-	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  std::vector<float> outpos = {out[0], out[1]};
+  std::vector<float> outdir = {out[2], out[3]};
+	std::vector<float> camera_space_pos(3);
+	std::vector<float> camera_space_omega(3);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
 
   Eigen::Vector3d origin(camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
@@ -591,9 +594,9 @@ inline void trace_ray(bool original_ray,
   tries = 0;
   bool ray_succes = false;
 
-  float sensor[5] = {0.0f};
-  float aperture[5] = {0.0f};
-  float out[5] = {0.0f};
+  std::vector<float> sensor(5);
+  std::vector<float> aperture(5);
+  std::vector<float> out(5);
 
   while(ray_succes == false && tries <= camera->vignetting_retries){
 
@@ -684,11 +687,13 @@ inline void trace_ray(bool original_ray,
 
 
 	// convert from sphere/sphere space to camera space
-	float camera_space_pos[3];
-	float camera_space_omega[3];
-  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else sphereToCs(out, out+2, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  std::vector<float> outpos = {out[0], out[1]};
+  std::vector<float> outdir = {out[2], out[3]};
+	std::vector<float> camera_space_pos(3);
+	std::vector<float> camera_space_omega(3);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
   
 
   for (int i=0; i<3; i++) {
@@ -744,12 +749,12 @@ inline bool trace_backwards(Eigen::Vector3d sample_position,
                             const float sensor_shift, 
                             Camera *camera)
 {
-   const float target[3] = {sample_position(0), sample_position(1), sample_position(2)};
+   const std::vector<float> target = {sample_position(0), sample_position(1), sample_position(2)};
 
    // initialize 5d light fields
-   float sensor[5] =  {0.0f, 0.0f, 0.0f, 0.0f, lambda};
-   float out[5] =    {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-   float aperture[2] =  {0.0f, 0.0f};
+   std::vector<float> sensor = {0.0f, 0.0f, 0.0f, 0.0f, lambda};
+   std::vector<float> out(5);
+   std::vector<float> aperture(2);
 
    Eigen::Vector2d lens;
    concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, lens, true);
@@ -801,12 +806,12 @@ void trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &
   for (int i = 1; i < maxrays; i++)
   {
     const float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera->lens_outer_pupil_radius;
-    const float target[3] = {0.0, parallel_ray_height, AI_BIG};
-    float sensor[5] = {0.0f, 0.0f, 0.0f, 0.0f, camera->lambda};
-    float out[5] = {0.0f};
+    const std::vector<float> target = {0.0, parallel_ray_height, AI_BIG};
+    std::vector<float> sensor = {0.0f, 0.0f, 0.0f, 0.0f, camera->lambda};
+    std::vector<float> out(5);
 
     // just point through center of aperture
-    float aperture[2] = {0.01f, parallel_ray_height};
+    std::vector<float> aperture = {0.01f, parallel_ray_height};
 
     if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0f) continue;
 
@@ -816,15 +821,17 @@ void trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &
     if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) continue;
 
     // somehow need to get last vertex positiondata.. don't think what i currently have is correct
-    float out_cs_pos[3] = {0.0f, 0.0f, 0.0f};
-    float out_cs_dir[3] = {0.0f, 0.0f, 0.0f}; 
+    std::vector<float> out_cs_pos(3);
+    std::vector<float> out_cs_dir(3);
+    std::vector<float> outpos = {out[0], out[1]};
+    std::vector<float> outdir = {out[2], out[3]}; 
     if (camera->lens_inner_pupil_geometry == "cyl-y") {
-      cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, true);
+      cylinderToCs(outpos, outdir, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, true);
     }
     else if (camera->lens_inner_pupil_geometry == "cyl-x") {
-      cylinderToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, false);
+      cylinderToCs(outpos, outdir, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius, false);
     }
-    else sphereToCs(out, out+2, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius);
+    else sphereToCs(outpos, outdir, out_cs_pos, out_cs_dir, - camera->lens_inner_pupil_curvature_radius + camera->lens_back_focal_length, camera->lens_inner_pupil_curvature_radius);
 
     const float theta = std::atan(out_cs_pos[1] / out_cs_pos[2]);
     const float fstop = 1.0 / (std::sin(theta)* 2.0);

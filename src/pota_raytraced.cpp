@@ -114,7 +114,7 @@ void rt_logarithmic_focus_search(
     std::vector<std::vector<float>> tmpdir1;
     std::vector<std::vector<float>> tmppos1;
     
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1, false);
     if (error) continue;
 
     Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
@@ -214,7 +214,7 @@ node_update {
 
   AiMsgInfo("");
   AiMsgInfo("[lentil raytraced] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[lentil raytraced] lens name: %s", camera_rt->id.c_str()); //not sure why this isn't printing out.. weird
+  //AiMsgInfo("[lentil raytraced] lens name: %s", camera_rt->id.c_str()); //not sure why this isn't printing out.. weird
   //AiMsgInfo("[lentil raytraced] lens f-stop: %f", camera->lens_fstop);
   AiMsgInfo("[lentil raytraced] --------------------------------------");
 
@@ -271,8 +271,8 @@ node_update {
   camera_rt->test_cnt = 0;
   camera_rt->test_maxcnt = 1000;
   camera_rt->test_intersection_distance = 0.0f;
-  camera_rt->position_list.clear();
-  camera_rt->direction_list.clear();
+  //camera_rt->position_list.clear();
+  //camera_rt->direction_list.clear();
 
 #ifdef TIMING
   camera_rt->total_duration = 0;
@@ -367,7 +367,7 @@ camera_create_ray {
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, camera_rt->position_list, camera_rt->direction_list);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, camera_rt->position_list, camera_rt->direction_list,true);
     if (error){
       ++tries;
       continue;
