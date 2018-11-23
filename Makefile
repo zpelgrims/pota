@@ -25,7 +25,7 @@ $(info    LENSES: $(LENSES))
 
 CXXFLAGS=\
 	-Wall\
-	-std=c++17\
+	-std=c++14\
 	-O3\
 	-shared\
 	-fPIC\

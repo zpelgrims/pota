@@ -11,9 +11,9 @@
 #endif
 
 
-static inline void common_sincosf(float phi, float* sin, float* cos) {
-  *sin = std::sin(phi);
-  *cos = std::cos(phi);
+static inline void common_sincosf(float phi, float &sin, float &cos) {
+  sin = std::sin(phi);
+  cos = std::cos(phi);
 }
 
 

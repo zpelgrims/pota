@@ -17,7 +17,7 @@ AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
 struct CameraRaytraced {
   std::string id;
   int lenses_cnt;
-  lens_element_t lenses[50];
+  std::vector<lens_element_t> lenses;
   float p_rad;
   float zoom;
   float lens_focal_length;
@@ -101,11 +101,11 @@ void rt_logarithmic_focus_search(
     //AiMsgInfo("----------------------");
 
     add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, camera_rt->thickness_original);
-    const float p_dist = lens_get_thickness(camera_rt->lenses + camera_rt->lenses_cnt-1, camera_rt->zoom);
+    const float p_dist = lens_get_thickness(camera_rt->lenses[camera_rt->lenses_cnt-1], camera_rt->zoom);
 
-    float pos[3] = {0.0f};
-    float dir[3] = {0.0f};
-    float ray_in[5] = {0.0};
+    std::vector<float> pos = {0.0f, 0.0f, 0.0f};
+    std::vector<float> dir = {0.0f, 0.0f, 0.0f};
+    std::vector<float> ray_in = {0.0, 0.0f, 0.0f, 0.0f, 0.0f};
     ray_in[2] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[0] / p_dist);
     ray_in[3] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[1] / p_dist);
     ray_in[4] = lambda;
@@ -172,7 +172,6 @@ node_update {
   camera_rt->lens_focal_length = AiNodeGetInt(node, "rt_lens_focal_length");
   camera_rt->id = AiNodeGetStr(node, "rt_lens_id");
   camera_rt->zoom = AiNodeGetFlt(node, "rt_lens_zoom");
-  memset(camera_rt->lenses, 0, sizeof(camera_rt->lenses)); // not sure if the resetting is necessary?
   camera_rt->lenses_cnt = lens_configuration(camera_rt->lenses, camera_rt->id.c_str(), camera_rt->lens_focal_length);
   camera_rt->p_rad = camera_rt->lenses[camera_rt->lenses_cnt-1].housing_radius;
 
@@ -335,8 +334,8 @@ camera_create_ray {
   int tries = 0;
   bool ray_success = false;
 
-  float pos[3] = {0.0f};
-  float dir[3] = {0.0f};
+  std::vector<float> pos = {0.0f, 0.0f, 0.0f};
+  std::vector<float> dir = {0.0f, 0.0f, 0.0f};
 
   while(ray_success == false && tries <= camera->vignetting_retries) {
     
@@ -364,7 +363,7 @@ camera_create_ray {
     Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
     direction.normalize(); 
     
-    float ray_in[5] = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
+    std::vector<float> ray_in = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
