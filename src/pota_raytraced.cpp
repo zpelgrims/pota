@@ -318,7 +318,6 @@ node_finish {
   delete camera;
 
   // why can't i delete camera_rt without getting "pointer being freed was not allocated" error?
-  // should be deleting my resources to avoid memory leaks...
   //delete camera_rt;
 }
 

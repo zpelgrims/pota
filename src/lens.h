@@ -701,7 +701,7 @@ inline void trace_ray(bool original_ray,
     direction(i) = camera_space_omega[i];
   }
 
-  //printf("[%f,%f,%f],", camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
+  printf("[%f,%f,%f],", camera_space_pos[0], camera_space_pos[1], camera_space_pos[2]);
 
 
   switch (camera->unitModel){
