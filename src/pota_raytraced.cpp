@@ -103,23 +103,21 @@ void rt_logarithmic_focus_search(
     add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, camera_rt->thickness_original);
     const float p_dist = lens_get_thickness(camera_rt->lenses[camera_rt->lenses_cnt-1], camera_rt->zoom);
 
-    std::vector<float> pos = {0.0f, 0.0f, 0.0f};
-    std::vector<float> dir = {0.0f, 0.0f, 0.0f};
-    std::vector<float> ray_in = {0.0, 0.0f, 0.0f, 0.0f, 0.0f};
-    ray_in[2] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[0] / p_dist);
-    ray_in[3] = (camera_rt->p_rad*0.25 / p_dist) - (ray_in[1] / p_dist);
-    ray_in[4] = lambda;
+    Eigen::Vector3f pos(0,0,0);
+    Eigen::Vector3f dir(0,0,0);
+    Eigen::VectorXf ray_in(0,0,0,0,0);
+    ray_in(2) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(0) / p_dist);
+    ray_in(3) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(1) / p_dist);
+    ray_in(4) = lambda;
 
     //remove
-    std::vector<std::vector<float>> tmpdir1;
-    std::vector<std::vector<float>> tmppos1;
+    std::vector<Eigen::Vector3f> tmpdir1;
+    std::vector<Eigen::Vector3f> tmppos1;
     
     int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1, false);
     if (error) continue;
 
-    Eigen::Vector3d pos_eigen(pos[0], pos[1], pos[2]);
-    Eigen::Vector3d dir_eigen(dir[0], dir[1], dir[2]);
-    intersection_distance = line_plane_intersection(pos_eigen, dir_eigen)(2);
+    intersection_distance = line_plane_intersection(pos, dir)(2);
     //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
@@ -333,8 +331,8 @@ camera_create_ray {
   int tries = 0;
   bool ray_success = false;
 
-  std::vector<float> pos = {0.0f, 0.0f, 0.0f};
-  std::vector<float> dir = {0.0f, 0.0f, 0.0f};
+  Eigen::Vector3f pos(0,0,0);
+  Eigen::Vector3f dir(0,0,0);
 
   while(ray_success == false && tries <= camera->vignetting_retries) {
     
@@ -342,10 +340,7 @@ camera_create_ray {
     //                            input.sy * (camera->sensor_width * 0.5f),
     //                            0.0
     // );
-    Eigen::Vector3d sensor_pos(0.0,//input.sx * (camera->sensor_width * 0.5f),
-                               0.0,//input.sy * (camera->sensor_width * 0.5f),
-                               0.0
-    );
+    Eigen::Vector3d sensor_pos(0,0,0);
 
 
     // transform unit square to unit disk
@@ -362,7 +357,7 @@ camera_create_ray {
     Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
     direction.normalize(); 
     
-    std::vector<float> ray_in = {sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda};
+    Eigen::VectorXf ray_in(sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda);
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
@@ -381,8 +376,8 @@ camera_create_ray {
   }
   
   for (int i = 0; i<3; i++){
-    output.origin[i] = pos[i];
-    output.dir[i] = dir[i];
+    output.origin[i] = pos(i);
+    output.dir[i] = dir(i);
   }
 
   /*
