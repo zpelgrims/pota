@@ -321,8 +321,8 @@ static inline float lens_aperture_area(const float radius, const int blades)
 float camera_set_focus(float dist, Camera *camera)
 {
   const Eigen::Vector3f target(0, 0, dist);
-  Eigen::VectorXf sensor(0,0,0,0,0);
-  Eigen::VectorXf out(0,0,0,0,0);
+  Eigen::VectorXf sensor(5); sensor.setZero();
+  Eigen::VectorXf out(5); out.setZero();
   sensor(4) = camera->lambda;
   float offset = 0.0f;
   int count = 0;
@@ -377,8 +377,8 @@ float camera_set_focus_infinity(Camera *camera)
 {
 	float parallel_ray_height = camera->lens_aperture_housing_radius * 0.1;
   const Eigen::Vector3f target(0.0, parallel_ray_height, AI_BIG);
-  Eigen::VectorXf sensor(0,0,0,0,0);
-  Eigen::VectorXf out(0,0,0,0,0);
+  Eigen::VectorXf sensor(5); sensor.setZero();
+  Eigen::VectorXf out(5); out.setZero();
   sensor[4] = camera->lambda;
   float offset = 0.0f;
   int count = 0;
@@ -443,9 +443,9 @@ Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector
 
 void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, Camera *camera)
 {
-  Eigen::VectorXf sensor(0,0,0,0,0);
-  Eigen::VectorXf aperture(0,0,0,0,0);
-  Eigen::VectorXf out(0,0,0,0,0);
+  Eigen::VectorXf sensor(5); sensor.setZero();
+  Eigen::VectorXf aperture(5); aperture.setZero();
+  Eigen::VectorXf out(5); out.setZero();
   sensor(4) = camera->lambda;
   aperture(1) = camera->lens_aperture_housing_radius * 0.1;
 
@@ -522,9 +522,9 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
 
 inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 {
-  Eigen::VectorXf sensor(0,0,0,0,0);
-  Eigen::VectorXf aperture(0,0,0,0,0);
-  Eigen::VectorXf out(0,0,0,0,0);
+  Eigen::VectorXf sensor(5); sensor.setZero();
+  Eigen::VectorXf aperture(5); aperture.setZero();
+  Eigen::VectorXf out(5); out.setZero();
   sensor(4) = camera->lambda;
   aperture(1) = camera->lens_aperture_housing_radius * 0.1;
 
@@ -587,9 +587,9 @@ inline void trace_ray(bool original_ray,
   tries = 0;
   bool ray_succes = false;
 
-  Eigen::VectorXf sensor(0,0,0,0,0);
-  Eigen::VectorXf aperture(0,0,0,0,0);
-  Eigen::VectorXf out(0,0,0,0,0);
+  Eigen::VectorXf sensor(5); sensor.setZero();
+  Eigen::VectorXf aperture(5); aperture.setZero();
+  Eigen::VectorXf out(5); out.setZero();
 
   while(ray_succes == false && tries <= camera->vignetting_retries){
 
@@ -732,8 +732,8 @@ inline bool trace_backwards(Eigen::Vector3d target,
                             Camera *camera)
 {
    // initialize 5d light fields
-   Eigen::VectorXf sensor(0,0,0,0, lambda);
-   Eigen::VectorXf out(0,0,0,0,0);
+   Eigen::VectorXf sensor(5); sensor << 0,0,0,0, lambda;
+   Eigen::VectorXf out(5); out.setZero();
    Eigen::Vector2f aperture(0,0);
 
    Eigen::Vector2d lens;
@@ -787,8 +787,8 @@ void trace_backwards_for_fstop(Camera *camera, const float fstop_target, float &
   {
     const float parallel_ray_height = (static_cast<float>(i)/static_cast<float>(maxrays)) * camera->lens_outer_pupil_radius;
     const Eigen::Vector3f target(0, parallel_ray_height, AI_BIG);
-    Eigen::VectorXf sensor(0,0,0,0, camera->lambda);
-    Eigen::VectorXf out(0,0,0,0,0);
+    Eigen::VectorXf sensor(5); sensor << 0,0,0,0, camera->lambda;
+    Eigen::VectorXf out(5); out.setZero();
 
     // just point through center of aperture
     Eigen::Vector2f aperture(0.01f, parallel_ray_height);

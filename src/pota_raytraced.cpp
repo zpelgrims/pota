@@ -105,7 +105,7 @@ void rt_logarithmic_focus_search(
 
     Eigen::Vector3f pos(0,0,0);
     Eigen::Vector3f dir(0,0,0);
-    Eigen::VectorXf ray_in(0,0,0,0,0);
+    Eigen::VectorXf ray_in(5); ray_in.setZero();
     ray_in(2) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(0) / p_dist);
     ray_in(3) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(1) / p_dist);
     ray_in(4) = lambda;
