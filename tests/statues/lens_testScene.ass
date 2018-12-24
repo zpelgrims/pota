@@ -1,15 +1,9 @@
-### exported: Mon Nov 27 23:12:24 2017
-### from:     Arnold 5.0.2.0 [716426a7] windows icc-17.0.2 oiio-1.7.17 osl-1.9.0 vdb-4.0.0 clm-1.0.3.513 rlm-12.2.2 2017/11/08 19:29:47
-### host app: MtoA 2.1.0 1bdea080 (master) Maya 2018
-
-
-
 options
 {
  AA_samples 4
  xres 1000
  yres 750
- camera "renderCam_35mm_150cmShape"
+ camera "renderCam_75mm_350cmShape"
 
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -20,7 +14,7 @@ options
 }
 
 #pota
-pota_raytraced
+#pota_raytraced
 {
  name renderCam_35mm_150cmShape
  matrix
@@ -62,7 +56,7 @@ pota_raytraced
  camera_proper_ray_derivatives 0
 }
 
-#pota
+pota
 {
  name renderCam_75mm_350cmShape
  matrix
@@ -72,6 +66,10 @@ pota_raytraced
  1.1199075 23.2897511 253.581589 1
  fov 26.9914665
  focal_distance 350
+ camera_proper_ray_derivatives 0
+ extra_sensor_shift 0.0
+ lensModel angenieux_double_gauss_1953_49mm
+ fstop 0.0
 }
 
 #pota
@@ -228,216 +226,6 @@ zzyzzyzzyzzyzyzzyzzyzzy!$$$$$$$$$'aRT=dzzaRT=dzzaRT=dzzaRT=dzaRT=dzzaRT=dzzaRT=d
  volume_padding 0
 }
 
-procedural
-{
- name aiStandIn1Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 182.391815 0 -70.5179977 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn2Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 99.8029251 0 -70.5179977 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn3Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -177.949631 0 -70.5184784 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn4Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -101.293694 0 -70.5184784 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn5Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 135.883987 0 -332.860504 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn6Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -120.846184 0 -268.235107 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn7Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 34.2344589 0 40.5013313 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn8Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -38.4781609 0 0.36013633 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn9Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 135.883987 0 -234.031052 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn10Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 82.0789032 0 -147.183197 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn11Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -120.846184 0 -207.489471 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn12Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -74.9867783 0 -135.054901 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn13Shape
- visibility 255
- matrix
- -0.0349690691 0 -4.28247616e-18 0
- 0 0.0349690691 0 0
- -4.28247616e-18 0 0.0349690691 0
- -34.8019371 0 -70.5184784 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
-procedural
-{
- name aiStandIn14Shape
- visibility 255
- matrix
- 0.0350000001 0 0 0
- 0 0.0350000001 0 0
- 0 0 0.0350000001 0
- 34.2344589 0 -70.5179977 1
- shader "mat_sss"
- use_light_group off
- override_nodes off
- filename "~/lentil/pota/tests/statues/statue.ass.gz"
-}
-
 standard_surface
 {
  name mat_sss
@@ -587,7 +375,7 @@ standard_surface
 image
 {
  name aiImage1
- filename "~/lentil/pota/tests/statues/lenstestchart.tx"
+ filename "/home/cactus/lentil/pota/tests/statues/lenstestchart.tx"
 }
 
 standard_surface

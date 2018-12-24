@@ -689,7 +689,7 @@ inline void trace_ray(bool original_ray,
   origin = cs_origin;
   direction = cs_direction;
 
-  printf("[%f,%f,%f],", origin[0], origin[1], origin[2]);
+  //printf("[%f,%f,%f],", origin[0], origin[1], origin[2]);
 
 
   switch (camera->unitModel){
