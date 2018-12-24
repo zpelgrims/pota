@@ -431,17 +431,17 @@ std::vector<float> logarithmic_values()
 
 // line plane intersection with fixed intersection at y = 0
 // used for finding the focal length and sensor shift
-Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector3d rayDirection)
+Eigen::Vector3f line_plane_intersection(Eigen::Vector3f rayOrigin, Eigen::Vector3f rayDirection)
 {
-  Eigen::Vector3d coord(100.0, 0.0, 100.0);
-  Eigen::Vector3d planeNormal(0.0, 1.0, 0.0);
+  Eigen::Vector3f coord(100.0, 0.0, 100.0);
+  Eigen::Vector3f planeNormal(0.0, 1.0, 0.0);
   rayDirection.normalize();
   coord.normalize();
   return rayOrigin + (rayDirection * (coord.dot(planeNormal) - planeNormal.dot(rayOrigin)) / planeNormal.dot(rayDirection));
 }
 
 
-void camera_get_y0_intersection_distance(float sensor_shift, float &intersection_distance, Camera *camera)
+float camera_get_y0_intersection_distance(float sensor_shift, float intersection_distance, Camera *camera)
 {
   Eigen::VectorXf sensor(5); sensor.setZero();
   Eigen::VectorXf aperture(5); aperture.setZero();
@@ -488,7 +488,7 @@ void camera_get_y0_intersection_distance(float sensor_shift, float &intersection
 
   */
   
-  intersection_distance = line_plane_intersection(camera_space_pos, camera_space_omega)(2);
+  return line_plane_intersection(camera_space_pos, camera_space_omega)(2);
 
   //ray_origin *= -0.1;
   //ray_dir *= -0.1;
@@ -504,7 +504,7 @@ void logarithmic_focus_search(const float focal_distance, float &best_sensor_shi
   	float intersection_distance = 0.0f;
     //AiMsgInfo("sensorshift: %f", sensorshift);
 
-    camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
+    intersection_distance = camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
     //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
@@ -578,9 +578,9 @@ inline void trace_ray(bool original_ray,
                       const float input_sx, const float input_sy, 
                       const float input_lensx, const float input_lensy, 
                       float &r1, float &r2, 
-                      Eigen::Vector3d &weight, 
-                      Eigen::Vector3d &origin, 
-                      Eigen::Vector3d &direction, 
+                      Eigen::Vector3f &weight, 
+                      Eigen::Vector3f &origin, 
+                      Eigen::Vector3f &direction, 
                       Camera *camera)
 {
 
@@ -680,10 +680,14 @@ inline void trace_ray(bool original_ray,
 	// convert from sphere/sphere space to camera space
   Eigen::Vector2f outpos(out[0], out[1]);
   Eigen::Vector2f outdir(out[2], out[3]);
-  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, origin, direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
-	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, origin, direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
-  else sphereToCs(outpos, outdir, origin, direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
+  Eigen::Vector3f cs_origin(0,0,0);
+  Eigen::Vector3f cs_direction(0,0,0);
+  if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, cs_origin, cs_direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
+	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, cs_origin, cs_direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
+  else sphereToCs(outpos, outdir, cs_origin, cs_direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
   
+  origin = cs_origin;
+  direction = cs_direction;
 
   printf("[%f,%f,%f],", origin[0], origin[1], origin[2]);
 
@@ -724,7 +728,7 @@ inline void trace_ray(bool original_ray,
 
 
 // given camera space scene point, return point on sensor
-inline bool trace_backwards(Eigen::Vector3d target, 
+inline bool trace_backwards(Eigen::Vector3f target, 
                             const float aperture_radius, 
                             const float lambda, 
                             Eigen::Vector2d &sensor_position, 

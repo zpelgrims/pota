@@ -240,7 +240,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -255,7 +255,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -270,7 +270,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -285,7 +285,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -300,7 +300,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -315,7 +315,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -330,7 +330,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -345,7 +345,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -360,7 +360,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -375,7 +375,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -390,7 +390,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -405,7 +405,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -420,7 +420,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 procedural
@@ -435,7 +435,7 @@ procedural
  shader "mat_sss"
  use_light_group off
  override_nodes off
- filename "/Users/zeno/pota/tests/statues/statue.ass.gz"
+ filename "~/lentil/pota/tests/statues/statue.ass.gz"
 }
 
 standard_surface
@@ -587,7 +587,7 @@ standard_surface
 image
 {
  name aiImage1
- filename "/Users/zeno/pota/tests/statues/lenstestchart.tx"
+ filename "~/lentil/pota/tests/statues/lenstestchart.tx"
 }
 
 standard_surface

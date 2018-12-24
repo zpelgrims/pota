@@ -201,9 +201,9 @@ camera_create_ray {
 
   int tries = 0;
   float random1 = 0.0f, random2 = 0.0f; 
-  Eigen::Vector3d origin(0, 0, 0);
-  Eigen::Vector3d direction(0, 0, 0);
-  Eigen::Vector3d weight(1, 1, 1);
+  Eigen::Vector3f origin(0, 0, 0);
+  Eigen::Vector3f direction(0, 0, 0);
+  Eigen::Vector3f weight(1, 1, 1);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera);
   
@@ -228,20 +228,20 @@ camera_create_ray {
       input_dx.sx += input.dsx * step;
       input_dy.sy += input.dsy * step;
 
-      Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
-      Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
-      Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+      Eigen::Vector3f out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
+      Eigen::Vector3f out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
+      Eigen::Vector3f out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
       trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera);
 
-      Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
-      Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
-      Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
+      Eigen::Vector3f out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
+      Eigen::Vector3f out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
+      Eigen::Vector3f out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
       trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera);
 
-      Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
-      Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
-      Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
-      Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
+      Eigen::Vector3f out_d0dx = (out_dx_origin - origin) / step;
+      Eigen::Vector3f out_dOdy = (out_dy_origin - origin) / step;
+      Eigen::Vector3f out_dDdx = (out_dx_dir - direction) / step;
+      Eigen::Vector3f out_dDdy = (out_dy_dir - direction) / step;
 
       for (int i = 0; i<3; i++){
         output.dOdx[i] = out_d0dx(i);

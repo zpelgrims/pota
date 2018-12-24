@@ -35,8 +35,8 @@ struct CameraRaytraced {
   #endif
 
 
-  std::vector<std::vector<float>> position_list;
-  std::vector<std::vector<float>> direction_list;
+  std::vector<Eigen::Vector3f> position_list;
+  std::vector<Eigen::VectorXf> direction_list;
 
 } camera_rt;
 
@@ -111,7 +111,7 @@ void rt_logarithmic_focus_search(
     ray_in(4) = lambda;
 
     //remove
-    std::vector<Eigen::Vector3f> tmpdir1;
+    std::vector<Eigen::VectorXf> tmpdir1;
     std::vector<Eigen::Vector3f> tmppos1;
     
     int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1, false);
@@ -336,11 +336,11 @@ camera_create_ray {
 
   while(ray_success == false && tries <= camera->vignetting_retries) {
     
-    // Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+    // Eigen::Vector3f sensor_pos(input.sx * (camera->sensor_width * 0.5f),
     //                            input.sy * (camera->sensor_width * 0.5f),
     //                            0.0
     // );
-    Eigen::Vector3d sensor_pos(0,0,0);
+    Eigen::Vector3f sensor_pos(0,0,0);
 
 
     // transform unit square to unit disk
@@ -349,15 +349,15 @@ camera_create_ray {
     else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
     
     // p_rad should cover -1, 1 in this config.. not sure why i have to scale it up further.. debug
-    Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad*3.0f * unit_disk(0),
+    Eigen::Vector3f first_lens_element_pos(camera_rt->p_rad*3.0f * unit_disk(0),
                                            camera_rt->p_rad*3.0f * unit_disk(1),
                                            camera_rt->thickness_original
     );
 
-    Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
+    Eigen::Vector3f direction = first_lens_element_pos - sensor_pos;
     direction.normalize(); 
     
-    Eigen::VectorXf ray_in(sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda);
+    Eigen::VectorXf ray_in(5); ray_in << sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda;
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
@@ -381,8 +381,8 @@ camera_create_ray {
   }
 
   /*
-  Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
-  Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
+  Eigen::Vector3f pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
+  Eigen::Vector3f dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
   camera_rt->test_intersection_distance += line_plane_intersection(pos_eigen, dir_eigen)(2);
   ++camera_rt->test_cnt;
   if (camera_rt->test_cnt == camera_rt->test_maxcnt){

@@ -12,7 +12,7 @@ ifeq ($(OS), Darwin)
 	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.1.0-linux
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.2.0-linux
 endif
 
 
@@ -25,7 +25,7 @@ $(info    LENSES: $(LENSES))
 
 CXXFLAGS=\
 	-Wall\
-	-std=c++14\
+	-std=c++17\
 	-O3\
 	-shared\
 	-fPIC\
