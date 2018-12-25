@@ -1,25 +1,22 @@
 #pragma once
 
-#include <ai.h>
 #include <iostream>
 #include <algorithm>
 #include <string>
 #include <fstream>
+#include <vector>
+
+
+#include "../../polynomial-optics/src/lenssystem.h"
+#include "../../polynomial-optics/src/raytrace.h"
+#include "../../Eigen/Eigen/Dense"
 
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
-    takumar_1969_50mm,
-    zeiss_biotar_1927_58mm,
-    zeiss_flektagon_1954_35mm,
-    primoplan_1936_58mm,
-    fisheye,
-    fisheye_aspherical,
-    doublegauss_100mm,
-    angenieux_doublegauss_1953_49mm,
-    petzval_1900_66mm,
-    wideangle
+    #include "auto_generated_lens_includes/pota_h_lenses.h"
 };
+
 
 // enum to switch between units in interface dropdown
 enum UnitModel{
@@ -29,27 +26,53 @@ enum UnitModel{
     m
 };
 
+/*
+struct Draw
+{
+    std::vector<std::vector<float>> sensor;
+    std::vector<std::vector<float>> aperture;
+    std::vector<std::vector<float>> pxpy;
+    std::vector<std::vector<float>> out;
+    std::vector<std::vector<float>> sensor_shifted;
+    bool enabled;
+    int counter;
+    const int max_counter;
 
-struct MyCameraData
+    Draw() : enabled(true), counter(0), max_counter(50000){}
+};
+*/
+
+struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
+
+    //Draw draw;
 
     // lens constants
     const char* lens_name;
     float lens_outer_pupil_radius;
     float lens_inner_pupil_radius;
     float lens_length;
-    float lens_focal_length;
+    float lens_back_focal_length;
+    float lens_effective_focal_length;
     float lens_aperture_pos;
     float lens_aperture_housing_radius;
+    float lens_inner_pupil_curvature_radius;
     float lens_outer_pupil_curvature_radius;
     float lens_field_of_view;
+    float lens_fstop;
+    float lens_aperture_radius_at_fstop;
+    std::string lens_inner_pupil_geometry;
+    std::string lens_outer_pupil_geometry;
 
 
 	float sensor_width;
-	float fstop;
+	float input_fstop;
+    
+    //debug
     float max_fstop;
+
 	float focal_distance;
 	float aperture_radius;
 	float sensor_shift;
@@ -71,78 +94,8 @@ struct MyCameraData
 
     //camera_reverse_ray
     float tan_fov;
+
+    float anamorphic_stretch;
 };
 
-extern struct MyCameraData camera_data;
-
-
-
-
-// xorshift fast random number generator
-inline uint32_t xor128(void){
-    static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-    uint32_t t = x ^ (x << 11);
-    x = y; y = z; z = w;
-    return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
-
-
-inline float Lerp(float t, float v1, float v2)
-{
-    return (1 - t) * v1 + t * v2;
-}
-
-
-// sin approximation, not completely accurate but faster than std::sin
-inline float fastSin(float x){
-    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
-    const float B = 4.0f / AI_PI;
-    const float C = -4.0f / (AI_PI*AI_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
-
-
-inline float fastCos(float x){
-    // conversion from sin to cos
-    x += AI_PI * 0.5;
-
-    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
-    const float B = 4.0f / AI_PI;
-    const float C = -4.0f / (AI_PI*AI_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
-
-
-
-// maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(const float ox, const float oy, AtVector2 &lens, bool fast_trigo)
-{
-    float phi, r;
-
-    // switch coordinate space from [0, 1] to [-1, 1]
-    float a = 2.0 * ox - 1.0;
-    float b = 2.0 * oy - 1.0;
-
-    if ((a * a) > (b * b)){
-        r = a;
-        phi = (0.78539816339f) * (b / a);
-    }
-    else {
-        r = b;
-        phi = (AI_PIOVER2)-(0.78539816339f) * (a / b);
-    }
-
-    if (!fast_trigo){
-        lens.x = r * std::cos(phi);
-        lens.y = r * std::sin(phi);
-    } else {
-        lens.x = r * fastCos(phi);
-        lens.y = r * fastSin(phi);
-    }
-
-    
-}
+extern struct Camera camera;
