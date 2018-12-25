@@ -10,43 +10,5 @@
 ***
 
 **Compile instructions:**
-
-Base requirement: Arnold >5.0.2.0, Eigen
-
->OSX:
-```
-open makefile     ### change arnold sdk path
-mkdir bin
-make
-```
-
->Windows
-
-```
-###   using the "x64 native tools command prompt for VS 2017"
-
-cl /LD /I ...\Arnold-5.0.2.0-windows\include /EHsc /O2 pota.cpp /link /LIBPATH:...\Arnold-5.0.2.0-windows\lib ai.lib
-```
-
+This repo currently depends on another, private repository. Apologies!
 ***
-
-**Roadmap:**
-	
-1.4:
-- Calculate accurate infinity focus before lens generation (lentil)
-- Compute focal length before lens generation so I can properly match the lenses (lentil)
-- Fix clipping, not sure why but pota's is closer than the perspective camera by a factor of 10
-
-
-2.0:
-- add energy-redistribution bidirectional sampling (aov shader)
-- fix nans of double gauss angenieux (energy redistribution)
-
-
-2.x:
-- bidirectional energy redistribution: check for intersections along P->Lens path
-- bidirectional energy redistribution: come up with better triggering of backtracing, based on sample intensity, distance from focal point, fstop, ..?
-- add support for x and y cylinders for newer anamorphic lenses (lentil)
-
-3.0:
-- remove arnold library dependency to make pota renderer agnostic
