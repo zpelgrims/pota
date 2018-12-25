@@ -421,6 +421,7 @@ std::vector<float> logarithmic_values()
   float max = 45.0;
   float exponent = 2.0; // sharpness
   std::vector<float> log;
+
   for(float i = -1.0; i <= 1.0; i += 0.0001) {
     log.push_back((i < 0 ? -1 : 1) * std::pow(i, exponent) * (max - min) + min);
   }
@@ -447,29 +448,15 @@ float camera_get_y0_intersection_distance(float sensor_shift, float intersection
   Eigen::VectorXf aperture(5); aperture.setZero();
   Eigen::VectorXf out(5); out.setZero();
   sensor(4) = camera->lambda;
-  aperture(1) = camera->lens_aperture_housing_radius * 0.1;
+  aperture(1) = camera->lens_aperture_housing_radius * 0.25;
 
   lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera);
 
-  /*
-  for (int i = 0; i<5; i++) printf("----------------------------------\n");
-  printf("lens_evaluate:\n");
-  printf("sensor: [\n%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
-  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
-  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
-  printf("----------------------------------\n");
-  */
   sensor(0) += sensor(2) * sensor_shift;
 	sensor(1) += sensor(3) * sensor_shift;
 
 	float transmittance = lens_evaluate(sensor, out, camera);
-  /*
-  printf("lens_evaluate:\n");
-  printf("sensor: [%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
-  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
-  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
-  printf("----------------------------------\n");
-  */
+
 	// convert from sphere/sphere space to camera space
   Eigen::Vector2f outpos(out(0), out(1));
   Eigen::Vector2f outdir(out(2), out(3));
@@ -478,55 +465,38 @@ float camera_get_y0_intersection_distance(float sensor_shift, float intersection
   if (camera->lens_outer_pupil_geometry == "cyl-y") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, true);
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else sphereToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
-
-  /*
-  printf("lens_xxToCs:\n");
-  printf("sensor: [%f %f %f %f %f]\n", sensor[0], sensor[1], sensor[2], sensor[3], sensor[4]);
-  printf("aperture: [%f %f %f %f %f]\n", aperture[0], aperture[1], aperture[2], aperture[3], aperture[4]);
-  printf("out: [%f %f %f %f %f]\n", out[0], out[1], out[2], out[3], out[4]);
-  printf("----------------------------------\n");
-
-  */
   
   return line_plane_intersection(camera_space_pos, camera_space_omega)(2);
-
-  //ray_origin *= -0.1;
-  //ray_dir *= -0.1;
-
 }
 
 
 // focal_distance is in mm
-void logarithmic_focus_search(const float focal_distance, float &best_sensor_shift, float &closest_distance, Camera *camera){
-  std::vector<float> log = logarithmic_values();
-
-  for (float sensorshift : log){
+float logarithmic_focus_search(const float focal_distance, Camera *camera){
+  float closest_distance = 999999999.0f;
+  float best_sensor_shift = 0.0f;
+  for (float sensorshift : logarithmic_values()){
   	float intersection_distance = 0.0f;
-    //AiMsgInfo("sensorshift: %f", sensorshift);
-
     intersection_distance = camera_get_y0_intersection_distance(sensorshift, intersection_distance, camera);
-    //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
     float new_distance = focal_distance - intersection_distance;
-    //AiMsgInfo("new_distance: %f", new_distance);
-
 
     if (new_distance < closest_distance && new_distance > 0.0f){
       closest_distance = new_distance;
       best_sensor_shift = sensorshift;
-      //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
     }
   }
+
+  return best_sensor_shift;
 }
 
 
 
-inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
+inline bool trace_ray_focus_check(float sensor_shift, float &test_focus_distance, Camera *camera)
 {
   Eigen::VectorXf sensor(5); sensor.setZero();
   Eigen::VectorXf aperture(5); aperture.setZero();
   Eigen::VectorXf out(5); out.setZero();
   sensor(4) = camera->lambda;
-  aperture(1) = camera->lens_aperture_housing_radius * 0.1;
+  aperture(1) = camera->lens_aperture_housing_radius * 0.25;
 
 	lens_pt_sample_aperture(sensor, aperture, sensor_shift, camera);
 
@@ -559,13 +529,7 @@ inline bool trace_ray_focus_check(float sensor_shift, Camera *camera)
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else sphereToCs(outpos, outdir, camera_space_pos, camera_space_omega, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
 
-
-  //float y0 = line_plane_intersection(camera_space_pos, camera_space_omega)(2);
-  //printf("[LENTIL] y=0 ray plane intersection: %f", y0);
-
-	camera_space_pos *= -0.1; // convert to cm
-  camera_space_omega *= -0.1; //reverse rays and convert to cm
-
+  test_focus_distance = line_plane_intersection(camera_space_pos, camera_space_omega)(2);
   return true;
 }
 

@@ -8,13 +8,13 @@ AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
 
 
 enum {
-  p_unitModel,
-  p_lensModel,
+  p_units,
+  p_lens_model,
   p_sensor_width,
   p_wavelength,
   p_dof,
   p_fstop,
-  p_focal_distance,
+  p_focus_distance,
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
@@ -33,17 +33,17 @@ static const char* LensModelNames[] = {
 };
 
 // to switch between units in interface dropdown
-static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
+static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 
 node_parameters {
-  AiParameterEnum("unitModel", cm, UnitModelNames);
-  AiParameterEnum("lensModel", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
+  AiParameterEnum("units", cm, Units);
+  AiParameterEnum("lens_model", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
@@ -66,9 +66,9 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f; //converting to mm
-  camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
-  camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f; //converting to mm
+  camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
+  camera->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
   camera->dof = AiNodeGetBool(node, "dof");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
@@ -81,15 +81,15 @@ node_update {
   switch (camera->unitModel){
     case mm:
     {
-      camera->focal_distance *= 0.1f;
+      camera->focus_distance *= 0.1f;
     } break;
     case dm:
     {
-      camera->focal_distance *= 10.0f;
+      camera->focus_distance *= 10.0f;
     } break;
     case m:
     {
-      camera->focal_distance *= 100.0f;
+      camera->focus_distance *= 100.0f;
     }
   }
 
@@ -130,29 +130,27 @@ node_update {
     trace_backwards_for_fstop(camera, camera->input_fstop, calculated_fstop, calculated_aperture_radius);
     
     AiMsgInfo("[POTA] calculated fstop: %f", calculated_fstop);
-    AiMsgInfo("[POTA] calculated aperture radius: %f", calculated_aperture_radius);
+    AiMsgInfo("[POTA] calculated aperture radius: %f mm", calculated_aperture_radius);
     
     camera->aperture_radius = fminf(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
   }
 
   AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
-  AiMsgInfo("[POTA] lens wide open aperture radius: %f", camera->lens_aperture_radius_at_fstop);
-  AiMsgInfo("[POTA] fstop-calculated aperture radius: %f", camera->aperture_radius);
+  AiMsgInfo("[POTA] lens wide open aperture radius: %f mm", camera->lens_aperture_radius_at_fstop);
+  AiMsgInfo("[POTA] fstop-calculated aperture radius: %f mm", camera->aperture_radius);
   AiMsgInfo("[POTA] --------------------------------------");
 
 
-  AiMsgInfo("[POTA] focus distance: %f", camera->focal_distance);
+  AiMsgInfo("[POTA] user supplied focus distance: %f mm", camera->focus_distance);
 
   /*
   AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
-  camera->sensor_shift = camera_set_focus(camera->focal_distance, camera);
-  AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focal_distance, camera->sensor_shift);
+  camera->sensor_shift = camera_set_focus(camera->focus_distance, camera);
+  AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focus_distance, camera->sensor_shift);
   */
 
   // logartihmic focus search
-  float best_sensor_shift = 0.0f;
-  float closest_distance = AI_BIG;
-  logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera);
+  float best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
@@ -163,28 +161,22 @@ node_update {
   */
 
   // logarithmic infinity focus search
-  float best_sensor_shift_infinity = 0.0f;
-  float closest_distance_infinity = AI_BIG;
-  logarithmic_focus_search(AI_BIG, best_sensor_shift_infinity, closest_distance_infinity, camera);
-  AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f", best_sensor_shift_infinity);
+  float best_sensor_shift_infinity = logarithmic_focus_search(999999999.0f, camera);
+  AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f mm", best_sensor_shift_infinity);
       
   // bidirectional parallel infinity focus search
   float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
-  AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f", infinity_focus_parallel_light_tracing);
-
+  AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f mm", infinity_focus_parallel_light_tracing);
 
   // double check where y=0 intersection point is, should be the same as focus distance
-  if(!trace_ray_focus_check(camera->sensor_shift, camera)){
+  float test_focus_distance = 0.0f;
+  bool focus_test = trace_ray_focus_check(camera->sensor_shift, test_focus_distance, camera);
+  AiMsgInfo("[POTA] focus test ray: %f mm", test_focus_distance);
+  if(!focus_test){
     AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
   }
 
-
   camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
-
-  // tmp debug, remove!
-  camera->sensor_shift = 0.0f;
-  //camera->aperture_radius = camera->lens_aperture_housing_radius;
-  //printf("first element radius: %f\n", camera->aperture_radius);
 
   AiMsgInfo("");
 }

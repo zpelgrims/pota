@@ -73,7 +73,7 @@ struct Camera
     //debug
     float max_fstop;
 
-	float focal_distance;
+	float focus_distance;
 	float aperture_radius;
 	float sensor_shift;
     int vignetting_retries;

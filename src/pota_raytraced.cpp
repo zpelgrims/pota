@@ -47,7 +47,7 @@ enum {
   p_wavelength,
   p_dof,
   p_fstop,
-  p_focal_distance,
+  p_focus_distance,
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
@@ -85,9 +85,9 @@ float get_lens_length(CameraRaytraced *camera_rt) {
 }
 
 
-// focal_distance is in mm
+// focus_distance is in mm
 void rt_logarithmic_focus_search(
-  const float focal_distance, 
+  const float focus_distance, 
   float &best_sensor_shift, 
   float &closest_distance,
   const float lambda,
@@ -119,7 +119,7 @@ void rt_logarithmic_focus_search(
 
     intersection_distance = line_plane_intersection(pos, dir)(2);
     //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
-    float new_distance = focal_distance - intersection_distance;
+    float new_distance = focus_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
 
 
@@ -139,7 +139,7 @@ node_parameters {
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
@@ -181,7 +181,7 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focal_distance = AiNodeGetFlt(node, "focal_distance") * 10.0f; //convert to mm
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
   //camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
@@ -198,15 +198,15 @@ node_update {
   switch (camera->unitModel){
     case mm:
     {
-      camera->focal_distance *= 0.1f;
+      camera->focus_distance *= 0.1f;
     } break;
     case dm:
     {
-      camera->focal_distance *= 10.0f;
+      camera->focus_distance *= 10.0f;
     } break;
     case m:
     {
-      camera->focal_distance *= 100.0f;
+      camera->focus_distance *= 100.0f;
     }
   }
 
@@ -231,12 +231,12 @@ node_update {
   AiMsgInfo("[lentil raytraced] --------------------------------------");
 */
 
-  AiMsgInfo("[lentil raytraced] focus distance (mm): %f", camera->focal_distance);
+  AiMsgInfo("[lentil raytraced] focus distance (mm): %f", camera->focus_distance);
 
   // logartihmic focus search
   float best_sensor_shift = 0.0f;
   float closest_distance = AI_BIG;
-  rt_logarithmic_focus_search(camera->focal_distance, best_sensor_shift, closest_distance, camera->lambda, camera_rt);
+  rt_logarithmic_focus_search(camera->focus_distance, best_sensor_shift, closest_distance, camera->lambda, camera_rt);
   AiMsgInfo("[lentil raytraced] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
   add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original); //is this needed or already set by log focus search?
