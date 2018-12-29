@@ -263,7 +263,7 @@ node_update {
 */
 
   // tmp debug
-  camera->sensor_shift = 0.0;
+  //camera->sensor_shift = 0.0;
 
   // remove
   camera_rt->test_cnt = 0;
@@ -286,28 +286,28 @@ node_update {
 node_finish {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
   CameraRaytraced* camera_rt = (CameraRaytraced*)AiNodeGetLocalData(node);
-
-  std::ofstream fout_pos("/Users/zeno/lentil/pota/tests/pos_dir_writeout/positions.txt");
-  std::ofstream fout_dir("/Users/zeno/lentil/pota/tests/pos_dir_writeout/directions.txt");
-  fout_pos << "[";
-  for (auto i : camera_rt->position_list){
-    fout_pos << "[";
-    fout_pos << i[0] << ", ";
-    fout_pos << i[1] << ", ";
-    fout_pos << i[2] << "], ";
-  }
-  fout_pos << "]" << std::endl;
-  fout_dir << "[";
-  for (auto i : camera_rt->direction_list){
-    fout_dir << "[";
-    fout_dir << i[0] << ", ";
-    fout_dir << i[1] << ", ";
-    fout_dir << i[2] << ", ";
-    fout_dir << i[3] << ", ";
-    fout_dir << i[4] << ", ";
-    fout_dir << i[5] << "], ";
-  }
-  fout_dir << "]" << std::endl;
+  
+  // std::ofstream fout_pos("/Users/zeno/lentil/pota/tests/pos_dir_writeout/positions.txt");
+  // std::ofstream fout_dir("/Users/zeno/lentil/pota/tests/pos_dir_writeout/directions.txt");
+  // fout_pos << "[";
+  // for (auto i : camera_rt->position_list){
+  //   fout_pos << "[";
+  //   fout_pos << i[0] << ", ";
+  //   fout_pos << i[1] << ", ";
+  //   fout_pos << i[2] << "], ";
+  // }
+  // fout_pos << "]" << std::endl;
+  // fout_dir << "[";
+  // for (auto i : camera_rt->direction_list){
+  //   fout_dir << "[";
+  //   fout_dir << i[0] << ", ";
+  //   fout_dir << i[1] << ", ";
+  //   fout_dir << i[2] << ", ";
+  //   fout_dir << i[3] << ", ";
+  //   fout_dir << i[4] << ", ";
+  //   fout_dir << i[5] << "], ";
+  // }
+  // fout_dir << "]" << std::endl;
 
 #ifdef TIMING
   AiMsgInfo("[lentil raytraced] Average execution time: %lld nanoseconds over %lld camera rays", camera_rt->total_duration / camera_rt->execution_counter, camera_rt->execution_counter);
@@ -349,8 +349,8 @@ camera_create_ray {
     else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
     
     // p_rad should cover -1, 1 in this config.. not sure why i have to scale it up further.. debug
-    Eigen::Vector3f first_lens_element_pos(camera_rt->p_rad*3.0f * unit_disk(0),
-                                           camera_rt->p_rad*3.0f * unit_disk(1),
+    Eigen::Vector3f first_lens_element_pos(camera_rt->p_rad*1.0f * unit_disk(0),
+                                           camera_rt->p_rad*1.0f * unit_disk(1),
                                            camera_rt->thickness_original
     );
 
@@ -361,7 +361,7 @@ camera_create_ray {
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
-    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, camera_rt->position_list, camera_rt->direction_list,true);
+    int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, camera_rt->position_list, camera_rt->direction_list, false);
     if (error){
       ++tries;
       continue;
