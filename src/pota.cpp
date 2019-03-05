@@ -28,7 +28,7 @@ enum {
 // to switch between lens models in interface dropdown
 // this will need to be automatically filled somehow
 static const char* LensModelNames[] = {
-  #include "auto_generated_lens_includes/pota_cpp_lenses.h"
+  #include "../include/auto_generated_lens_includes/pota_cpp_lenses.h"
   NULL
 };
 

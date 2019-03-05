@@ -3,7 +3,6 @@
 #include <vector>
 #include <algorithm>
 #include "../../Eigen/Eigen/Core"
-
 #include "../../polynomial-optics/src/raytrace.h"
 
 #ifndef M_PI
@@ -31,7 +30,7 @@ static inline double lens_ipow(const double x, const int exp) {
 inline void load_lens_constants (Camera *camera)
 {
   switch (camera->lensModel){
-    #include "auto_generated_lens_includes/load_lens_constants.h"
+    #include "../include/auto_generated_lens_includes/load_lens_constants.h"
   }
 }
 
@@ -45,7 +44,7 @@ static inline double lens_evaluate(const Eigen::VectorXd in, Eigen::VectorXd &ou
   const double x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
   double out_transmittance = 0.0;
   switch (camera->lensModel){
-    #include "auto_generated_lens_includes/load_pt_evaluate.h"
+    #include "../include/auto_generated_lens_includes/load_pt_evaluate.h"
   }
 
   return std::max(0.0, out_transmittance);
@@ -74,7 +73,7 @@ static inline void lens_pt_sample_aperture(Eigen::VectorXd &in, Eigen::VectorXd 
   double x = in[0], y = in[1], dx = in[2], dy = in[3], lambda = in[4];
 
   switch (camera->lensModel){
-    #include "auto_generated_lens_includes/load_pt_sample_aperture.h"
+    #include "../include/auto_generated_lens_includes/load_pt_sample_aperture.h"
   }
 
   // directions may have changed, copy all to be sure.
@@ -106,7 +105,7 @@ static inline double lens_lt_sample_aperture(
   double x = 0, y = 0, dx = 0, dy = 0;
 
   switch (camera->lensModel){
-    #include "auto_generated_lens_includes/load_lt_sample_aperture.h"    
+    #include "../include/auto_generated_lens_includes/load_lt_sample_aperture.h"    
   }
 
   sensor[0] = x; sensor[1] = y; sensor[2] = dx; sensor[3] = dy; sensor[4] = lambda;

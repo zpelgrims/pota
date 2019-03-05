@@ -14,7 +14,7 @@
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
-    #include "auto_generated_lens_includes/pota_h_lenses.h"
+    #include "../include/auto_generated_lens_includes/pota_h_lenses.h"
 };
 
 
