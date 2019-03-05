@@ -96,16 +96,16 @@ node_finish
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // fill exr
-  std::vector<float> image(bokeh->yres * bokeh->xres * 4);
+  std::vector<double> image(bokeh->yres * bokeh->xres * 4);
   int offset = -1;
   int pixelnumber = 0;
   int aa_square = bokeh->aa_samples * bokeh->aa_samples;
 
   for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
-    image[++offset] = bokeh->image[pixelnumber].r / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].g / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].b / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].a / (float)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].r / (double)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].g / (double)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].b / (double)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].a / (double)aa_square;
     ++pixelnumber;
   }
 
@@ -144,9 +144,9 @@ shader_evaluate
    // why does this need to be in shader_evaluate to work? returns 0 in _update_?
    bokeh->samples = camera->backward_samples * (bokeh->aa_samples * bokeh->aa_samples);
 
-   const float xres = (float)bokeh->xres;
-   const float yres = (float)bokeh->yres;
-   const float frame_aspect_ratio = xres/yres;
+   const double xres = (double)bokeh->xres;
+   const double yres = (double)bokeh->yres;
+   const double frame_aspect_ratio = xres/yres;
    AtRGBA sample_energy = AI_RGBA_ZERO;
 
    // write AOV only if in use
@@ -163,8 +163,8 @@ shader_evaluate
         }
         
         sample_energy = sg->out.RGBA();
-        sample_energy.a = 1.0f;
-        sample_energy /=  static_cast<float>(bokeh->samples);
+        sample_energy.a = 1.0;
+        sample_energy /=  static_cast<double>(bokeh->samples);
 
         // convert sample world space position to camera space
         AtMatrix world_to_camera_matrix;
@@ -173,7 +173,7 @@ shader_evaluate
         AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
         // improve this, too much copying
         AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
-        Eigen::Vector3f camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
+        Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
          
         for(int count=0; count<bokeh->samples; count++)
         {

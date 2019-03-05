@@ -66,7 +66,7 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f; //converting to mm
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
@@ -81,15 +81,15 @@ node_update {
   switch (camera->unitModel){
     case mm:
     {
-      camera->focus_distance *= 0.1f;
+      camera->focus_distance *= 0.1;
     } break;
     case dm:
     {
-      camera->focus_distance *= 10.0f;
+      camera->focus_distance *= 10.0;
     } break;
     case m:
     {
-      camera->focus_distance *= 100.0f;
+      camera->focus_distance *= 100.0;
     }
   }
 
@@ -122,11 +122,11 @@ node_update {
   AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
 
 
-  if (camera->input_fstop == 0.0f) {
+  if (camera->input_fstop == 0.0) {
     camera->aperture_radius = camera->lens_aperture_radius_at_fstop;
   } else {
-    float calculated_fstop = 0.0f;
-    float calculated_aperture_radius = 0.0f;
+    double calculated_fstop = 0.0;
+    double calculated_aperture_radius = 0.0;
     trace_backwards_for_fstop(camera, camera->input_fstop, calculated_fstop, calculated_aperture_radius);
     
     AiMsgInfo("[POTA] calculated fstop: %f", calculated_fstop);
@@ -150,33 +150,33 @@ node_update {
   */
 
   // logartihmic focus search
-  float best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
+  double best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
   AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
   /*
   // average guesses infinity focus search
-  float infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
+  double infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
   AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
   */
 
   // logarithmic infinity focus search
-  float best_sensor_shift_infinity = logarithmic_focus_search(999999999.0f, camera);
+  double best_sensor_shift_infinity = logarithmic_focus_search(999999999.0, camera);
   AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f mm", best_sensor_shift_infinity);
       
   // bidirectional parallel infinity focus search
-  float infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
+  double infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
   AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f mm", infinity_focus_parallel_light_tracing);
 
   // double check where y=0 intersection point is, should be the same as focus distance
-  float test_focus_distance = 0.0f;
+  double test_focus_distance = 0.0;
   bool focus_test = trace_ray_focus_check(camera->sensor_shift, test_focus_distance, camera);
   AiMsgInfo("[POTA] focus test ray: %f mm", test_focus_distance);
   if(!focus_test){
     AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
   }
 
-  camera->tan_fov = tanf(camera->lens_field_of_view / 2.0f);
+  camera->tan_fov = std::tan(camera->lens_field_of_view / 2.0);
 
   AiMsgInfo("");
 }
@@ -192,10 +192,10 @@ camera_create_ray {
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
   int tries = 0;
-  float random1 = 0.0f, random2 = 0.0f; 
-  Eigen::Vector3f origin(0, 0, 0);
-  Eigen::Vector3f direction(0, 0, 0);
-  Eigen::Vector3f weight(1, 1, 1);
+  double random1 = 0.0, random2 = 0.0; 
+  Eigen::Vector3d origin(0, 0, 0);
+  Eigen::Vector3d direction(0, 0, 0);
+  Eigen::Vector3d weight(1, 1, 1);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera);
   
@@ -220,20 +220,20 @@ camera_create_ray {
       input_dx.sx += input.dsx * step;
       input_dy.sy += input.dsy * step;
 
-      Eigen::Vector3f out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
-      Eigen::Vector3f out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
-      Eigen::Vector3f out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+      Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
+      Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
+      Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
       trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera);
 
-      Eigen::Vector3f out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
-      Eigen::Vector3f out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
-      Eigen::Vector3f out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
+      Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
+      Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
+      Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
       trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera);
 
-      Eigen::Vector3f out_d0dx = (out_dx_origin - origin) / step;
-      Eigen::Vector3f out_dOdy = (out_dy_origin - origin) / step;
-      Eigen::Vector3f out_dDdx = (out_dx_dir - direction) / step;
-      Eigen::Vector3f out_dDdy = (out_dy_dir - direction) / step;
+      Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
+      Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
+      Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
+      Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
 
       for (int i = 0; i<3; i++){
         output.dOdx[i] = out_d0dx(i);
@@ -366,7 +366,7 @@ camera_reverse_ray
 camera_reverse_ray {
   const Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
-  float coeff = 1.0 / AiMax(fabsf(Po.z * camera->tan_fov), 1e-3f);
+  double coeff = 1.0 / AiMax(fabs(Po.z * camera->tan_fov), 1e-3);
   Ps.x = Po.x * coeff;
   Ps.y = Po.y * coeff;
 

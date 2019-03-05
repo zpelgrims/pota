@@ -18,11 +18,11 @@ struct CameraRaytraced {
   std::string id;
   int lenses_cnt;
   std::vector<lens_element_t> lenses;
-  float p_rad;
-  float zoom;
-  float lens_focal_length;
-  float thickness_original;
-  float total_lens_length;
+  double p_rad;
+  double zoom;
+  double lens_focal_length;
+  double thickness_original;
+  double total_lens_length;
 
   //test
   int test_cnt;
@@ -35,8 +35,8 @@ struct CameraRaytraced {
   #endif
 
 
-  std::vector<Eigen::Vector3f> position_list;
-  std::vector<Eigen::VectorXf> direction_list;
+  std::vector<Eigen::Vector3d> position_list;
+  std::vector<Eigen::VectorXd> direction_list;
 
 } camera_rt;
 
@@ -75,8 +75,8 @@ static const char* LensModelNames[] = {
 static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
 
 
-float get_lens_length(CameraRaytraced *camera_rt) {
-  float total_length = 0.0f;
+double get_lens_length(CameraRaytraced *camera_rt) {
+  double total_length = 0.0;
   for (int i = 0; i < camera_rt->lenses_cnt; i++) {
     total_length += camera_rt->lenses[i].thickness_short;
   }
@@ -87,43 +87,43 @@ float get_lens_length(CameraRaytraced *camera_rt) {
 
 // focus_distance is in mm
 void rt_logarithmic_focus_search(
-  const float focus_distance, 
-  float &best_sensor_shift, 
-  float &closest_distance,
-  const float lambda,
+  const double focus_distance, 
+  double &best_sensor_shift, 
+  double &closest_distance,
+  const double lambda,
   CameraRaytraced *camera_rt)
 {
 
-  std::vector<float> log = logarithmic_values();
+  std::vector<double> log = logarithmic_values();
 
-  for (float sensorshift : log){
-  	float intersection_distance = 0.0f;
+  for (double sensorshift : log){
+  	double intersection_distance = 0.0;
     //AiMsgInfo("----------------------");
 
     add_to_thickness_last_element(camera_rt->lenses, sensorshift, camera_rt->lenses_cnt, camera_rt->thickness_original);
-    const float p_dist = lens_get_thickness(camera_rt->lenses[camera_rt->lenses_cnt-1], camera_rt->zoom);
+    const double p_dist = lens_get_thickness(camera_rt->lenses[camera_rt->lenses_cnt-1], camera_rt->zoom);
 
-    Eigen::Vector3f pos(0,0,0);
-    Eigen::Vector3f dir(0,0,0);
-    Eigen::VectorXf ray_in(5); ray_in.setZero();
+    Eigen::Vector3d pos(0,0,0);
+    Eigen::Vector3d dir(0,0,0);
+    Eigen::VectorXd ray_in(5); ray_in.setZero();
     ray_in(2) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(0) / p_dist);
     ray_in(3) = (camera_rt->p_rad*0.25 / p_dist) - (ray_in(1) / p_dist);
     ray_in(4) = lambda;
 
     //remove
-    std::vector<Eigen::VectorXf> tmpdir1;
-    std::vector<Eigen::Vector3f> tmppos1;
+    std::vector<Eigen::VectorXd> tmpdir1;
+    std::vector<Eigen::Vector3d> tmppos1;
     
     int error = evaluate_for_pos_dir(camera_rt->lenses, camera_rt->lenses_cnt, camera_rt->zoom, ray_in, 1, pos, dir, camera_rt->total_lens_length, tmppos1, tmpdir1, false);
     if (error) continue;
 
     intersection_distance = line_plane_intersection(pos, dir)(2);
     //AiMsgInfo("intersection_distance: %f at sensor_shift: %f", intersection_distance, sensorshift);
-    float new_distance = focus_distance - intersection_distance;
+    double new_distance = focus_distance - intersection_distance;
     //AiMsgInfo("new_distance: %f", new_distance);
 
 
-    if (new_distance < closest_distance && new_distance > 0.0f){
+    if (new_distance < closest_distance && new_distance > 0.0){
       closest_distance = new_distance;
       best_sensor_shift = sensorshift;
       //AiMsgInfo("best_sensor_shift: %f", best_sensor_shift);
@@ -181,7 +181,7 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0f; //convert to mm
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
   //camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
@@ -198,15 +198,15 @@ node_update {
   switch (camera->unitModel){
     case mm:
     {
-      camera->focus_distance *= 0.1f;
+      camera->focus_distance *= 0.1;
     } break;
     case dm:
     {
-      camera->focus_distance *= 10.0f;
+      camera->focus_distance *= 10.0;
     } break;
     case m:
     {
-      camera->focus_distance *= 100.0f;
+      camera->focus_distance *= 100.0;
     }
   }
 
@@ -234,8 +234,8 @@ node_update {
   AiMsgInfo("[lentil raytraced] focus distance (mm): %f", camera->focus_distance);
 
   // logartihmic focus search
-  float best_sensor_shift = 0.0f;
-  float closest_distance = AI_BIG;
+  double best_sensor_shift = 0.0;
+  double closest_distance = AI_BIG;
   rt_logarithmic_focus_search(camera->focus_distance, best_sensor_shift, closest_distance, camera->lambda, camera_rt);
   AiMsgInfo("[lentil raytraced] sensor_shift using logarithmic search: %f", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
@@ -268,7 +268,7 @@ node_update {
   // remove
   camera_rt->test_cnt = 0;
   camera_rt->test_maxcnt = 1000;
-  camera_rt->test_intersection_distance = 0.0f;
+  camera_rt->test_intersection_distance = 0.0;
   //camera_rt->position_list.clear();
   //camera_rt->direction_list.clear();
 
@@ -331,33 +331,33 @@ camera_create_ray {
   int tries = 0;
   bool ray_success = false;
 
-  Eigen::Vector3f pos(0,0,0);
-  Eigen::Vector3f dir(0,0,0);
+  Eigen::Vector3d pos(0,0,0);
+  Eigen::Vector3d dir(0,0,0);
 
   while(ray_success == false && tries <= camera->vignetting_retries) {
     
-    // Eigen::Vector3f sensor_pos(input.sx * (camera->sensor_width * 0.5f),
+    // Eigen::Vector3d sensor_pos(input.sx * (camera->sensor_width * 0.5f),
     //                            input.sy * (camera->sensor_width * 0.5f),
     //                            0.0
     // );
-    Eigen::Vector3f sensor_pos(0,0,0);
+    Eigen::Vector3d sensor_pos(0,0,0);
 
 
     // transform unit square to unit disk
-    Eigen::Vector2d unit_disk(0.0f, 0.0f);
+    Eigen::Vector2d unit_disk(0.0, 0.0);
     if (tries == 0) concentric_disk_sample(input.lensx, input.lensy, unit_disk, false);
-    else concentric_disk_sample(xor128() / 4294967296.0f, xor128() / 4294967296.0f, unit_disk, true);
+    else concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, unit_disk, true);
     
     // p_rad should cover -1, 1 in this config.. not sure why i have to scale it up further.. debug
-    Eigen::Vector3f first_lens_element_pos(camera_rt->p_rad*1.0f * unit_disk(0),
-                                           camera_rt->p_rad*1.0f * unit_disk(1),
+    Eigen::Vector3d first_lens_element_pos(camera_rt->p_rad*1.0 * unit_disk(0),
+                                           camera_rt->p_rad*1.0 * unit_disk(1),
                                            camera_rt->thickness_original
     );
 
-    Eigen::Vector3f direction = first_lens_element_pos - sensor_pos;
+    Eigen::Vector3d direction = first_lens_element_pos - sensor_pos;
     direction.normalize(); 
     
-    Eigen::VectorXf ray_in(5); ray_in << sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda;
+    Eigen::VectorXd ray_in(5); ray_in << sensor_pos(0), sensor_pos(1), direction(0), direction(1), camera->lambda;
 
     add_to_thickness_last_element(camera_rt->lenses, camera->sensor_shift, camera_rt->lenses_cnt, camera_rt->thickness_original);
 
@@ -381,8 +381,8 @@ camera_create_ray {
   }
 
   /*
-  Eigen::Vector3f pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
-  Eigen::Vector3f dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
+  Eigen::Vector3d pos_eigen(output.origin[0], output.origin[1], output.origin[2]);
+  Eigen::Vector3d dir_eigen(output.dir[0], output.dir[1], output.dir[2]);
   camera_rt->test_intersection_distance += line_plane_intersection(pos_eigen, dir_eigen)(2);
   ++camera_rt->test_cnt;
   if (camera_rt->test_cnt == camera_rt->test_maxcnt){

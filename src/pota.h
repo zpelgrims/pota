@@ -51,37 +51,37 @@ struct Camera
 
     // lens constants
     const char* lens_name;
-    float lens_outer_pupil_radius;
-    float lens_inner_pupil_radius;
-    float lens_length;
-    float lens_back_focal_length;
-    float lens_effective_focal_length;
-    float lens_aperture_pos;
-    float lens_aperture_housing_radius;
-    float lens_inner_pupil_curvature_radius;
-    float lens_outer_pupil_curvature_radius;
-    float lens_field_of_view;
-    float lens_fstop;
-    float lens_aperture_radius_at_fstop;
+    double lens_outer_pupil_radius;
+    double lens_inner_pupil_radius;
+    double lens_length;
+    double lens_back_focal_length;
+    double lens_effective_focal_length;
+    double lens_aperture_pos;
+    double lens_aperture_housing_radius;
+    double lens_inner_pupil_curvature_radius;
+    double lens_outer_pupil_curvature_radius;
+    double lens_field_of_view;
+    double lens_fstop;
+    double lens_aperture_radius_at_fstop;
     std::string lens_inner_pupil_geometry;
     std::string lens_outer_pupil_geometry;
 
 
-	float sensor_width;
-	float input_fstop;
+	double sensor_width;
+	double input_fstop;
     
     //debug
-    float max_fstop;
+    double max_fstop;
 
-	float focus_distance;
-	float aperture_radius;
-	float sensor_shift;
+	double focus_distance;
+	double aperture_radius;
+	double sensor_shift;
     int vignetting_retries;
-	float lambda;
+	double lambda;
     int aperture_blades;
 	bool dof;
     int backward_samples;
-    float minimum_rgb;
+    double minimum_rgb;
     AtString bokeh_exr_path;
 
     bool run_intersection_tests;
@@ -89,13 +89,13 @@ struct Camera
 
     bool proper_ray_derivatives;
 
-    float random1;
-    float random2;
+    double random1;
+    double random2;
 
     //camera_reverse_ray
-    float tan_fov;
+    double tan_fov;
 
-    float anamorphic_stretch;
+    double anamorphic_stretch;
 };
 
 extern struct Camera camera;
