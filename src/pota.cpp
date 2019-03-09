@@ -38,7 +38,7 @@ static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 node_parameters {
   AiParameterEnum("units", cm, Units);
-  AiParameterEnum("lens_model", angenieux_double_gauss_1953_100mm, LensModelNames); // what to do here..? Can i not specify one?
+  AiParameterEnum("lens_model", angenieux_double_gauss_1953_49mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
@@ -132,7 +132,7 @@ node_update {
     AiMsgInfo("[POTA] calculated fstop: %f", calculated_fstop);
     AiMsgInfo("[POTA] calculated aperture radius: %f mm", calculated_aperture_radius);
     
-    camera->aperture_radius = fminf(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
+    camera->aperture_radius = std::min(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
   }
 
   AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);

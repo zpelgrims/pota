@@ -96,16 +96,16 @@ node_finish
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // fill exr
-  std::vector<double> image(bokeh->yres * bokeh->xres * 4);
+  std::vector<float> image(bokeh->yres * bokeh->xres * 4);
   int offset = -1;
   int pixelnumber = 0;
   int aa_square = bokeh->aa_samples * bokeh->aa_samples;
 
   for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
-    image[++offset] = bokeh->image[pixelnumber].r / (double)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].g / (double)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].b / (double)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].a / (double)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].r / (float)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].g / (float)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].b / (float)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].a / (float)aa_square;
     ++pixelnumber;
   }
 
