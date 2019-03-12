@@ -6,7 +6,6 @@
 #include <fstream>
 #include <vector>
 
-
 #include "../../polynomial-optics/src/lenssystem.h"
 #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
@@ -42,10 +41,29 @@ struct Draw
 };
 */
 
+struct CameraRaytraced 
+{
+  std::string id;
+  int lenses_cnt;
+  std::vector<lens_element_t> lenses;
+  double p_rad;
+  double zoom;
+  double lens_focal_length;
+  double thickness_original;
+  double total_lens_length;
+
+  #ifdef TIMING
+    long long int total_duration;
+    long long int execution_counter;
+  #endif
+};
+
 struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
+
+    CameraRaytraced camera_rt;
 
     //Draw draw;
 
@@ -65,7 +83,6 @@ struct Camera
     double lens_aperture_radius_at_fstop;
     std::string lens_inner_pupil_geometry;
     std::string lens_outer_pupil_geometry;
-
 
 	double sensor_width;
 	double input_fstop;

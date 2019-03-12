@@ -35,7 +35,7 @@ CXXFLAGS=\
 	-I/../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
-	-ggdb3
+	-g
 
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
