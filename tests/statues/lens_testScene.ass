@@ -375,7 +375,7 @@ standard_surface
 image
 {
  name aiImage1
- filename "/home/cactus/lentil/pota/tests/statues/lenstestchart.tx"
+ filename "/Users/zeno/lentil/pota/tests/statues/lenstestchart.tx"
 }
 
 standard_surface
