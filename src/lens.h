@@ -206,29 +206,29 @@ inline double fastCos(double x){
 
 
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(const double ox, const double oy, Eigen::Vector2d &lens, bool fast_trigo)
+inline void concentric_disk_sample(const double ox, const double oy, Eigen::Vector2d &unit_disk, bool fast_trigo)
 {
   double phi, r;
 
   // switch coordinate space from [0, 1] to [-1, 1]
-  double a = 2.0 * ox - 1.0;
-  double b = 2.0 * oy - 1.0;
+  double a = 2.0*ox - 1.0;
+  double b = 2.0*oy - 1.0;
 
-  if ((a * a) > (b * b)){
+  if ((a*a) > (b*b)){
     r = a;
-    phi = (0.78539816339f) * (b / a);
+    phi = (0.78539816339) * (b/a);
   }
   else {
     r = b;
-    phi = (M_PI/2.0f)-(0.78539816339f) * (a / b);
+    phi = (M_PI/2.0) - (0.78539816339) * (a/b);
   }
 
   if (!fast_trigo){
-    lens(0) = r * std::cos(phi);
-    lens(1) = r * std::sin(phi);
+    unit_disk(0) = r * std::cos(phi);
+    unit_disk(1) = r * std::sin(phi);
   } else {
-    lens(0) = r * fastCos(phi);
-    lens(1) = r * fastSin(phi);
+    unit_disk(0) = r * fastCos(phi);
+    unit_disk(1) = r * fastSin(phi);
   }
 }
 

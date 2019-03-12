@@ -43,19 +43,20 @@ struct Draw
 
 struct CameraRaytraced 
 {
-  std::string id;
-  int lenses_cnt;
-  std::vector<lens_element_t> lenses;
-  double p_rad;
-  double zoom;
-  double lens_focal_length;
-  double thickness_original;
-  double total_lens_length;
+    std::string id;
+    int lenses_cnt;
+    std::vector<lens_element_t> lenses;
+    double first_element_housing_radius;
+    double zoom;
+    double lens_focal_length;
+    double thickness_original;
+    double total_lens_length;
+};
 
-  #ifdef TIMING
+struct Timing
+{
     long long int total_duration;
     long long int execution_counter;
-  #endif
 };
 
 struct Camera
@@ -64,6 +65,10 @@ struct Camera
     UnitModel unitModel;
 
     CameraRaytraced camera_rt;
+
+    #ifdef TIMING
+        Timing timing;
+    #endif
 
     //Draw draw;
 

@@ -178,6 +178,9 @@ node_update {
 
   camera->tan_fov = std::tan(camera->lens_field_of_view / 2.0);
 
+  // tmp, remove!
+  camera->sensor_shift = 1.660608;
+
   AiMsgInfo("");
 }
 
