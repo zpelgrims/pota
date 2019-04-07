@@ -27,6 +27,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
 
     """
 
+
     def setup(self):
 
         self.beginLayout("Polynomial Optics", collapse=False)
@@ -35,8 +36,8 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiSensorWidth", label="Sensor Width (mm)")
         self.addControl("aiWavelength", label="Wavelength (nm)")
         self.addControl("aiDof", label="Enable depth of field")
-        self.addControl("aiFstop", label="F-stop")
-        self.addControl("aiFocalDistance", label="Focus distance (units)")
+        self.addControl("aiFstop", label="F-stop", dynamic=True)
+        self.addControl("aiFocalDistance", label="Focus distance (unit)")
         self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
@@ -51,13 +52,6 @@ class aiPotaTemplate(templates.AttributeTemplate):
 
         
         """
-        self.addSeparator()
-        self.addSeparator()
-        self.addSeparator()
-        self.addSeparator()
-        self.addSeparator()
-        self.addSeparator()
-
         self.beginLayout("AOV shader", collapse=False)
         self.addControl("aiBackwardSamples", label="Backwards samples")
         self.addControl("aiMinimumRgb", label="Minimum RGB")

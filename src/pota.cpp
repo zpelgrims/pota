@@ -14,7 +14,7 @@ enum {
   p_wavelength,
   p_dof,
   p_fstop,
-  p_focus_distance,
+  p_focal_distance,
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
@@ -43,7 +43,7 @@ node_parameters {
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
@@ -66,7 +66,7 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
+  camera->focus_distance = AiNodeGetFlt(node, "focal_distance") * 10.0; //converting to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
