@@ -21,7 +21,7 @@ cd $LENTIL_BUILD_HOME/lentil
 git pull --recurse-submodules
 
 # build the plugin
-cd pota/makefile_prod
+cd pota/build/server
 make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=$LENSES
 # if this fails i need to be sent an urgent email/notification..!
 
