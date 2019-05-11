@@ -18,7 +18,7 @@ echo ""
 
 # need to run a git pull on master, currently only supporting latest release
 cd $LENTIL_BUILD_HOME/lentil
-git pull # might need to do a pull all subrepos
+git pull --recurse-submodules
 
 # build the plugin
 cd pota/makefile_prod
