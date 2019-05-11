@@ -34,7 +34,7 @@ CXXFLAGS=\
 	-Wno-narrowing\
 	-I${ARNOLD_PATH}/include\
 	-I/../Eigen/Eigen\
-	-I/../fmt/\
+	-I/../fmt/include/fmt\
 	-I/../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
