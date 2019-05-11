@@ -6,7 +6,7 @@ echo ""
 echo "Setting environment variables: "
     # green text color
     tput setaf 2;
-    export LENTIL_PATH=$CURRENT_DIR/../polynomial-optics/
+    export LENTIL_PATH=$CURRENT_DIR/../../../polynomial-optics/
     echo -e "\t LENTIL_PATH: " $LENTIL_PATH
     export LENTIL_ARNOLD_SDKS=$LENTIL_PATH/../../
     echo -e "\t LENTIL_ARNOLD_SDKS: " $LENTIL_ARNOLD_SDKS

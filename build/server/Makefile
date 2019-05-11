@@ -33,17 +33,17 @@ CXXFLAGS=\
 	-fPIC\
 	-Wno-narrowing\
 	-I${ARNOLD_PATH}/include\
-	-I/../../Eigen/Eigen\
-	-I/../../fmt/include/fmt\
-	-I/../../polynomial-optics/src\
+	-I/../../../Eigen/Eigen\
+	-I/../../../fmt/include/fmt\
+	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY
 
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
 HEADERS=\
-	../src/lens.h\
-	../src/pota.h
+	../../src/lens.h\
+	../../src/pota.h
 
 .PHONY=all clean
 
@@ -51,12 +51,12 @@ all: lentil
 
 
 ifeq ($(OS), Darwin)
-lentil: Makefile ../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
+lentil: Makefile ../../src/pota.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
 ifeq ($(OS), Linux)
-lentil: Makefile ../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
+lentil: Makefile ../../src/pota.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
 endif
 
 
