@@ -19,9 +19,13 @@ echo "Setting environment variables: "
     echo -e "\t LENTIL_PATH: " $LENTIL_PATH
 echo ""
 
+# need to run a git pull on master, currently only supporting latest release
+cd $LENTIL_BUILD_HOME/lentil
+git pull
 
 # build the plugin
 make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=lenses
+# if this fails i need to be sent an urgent email/notification..!
 
 # collect files into directories
 rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/
