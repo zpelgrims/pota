@@ -26,7 +26,8 @@ make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=$L
 # if this fails i need to be sent an urgent email/notification..!
 
 # collect files into directories
-rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/
+# this currently copies the whole directory tree (/root/lentil-build/...)
+rsync -a --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/
 
 # zip it up
 zip -r9 /root/lentil-build/builds/$USER_BUILD_FOLDER/$USER_BUILD_FOLDER.zip /root/lentil-build/builds/$USER_BUILD_FOLDER
