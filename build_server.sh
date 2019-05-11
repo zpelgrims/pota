@@ -33,4 +33,4 @@ cd /root/lentil-build/builds
 zip -r9 $USER_BUILD_FOLDER.zip $USER_BUILD_FOLDER
 
 # sync .zip to website server
-rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /root/lentil-build/builds/$USER_BUILD_FOLDER/$USER_BUILD_FOLDER.zip $WEBSERVER:$DOWNLOAD_DIR
+rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress $USER_BUILD_FOLDER.zip $WEBSERVER:$DOWNLOAD_DIR
