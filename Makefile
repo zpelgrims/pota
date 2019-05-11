@@ -12,7 +12,7 @@ ifeq ($(OS), Darwin)
 	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.2.0-linux
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-linux
 endif
 
 
@@ -20,6 +20,8 @@ LENSES = -DLENS_ID_FREE
 # lens list is expected in following format: lens_list=.1001.2001.2002.2003 (first dot is important)
 LENSES += $(subst ., -DLENS_ID_, ${lens_list})
 $(info    LENSES: $(LENSES))
+
+# is there an issue when I specify the same lens twice? once in lens_id_free and once in the user string?
 
 
 

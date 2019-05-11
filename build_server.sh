@@ -1,6 +1,7 @@
 #!/bin/bash
 
 WEBSERVER=root@78.141.196.104
+LENTIL_BUILD_HOME=/root/lentil-build
 
 args=("$@")
 LENSES=${args[0]}
@@ -10,21 +11,18 @@ DOWNLOAD_DIR=${args[3]}
 
 mkdir -p $LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER/bin
 
-
-CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
-echo ""
 echo "Setting environment variables: "
-    export LENTIL_PATH=$CURRENT_DIR/../polynomial-optics/
+    export LENTIL_PATH=/root/lentil-build/lentil/polynomial-optics/
     echo -e "\t LENTIL_PATH: " $LENTIL_PATH
 echo ""
 
 # need to run a git pull on master, currently only supporting latest release
 cd $LENTIL_BUILD_HOME/lentil
-git pull
+git pull # might need to do a pull all subrepos
 
 # build the plugin
-make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=lenses
+cd pota/makefile_prod
+make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_FOLDER lens_list=$LENSES
 # if this fails i need to be sent an urgent email/notification..!
 
 # collect files into directories
