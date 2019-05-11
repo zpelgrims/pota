@@ -32,4 +32,4 @@ rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/buil
 zip -r9 /root/lentil-build/builds/$USER_BUILD_FOLDER/$USER_BUILD_FOLDER.zip /root/lentil-build/builds/$USER_BUILD_FOLDER
 
 # sync .zip to website server
-rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /root/lentil-build/builds/$USER_BUILD_FOLDER/$USER_BUILD_FOLDER.zip $WEBSERVER:$DOWNLOAD_DIR/
+rsync -avz -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --progress /root/lentil-build/builds/$USER_BUILD_FOLDER/$USER_BUILD_FOLDER.zip $WEBSERVER:$DOWNLOAD_DIR
