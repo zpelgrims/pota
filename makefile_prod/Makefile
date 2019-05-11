@@ -50,11 +50,11 @@ all: lentil
 
 
 ifeq ($(OS), Darwin)
-lentil: Makefile src/pota.cpp ${HEADERS}
+lentil: Makefile ../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
 ifeq ($(OS), Linux)
-lentil: Makefile src/pota.cpp ${HEADERS}
+lentil: Makefile ../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
 endif
 
