@@ -29,7 +29,7 @@ make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_DIR lens_list=$LENS
 rsync -ah --progress $LENTIL_BUILD_HOME/lentil/pota/maya $LENTIL_BUILD_HOME/builds/$USER_BUILD_DIR/ &&
 
 # zip it up
-cd /root/lentil-build/builds
+cd $LENTIL_BUILD_HOME/builds
 zip -r9 $USER_BUILD_DIR.zip $USER_BUILD_DIR &&
 
 # sync .zip to website server
