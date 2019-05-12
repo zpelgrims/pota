@@ -17,8 +17,8 @@ echo "Setting environment variables: "
 echo ""
 
 # need to run a git pull on master, currently only supporting latest release
-cd $LENTIL_BUILD_HOME/lentil
-git pull --recurse-submodules
+# cd $LENTIL_BUILD_HOME/lentil
+# git pull --recurse-submodules
 
 # build the plugin
 cd pota/build/server
