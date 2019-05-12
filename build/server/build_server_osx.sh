@@ -12,7 +12,7 @@ DOWNLOAD_DIR=${args[3]}
 mkdir -p $LENTIL_BUILD_HOME/builds/$USER_BUILD_DIR/bin &&
 
 echo "Setting environment variables: "
-    export LENTIL_PATH=/root/lentil-build/lentil/polynomial-optics/
+    export LENTIL_PATH=/Users/xcloud/lentil-build/lentil/polynomial-optics/
     echo -e "\t LENTIL_PATH: " $LENTIL_PATH
 echo ""
 
