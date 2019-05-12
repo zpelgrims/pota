@@ -9,7 +9,7 @@ endif
 
 # these need to be changed to the envvar
 ifeq ($(OS), Darwin)
-	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-darwin
+	ARNOLD_PATH=~/lentil-build/arnold/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
 	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-linux
