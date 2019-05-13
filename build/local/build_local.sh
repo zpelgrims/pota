@@ -15,4 +15,4 @@ echo ""
 # reset text formatting
 tput sgr0
 
-make user_build_folder=. -j4
+make user_build_folder=../../ -j4
