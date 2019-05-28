@@ -38,7 +38,7 @@ static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 node_parameters {
   AiParameterEnum("units", cm, Units);
-  AiParameterEnum("lens_model", angenieux_double_gauss_1953_49mm, LensModelNames); // what to do here..? Can i not specify one?
+  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
