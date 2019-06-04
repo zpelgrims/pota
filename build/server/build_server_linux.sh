@@ -22,7 +22,7 @@ echo ""
 
 # build the plugin
 cd $LENTIL_BUILD_HOME/lentil/pota/build/server
-make user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_DIR lens_list=$LENSES &&
+make os=Linux user_build_folder=$LENTIL_BUILD_HOME/builds/$USER_BUILD_DIR lens_list=$LENSES &&
 # if this fails i need to be sent an urgent email/notification..!
 
 # collect files into directories

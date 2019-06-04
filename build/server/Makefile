@@ -1,18 +1,22 @@
-OS := $(shell uname)
-
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 	CXX=clang++
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 	CXX=g++
+endif
+ifeq (${os}, Windows)
+	CXX=x86_64-w64-mingw32-g++
 endif
 
 # these need to be changed to the envvar
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 	ARNOLD_PATH=/Users/xcloud/lentil-build/arnold/Arnold-5.2.0.0-darwin
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-linux
+endif
+ifeq (${os}, Windows)
+	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-windows
 endif
 
 
@@ -50,13 +54,17 @@ HEADERS=\
 all: lentil
 
 
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
+endif
+ifeq (${os}, Windows)
+lentil: Makefile ../../src/pota.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dll ${LDFLAGS}
 endif
 
 
