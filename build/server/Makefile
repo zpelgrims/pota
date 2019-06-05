@@ -32,6 +32,7 @@ $(info    LENSES: $(LENSES))
 CXXFLAGS=\
 	-Wall\
 	-std=c++17\
+	-shared
 	-O3\
 	-fPIC\
 	-Wno-narrowing\
@@ -65,11 +66,11 @@ all: lentil
 
 ifeq (${os}, Darwin)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -shared ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
 ifeq (${os}, Linux)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -shared ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
 endif
 ifeq (${os}, Windows)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
