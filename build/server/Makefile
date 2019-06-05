@@ -32,7 +32,7 @@ $(info    LENSES: $(LENSES))
 CXXFLAGS=\
 	-Wall\
 	-std=c++17\
-	-shared
+	-shared\
 	-O3\
 	-fPIC\
 	-Wno-narrowing\
