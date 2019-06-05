@@ -42,7 +42,17 @@ CXXFLAGS=\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY
 
-LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
+
+ifeq (${os}, Darwin)
+	LDFLAGS=-L${ARNOLD_PATH}/bin -lai
+endif
+ifeq (${os}, Linux)
+	LDFLAGS=-L${ARNOLD_PATH}/bin -lai
+endif
+ifeq (${os}, Windows)
+	LDFLAGS=-L${ARNOLD_PATH}/lib -lai
+endif
+
 
 HEADERS=\
 	../../src/lens.h\
