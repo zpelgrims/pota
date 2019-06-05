@@ -33,7 +33,6 @@ CXXFLAGS=\
 	-Wall\
 	-std=c++17\
 	-O3\
-	-shared\
 	-fPIC\
 	-Wno-narrowing\
 	-I${ARNOLD_PATH}/include\
@@ -56,15 +55,15 @@ all: lentil
 
 ifeq (${os}, Darwin)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} -shared ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
 ifeq (${os}, Linux)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
+	${CXX} ${CXXFLAGS} -shared ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
 endif
 ifeq (${os}, Windows)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dll ${LDFLAGS}
+	${CXX} ${CXXFLAGS} -static -static-libgcc -static-libstdc++ ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dll ${LDFLAGS}
 endif
 
 
