@@ -1,18 +1,22 @@
-OS := $(shell uname)
-
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 	CXX=clang++
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 	CXX=g++
+endif
+ifeq (${os}, Windows)
+	CXX=x86_64-w64-mingw32-g++
 endif
 
 # these need to be changed to the envvar
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 	ARNOLD_PATH=/Users/xcloud/lentil-build/arnold/Arnold-5.2.0.0-darwin
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-linux
+endif
+ifeq (${os}, Windows)
+	ARNOLD_PATH=/root/lentil-build/arnold/Arnold-5.2.0.0-windows
 endif
 
 
@@ -28,8 +32,8 @@ $(info    LENSES: $(LENSES))
 CXXFLAGS=\
 	-Wall\
 	-std=c++17\
-	-O3\
 	-shared\
+	-O3\
 	-fPIC\
 	-Wno-narrowing\
 	-I${ARNOLD_PATH}/include\
@@ -39,7 +43,17 @@ CXXFLAGS=\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY
 
-LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
+
+ifeq (${os}, Darwin)
+	LDFLAGS=-L${ARNOLD_PATH}/bin -lai
+endif
+ifeq (${os}, Linux)
+	LDFLAGS=-L${ARNOLD_PATH}/bin -lai
+endif
+ifeq (${os}, Windows)
+	LDFLAGS=-L${ARNOLD_PATH}/lib -lai
+endif
+
 
 HEADERS=\
 	../../src/lens.h\
@@ -50,13 +64,19 @@ HEADERS=\
 all: lentil
 
 
-ifeq ($(OS), Darwin)
+ifeq (${os}, Darwin)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dylib ${LDFLAGS}
 endif
-ifeq ($(OS), Linux)
+ifeq (${os}, Linux)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.so ${LDFLAGS}
+endif
+ifeq (${os}, Windows)
+lentil: Makefile ../../src/pota.cpp ${HEADERS}
+	${CXX} ${LENSES} -o ${user_build_folder}/bin/pota.o ../../src/pota.cpp -I${ARNOLD_PATH}/include -std=c++17 -fpic -O3 -c -I${ARNOLD_PATH}/include -I/../../../Eigen/Eigen -I/../../../fmt/include/fmt -I/../../../polynomial-optics/src -DDEBUG_LOG -DFMT_HEADER_ONLY
+	${CXX} -shared -static-libgcc -static-libstdc++ -o ${user_build_folder}/bin/lentil.dll ${user_build_folder}/bin/pota.o -L${ARNOLD_PATH}/lib -l:ai.lib
+	#${CXX} ${CXXFLAGS} -static -static-libgcc -static-libstdc++ ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dll ${LDFLAGS}
 endif
 
 
