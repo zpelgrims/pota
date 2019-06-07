@@ -75,7 +75,7 @@ endif
 ifeq (${os}, Windows)
 lentil: Makefile ../../src/pota.cpp ${HEADERS}
 	${CXX} ${LENSES} -o ${user_build_folder}/bin/pota.o ../../src/pota.cpp -I${ARNOLD_PATH}/include -std=c++17 -fpic -O3 -c -I${ARNOLD_PATH}/include -I/../../../Eigen/Eigen -I/../../../fmt/include/fmt -I/../../../polynomial-optics/src -DDEBUG_LOG -DFMT_HEADER_ONLY
-	${CXX} -shared -o ${user_build_folder}/bin/lentil.dll ${user_build_folder}/bin/pota.o -L${ARNOLD_PATH}/lib -l:ai.lib
+	${CXX} -shared -static-libgcc -static-libstdc++ -o ${user_build_folder}/bin/lentil.dll ${user_build_folder}/bin/pota.o -L${ARNOLD_PATH}/lib -l:ai.lib
 	#${CXX} ${CXXFLAGS} -static -static-libgcc -static-libstdc++ ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/lentil.dll ${LDFLAGS}
 endif
 
