@@ -13,9 +13,10 @@ setx LENTIL_PATH "C:\lentil-build\lentil\polynomial-optics" /M
 :: need to run a git pull on master, currently only supporting latest release
 cd %LENTIL_BUILD_HOME%/lentil
 git pull --recurse-submodules
+:: need to switch to origin/dev for all repos here
 
 :: build the plugin
-cd pota/build/server
+cd ../pota/build/server
 make user_build_folder=%LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR% lens_list=%LENSES%
 :: if this fails i need to be sent an urgent email/notification..!
 
@@ -27,4 +28,4 @@ cd %LENTIL_BUILD_HOME%/builds
 7z %USER_BUILD_DIR%.zip %USER_BUILD_DIR%
 
 :: sync .zip to website server
-C:\pscp %USER_BUILD_DIR%.zip %WEBSERVER%:%DOWNLOAD_DIR%
+scp %USER_BUILD_DIR%.zip %WEBSERVER%:%DOWNLOAD_DIR%

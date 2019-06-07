@@ -19,6 +19,7 @@ echo ""
 # need to run a git pull on master, currently only supporting latest release
 # cd $LENTIL_BUILD_HOME/lentil
 # git pull --recurse-submodules
+# need to switch to origin/dev for all repos here
 
 # build the plugin
 cd $LENTIL_BUILD_HOME/lentil/pota/build/server
