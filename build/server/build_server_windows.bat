@@ -1,8 +1,6 @@
 :: initialize x64 developer command line environment:
 "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
-
-
 SET WEBSERVER="root@78.141.196.104"
 SET LENTIL_BUILD_HOME="C:\lentil-build"
 
@@ -16,13 +14,14 @@ mkdir %LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR%/bin
 setx LENTIL_PATH "C:\lentil-build\lentil\polynomial-optics" /M
 
 :: need to run a git pull on master, currently only supporting latest release
-cd %LENTIL_BUILD_HOME%/lentil
-git pull --recurse-submodules
+:: cd %LENTIL_BUILD_HOME%/lentil
+:: git pull --recurse-submodules
 :: need to switch to origin/dev for all repos here
 
 :: build the plugin
-cd ../pota/build/server
-make user_build_folder=%LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR% lens_list=%LENSES%
+CALL SET LENSES=%LENSES:.=-DLENS_ID_%
+ECHO %LENSES%
+cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.2.0-windows\include /I %LENTIL_BUILD_HOME%/lentil/Eigen/Eigen /I %LENTIL_BUILD_HOME%/lentil/fmt/include/fmt /I %LENTIL_BUILD_HOME%/lentil/polynomial-optics/src /EHsc /O3 %LENSES% -DFMT_HEADER_ONLY %LENTIL_BUILD_HOME%\pota\src\pota.cpp /link /LIBPATH:%LENTIL_BUILD_HOME%\arnold\Arnold-5.2.2.0-windows\lib ai.lib /OUT:%LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR%/lentil.dll
 :: if this fails i need to be sent an urgent email/notification..!
 
 :: collect files into directories
