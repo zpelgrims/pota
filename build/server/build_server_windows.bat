@@ -1,5 +1,5 @@
 :: initialize x64 developer command line environment:
-"C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 SET WEBSERVER="root@78.141.196.104"
 SET LENTIL_BUILD_HOME="C:\lentil-build"
