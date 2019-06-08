@@ -25,7 +25,7 @@ setx LENTIL_PATH "C:\lentil-build\lentil\polynomial-optics" /M
 :: build the plugin
 CALL SET LENSES=%LENSES:.=-DLENS_ID_%
 ECHO %LENSES%
-cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_BUILD_HOME%\lentil\Eigen\Eigen /I %LENTIL_BUILD_HOME%\lentil\polynomial-optics\src /EHsc /O2 %LENSES% %LENTIL_BUILD_HOME%\lentil\pota\src\pota.cpp /link /LIBPATH:%LENTIL_BUILD_HOME%\arnold\Arnold-5.2.2.0-windows\lib ai.lib /OUT:%LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\lentil.dll
+cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_BUILD_HOME%\lentil\Eigen\Eigen /I %LENTIL_BUILD_HOME%\lentil\fmt\include\fmt /I %LENTIL_BUILD_HOME%\lentil\polynomial-optics\src /EHsc /O2 %LENSES% -DFMT_HEADER_ONLY %LENTIL_BUILD_HOME%\lentil\pota\src\pota.cpp /link /LIBPATH:%LENTIL_BUILD_HOME%\arnold\Arnold-5.2.2.0-windows\lib ai.lib /OUT:%LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\lentil.dll
 :: if this fails i need to be sent an urgent email/notification..!
 
 :: collect files into directories
