@@ -9,6 +9,7 @@ echo %LENSES%
 SET USER=%2
 echo %USER%
 SET USER_BUILD_DIR=%3
+CALL SET USER_BUILD_DIR=%USER_BUILD_DIR:/=\%
 echo %USER_BUILD_DIR%
 SET DOWNLOAD_DIR=%4
 echo %DOWNLOAD_DIR%
@@ -25,14 +26,14 @@ setx LENTIL_PATH "C:\lentil-build\lentil\polynomial-optics" /M
 :: build the plugin
 CALL SET LENSES=%LENSES:.=-DLENS_ID_%
 ECHO %LENSES%
-cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_BUILD_HOME%\lentil\Eigen\Eigen /I %LENTIL_BUILD_HOME%\lentil\fmt\include\fmt /I %LENTIL_BUILD_HOME%\lentil\polynomial-optics\src /EHsc /O2 -DLENS_ID_FREE %LENSES% -DFMT_HEADER_ONLY %LENTIL_BUILD_HOME%\lentil\pota\src\pota.cpp /link /LIBPATH:%LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\lib ai.lib /OUT:%LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\lentil.dll
+cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_BUILD_HOME%\lentil\Eigen\Eigen /I %LENTIL_BUILD_HOME%\lentil\fmt\include\fmt /I %LENTIL_BUILD_HOME%\lentil\polynomial-optics\src /EHsc /O2 -DLENS_ID_FREE %LENSES% -DFMT_HEADER_ONLY %LENTIL_BUILD_HOME%\lentil\pota\src\pota.cpp /link /LIBPATH:%LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\lib ai.lib /OUT:%LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\bin\lentil.dll
 :: if this fails i need to be sent an urgent email/notification..!
 
 :: collect files into directories
-xcopy %LENTIL_BUILD_HOME%/lentil/pota/maya %LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR%/
+xcopy %LENTIL_BUILD_HOME%\lentil\pota\maya %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\maya /E /C /I /Q /G /H /R /K /Y /Z /J
 
 :: zip it up
-cd %LENTIL_BUILD_HOME%/builds
+cd %LENTIL_BUILD_HOME%\builds
 7z %USER_BUILD_DIR%.zip %USER_BUILD_DIR%
 
 :: sync .zip to website server
