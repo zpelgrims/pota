@@ -29,7 +29,7 @@ cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_B
 :: if this fails i need to be sent an urgent email/notification..!
 
 :: collect files into directories
-copy %LENTIL_BUILD_HOME%/lentil/pota/maya %LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR%/
+xcopy %LENTIL_BUILD_HOME%/lentil/pota/maya %LENTIL_BUILD_HOME%/builds/%USER_BUILD_DIR%/
 
 :: zip it up
 cd %LENTIL_BUILD_HOME%/builds
