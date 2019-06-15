@@ -33,7 +33,7 @@ cl /LD /I %LENTIL_BUILD_HOME%\arnold\Arnold-5.2.0.0-windows\include /I %LENTIL_B
 xcopy %LENTIL_BUILD_HOME%\lentil\pota\maya %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\maya /E /C /I /Q /G /H /R /K /Y /Z /J
 
 :: zip it up
-7z %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%
+7z %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR% %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip
 
 :: sync .zip to website server
 scp %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip %WEBSERVER%:%DOWNLOAD_DIR%
