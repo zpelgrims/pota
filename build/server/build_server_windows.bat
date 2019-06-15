@@ -36,4 +36,4 @@ xcopy %LENTIL_BUILD_HOME%\lentil\pota\maya %LENTIL_BUILD_HOME%\builds\%USER_BUIL
 7z a %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%\*
 
 :: sync .zip to website server
-scp %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip %WEBSERVER%:%DOWNLOAD_DIR%
+scp -v %LENTIL_BUILD_HOME%\builds\%USER_BUILD_DIR%.zip %WEBSERVER%:%DOWNLOAD_DIR%
