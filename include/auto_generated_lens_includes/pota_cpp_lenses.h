@@ -6,6 +6,12 @@
 	"angenieux__double_gauss__1953__85mm",
 	"angenieux__double_gauss__1953__105mm",
 #endif
-#ifdef LENS_ID_0002
+#ifdef LENS_ID_COMMERCIAL
+	"canon__unknown__1956__35mm",
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	"meyer_optik_goerlitz__primoplan__1936__58mm",
+#endif
+#ifdef LENS_ID_COMMERCIAL
+	"minolta__fisheye__1978__16mm",
 #endif

@@ -17,12 +17,8 @@ endif
 
 
 LENSES = -DLENS_ID_FREE
-# lens list is expected in following format: lens_list=.1001.2001.2002.2003 (first dot is important)
-LENSES += $(subst ., -DLENS_ID_, ${lens_list})
+LENSES += -DLENS_ID_COMMERCIAL
 $(info    LENSES: $(LENSES))
-
-# is there an issue when I specify the same lens twice? once in lens_id_free and once in the user string?
-
 
 
 CXXFLAGS=\
