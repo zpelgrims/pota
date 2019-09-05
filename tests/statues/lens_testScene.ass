@@ -56,8 +56,8 @@ options
  camera_proper_ray_derivatives 0
 }
 
-#pota
-pota_raytraced
+pota
+#pota_raytraced
 {
  name renderCam_75mm_350cmShape
  matrix
