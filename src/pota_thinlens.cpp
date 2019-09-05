@@ -112,13 +112,6 @@ camera_create_ray
     // create point on lens
     AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
 
-    //ca: calculate distance from center
-    AtVector2 p2(p.x, p.y);
-    float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
-
-    //ca: calc random number to choose between 3 apertures
-    int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-
     // calculate direction vector from origin to point on lens
     output.dir = AiV3Normalize(p - output.origin);
 
@@ -130,10 +123,13 @@ camera_create_ray
     lens *= data->apertureRadius;
 
     // ca
+    AtVector2 p2(p.x, p.y);
+    float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
+    int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
     float chr_abb_mult = 3.0;
     AtVector2 aperture_0_center(0.0, 0.0);
-    AtVector2 aperture_1_center(- p2 * distance_to_center * chr_abb_mult); // needs to be a diagonal shift
-    AtVector2 aperture_2_center(p2 * distance_to_center * chr_abb_mult); // needs to be a diagonal shift
+    AtVector2 aperture_1_center(- p2 * distance_to_center * chr_abb_mult);
+    AtVector2 aperture_2_center(p2 * distance_to_center * chr_abb_mult);
     output.weight = AtRGB(1.0);
     if (random_aperture == 0) {
         if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
