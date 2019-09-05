@@ -1,6 +1,9 @@
 #include <ai.h>
 #include <string.h>
 
+// ca
+#include <cmath>
+
 AI_CAMERA_NODE_EXPORT_METHODS(pota_thinlensMethods)
 
 enum
@@ -9,7 +12,7 @@ enum
     p_sensorHeight,
     p_focal_length,
     p_fStop,
-    p_focus_distance
+    p_focal_distance
 };
 
 struct Camera
@@ -20,7 +23,7 @@ struct Camera
     float sensorHeight;
     float focal_length;
     float fStop;
-    float focus_distance;
+    float focal_distance;
     float apertureRadius;
 };
 
@@ -55,7 +58,7 @@ node_parameters
     AiParameterFlt("sensorHeight", 2.4); // 35 mm film
     AiParameterFlt("focal_length", 3.5); // in cm
     AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focus_distance", 100.0);
+    AiParameterFlt("focal_distance", 100.0);
 }
 
 
@@ -74,7 +77,7 @@ node_update
     data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
     data->focal_length = AiNodeGetFlt(node, "focal_length");
     data->fStop = AiNodeGetFlt(node, "fStop");
-    data->focus_distance = AiNodeGetFlt(node, "focus_distance");
+    data->focal_distance = AiNodeGetFlt(node, "focal_distance");
 
     data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focal_length))); // in radians
     data->tan_fov = tanf(data->fov / 2.0f);
@@ -92,12 +95,29 @@ node_finish
     delete data;
 }
 
+
+// xorshift fast random number generator
+inline uint32_t xor128(void){
+  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
+  uint32_t t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
+}
+
+
 camera_create_ray
 {
     const Camera* data = (Camera*)AiNodeGetLocalData(node);
 
     // create point on lens
     AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
+
+    //ca: calculate distance from center
+    AtVector2 p2(p.x, p.y);
+    float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
+
+    //ca: calc random number to choose between 3 apertures
+    int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
 
     // calculate direction vector from origin to point on lens
     output.dir = AiV3Normalize(p - output.origin);
@@ -109,13 +129,59 @@ camera_create_ray
     // scale points in [-1, 1] domain to actual aperture radius
     lens *= data->apertureRadius;
 
+    // ca
+    float chr_abb_mult = 3.0;
+    AtVector2 aperture_0_center(0.0, 0.0);
+    AtVector2 aperture_1_center(- p2 * distance_to_center * chr_abb_mult); // needs to be a diagonal shift
+    AtVector2 aperture_2_center(p2 * distance_to_center * chr_abb_mult); // needs to be a diagonal shift
+    output.weight = AtRGB(1.0);
+    if (random_aperture == 0) {
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.r = 0.0;
+        }
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.b = 0.0;
+        }
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.g = 0.0;
+        }
+    } else if (random_aperture == 1) {
+        lens += aperture_1_center;
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.r = 0.0;
+        }
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.b = 0.0;
+        }
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.g = 0.0;
+        }
+    } else if (random_aperture == 2) {
+        lens += aperture_2_center;
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.r = 0.0;
+        }
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.b = 0.0;
+        }
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+            output.weight.g = 0.0;
+        }
+    }
+
+    //ca, not sure if this should be done, evens out the intensity
+    // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
+    // output.weight.r /= sum;
+    // output.weight.g /= sum;
+    // output.weight.b /= sum;
+
     // new origin is these points on the lens
     output.origin.x = lens.x;
     output.origin.y = lens.y;
     output.origin.z = 0.0;
 
     // Compute point on plane of focus, intersection on z axis
-    float intersection = std::abs(data->focus_distance / output.dir.z);
+    float intersection = std::abs(data->focal_distance / output.dir.z);
     AtVector focusPoint = output.dir * intersection;
     output.dir = AiV3Normalize(focusPoint - output.origin);
 

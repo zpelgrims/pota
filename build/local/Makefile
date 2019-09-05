@@ -2,9 +2,11 @@ OS := $(shell uname)
 
 ifeq ($(OS), Darwin)
 	CXX=clang++
+	SHARED_LIB_FORMAT=dylib
 endif
 ifeq ($(OS), Linux)
 	CXX=g++
+	SHARED_LIB_FORMAT=so
 endif
 
 # these need to be changed to the envvar
@@ -34,7 +36,7 @@ CXXFLAGS=\
 	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
-	-g
+#	-g
 
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
@@ -46,29 +48,20 @@ HEADERS=\
 
 .PHONY=all clean
 
-all: pota pota_raytraced potabokehAOV
+all: pota pota_thinlens pota_raytraced potabokehAOV
 
-ifeq ($(OS), Darwin)
 pota: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/pota.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/pota.${SHARED_LIB_FORMAT} ${LDFLAGS}
+
+pota_thinlens: Makefile ../../src/pota_thinlens.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ../../src/pota_thinlens.cpp -o ${user_build_folder}/bin/pota_thinlens.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
 pota_raytraced: Makefile ../../src/pota_raytraced.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.dylib ${LDFLAGS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
 potabokehAOV: Makefile ../../src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.dylib ${LDFLAGS}
-endif
-ifeq ($(OS), Linux)
-pota: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/pota.so ${LDFLAGS}
-
-pota_raytraced: Makefile ../../src/pota_raytraced.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.so ${LDFLAGS}
-
-potabokehAOV: Makefile ../../src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.so ${LDFLAGS}
-endif
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
 
 clean:
-	rm -f pota pota_raytraced potabokehAOV
+	rm -f pota pota_thinlens pota_raytraced potabokehAOV
