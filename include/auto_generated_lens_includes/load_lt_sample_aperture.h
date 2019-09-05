@@ -11,6 +11,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1936-meyer-optik-goerlitz-primoplan/58/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1936-meyer-optik-goerlitz-primoplan/75/code/lt_sample_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1978-minolta-fisheye/16/code/lt_sample_aperture.h"

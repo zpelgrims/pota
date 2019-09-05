@@ -11,6 +11,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"meyer_optik_goerlitz__primoplan__1936__58mm",
+	"meyer_optik_goerlitz__primoplan__1936__75mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"minolta__fisheye__1978__16mm",
