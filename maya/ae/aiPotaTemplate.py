@@ -42,6 +42,8 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiVignettingRetries", label="Vignetting retries")
         self.addControl("aiApertureBlades", label="Aperture blades")
         self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
+        self.addControl("aiUseImage", label="Use Bokeh Image")
+        self.addControl("aiBokehInputPath", label="Bokeh Path")
         
         # add these in the aovshader template instead
         # self.suppress('normalCamera') 
