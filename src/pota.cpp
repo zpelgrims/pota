@@ -21,7 +21,9 @@ enum {
   p_backward_samples,
   p_minimum_rgb,
   p_bokeh_exr_path,
-  p_proper_ray_derivatives
+  p_proper_ray_derivatives,
+  p_use_image,
+  p_bokeh_input_path
 };
 
 
@@ -51,6 +53,8 @@ node_parameters {
   AiParameterFlt("minimum_rgb", 3.0f);
   AiParameterStr("bokeh_exr_path", "");
   AiParameterBool("proper_ray_derivatives", true);
+  AiParameterBool("use_image", false);
+  AiParameterStr("bokeh_input_path", "");
 }
 
 
@@ -76,7 +80,9 @@ node_update {
   camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
-
+  camera->use_image = AiNodeGetBool(node, "use_image");
+  camera->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
+  
   // convert to cm
   switch (camera->unitModel){
     case mm:
@@ -178,6 +184,17 @@ node_update {
 
   camera->tan_fov = std::tan(camera->lens_field_of_view / 2.0);
 
+  AiMsgInfo("[LENTIL] --------------------------------------");
+  
+
+  // make probability functions of the bokeh image
+  // if (parms.bokehChanged(camera->params)) {
+    camera->image.invalidate();
+    if (camera->use_image && !camera->image.read(camera->bokeh_input_path.c_str())){
+      AiMsgError("[LENTIL] Couldn't open bokeh image!");
+      AiRenderAbort();
+    }
+  // }
   AiMsgInfo("");
 }
 

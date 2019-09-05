@@ -10,6 +10,8 @@
 #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
 
+#include "imagebokeh.h"
+
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
@@ -63,8 +65,8 @@ struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
-
     CameraRaytraced camera_rt;
+    imageData image;
 
     #ifdef TIMING
         Timing timing;
@@ -118,6 +120,9 @@ struct Camera
     double tan_fov;
 
     double anamorphic_stretch;
+
+    bool use_image;
+    AtString bokeh_input_path;
 };
 
 extern struct Camera camera;

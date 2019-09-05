@@ -574,14 +574,24 @@ inline void trace_ray(bool original_ray,
 	  else if (camera->dof && camera->aperture_blades <= 2) {
 			// transform unit square to unit disk
 		  Eigen::Vector2d unit_disk(0.0, 0.0);
-		  if (tries == 0) concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
+		  if (tries == 0) {
+        if (camera->use_image) {
+          camera->image.bokehSample(input_lensx, input_lensy, unit_disk);
+        } else {
+          concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
+        }
+      }
 		  else {
 		  	if (original_ray) {
 				  r1 = xor128() / 4294967296.0;
 				  r2 = xor128() / 4294967296.0;
 			  }
 
-		  	concentric_disk_sample(r1, r2, unit_disk, true);
+        if (camera->use_image) {
+          camera->image.bokehSample(r1, r2, unit_disk);
+        } else {
+          concentric_disk_sample(r1, r2, unit_disk, true);
+        }
 		  }
 
       aperture(0) = unit_disk(0) * camera->aperture_radius;

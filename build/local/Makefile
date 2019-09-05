@@ -41,6 +41,7 @@ LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 HEADERS=\
 	../../src/lens.h\
 	../../src/pota.h\
+	../../src/imagebokeh.h\
 	../../src/tinyexr.h
 
 .PHONY=all clean
