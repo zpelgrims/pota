@@ -97,29 +97,29 @@ node_update {
   AiMsgInfo("");
 
   load_lens_constants(camera);
-  AiMsgInfo("[POTA] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[POTA] Lens Name: %s", camera->lens_name);
-  AiMsgInfo("[POTA] Lens F-Stop: %f", camera->lens_fstop);
+  AiMsgInfo("[LENTIL] ----------  LENS CONSTANTS  -----------");
+  AiMsgInfo("[LENTIL] Lens Name: %s", camera->lens_name);
+  AiMsgInfo("[LENTIL] Lens F-Stop: %f", camera->lens_fstop);
 #ifdef DEBUG_LOG
-  AiMsgInfo("[POTA] lens_outer_pupil_radius: %f", camera->lens_outer_pupil_radius);
-  AiMsgInfo("[POTA] lens_inner_pupil_radius: %f", camera->lens_inner_pupil_radius);
-  AiMsgInfo("[POTA] lens_length: %f", camera->lens_length);
-  AiMsgInfo("[POTA] lens_back_focal_length: %f", camera->lens_back_focal_length);
-  AiMsgInfo("[POTA] lens_effective_focal_length: %f", camera->lens_effective_focal_length);
-  AiMsgInfo("[POTA] lens_aperture_pos: %f", camera->lens_aperture_pos);
-  AiMsgInfo("[POTA] lens_aperture_housing_radius: %f", camera->lens_aperture_housing_radius);
-  AiMsgInfo("[POTA] lens_inner_pupil_curvature_radius: %f", camera->lens_inner_pupil_curvature_radius);
-  AiMsgInfo("[POTA] lens_outer_pupil_curvature_radius: %f", camera->lens_outer_pupil_curvature_radius);
-  AiMsgInfo("[POTA] lens_inner_pupil_geometry: %s", camera->lens_inner_pupil_geometry.c_str());
-  AiMsgInfo("[POTA] lens_outer_pupil_geometry: %s", camera->lens_outer_pupil_geometry.c_str());
-  AiMsgInfo("[POTA] lens_field_of_view: %f", camera->lens_field_of_view);
-  AiMsgInfo("[POTA] lens_aperture_radius_at_fstop: %f", camera->lens_aperture_radius_at_fstop);
+  AiMsgInfo("[LENTIL] lens_outer_pupil_radius: %f", camera->lens_outer_pupil_radius);
+  AiMsgInfo("[LENTIL] lens_inner_pupil_radius: %f", camera->lens_inner_pupil_radius);
+  AiMsgInfo("[LENTIL] lens_length: %f", camera->lens_length);
+  AiMsgInfo("[LENTIL] lens_back_focal_length: %f", camera->lens_back_focal_length);
+  AiMsgInfo("[LENTIL] lens_effective_focal_length: %f", camera->lens_effective_focal_length);
+  AiMsgInfo("[LENTIL] lens_aperture_pos: %f", camera->lens_aperture_pos);
+  AiMsgInfo("[LENTIL] lens_aperture_housing_radius: %f", camera->lens_aperture_housing_radius);
+  AiMsgInfo("[LENTIL] lens_inner_pupil_curvature_radius: %f", camera->lens_inner_pupil_curvature_radius);
+  AiMsgInfo("[LENTIL] lens_outer_pupil_curvature_radius: %f", camera->lens_outer_pupil_curvature_radius);
+  AiMsgInfo("[LENTIL] lens_inner_pupil_geometry: %s", camera->lens_inner_pupil_geometry.c_str());
+  AiMsgInfo("[LENTIL] lens_outer_pupil_geometry: %s", camera->lens_outer_pupil_geometry.c_str());
+  AiMsgInfo("[LENTIL] lens_field_of_view: %f", camera->lens_field_of_view);
+  AiMsgInfo("[LENTIL] lens_aperture_radius_at_fstop: %f", camera->lens_aperture_radius_at_fstop);
 #endif
-  AiMsgInfo("[POTA] --------------------------------------");
+  AiMsgInfo("[LENTIL] --------------------------------------");
 
 
   camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-  AiMsgInfo("[POTA] wavelength: %f", camera->lambda);
+  AiMsgInfo("[LENTIL] wavelength: %f nm", camera->lambda);
 
 
   if (camera->input_fstop == 0.0) {
@@ -129,57 +129,54 @@ node_update {
     double calculated_aperture_radius = 0.0;
     trace_backwards_for_fstop(camera, camera->input_fstop, calculated_fstop, calculated_aperture_radius);
     
-    AiMsgInfo("[POTA] calculated fstop: %f", calculated_fstop);
-    AiMsgInfo("[POTA] calculated aperture radius: %f mm", calculated_aperture_radius);
+    AiMsgInfo("[LENTIL] calculated fstop: %f", calculated_fstop);
+    AiMsgInfo("[LENTIL] calculated aperture radius: %f mm", calculated_aperture_radius);
     
     camera->aperture_radius = std::min(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
   }
 
-  AiMsgInfo("[POTA] lens wide open f-stop: %f", camera->lens_fstop);
-  AiMsgInfo("[POTA] lens wide open aperture radius: %f mm", camera->lens_aperture_radius_at_fstop);
-  AiMsgInfo("[POTA] fstop-calculated aperture radius: %f mm", camera->aperture_radius);
-  AiMsgInfo("[POTA] --------------------------------------");
+  AiMsgInfo("[LENTIL] lens wide open f-stop: %f", camera->lens_fstop);
+  AiMsgInfo("[LENTIL] lens wide open aperture radius: %f mm", camera->lens_aperture_radius_at_fstop);
+  AiMsgInfo("[LENTIL] fstop-calculated aperture radius: %f mm", camera->aperture_radius);
+  AiMsgInfo("[LENTIL] --------------------------------------");
 
 
-  AiMsgInfo("[POTA] user supplied focus distance: %f mm", camera->focus_distance);
+  AiMsgInfo("[LENTIL] user supplied focus distance: %f mm", camera->focus_distance);
 
   /*
-  AiMsgInfo("[POTA] calculating sensor shift at focus distance:");
+  AiMsgInfo("[LENTIL] calculating sensor shift at focus distance:");
   camera->sensor_shift = camera_set_focus(camera->focus_distance, camera);
-  AiMsgInfo("[POTA] sensor_shift to focus at %f: %f", camera->focus_distance, camera->sensor_shift);
+  AiMsgInfo("[LENTIL] sensor_shift to focus at %f: %f", camera->focus_distance, camera->sensor_shift);
   */
 
   // logartihmic focus search
   double best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
-  AiMsgInfo("[POTA] sensor_shift using logarithmic search: %f", best_sensor_shift);
+  AiMsgInfo("[LENTIL] sensor_shift using logarithmic search: %f mm", best_sensor_shift);
   camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
 
   /*
   // average guesses infinity focus search
   double infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
-  AiMsgInfo("[POTA] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
+  AiMsgInfo("[LENTIL] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
   */
 
   // logarithmic infinity focus search
   double best_sensor_shift_infinity = logarithmic_focus_search(999999999.0, camera);
-  AiMsgInfo("[POTA] sensor_shift [logarithmic forward tracing] to focus at infinity: %f mm", best_sensor_shift_infinity);
+  AiMsgInfo("[LENTIL] sensor_shift [logarithmic forward tracing] to focus at infinity: %f mm", best_sensor_shift_infinity);
       
   // bidirectional parallel infinity focus search
   double infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
-  AiMsgInfo("[POTA] sensor_shift [parallel backwards light tracing] to focus at infinity: %f mm", infinity_focus_parallel_light_tracing);
+  AiMsgInfo("[LENTIL] sensor_shift [parallel backwards light tracing] to focus at infinity: %f mm", infinity_focus_parallel_light_tracing);
 
   // double check where y=0 intersection point is, should be the same as focus distance
   double test_focus_distance = 0.0;
   bool focus_test = trace_ray_focus_check(camera->sensor_shift, test_focus_distance, camera);
-  AiMsgInfo("[POTA] focus test ray: %f mm", test_focus_distance);
+  AiMsgInfo("[LENTIL] focus test ray: %f mm", test_focus_distance);
   if(!focus_test){
-    AiMsgWarning("[POTA] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
+    AiMsgWarning("[LENTIL] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
   }
 
   camera->tan_fov = std::tan(camera->lens_field_of_view / 2.0);
-
-  // tmp, remove!
-  camera->sensor_shift = 1.660608;
 
   AiMsgInfo("");
 }
