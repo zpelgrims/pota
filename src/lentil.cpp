@@ -1,10 +1,10 @@
 #include <ai.h>
-#include "pota.h"
+#include "lentil.h"
 #include "lens.h"
 #include <cmath>
 #include <vector>
 
-AI_CAMERA_NODE_EXPORT_METHODS(potaMethods)
+AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
 enum {
@@ -396,9 +396,9 @@ camera_reverse_ray {
 
 node_loader {
   if (i != 0) return false;
-  node->methods = potaMethods;
+  node->methods = lentilMethods;
   node->output_type = AI_TYPE_UNDEFINED;
-  node->name = "pota";
+  node->name = "lentil";
   node->node_type = AI_NODE_CAMERA;
   strcpy(node->version, AI_VERSION);
   return true;

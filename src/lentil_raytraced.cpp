@@ -1,5 +1,5 @@
 #include <ai.h>
-#include "pota.h"
+#include "lentil.h"
 #include "lens.h"
 #include <cmath>
 #include <string>
@@ -9,7 +9,7 @@
 //#define TIMING
 
 
-AI_CAMERA_NODE_EXPORT_METHODS(pota_raytracedMethods)
+AI_CAMERA_NODE_EXPORT_METHODS(lentil_raytracedMethods)
 
 
 enum {
@@ -342,9 +342,9 @@ camera_reverse_ray
 node_loader
 {
   if (i != 0) return false;
-  node->methods = pota_raytracedMethods;
+  node->methods = lentil_raytracedMethods;
   node->output_type = AI_TYPE_UNDEFINED;
-  node->name = "pota_raytraced";
+  node->name = "lentil_raytraced";
   node->node_type = AI_NODE_CAMERA;
   strcpy(node->version, AI_VERSION);
   return true;

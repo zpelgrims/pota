@@ -42,26 +42,26 @@ LDFLAGS=-L${ARNOLD_PATH}/bin -lai
 
 HEADERS=\
 	../../src/lens.h\
-	../../src/pota.h\
+	../../src/lentil.h\
 	../../src/imagebokeh.h\
 	../../src/tinyexr.h
 
 .PHONY=all clean
 
-all: pota pota_thinlens pota_raytraced potabokehAOV
+all: lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov
 
-pota: Makefile ../../src/pota.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota.cpp -o ${user_build_folder}/bin/pota.${SHARED_LIB_FORMAT} ${LDFLAGS}
+lentil: Makefile ../../src/lentil.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil.cpp -o ${user_build_folder}/bin/lentil.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
-pota_thinlens: Makefile ../../src/pota_thinlens.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ../../src/pota_thinlens.cpp -o ${user_build_folder}/bin/pota_thinlens.${SHARED_LIB_FORMAT} ${LDFLAGS}
+lentil_thinlens: Makefile ../../src/lentil_thinlens.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ../../src/lentil_thinlens.cpp -o ${user_build_folder}/bin/lentil_thinlens.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
-pota_raytraced: Makefile ../../src/pota_raytraced.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/pota_raytraced.cpp -o ${user_build_folder}/bin/pota_raytraced.${SHARED_LIB_FORMAT} ${LDFLAGS}
+lentil_raytraced: Makefile ../../src/lentil_raytraced.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil_raytraced.cpp -o ${user_build_folder}/bin/lentil_raytraced.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
-potabokehAOV: Makefile ../../src/potabokehAOV.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} ${LENSES} ../../src/potabokehAOV.cpp -o ${user_build_folder}/bin/potabokehAOV.${SHARED_LIB_FORMAT} ${LDFLAGS}
+lentil_bokeh_aov: Makefile ../../src/lentil_bokeh_aov.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil_bokeh_aov.cpp -o ${user_build_folder}/bin/lentil_bokeh_aov.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
 
 clean:
-	rm -f pota pota_thinlens pota_raytraced potabokehAOV
+	rm -f lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov

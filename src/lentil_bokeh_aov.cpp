@@ -1,6 +1,6 @@
 #include <ai.h>
 #include <vector>
-#include "pota.h"
+#include "lentil.h"
 #include "lens.h"
 
 #define TINYEXR_IMPLEMENTATION
@@ -12,7 +12,7 @@
 // using json = nlohmann::json;
 
 
-AI_SHADER_NODE_EXPORT_METHODS(PotaBokehAOVMtd);
+AI_SHADER_NODE_EXPORT_METHODS(LentilBokehAOVMtd);
 
 
 inline void replace_frame_numbering(std::string &original_string){
@@ -26,7 +26,7 @@ inline void replace_frame_numbering(std::string &original_string){
 }
 
 
-struct PotaBokehAOV
+struct LentilBokehAOV
 {
   AtString bokeh_aov_name;
   AtString discarded_samples_aov_name;
@@ -56,13 +56,13 @@ node_parameters
  
 node_initialize
 {
-   AiNodeSetLocalData(node, new PotaBokehAOV());
+   AiNodeSetLocalData(node, new LentilBokehAOV());
 }
 
  
 node_update
 {
-  PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
+  LentilBokehAOV *bokeh = (LentilBokehAOV*)AiNodeGetLocalData(node);
   // Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // register AOVs
@@ -92,7 +92,7 @@ node_update
 
 node_finish
 {
-  PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
+  LentilBokehAOV *bokeh = (LentilBokehAOV*)AiNodeGetLocalData(node);
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // fill exr
@@ -114,7 +114,7 @@ node_finish
   std::string original_string = camera->bokeh_exr_path.c_str();
   replace_frame_numbering(original_string);
   SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, original_string.c_str());
-  AiMsgWarning("[POTA] Bokeh AOV written to %s", original_string.c_str());
+  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", original_string.c_str());
 
 
 
@@ -135,7 +135,7 @@ node_finish
 
 shader_evaluate
 {
-   PotaBokehAOV *bokeh = (PotaBokehAOV*)AiNodeGetLocalData(node);
+   LentilBokehAOV *bokeh = (LentilBokehAOV*)AiNodeGetLocalData(node);
    Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // Draw &draw = camera->draw;
@@ -217,9 +217,9 @@ shader_evaluate
 node_loader
 {
   if (i != 0) return false;
-  node->methods     = PotaBokehAOVMtd;
+  node->methods     = LentilBokehAOVMtd;
   node->output_type = AI_TYPE_RGBA;
-  node->name        = "potabokehAOV";
+  node->name        = "lentil_bokeh_aov";
   node->node_type   = AI_NODE_SHADER;
   strcpy(node->version, AI_VERSION);
   return true;

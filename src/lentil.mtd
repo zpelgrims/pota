@@ -1,16 +1,16 @@
-[node pota]
+[node lentil]
     desc STRING "Polynomial optics camera shader"
     maya.name               STRING  "camera"
-    maya.id                 INT     0x00070506
+    maya.id                 INT     0x00070507
     maya.classification     STRING  "shader/surface"
     maya.type               STRING  "camera"
-    maya.translator         STRING  "pota"
+    maya.translator         STRING  "lentil"
 
     c4d.classification      STRING  "generic"
 
     houdini.icon            STRING  "SHOP_surface"
-    houdini.label           STRING  "pota"
-    houdini.help_url        STRING  "http://www.zenopelgrims.com/polynomial-optics-arnold"
+    houdini.label           STRING  "lentil"
+    houdini.help_url        STRING  "http://www.lentil.xyz"
 
 
     [attr unitModel]

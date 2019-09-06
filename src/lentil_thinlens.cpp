@@ -4,7 +4,7 @@
 // ca
 #include <cmath>
 
-AI_CAMERA_NODE_EXPORT_METHODS(pota_thinlensMethods)
+AI_CAMERA_NODE_EXPORT_METHODS(lentil_thinlensMethods)
 
 enum
 {
@@ -83,7 +83,7 @@ node_update
     data->tan_fov = tanf(data->fov / 2.0f);
     data->apertureRadius = (data->focal_length) / (2.0f * data->fStop);
 
-    AiMsgInfo("[POTA] fov: %f", data->fov);
+    AiMsgInfo("[LENTIL_THINLENS] fov: %f", data->fov);
 
 
     AiCameraUpdate(node, false);
@@ -195,9 +195,9 @@ camera_reverse_ray
 node_loader
 {
     if (i != 0) return false;
-    node->methods = pota_thinlensMethods;
+    node->methods = lentil_thinlensMethods;
     node->output_type = AI_TYPE_UNDEFINED;
-    node->name = "pota_thinlens";
+    node->name = "lentil_thinlens";
     node->node_type = AI_NODE_CAMERA;
     strcpy(node->version, AI_VERSION);
     return true;

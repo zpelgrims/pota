@@ -3,7 +3,7 @@ import pymel.core as pm
 import maya.cmds as cmds
 import mtoa.ui.ae.utils as aeUtils
 
-class aiPotaTemplate(templates.AttributeTemplate):
+class aiLentilTemplate(templates.AttributeTemplate):
     """
     def filenameEditBokeh(self, mData) :
         attr = self.nodeAttr('aiBokehEXRPath')
@@ -64,4 +64,4 @@ class aiPotaTemplate(templates.AttributeTemplate):
 
 
 
-templates.registerTranslatorUI(aiPotaTemplate, "camera", "pota")
+templates.registerTranslatorUI(aiLentilTemplate, "camera", "lentil")
