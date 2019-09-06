@@ -44,6 +44,7 @@ class aiPotaTemplate(templates.AttributeTemplate):
         self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
         self.addControl("aiUseImage", label="Use Bokeh Image")
         self.addControl("aiBokehInputPath", label="Bokeh Path")
+        self.addControl("aiEmpiricalCaDist", label="Empirical Chromatic Aberration Distance")
         
         # add these in the aovshader template instead
         # self.suppress('normalCamera') 

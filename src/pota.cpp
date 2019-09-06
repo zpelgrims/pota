@@ -23,7 +23,8 @@ enum {
   p_bokeh_exr_path,
   p_proper_ray_derivatives,
   p_use_image,
-  p_bokeh_input_path
+  p_bokeh_input_path,
+  p_empirical_ca_dist
 };
 
 
@@ -50,11 +51,12 @@ node_parameters {
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
   AiParameterInt("backward_samples", 3);
-  AiParameterFlt("minimum_rgb", 3.0f);
+  AiParameterFlt("minimum_rgb", 3.0);
   AiParameterStr("bokeh_exr_path", "");
   AiParameterBool("proper_ray_derivatives", true);
   AiParameterBool("use_image", false);
   AiParameterStr("bokeh_input_path", "");
+  AiParameterFlt("empirical_ca_dist", 0.0);
 }
 
 
@@ -82,6 +84,7 @@ node_update {
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
   camera->use_image = AiNodeGetBool(node, "use_image");
   camera->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
+  camera->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist") / 2500.0; //2500 is empirically set, not sure if correct for all cases?
   
   // convert to cm
   switch (camera->unitModel){

@@ -535,16 +535,64 @@ inline bool trace_ray_focus_check(double sensor_shift, double &test_focus_distan
 
 
 
+inline float calculate_distance_vec2(Eigen::Vector2d a, Eigen::Vector2d b) { 
+    return std::sqrt(std::pow(b[0] - a[0], 2) +  std::pow(b[1] - a[1], 2));
+}
+
+Eigen::Vector3d chromatic_abberration_empirical(Eigen::Vector2d pos, float distance_mult, Eigen::Vector2d &lens, float apertureradius) {
+  float distance_to_center = calculate_distance_vec2(Eigen::Vector2d(0.0, 0.0), pos);
+  int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+
+  Eigen::Vector2d aperture_0_center(0.0, 0.0);
+  Eigen::Vector2d aperture_1_center(- pos * distance_to_center * distance_mult);
+  Eigen::Vector2d aperture_2_center(pos * distance_to_center * distance_mult);
+
+  Eigen::Vector3d weight(1.0, 1.0, 1.0);
+
+  if (random_aperture == 0) {
+      if (std::pow(lens(0)-aperture_1_center(0), 2) + std::pow(lens(1) - aperture_1_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(0) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_0_center(0), 2) + std::pow(lens(1) - aperture_0_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(2) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_2_center(0), 2) + std::pow(lens(1) - aperture_2_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(1) = 0.0;
+      }
+  } else if (random_aperture == 1) {
+      lens += aperture_1_center;
+      if (std::pow(lens(0)-aperture_1_center(0), 2) + std::pow(lens(1) - aperture_1_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(0) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_0_center(0), 2) + std::pow(lens(1) - aperture_0_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(2) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_2_center(0), 2) + std::pow(lens(1) - aperture_2_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(1) = 0.0;
+      }
+  } else if (random_aperture == 2) {
+      lens += aperture_2_center;
+      if (std::pow(lens(0)-aperture_1_center(0), 2) + std::pow(lens(1) - aperture_1_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(0) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_0_center(0), 2) + std::pow(lens(1) - aperture_0_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(2) = 0.0;
+      }
+      if (std::pow(lens(0)-aperture_2_center(0), 2) + std::pow(lens(1) - aperture_2_center(1), 2) > std::pow(apertureradius, 2)) {
+          weight(1) = 0.0;
+      }
+  }
+
+  return weight;
+}
+   
 
 
-inline void trace_ray(bool original_ray, 
-                      int &tries, 
+inline void trace_ray(bool original_ray, int &tries, 
                       const double input_sx, const double input_sy, 
                       const double input_lensx, const double input_lensy, 
                       double &r1, double &r2, 
-                      Eigen::Vector3d &weight, 
-                      Eigen::Vector3d &origin, 
-                      Eigen::Vector3d &direction, 
+                      Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, 
                       Camera *camera)
 {
 
@@ -562,26 +610,22 @@ inline void trace_ray(bool original_ray,
 	  sensor(1) = input_sy * (camera->sensor_width * 0.5);
   	sensor(2) = sensor(3) = 0.0;
 	  sensor(4) = camera->lambda;
-    // tmp debug
-    // sensor(0) = 0.0f;
-    // sensor(1) = 0.0f;
 
     aperture.setZero();
     out.setZero();
 
-	  // no dof, all rays through single aperture point
-	  if (!camera->dof) aperture(0) = aperture(1) = 0.0;
+
+	  if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
 	  else if (camera->dof && camera->aperture_blades <= 2) {
-			// transform unit square to unit disk
 		  Eigen::Vector2d unit_disk(0.0, 0.0);
+
 		  if (tries == 0) {
         if (camera->use_image) {
           camera->image.bokehSample(input_lensx, input_lensy, unit_disk);
         } else {
           concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
         }
-      }
-		  else {
+      } else {
 		  	if (original_ray) {
 				  r1 = xor128() / 4294967296.0;
 				  r2 = xor128() / 4294967296.0;
@@ -609,12 +653,20 @@ inline void trace_ray(bool original_ray,
 	  	}
 	  }
 
+
+    if (camera->empirical_ca_dist > 0.0) {
+      Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
+      Eigen::Vector2d aperture_pos(aperture[0], aperture[1]);
+      weight = chromatic_abberration_empirical(sensor_pos, camera->empirical_ca_dist, aperture_pos, camera->aperture_radius);
+      aperture(0) = aperture_pos(0);
+      aperture(1) = aperture_pos(1);
+    }
+    
+
 	  if (camera->dof) {
 	  	// aperture sampling, to make sure ray is able to propagate through whole lens system
 	  	lens_pt_sample_aperture(sensor, aperture, camera->sensor_shift, camera);
 	  }
-
-    //printf("[%f, %f, %f],", aperture(0), aperture(1), -camera->lens_aperture_pos);
 	  
 
 	  // move to beginning of polynomial

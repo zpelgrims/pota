@@ -123,6 +123,8 @@ struct Camera
 
     bool use_image;
     AtString bokeh_input_path;
+
+    float empirical_ca_dist;
 };
 
 extern struct Camera camera;

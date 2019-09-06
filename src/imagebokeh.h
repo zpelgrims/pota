@@ -86,7 +86,7 @@ public:
         
         if (x != y){
             invalidate();
-            AiMsgError("[LENTIL] Bokeh image is not square", x);
+            AiMsgError("[LENTIL] Bokeh image is not square");
             return false;
         }
 
