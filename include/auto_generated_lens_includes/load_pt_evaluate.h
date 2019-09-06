@@ -16,3 +16,6 @@
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1978-minolta-fisheye/16/code/pt_evaluate.h"
 #endif
+#ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/85/code/pt_evaluate.h"
+#endif

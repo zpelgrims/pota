@@ -16,3 +16,6 @@
 #ifdef LENS_ID_COMMERCIAL
 	"minolta__fisheye__1978__16mm",
 #endif
+#ifdef LENS_ID_COMMERCIAL
+	"unknown__petzval__1900__85mm",
+#endif
