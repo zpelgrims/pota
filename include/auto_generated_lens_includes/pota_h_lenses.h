@@ -7,6 +7,9 @@
 	angenieux__double_gauss__1953__105mm,
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	canon__retrofocus_wideangle__1982__14mm,
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	canon__unknown__1956__35mm,
 #endif
 #ifdef LENS_ID_COMMERCIAL
