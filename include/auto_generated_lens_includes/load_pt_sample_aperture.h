@@ -8,6 +8,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/14/code/pt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/22/code/pt_sample_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1956-canon-unknown/35/code/pt_sample_aperture.h"

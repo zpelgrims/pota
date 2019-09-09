@@ -8,6 +8,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"canon__retrofocus_wideangle__1982__14mm",
+	"canon__retrofocus_wideangle__1982__22mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"canon__unknown__1956__35mm",

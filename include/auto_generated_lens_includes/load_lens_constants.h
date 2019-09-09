@@ -8,6 +8,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/14/code/lens_constants.h"
+	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/22/code/lens_constants.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1956-canon-unknown/35/code/lens_constants.h"
