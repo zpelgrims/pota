@@ -14,6 +14,9 @@
 	canon__unknown__1956__35mm,
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	kodak__petzval__1948__150mm,
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	meyer_optik_goerlitz__primoplan__1936__58mm,
 	meyer_optik_goerlitz__primoplan__1936__75mm,
 #endif
