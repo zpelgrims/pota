@@ -15,6 +15,7 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/150/code/pt_evaluate_jacobian.h"
+	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/105/code/pt_evaluate_jacobian.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1936-meyer-optik-goerlitz-primoplan/58/code/pt_evaluate_jacobian.h"
