@@ -16,6 +16,7 @@
 #ifdef LENS_ID_COMMERCIAL
 	"kodak__petzval__1948__150mm",
 	"kodak__petzval__1948__105mm",
+	"kodak__petzval__1948__85mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"meyer_optik_goerlitz__primoplan__1936__58mm",
