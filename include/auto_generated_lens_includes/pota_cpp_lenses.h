@@ -14,6 +14,10 @@
 	"canon__unknown__1956__35mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	"cooke__speed_panchro__1920__18mm",
+	"cooke__speed_panchro__1920__28mm",
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	"kodak__petzval__1948__150mm",
 	"kodak__petzval__1948__105mm",
 	"kodak__petzval__1948__85mm",

@@ -14,6 +14,10 @@
 	#include "../../../polynomial-optics/database/lenses/1956-canon-unknown/35/code/pt_sample_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/18/code/pt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/28/code/pt_sample_aperture.h"
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/150/code/pt_sample_aperture.h"
 	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/105/code/pt_sample_aperture.h"
 	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/85/code/pt_sample_aperture.h"
