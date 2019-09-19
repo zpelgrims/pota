@@ -16,6 +16,10 @@
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/18/code/pt_evaluate.h"
 	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/28/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/40/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/75/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/100/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1920-cooke-speed-panchro/50/code/pt_evaluate.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1948-kodak-petzval/150/code/pt_evaluate.h"

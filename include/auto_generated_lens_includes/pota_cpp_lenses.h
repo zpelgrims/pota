@@ -16,6 +16,10 @@
 #ifdef LENS_ID_COMMERCIAL
 	"cooke__speed_panchro__1920__18mm",
 	"cooke__speed_panchro__1920__28mm",
+	"cooke__speed_panchro__1920__40mm",
+	"cooke__speed_panchro__1920__75mm",
+	"cooke__speed_panchro__1920__100mm",
+	"cooke__speed_panchro__1920__50mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"kodak__petzval__1948__150mm",
