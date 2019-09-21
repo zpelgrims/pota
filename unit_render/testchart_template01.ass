@@ -37,7 +37,7 @@ gaussian_filter
 driver_png
 {
  name defaultArnoldDriver@driver_png.RGBA
- color_space ""
+ color_space "sRGB"
 }
 
 variance_filter
