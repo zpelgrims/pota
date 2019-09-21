@@ -1,0 +1,143 @@
+### exported: Sat Sep 21 13:42:49 2019
+### from:     Arnold 5.3.0.2 [f7602f75] windows icc-17.0.2 oiio-2.1.0 osl-1.11.0 vdb-4.0.0 clm-1.0.3.513 rlm-12.4.2 optix-6.0.0 2019/04/09 17:16:44
+### host app: MtoA 3.2.0.2 dec5f9bc (master) Maya 2018
+### user: cactus
+### render_layer: defaultRenderLayer
+### scene: C:/ZENO_2019/projects/unit_render/testchart.ma
+
+
+
+options
+{
+ AA_samples 2
+ outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_png.RGBA"
+ xres 1280
+ yres 720
+ texture_per_file_stats on
+ texture_automip off
+ camera "rendercamShape"
+ frame 1
+ GI_transmission_depth 0
+ GI_total_depth 1
+ GI_diffuse_samples 0
+ GI_specular_samples 0
+ GI_transmission_samples 0
+ GI_sss_samples 0
+ GI_volume_samples 0
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+ width 1.79999995
+}
+
+driver_png
+{
+ name defaultArnoldDriver@driver_png.RGBA
+ color_space ""
+}
+
+variance_filter
+{
+ name defaultArnoldRenderOptions@variance_filter
+ width 1.79999995
+ scalar_mode off
+ filter_weights "gaussian"
+}
+
+persp_camera
+{
+ name rendercamShape
+ fov 39.5977516
+ focus_distance 185
+ aperture_size 1
+ declare maya_full_name constant STRING
+ maya_full_name "|camera1|rendercamShape"
+}
+
+
+lentil
+{
+ name rendercamLentilShape
+ focal_distance 185
+ vignetting_retries 20
+ declare maya_full_name constant STRING
+ maya_full_name "|rendercam|rendercamLentilShape"
+}
+
+polymesh
+{
+ name pPlaneShape1
+ visibility 255
+ sidedness 255
+ matrix
+ 0.509978354 0 0 0
+ 0 0.509978354 0 0
+ 0 0 0.509978354 0
+ 0.859737694 -0.285069585 -69.6267319 1
+ shader "aiUtility1"
+ id 141609554
+ nsides 4
+ vidxs 4 1 UINT
+0 1 3 2
+ nidxs 4 1 UINT
+0 1 2 3
+ uvidxs 4 1 UINT
+0 1 3 2
+ vlist 4 1 b85VECTOR
+c%7N&c%7N&bgX%h9nFrPc%7N&bgX%hc%7N&9nFrPbgX%h9nFrP9nFrPbgX%h
+ nlist 4 1 b85VECTOR
+zz8Fcb8zz8Fcb8zz8Fcb8zz8Fcb8
+ uvlist 4 1 VECTOR2
+0 0 1 0 0 1 1 1
+ smoothing on
+ step_size 0
+ volume_padding 0
+ declare maya_full_name constant STRING
+ maya_full_name "|pPlane1|pPlaneShape1"
+}
+
+utility
+{
+ name aiUtility1
+ shade_mode "flat"
+ color aiLayerRgba1
+}
+
+layer_rgba
+{
+ name aiLayerRgba1
+ input1 1 1 1 1
+ operation1 "overwrite"
+ input2 aiImage1
+ mix2 aiImage1.a
+ operation2 "overwrite"
+ enable3 off
+ input3 0 0 0 1
+ enable4 off
+ input4 0 0 0 1
+ enable5 off
+ input5 0 0 0 1
+ enable6 off
+ input6 0 0 0 1
+ enable7 off
+ input7 0 0 0 1
+ enable8 off
+ input8 0 0 0 1
+}
+
+image
+{
+ name aiImage1
+ filename "testchart02.tx"
+ color_space ""
+ sscale 6
+ tscale 7.73000002
+ soffset 0.0850000009
+ toffset -0.0480000004
+ missing_texture_color 0 0 0 1
+}
+
