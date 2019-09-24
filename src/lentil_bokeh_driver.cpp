@@ -30,7 +30,7 @@ node_initialize
   //DriverRAWStruct *raw = new DriverRAWStruct();
   AiNodeSetLocalData(node, new DriverRAWStruct());
 
-  static const char *required_aovs[] = {"RGBA RGBA", NULL}; // unsure about this, do i need extra?
+  static const char *required_aovs[] = {"RGBA RGBA, VECTOR P", NULL}; // unsure about this, do i need extra?
   AiRawDriverInitialize(node, required_aovs, false);
 }
  
@@ -97,10 +97,10 @@ driver_process_bucket
           // convert sample world space position to camera space
           AtMatrix world_to_camera_matrix;
           Eigen::Vector2d sensor_position;
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix);
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals?
           
           // improve this, too much copying
-          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P);
+          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P); // will need to query this from an AOV instead I assume?
           Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
           
 
