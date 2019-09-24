@@ -1,6 +1,6 @@
 // initially try to only do it for rgba, support multiple aovs at later point
-// will need to do sample filtering, currently no filtering happens
-
+// will need to do sample filtering, currently no filtering happens: https://docs.arnoldrenderer.com/display/A5ARP/Filter+Nodes
+// figure out NaNs
 
 #include <ai.h>
 #include <vector>
@@ -11,7 +11,7 @@
 #include "tinyexr.h"
 
  
-AI_DRIVER_NODE_EXPORT_METHODS(DriverRAWMtd);
+AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriver);
  
 struct LentilBokehDriver {
   int xres;
@@ -21,10 +21,7 @@ struct LentilBokehDriver {
 };
  
 
-node_parameters
-{
-  AiParameterSTR("filename", "deep.raw");
-}
+node_parameters {}
  
 node_initialize
 {
@@ -48,7 +45,8 @@ driver_open
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
 
   // this should be determined by more heuristics, such as the size of the bokeh on screen
-  // could do 64 initial samples, determine the radius of the bokeh & add more samples accordingly
+  // could do 64 initial samples, determine the bounding box of the bokeh & add more samples accordingly
+  // 64 samples should be the minimum (e.g 5x5 pixels, then scale up linearly)
   bokeh->samples = 512;
 
   // construct buffer
@@ -83,10 +81,9 @@ driver_process_bucket
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
       AtRGBA pixel = AI_RGBA_ZERO;
-			float total_weight = 0;
 
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
-				const AtPoint2 position = AiAOVSampleIteratorGetOffset(sample_iterator); // used for pixel filtering, will need to use this to compute sample weight, Raw-drivers only have a radius of 0.5 (one pixel wide).
+				// const AtPoint2 position = AiAOVSampleIteratorGetOffset(sample_iterator); // used for pixel filtering, will need to use this to compute sample weight, Raw-drivers only have a radius of 0.5 (one pixel wide).
 				const AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
@@ -143,15 +140,13 @@ driver_process_bucket
         }
 }
  
-driver_write_bucket {}
+driver_write_bucket {/* guess i could write the image in tiles? don't really see the point though */}
  
 driver_close
 {
-  // probably want to do the image writing here? guess i could do tiled writing in driver_write_bucket
-
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
 
-  // fill exr
+  // dump framebuffer to exr
   std::vector<float> image(bokeh->yres * bokeh->xres * 4);
   int offset = -1;
   int pixelnumber = 0;
@@ -165,8 +160,8 @@ driver_close
     ++pixelnumber;
   }
 
-  SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, bokeh->filename);
-  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", bokeh->filename);
+  SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, camera->bokeh_exr_path.c_str());
+  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", camera->bokeh_exr_path.c_str());
 }
  
 node_finish
@@ -179,9 +174,9 @@ node_finish
 node_loader
 {
    if (i>0) return FALSE;
-   node->methods = (AtNodeMethods*) DriverRAWMtd;
+   node->methods = (AtNodeMethods*) LentilBokehDriverMtd;
    node->output_type = AI_TYPE_NONE;
-   node->name = "driver_raw";
+   node->name = "lentil_bokeh_driver";
    node->node_type = AI_NODE_DRIVER;
    strcpy(node->version, AI_VERSION);
    return TRUE;
