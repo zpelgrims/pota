@@ -51,7 +51,7 @@ node_parameters {
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
   AiParameterInt("backward_samples", 3);
-  AiParameterFlt("minimum_rgb", 3.0);
+  AiParameterFlt("minimum_rgb", 2.0);
   AiParameterStr("bokeh_exr_path", "");
   AiParameterBool("proper_ray_derivatives", true);
   AiParameterBool("use_image", false);

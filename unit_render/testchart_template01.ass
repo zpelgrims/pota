@@ -10,7 +10,7 @@
 options
 {
  AA_samples 2
- outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_png.RGBA"
+ outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
  xres 1280
  yres 720
  texture_per_file_stats on
@@ -36,7 +36,7 @@ gaussian_filter
 
 driver_png
 {
- name defaultArnoldDriver@driver_png.RGBA
+ name aiAOVDriver2@driver_png.RGBA
  color_space "sRGB"
 }
 

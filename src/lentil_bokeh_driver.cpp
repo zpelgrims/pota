@@ -1,9 +1,9 @@
 // initially try to only do it for rgba, support multiple aovs at later point
 // will need to do sample filtering, currently no filtering happens: https://docs.arnoldrenderer.com/display/A5ARP/Filter+Nodes
 // figure out NaNs
-// not sure if I still have access to the shading context here, so sg->P won't work..
-  // might have to output a position AOV instead and use that as a required AOV
 // use initial 64 samples so they don't get wasted
+// losing energy at the image edges, is this due to vignetting retries?
+// doesn't seem to like AA_samples at 1 .. takes long?
 
 #include <ai.h>
 #include <vector>
@@ -14,12 +14,14 @@
 #include "tinyexr.h"
 
  
-AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriver);
+AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
  
 struct LentilBokehDriver {
   int xres;
   int yres;
   int samples;
+  int aa_samples;
+  bool enabled;
   std::vector<AtRGBA> image;
 };
  
@@ -28,10 +30,9 @@ node_parameters {}
  
 node_initialize
 {
-  //DriverRAWStruct *raw = new DriverRAWStruct();
-  AiNodeSetLocalData(node, new DriverRAWStruct());
+  AiNodeSetLocalData(node, new LentilBokehDriver());
 
-  static const char *required_aovs[] = {"RGBA RGBA, VECTOR P", NULL};
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", NULL};
   AiRawDriverInitialize(node, required_aovs, false);
 }
  
@@ -42,10 +43,16 @@ driver_supports_pixel_type { return true; } // not needed for raw drivers
 driver_open
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  // disable for non-lentil cameras
+  AtNode *node_camera = AiUniverseGetCamera();
+  AiNodeIs(node_camera, AtString("lentil")) ? bokeh->enabled = true : bokeh->enabled = false;
   
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
 
   // construct buffer
   bokeh->image.clear();
@@ -69,6 +76,8 @@ driver_process_bucket
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  if (!bokeh->enabled) return;
   
   const double xres = (double)bokeh->xres;
   const double yres = (double)bokeh->yres;
@@ -82,13 +91,15 @@ driver_process_bucket
 
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
 				// const AtPoint2 position = AiAOVSampleIteratorGetOffset(sample_iterator); // used for pixel filtering, will need to use this to compute sample weight, Raw-drivers only have a radius of 0.5 (one pixel wide).
-				const AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
+				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
+        AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
+        float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
+        sample.r *= inv_density;
+        sample.g *= inv_density;
+        sample.b *= inv_density;
+        sample.a *= inv_density;
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
         
-
-        // TODO: query P AOV instead of sg->P for current sample?
-        AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator,"P");
-
       // TODO: think I will have to filter the final samples. E.g gauss filter
 
       // ENERGY REDISTRIBUTION
@@ -97,15 +108,11 @@ driver_process_bucket
           // convert sample world space position to camera space
           AtMatrix world_to_camera_matrix;
           Eigen::Vector2d sensor_position;
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals?
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
           
-
-          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws); // will need to query this from an AOV instead I assume?
+          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
           
-
-
-
 
 
         // PROBE RAYS samples to determine size of bokeh, currently just throwing these away, fix that!
@@ -150,12 +157,10 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          int samples = std::floor((64.0/5.0*5.0) * bbox_area); // 5px*5px=25 is the base area for 64 samples, the chances this metric is finetuned are literally 0, so this needs heavy testing which sample counts are okay
-          
-          
-          
-          
-          
+          // int samples = std::floor((64.0/(20.0*20.0)) * bbox_area); // 5px*5px=25 is the base area for 64 samples, the chances this metric is finetuned are literally 0, so this needs heavy testing which sample counts are okay
+          int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
+          samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
+        
           sample.a = 1.0; // TODO: will prob want to use actual sample energy instead, but test with this for now
           sample /= static_cast<double>(samples);
 
@@ -190,6 +195,7 @@ driver_process_bucket
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             bokeh->image[pixelnumber] += sample;
+            
           }
         }
 
@@ -198,6 +204,9 @@ driver_process_bucket
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           bokeh->image[pixelnumber] += sample;
         }
+      }
+    }
+  }
 }
  
 driver_write_bucket {/* guess i could write the image in tiles? don't really see the point though */}
@@ -205,18 +214,20 @@ driver_write_bucket {/* guess i could write the image in tiles? don't really see
 driver_close
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());  
+
+  if (!bokeh->enabled) return;
 
   // dump framebuffer to exr
   std::vector<float> image(bokeh->yres * bokeh->xres * 4);
   int offset = -1;
   int pixelnumber = 0;
-  int aa_square = bokeh->aa_samples * bokeh->aa_samples;
 
   for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
-    image[++offset] = bokeh->image[pixelnumber].r / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].g / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].b / (float)aa_square;
-    image[++offset] = bokeh->image[pixelnumber].a / (float)aa_square;
+    image[++offset] = bokeh->image[pixelnumber].r;
+    image[++offset] = bokeh->image[pixelnumber].g;
+    image[++offset] = bokeh->image[pixelnumber].b;
+    image[++offset] = bokeh->image[pixelnumber].a;
     ++pixelnumber;
   }
 
@@ -228,17 +239,16 @@ node_finish
 {
    LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
    delete bokeh;
-   AiDriverDestroy(node);
 }
 
 node_loader
 {
-   if (i>0) return FALSE;
+   if (i>0) return false;
    node->methods = (AtNodeMethods*) LentilBokehDriverMtd;
    node->output_type = AI_TYPE_NONE;
    node->name = "lentil_bokeh_driver";
    node->node_type = AI_NODE_DRIVER;
    strcpy(node->version, AI_VERSION);
-   return TRUE;
+   return true;
 }
  

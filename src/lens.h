@@ -94,11 +94,11 @@ static inline void lens_pt_sample_aperture(Eigen::VectorXd &in, Eigen::VectorXd 
 // solves for a sensor position given a scene point and an aperture point
 // returns transmittance from sensor to outer pupil
 static inline double lens_lt_sample_aperture(
-    const Eigen::Vector3d scene,   // 3d point in scene in camera space
-    const Eigen::Vector2d ap,      // 2d point on aperture (in camera space, z is known)
+    const Eigen::Vector3d scene,    // 3d point in scene in camera space
+    const Eigen::Vector2d ap,       // 2d point on aperture (in camera space, z is known)
     Eigen::VectorXd &sensor,        // output point and direction on sensor plane/plane
     Eigen::VectorXd &out,           // output point and direction on outer pupil
-    const double lambda,   // wavelength
+    const double lambda,            // wavelength
     Camera *camera)   
 {
   const double scene_x = scene[0], scene_y = scene[1], scene_z = scene[2];
@@ -778,27 +778,10 @@ inline bool trace_backwards(Eigen::Vector3d target,
    const double py = sensor(1) + sensor(3) * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
    if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) return false;
 
-
-/*
-  Draw &draw = camera->draw;
-  // THIS IS NOT THREAD SAFE!! DRAWING CAN ONLY BE RAN ON ONE THREAD
-  if (draw.enabled) {
-    draw.sensor.push_back(std::vector<double> {sensor[0], sensor[1], sensor[2], sensor[3]});
-    draw.aperture.push_back(std::vector<double> {aperture[0], aperture[1], aperture[2], aperture[3]});
-    draw.out.push_back(std::vector<double> {out[0], out[1], out[2], out[3]});
-    draw.pxpy.push_back(std::vector<double> {px, py});
-  }
-*/
-
-
    // shift sensor
    sensor(0) += sensor(2) * -sensor_shift;
    sensor(1) += sensor(3) * -sensor_shift;
-/*
-  if (draw.enabled) {
-    draw.sensor_shifted.push_back(std::vector<double> {sensor[0], sensor[1]});
-  }
-*/
+
    sensor_position(0) = sensor(0);
    sensor_position(1) = sensor(1);
 

@@ -48,7 +48,10 @@ HEADERS=\
 
 .PHONY=all clean
 
-all: lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov
+all: lentil_bokeh_driver lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov
+
+lentil_bokeh_driver: Makefile ../../src/lentil_bokeh_driver.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil_bokeh_driver.cpp -o ${user_build_folder}/bin/lentil_bokeh_driver.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
 lentil: Makefile ../../src/lentil.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil.cpp -o ${user_build_folder}/bin/lentil.${SHARED_LIB_FORMAT} ${LDFLAGS}
@@ -64,4 +67,4 @@ lentil_bokeh_aov: Makefile ../../src/lentil_bokeh_aov.cpp ${HEADERS}
 
 
 clean:
-	rm -f lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov
+	rm -f lentil_bokeh_driver lentil lentil_thinlens lentil_raytraced lentil_bokeh_aov
