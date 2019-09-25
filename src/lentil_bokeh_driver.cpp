@@ -2,6 +2,9 @@
 // figure out NaNs, probably related to image edge darkening
   // losing energy at the image edges, is this due to vignetting retries?
 // doesn't seem to like AA_samples at 1 .. takes long?
+// add image based bokeh & chromatic aberrations to backtracing
+// strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
+// filter is losing 40% of the energy, look into how these actually work
 
 #include <ai.h>
 #include <vector>
@@ -213,15 +216,16 @@ driver_process_bucket
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            bokeh->image[pixelnumber] += sample;
+            bokeh->image[pixelnumber] += sample * 10; // remove 10 after debugging;
             
           }
         }
 
       // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         else {
+          /* tmp removed for debugging, renenable!*/
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          bokeh->image[pixelnumber] += sample;
+          //bokeh->image[pixelnumber] += sample;
         }
       }
     }
