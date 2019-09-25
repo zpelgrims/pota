@@ -19,7 +19,7 @@ options
  yres 720
  texture_per_file_stats on
  texture_automip off
- camera "rendercamLentilShape"
+ camera "renderCamShape"
  sss_use_autobump on
  frame 1
  GI_transmission_depth 0
@@ -37,17 +37,6 @@ gaussian_filter
 {
  name defaultArnoldFilter@gaussian_filter
  width 1.79999995
-}
-
-driver_png
-{
- name defaultArnoldDriver@driver_png.RGBA
- color_space "sRGB"
-}
-
-gaussian_filter
-{
- name defaultArnoldFilter@gaussian_filter
 }
 
 driver_exr
@@ -79,7 +68,7 @@ driver_png
 {
  name aiAOVDriver2@driver_png.RGBA
  filename "/Users/zeno/Documents/maya/projects/default/images/beauty/untitled_2.png"
- color_space ""
+ color_space "sRGB"
 }
 
 closest_filter

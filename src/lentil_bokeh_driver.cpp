@@ -1,8 +1,6 @@
 // initially try to only do it for rgba, support multiple aovs at later point
-// will need to do sample filtering, currently no filtering happens: https://docs.arnoldrenderer.com/display/A5ARP/Filter+Nodes
-// figure out NaNs
-// use initial 64 samples so they don't get wasted
-// losing energy at the image edges, is this due to vignetting retries?
+// figure out NaNs, probably related to image edge darkening
+  // losing energy at the image edges, is this due to vignetting retries?
 // doesn't seem to like AA_samples at 1 .. takes long?
 
 #include <ai.h>
@@ -22,8 +20,33 @@ struct LentilBokehDriver {
   int samples;
   int aa_samples;
   bool enabled;
+  float filter_width;
   std::vector<AtRGBA> image;
 };
+
+float gaussian(AtVector2 p, float width) {
+    /* matches Arnold's exactly. */
+    /* Sharpness=2 is good for width 2, sigma=1/sqrt(8) for the width=4,sharpness=4 case */
+    // const float sigma = 0.5f;
+    // const float sharpness = 1.0f / (2.0f * sigma * sigma);
+
+    p /= (width * 0.5f);
+    float dist_squared = (p.x * p.x + p.y * p.y);
+    if (dist_squared > (1.0f)) {
+        return 0.0f;
+    }
+
+    // const float normalization_factor = 1;
+    // Float weight = normalization_factor * expf(-dist_squared * sharpness);
+
+    float weight = AiFastExp(-dist_squared * 2.0f); // was:
+
+    if (weight > 0.0f) {
+        return weight;
+    } else {
+        return 0.0f;
+    }
+}
  
 
 node_parameters {}
@@ -36,14 +59,9 @@ node_initialize
   AiRawDriverInitialize(node, required_aovs, false);
 }
  
-node_update {}
- 
-driver_supports_pixel_type { return true; } // not needed for raw drivers
- 
-driver_open
+node_update 
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
-  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
@@ -52,12 +70,17 @@ driver_open
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  bokeh->filter_width = AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
   bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
 
   // construct buffer
   bokeh->image.clear();
   bokeh->image.reserve(bokeh->xres * bokeh->yres);
 }
+ 
+driver_supports_pixel_type { return true; } // not needed for raw drivers
+ 
+driver_open {}
  
 driver_extension
 {
@@ -87,20 +110,21 @@ driver_process_bucket
 		for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
-      AtRGBA pixel = AI_RGBA_ZERO;
-
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
-				// const AtPoint2 position = AiAOVSampleIteratorGetOffset(sample_iterator); // used for pixel filtering, will need to use this to compute sample weight, Raw-drivers only have a radius of 0.5 (one pixel wide).
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
-        sample.r *= inv_density;
-        sample.g *= inv_density;
-        sample.b *= inv_density;
-        sample.a *= inv_density;
-        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+        if (inv_density <= 0.f) continue; // does this every happen? test
         
-      // TODO: think I will have to filter the final samples. E.g gauss filter
+        
+      // GAUSSIAN FILTER
+        float filter_width = 1.8;
+        const AtVector2& offset = AiAOVSampleIteratorGetOffset(sample_iterator);
+        sample *= gaussian(offset, filter_width) * inv_density;
+
+
+        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > camera->minimum_rgb) {
@@ -115,7 +139,7 @@ driver_process_bucket
           
 
 
-        // PROBE RAYS samples to determine size of bokeh, currently just throwing these away, fix that!
+        // PROBE RAYS samples to determine size of bokeh & subsequent sample count
           AtVector2 bbox_min (0, 0);
           AtVector2 bbox_max (0, 0);
           for(int count=0; count<64; count++) {
@@ -157,15 +181,10 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          // int samples = std::floor((64.0/(20.0*20.0)) * bbox_area); // 5px*5px=25 is the base area for 64 samples, the chances this metric is finetuned are literally 0, so this needs heavy testing which sample counts are okay
           int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
           samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
-        
-          sample.a = 1.0; // TODO: will prob want to use actual sample energy instead, but test with this for now
+          
           sample /= static_cast<double>(samples);
-
-
-
 
 
           for(int count=0; count<samples; count++) {
@@ -209,7 +228,7 @@ driver_process_bucket
   }
 }
  
-driver_write_bucket {/* guess i could write the image in tiles? don't really see the point though */}
+driver_write_bucket {}
  
 driver_close
 {
