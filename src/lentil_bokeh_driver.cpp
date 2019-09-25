@@ -3,6 +3,7 @@
 // figure out NaNs
 // not sure if I still have access to the shading context here, so sg->P won't work..
   // might have to output a position AOV instead and use that as a required AOV
+// use initial 64 samples so they don't get wasted
 
 #include <ai.h>
 #include <vector>
@@ -30,7 +31,7 @@ node_initialize
   //DriverRAWStruct *raw = new DriverRAWStruct();
   AiNodeSetLocalData(node, new DriverRAWStruct());
 
-  static const char *required_aovs[] = {"RGBA RGBA, VECTOR P", NULL}; // unsure about this, do i need extra?
+  static const char *required_aovs[] = {"RGBA RGBA, VECTOR P", NULL};
   AiRawDriverInitialize(node, required_aovs, false);
 }
  
@@ -45,11 +46,6 @@ driver_open
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-
-  // this should be determined by more heuristics, such as the size of the bokeh on screen
-  // could do 64 initial samples, determine the bounding box of the bokeh & add more samples accordingly
-  // 64 samples should be the minimum (e.g 5x5 pixels, then scale up linearly)
-  bokeh->samples = 512;
 
   // construct buffer
   bokeh->image.clear();
@@ -88,6 +84,10 @@ driver_process_bucket
 				// const AtPoint2 position = AiAOVSampleIteratorGetOffset(sample_iterator); // used for pixel filtering, will need to use this to compute sample weight, Raw-drivers only have a radius of 0.5 (one pixel wide).
 				const AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+        
+
+        // TODO: query P AOV instead of sg->P for current sample?
+        AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator,"P");
 
       // TODO: think I will have to filter the final samples. E.g gauss filter
 
@@ -99,8 +99,8 @@ driver_process_bucket
           Eigen::Vector2d sensor_position;
           AiWorldToCameraMatrix(AiUniverseGetCamera(), sg->time, world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals?
           
-          // improve this, too much copying
-          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sg->P); // will need to query this from an AOV instead I assume?
+
+          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws); // will need to query this from an AOV instead I assume?
           Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
           
 
@@ -108,7 +108,7 @@ driver_process_bucket
 
 
 
-          // initial test samples to determine size of bokeh, currently just throwing these away, fix that!
+        // PROBE RAYS samples to determine size of bokeh, currently just throwing these away, fix that!
           AtVector2 bbox_min (0, 0);
           AtVector2 bbox_max (0, 0);
           for(int count=0; count<64; count++) {
@@ -150,7 +150,7 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          int samples = std::floor((64.0/5.0*5.0) * bbox_area); // 5px*5px=25 is the base area for 64 samples
+          int samples = std::floor((64.0/5.0*5.0) * bbox_area); // 5px*5px=25 is the base area for 64 samples, the chances this metric is finetuned are literally 0, so this needs heavy testing which sample counts are okay
           
           
           
