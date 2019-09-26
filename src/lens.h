@@ -766,17 +766,31 @@ inline bool trace_backwards(Eigen::Vector3d target,
    Eigen::VectorXd out(5); out.setZero();
    Eigen::Vector2d aperture(0,0);
 
-   Eigen::Vector2d lens;
-   concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, lens, true);
-   aperture(0) = lens(0) * aperture_radius;
-   aperture(1) = lens(1) * aperture_radius;
+  int tries = 0;
+  bool ray_succes = false;
 
-   if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera) <= 0.0) return false;
+  while(ray_succes == false && tries <= camera->vignetting_retries){
 
-   // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const double px = sensor(0) + sensor(2) * camera->lens_back_focal_length;
-   const double py = sensor(1) + sensor(3) * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-   if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) return false;
+    Eigen::Vector2d lens;
+    concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, lens, true);
+    aperture(0) = lens(0) * aperture_radius;
+    aperture(1) = lens(1) * aperture_radius;
+
+    if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera) <= 0.0) {
+      ++tries;
+      continue;
+    }
+
+    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
+    const double px = sensor(0) + sensor(2) * camera->lens_back_focal_length;
+    const double py = sensor(1) + sensor(3) * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+    if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) {
+      ++tries;
+      continue;
+    }
+
+    ray_succes = true;
+  }
 
    // shift sensor
    sensor(0) += sensor(2) * -sensor_shift;

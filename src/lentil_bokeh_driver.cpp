@@ -143,57 +143,60 @@ driver_process_bucket
 
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-          AtVector2 bbox_min (0, 0);
-          AtVector2 bbox_max (0, 0);
-          for(int count=0; count<64; count++) {
-            if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
-              continue;
-              --count;
-            }
+          // AtVector2 bbox_min (0, 0);
+          // AtVector2 bbox_max (0, 0);
+          // for(int count=0; count<64; count++) {
+          //   if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
+          //     --count;
+          //     continue;
+          //   }
 
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
+          //   // convert sensor position to pixel position
+          //   Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
 
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+          //   const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+          //   const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-            //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel_x > xres) || 
-                (pixel_x < 0)    || 
-                (pixel_y > yres) || 
-                (pixel_y < 0)    || 
-                (pixel_x != pixel_x) ||  //nan checking
-                (pixel_y != pixel_y)) // nan checking
-            {
-              continue;
-              --count;
-            }
+          //   //figure out why sometimes pixel is nan, can't just skip it
+          //   if ((pixel_x > xres) || 
+          //       (pixel_x < 0)    || 
+          //       (pixel_y > yres) || 
+          //       (pixel_y < 0)    || 
+          //       (pixel_x != pixel_x) ||  //nan checking
+          //       (pixel_y != pixel_y)) // nan checking
+          //   {
+          //     --count;
+          //     continue;
+          //   }
 
-            // expand bbox
-            if (count == 0) {
-              bbox_min[0] = pixel_x;
-              bbox_min[1] = pixel_y;
-              bbox_max[0] = pixel_x;
-              bbox_max[1] = pixel_y;
-            } else {
-              if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
-              if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
-              if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
-              if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
-            }
-          }
+          //   // expand bbox
+          //   if (count == 0) {
+          //     bbox_min[0] = pixel_x;
+          //     bbox_min[1] = pixel_y;
+          //     bbox_max[0] = pixel_x;
+          //     bbox_max[1] = pixel_y;
+          //   } else {
+          //     if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
+          //     if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
+          //     if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
+          //     if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
+          //   }
+          // }
 
-          double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
-          samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
-          
+          // double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
+          // int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
+          // samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
+          int samples = 256;
+
           sample /= static_cast<double>(samples);
 
-
+          int total_samples_taken = 0;
           for(int count=0; count<samples; count++) {
+            ++total_samples_taken;
+
             if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
+              // --count;
               continue;
-              --count;
             }
 
             // convert sensor position to pixel position
@@ -210,22 +213,21 @@ driver_process_bucket
                 (pixel_x != pixel_x) ||  //nan checking
                 (pixel_y != pixel_y)) // nan checking
             {
-              continue;
               --count;
+              continue;
             }
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            bokeh->image[pixelnumber] += sample * 10; // remove 10 after debugging;
+            bokeh->image[pixelnumber] += sample;
             
           }
         }
 
       // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         else {
-          /* tmp removed for debugging, renenable!*/
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          //bokeh->image[pixelnumber] += sample;
+          bokeh->image[pixelnumber] += sample;
         }
       }
     }
