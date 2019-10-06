@@ -9,7 +9,7 @@
 
 options
 {
- AA_samples 4
+ AA_samples 2
  outputs 4 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_bokeh_driver"
@@ -100,8 +100,9 @@ lentil
  0.649698555 -0.0574722625 -0.758016288 0
  17.601759 1.98807669 -19.9616642 1
  focal_distance 26.3
- vignetting_retries 20
- minimum_rgb 0.25
+ vignetting_retries 15
+ minimum_rgb 0.1
+ fstop 32
  #empirical_ca_dist 60
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING

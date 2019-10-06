@@ -1,14 +1,9 @@
 // initially try to only do it for rgba, support multiple aovs at later point
-// figure out NaNs, probably related to image edge darkening
-  // losing energy at the image edges, is this due to vignetting retries?
 // doesn't seem to like AA_samples at 1 .. takes long?
 // add image based bokeh & chromatic aberrations to backtracing
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
 // filter is losing 40% of the energy, look into how these actually work
 
-// when debugging newtonian iterations, if the squared error increases, the error code is 1.. might be ok to take the last iteration in that case?
-
-// what could the circle i'm getting possibly be?
 #include <ai.h>
 #include <vector>
 #include "lentil.h"
@@ -18,9 +13,9 @@
 #include "tinyexr.h"
 
  
-AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
+AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
-struct LentilBokehDriver {
+struct ThinLensBokehDriver {
   int xres;
   int yres;
   int samples;
@@ -59,7 +54,7 @@ node_parameters {}
  
 node_initialize
 {
-  AiNodeSetLocalData(node, new LentilBokehDriver());
+  AiNodeSetLocalData(node, new ThinLensBokehDriver());
 
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", NULL};
   AiRawDriverInitialize(node, required_aovs, false);
@@ -67,11 +62,11 @@ node_initialize
  
 node_update 
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
 
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
-  AiNodeIs(node_camera, AtString("lentil")) ? bokeh->enabled = true : bokeh->enabled = false;
+  AiNodeIs(node_camera, AtString("lentil_thin_lens")) ? bokeh->enabled = true : bokeh->enabled = false;
   
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
@@ -103,7 +98,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
  
 driver_process_bucket
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (!bokeh->enabled) return;
@@ -111,12 +106,6 @@ driver_process_bucket
   const double xres = (double)bokeh->xres;
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
-
-
-  // convert sample world space position to camera space
-  AtMatrix world_to_camera_matrix;
-  AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
-          
 
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
 		for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
@@ -141,10 +130,14 @@ driver_process_bucket
       // ENERGY REDISTRIBUTION
         if (sample_luminance > camera->minimum_rgb) {
           
+          // convert sample world space position to camera space
+          AtMatrix world_to_camera_matrix;
           Eigen::Vector2d sensor_position;
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
+          
           AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
-          //AiMsgInfo("%f, %f, %f", camera_space_sample_position(0), camera_space_sample_position(1) ,camera_space_sample_position(2));
+          
 
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
@@ -198,11 +191,12 @@ driver_process_bucket
           int total_samples_taken = 0;
           for(int count=0; count<samples; count++) {
             ++total_samples_taken;
-
-            //camera_space_sample_position(2) *= -1.0; // why no impact?
-            if(!trace_backwards(-camera_space_sample_position*10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
-              continue;
-            }
+              
+              // need to reverse this!!!!
+                // Compute point on plane of focus, intersection on z axis
+                float intersection = std::abs(data->focal_distance / output.dir.z);
+                AtVector focusPoint = output.dir * intersection;
+                output.dir = AiV3Normalize(focusPoint - output.origin);
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), 
@@ -230,21 +224,19 @@ driver_process_bucket
             {
               continue;
             }
-            
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            //bokeh->image[pixelnumber] += sample;
-            bokeh->image[pixelnumber] = AtRGBA(camera_space_sample_position_tmp[0], camera_space_sample_position_tmp[1], camera_space_sample_position_tmp[2], 1.0);
+            bokeh->image[pixelnumber] += sample;
             
           }
         }
 
       // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-        // else {
-        //   int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-        //   bokeh->image[pixelnumber] += sample;
-        // }
+        else {
+          int pixelnumber = static_cast<int>(bokeh->xres * py + px);
+          bokeh->image[pixelnumber] += sample;
+        }
       }
     }
   }
@@ -254,7 +246,7 @@ driver_write_bucket {}
  
 driver_close
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());  
 
   if (!bokeh->enabled) return;
@@ -278,16 +270,16 @@ driver_close
  
 node_finish
 {
-   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
    delete bokeh;
 }
 
 node_loader
 {
    if (i>0) return false;
-   node->methods = (AtNodeMethods*) LentilBokehDriverMtd;
+   node->methods = (AtNodeMethods*) ThinLensBokehDriverMtd;
    node->output_type = AI_TYPE_NONE;
-   node->name = "lentil_bokeh_driver";
+   node->name = "lentil_thin_lens_bokeh_driver";
    node->node_type = AI_NODE_DRIVER;
    strcpy(node->version, AI_VERSION);
    return true;
