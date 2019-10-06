@@ -233,7 +233,7 @@ inline void concentric_disk_sample(const double ox, const double oy, Eigen::Vect
 }
 
 
-static inline void lens_sample_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades)
+static inline void lens_sample_triangular_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades)
 {
   const int tri = (int)(r1*blades);
 
@@ -539,7 +539,7 @@ inline float calculate_distance_vec2(Eigen::Vector2d a, Eigen::Vector2d b) {
     return std::sqrt(std::pow(b[0] - a[0], 2) +  std::pow(b[1] - a[1], 2));
 }
 
-Eigen::Vector3d chromatic_abberration_empirical(Eigen::Vector2d pos, float distance_mult, Eigen::Vector2d &lens, float apertureradius) {
+inline Eigen::Vector3d chromatic_abberration_empirical(Eigen::Vector2d pos, float distance_mult, Eigen::Vector2d &lens, float apertureradius) {
   float distance_to_center = calculate_distance_vec2(Eigen::Vector2d(0.0, 0.0), pos);
   int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
 
@@ -642,14 +642,14 @@ inline void trace_ray(bool original_ray, int &tries,
       aperture(1) = unit_disk(1) * camera->aperture_radius;
 	  } 
 	  else if (camera->dof && camera->aperture_blades > 2) {
-	  	if (tries == 0) lens_sample_aperture(aperture(0), aperture(1), input_lensx, input_lensy, camera->aperture_radius, camera->aperture_blades);
+	  	if (tries == 0) lens_sample_triangular_aperture(aperture(0), aperture(1), input_lensx, input_lensy, camera->aperture_radius, camera->aperture_blades);
 	  	else {
 	  		if (original_ray) {
 		  		r1 = xor128() / 4294967296.0;
 		  		r2 = xor128() / 4294967296.0;
 	  		}
 
-	  		lens_sample_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->aperture_blades);
+	  		lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->aperture_blades);
 	  	}
 	  }
 
@@ -761,22 +761,26 @@ inline bool trace_backwards(Eigen::Vector3d target,
                             const double sensor_shift, 
                             Camera *camera)
 {
-   // initialize 5d light fields
-   Eigen::VectorXd sensor(5); sensor << 0,0,0,0, lambda;
-   Eigen::VectorXd out(5); out.setZero();
-   Eigen::Vector2d aperture(0,0);
-
   int tries = 0;
   bool ray_succes = false;
 
+  // initialize 5d light fields
+  Eigen::VectorXd sensor(5); sensor << 0,0,0,0, lambda;
+  Eigen::VectorXd out(5); out << 0,0,0,0, lambda;//out.setZero();
+  Eigen::Vector2d aperture(0,0);
+  
   while(ray_succes == false && tries <= camera->vignetting_retries){
 
-    Eigen::Vector2d lens;
-    concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, lens, true);
-    aperture(0) = lens(0) * aperture_radius;
-    aperture(1) = lens(1) * aperture_radius;
+    Eigen::Vector2d unit_disk;
+    concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, unit_disk, true);
+    aperture(0) = unit_disk(0) * aperture_radius;
+    aperture(1) = unit_disk(1) * aperture_radius;
 
-    if(lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera) <= 0.0) {
+    sensor(0) = sensor(1) = 0.0;
+
+
+    float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera);
+    if(transmittance <= 0) {
       ++tries;
       continue;
     }
@@ -791,6 +795,9 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
     ray_succes = true;
   }
+
+  // need to account for the ray_success==false case
+  if (!ray_succes) return false;
 
    // shift sensor
    sensor(0) += sensor(2) * -sensor_shift;
