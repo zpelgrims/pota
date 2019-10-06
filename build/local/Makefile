@@ -53,6 +53,9 @@ all: lentil_bokeh_driver lentil lentil_thinlens lentil_raytraced #lentil_bokeh_a
 lentil_bokeh_driver: Makefile ../../src/lentil_bokeh_driver.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil_bokeh_driver.cpp -o ${user_build_folder}/bin/lentil_bokeh_driver.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
+# lentil_thin_lens_bokeh_driver: Makefile ../../src/lentil_thin_lens_bokeh_driver.cpp ${HEADERS}
+# 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil_thin_lens_bokeh_driver.cpp -o ${user_build_folder}/bin/lentil_thin_lens_bokeh_driver.${SHARED_LIB_FORMAT} ${LDFLAGS}
+
 lentil: Makefile ../../src/lentil.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} ${LENSES} ../../src/lentil.cpp -o ${user_build_folder}/bin/lentil.${SHARED_LIB_FORMAT} ${LDFLAGS}
 
