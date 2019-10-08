@@ -14,7 +14,7 @@ enum {
   p_wavelength,
   p_dof,
   p_fstop,
-  p_focal_distance,
+  p_focus_distance,
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
@@ -72,7 +72,7 @@ node_update {
 
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focus_distance = AiNodeGetFlt(node, "focal_distance") * 10.0; //converting to mm
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");

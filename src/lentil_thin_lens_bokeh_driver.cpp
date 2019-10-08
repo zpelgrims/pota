@@ -4,6 +4,9 @@
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
 // filter is losing 40% of the energy, look into how these actually work
 
+// circle of confusion on sensor is just ...slightly... bigger
+// compute analytical size of circle of confusion
+
 #include <ai.h>
 #include <vector>
 #include "lentil_thinlens.h"
@@ -63,7 +66,8 @@ node_initialize
 node_update 
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-
+  CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
+  
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
   AiNodeIs(node_camera, AtString("lentil_thinlens")) ? bokeh->enabled = true : bokeh->enabled = false;
@@ -73,6 +77,8 @@ node_update
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
   bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+
+   AiMsgInfo("tl->aperture_radius: %f", tl->aperture_radius);
 
   // construct buffer
   bokeh->image.clear();
@@ -129,7 +135,7 @@ driver_process_bucket
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
-          
+
           // convert sample world space position to camera space
           AtMatrix world_to_camera_matrix;
           Eigen::Vector2d sensor_position;
@@ -137,52 +143,8 @@ driver_process_bucket
           
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           
-
-
-        // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-          // AtVector2 bbox_min (0, 0);
-          // AtVector2 bbox_max (0, 0);
-          // for(int count=0; count<64; count++) {
-          //   if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
-          //     --count;
-          //     continue;
-          //   }
-
-          //   // convert sensor position to pixel position
-          //   Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
-
-          //   const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-          //   const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
-
-          //   //figure out why sometimes pixel is nan, can't just skip it
-          //   if ((pixel_x > xres) || 
-          //       (pixel_x < 0)    || 
-          //       (pixel_y > yres) || 
-          //       (pixel_y < 0)    || 
-          //       (pixel_x != pixel_x) ||  //nan checking
-          //       (pixel_y != pixel_y)) // nan checking
-          //   {
-          //     --count;
-          //     continue;
-          //   }
-
-          //   // expand bbox
-          //   if (count == 0) {
-          //     bbox_min[0] = pixel_x;
-          //     bbox_min[1] = pixel_y;
-          //     bbox_max[0] = pixel_x;
-          //     bbox_max[1] = pixel_y;
-          //   } else {
-          //     if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
-          //     if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
-          //     if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
-          //     if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
-          //   }
-          // }
-
-          // double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          // int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
-          int samples = 10000;
+          // need to calculate sample count here!!
+          int samples = 2000;
           samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
 
           sample /= static_cast<double>(samples);
@@ -191,24 +153,25 @@ driver_process_bucket
           for(int count=0; count<samples; count++) {
             ++total_samples_taken;
 
-              // either get uniformly distributed points on the unit disk or bokeh image
-              AtVector2 lens(0.0, 0.0);
-              concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens);
+            // either get uniformly distributed points on the unit disk or bokeh image
+            AtVector2 lens(0.0, 0.0);
+            concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens);
 
-              // scale points in [-1, 1] domain to actual aperture radius
-              lens *= tl->aperture_radius;
-              AtVector lens3(lens.x,lens.y,0.0);
+            // scale points in [-1, 1] domain to actual aperture radius
+            lens *= tl->aperture_radius / tl->focus_distance;
+            AtVector lens3d(lens.x, lens.y, 0.0);
 
-              // intersect at -1? z plane.. this could be the sensor?
-              AtVector dir = AiV3Normalize(lens3 - camera_space_sample_position);
-              AtVector sensor_position = (lens3+dir) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            // intersect at -1? z plane.. this could be the sensor?
+            AtVector dir = AiV3Normalize(lens3d - camera_space_sample_position);
+            float intersection = std::abs(1.0 / dir.z);
+            AtVector sensor_position = (lens3d + (dir*intersection*-1.0)) / tl->tan_fov; // could be so wrong, most likely inaccurate
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position[0], 
                               sensor_position[1] * frame_aspect_ratio);
 
-            const float pixel_x = ((-s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = (( s(1) + 1.0) / 2.0) * yres;
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
             //figure out why sometimes pixel is nan, can't just skip it
             // if ((pixel_x > xres) || 
@@ -236,8 +199,7 @@ driver_process_bucket
           }
         }
 
-      // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-        else {
+        else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           bokeh->image[pixelnumber] += sample;
         }

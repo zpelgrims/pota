@@ -17,6 +17,8 @@ struct CameraThinLens
 
     float minimum_rgb;
     AtString bokeh_exr_path;
+
+    float chr_abb_mult;
 };
 
 extern struct CameraThinLens tl;

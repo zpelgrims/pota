@@ -11,7 +11,8 @@ enum
     p_fstop,
     p_focus_distance,
     p_minimum_rgb,
-    p_bokeh_exr_path
+    p_bokeh_exr_path,
+    p_chr_abb_mult
 };
 
 
@@ -28,6 +29,7 @@ node_parameters
     AiParameterFlt("focus_distance", 100.0);
     AiParameterFlt("minimum_rgb", 0.5);
     AiParameterStr("bokeh_exr_path", "");
+    AiParameterFlt("chr_abb_mult", 0.0);
 }
 
 
@@ -54,6 +56,8 @@ node_update
 
     tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
     tl->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+
+    tl->chr_abb_mult = AiNodeGetFlt(node, "chr_abb_mult");
 
     AiCameraUpdate(node, false);
 }
@@ -85,10 +89,9 @@ camera_create_ray
     AtVector2 p2(p.x, p.y);
     float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
     int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-    float chr_abb_mult = 3.0;
     AtVector2 aperture_0_center(0.0, 0.0);
-    AtVector2 aperture_1_center(- p2 * distance_to_center * chr_abb_mult);
-    AtVector2 aperture_2_center(p2 * distance_to_center * chr_abb_mult);
+    AtVector2 aperture_1_center(- p2 * distance_to_center * tl->chr_abb_mult);
+    AtVector2 aperture_2_center(p2 * distance_to_center * tl->chr_abb_mult);
     output.weight = AtRGB(1.0);
     if (random_aperture == 0) {
         if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
