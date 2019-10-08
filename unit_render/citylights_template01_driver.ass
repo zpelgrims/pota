@@ -121,6 +121,8 @@ lentil_thinlens
  focal_length 4.9
  minimum_rgb 0.25
  fstop 2.8
+ optical_vignetting_distance 5.0
+ optical_vignetting_radius 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"

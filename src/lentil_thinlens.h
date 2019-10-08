@@ -19,6 +19,8 @@ struct CameraThinLens
     AtString bokeh_exr_path;
 
     float chr_abb_mult;
+    float optical_vignetting_distance;
+    float optical_vignetting_radius;
 };
 
 extern struct CameraThinLens tl;
@@ -54,4 +56,14 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
 
     lens->x = r * std::cos(phi);
     lens->y = r * std::sin(phi);
+}
+
+// creates a secondary, virtual aperture resembling the exit pupil on a real lens
+bool empericalOpticalVignetting(AtVector origin, AtVector direction, float apertureRadius, float opticalVignettingRadius, float opticalVignettingDistance){
+    // because the first intersection point of the aperture is already known, I can just linearly scale it by the distance to the second aperture
+    AtVector opticalVignetPoint = (direction * opticalVignettingDistance) - origin;
+    float pointHypotenuse = std::sqrt((opticalVignetPoint.x * opticalVignetPoint.x) + (opticalVignetPoint.y * opticalVignetPoint.y));
+    float virtualApertureTrueRadius = apertureRadius * opticalVignettingRadius;
+
+    return std::abs(pointHypotenuse) < virtualApertureTrueRadius;
 }

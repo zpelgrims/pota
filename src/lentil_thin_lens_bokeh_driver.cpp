@@ -1,6 +1,6 @@
 // initially try to only do it for rgba, support multiple aovs at later point
 // doesn't seem to like AA_samples at 1 .. takes long?
-// add image based bokeh & chromatic aberrations to backtracing
+// add image based bokeh & chromatic aberrations & optical vignetting to backtracing
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
 // filter is losing 40% of the energy, look into how these actually work
 
