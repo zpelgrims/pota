@@ -150,7 +150,8 @@ driver_process_bucket
           sample /= static_cast<double>(samples);
 
           int total_samples_taken = 0;
-          for(int count=0; count<samples; count++) {
+          int max_total_samples = samples*2;
+          for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
 
             // either get uniformly distributed points on the unit disk or bokeh image
@@ -162,9 +163,18 @@ driver_process_bucket
             AtVector lens3d(lens.x, lens.y, 0.0);
 
             // intersect at -1? z plane.. this could be the sensor?
-            AtVector dir = AiV3Normalize(lens3d - camera_space_sample_position);
+            AtVector dir = AiV3Normalize(camera_space_sample_position - lens3d);
             float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection*-1.0)) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            
+            // add optical vignetting here
+            // if (tl->optical_vignetting_distance > 0.0){
+            //   if (!empericalOpticalVignetting(lens3d, dir, tl->aperture_radius / tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance)){
+            //       --count;
+            //       continue;
+            //   }
+            // }
+
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position[0], 
@@ -173,23 +183,13 @@ driver_process_bucket
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-            //figure out why sometimes pixel is nan, can't just skip it
-            // if ((pixel_x > xres) || 
-            //     (pixel_x < 0)    || 
-            //     (pixel_y > yres) || 
-            //     (pixel_y < 0)    || 
-            //     (pixel_x != pixel_x) ||  //nan checking
-            //     (pixel_y != pixel_y)) // nan checking
-            // {
-            //   continue;
-            // }
-
             // if outside of image
             if ((pixel_x >= xres) || 
                 (pixel_x < 0)    || 
                 (pixel_y >= yres) || 
                 (pixel_y < 0))
             {
+              --count; // really need something better here, many samples are wasted outside of frame
               continue;
             }
 
