@@ -7,8 +7,8 @@
 // filter is losing 40% of the energy, look into how these actually work
 
 // when debugging newtonian iterations, if the squared error increases, the error code is 1.. might be ok to take the last iteration in that case?
-
 // what could the circle i'm getting possibly be?
+
 #include <ai.h>
 #include <vector>
 #include "lentil.h"

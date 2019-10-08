@@ -1,126 +1,85 @@
 #include <ai.h>
-#include <string.h>
-
-// ca
-#include <cmath>
+#include "lentil_thinlens.h"
 
 AI_CAMERA_NODE_EXPORT_METHODS(lentil_thinlensMethods)
 
 enum
 {
-    p_sensorWidth,
-    p_sensorHeight,
+    p_sensor_width,
+    p_sensor_height,
     p_focal_length,
-    p_fStop,
-    p_focal_distance
-};
-
-struct Camera
-{
-    float fov;
-    float tan_fov;
-    float sensorWidth;
-    float sensorHeight;
-    float focal_length;
-    float fStop;
-    float focal_distance;
-    float apertureRadius;
+    p_fstop,
+    p_focus_distance,
+    p_minimum_rgb,
+    p_bokeh_exr_path
 };
 
 
-// Improved concentric mapping code by Dave Cline [peter shirley´s blog]
-// maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
-{
-    float phi, r;
 
-    // switch coordinate space from [0, 1] to [-1, 1]
-    float a = 2.0 * ox - 1.0;
-    float b = 2.0 * oy - 1.0;
 
-    if ((a * a) > (b * b)){
-        r = a;
-        phi = (0.78539816339f) * (b / a);
-    }
-    else {
-        r = b;
-        phi = (AI_PIOVER2)-(0.78539816339f) * (a / b);
-    }
-
-    lens->x = r * std::cos(phi);
-    lens->y = r * std::sin(phi);
-}
 
 
 node_parameters
 {
-    AiParameterFlt("sensorWidth", 3.6); // 35mm film
-    AiParameterFlt("sensorHeight", 2.4); // 35 mm film
+    AiParameterFlt("sensor_width", 3.6); // 35mm film
+    AiParameterFlt("sensor_height", 2.4); // 35 mm film
     AiParameterFlt("focal_length", 3.5); // in cm
-    AiParameterFlt("fStop", 1.4);
-    AiParameterFlt("focal_distance", 100.0);
+    AiParameterFlt("fstop", 1.4);
+    AiParameterFlt("focus_distance", 100.0);
+    AiParameterFlt("minimum_rgb", 0.5);
+    AiParameterStr("bokeh_exr_path", "");
 }
 
 
 node_initialize
 {
     AiCameraInitialize(node);
-    AiNodeSetLocalData(node, new Camera());
+    AiNodeSetLocalData(node, new CameraThinLens());
 }
 
 
 node_update
 {
-    Camera* data = (Camera*)AiNodeGetLocalData(node);
+    CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
 
-    data->sensorWidth = AiNodeGetFlt(node, "sensorWidth");
-    data->sensorHeight = AiNodeGetFlt(node, "sensorHeight");
-    data->focal_length = AiNodeGetFlt(node, "focal_length");
-    data->fStop = AiNodeGetFlt(node, "fStop");
-    data->focal_distance = AiNodeGetFlt(node, "focal_distance");
+    tl->sensor_width = AiNodeGetFlt(node, "sensor_width");
+    tl->sensor_height = AiNodeGetFlt(node, "sensor_height");
+    tl->focal_length = AiNodeGetFlt(node, "focal_length");
+    tl->fstop = AiNodeGetFlt(node, "fstop");
+    tl->focus_distance = AiNodeGetFlt(node, "focus_distance");
 
-    data->fov = 2.0f * atan((data->sensorWidth / (2.0f * data->focal_length))); // in radians
-    data->tan_fov = tanf(data->fov / 2.0f);
-    data->apertureRadius = (data->focal_length) / (2.0f * data->fStop);
+    tl->fov = 2.0 * atan((tl->sensor_width / (2.0 * tl->focal_length))); // in radians
+    tl->tan_fov = tanf(tl->fov / 2.0);
+    tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
 
-    AiMsgInfo("[LENTIL_THINLENS] fov: %f", data->fov);
-
+    tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
+    tl->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
 
     AiCameraUpdate(node, false);
 }
 
 node_finish
 {
-    Camera* data = (Camera*)AiNodeGetLocalData(node);
-    delete data;
-}
-
-
-// xorshift fast random number generator
-inline uint32_t xor128(void){
-  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-  uint32_t t = x ^ (x << 11);
-  x = y; y = z; z = w;
-  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
+    CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
+    delete tl;
 }
 
 
 camera_create_ray
 {
-    const Camera* data = (Camera*)AiNodeGetLocalData(node);
+    const CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
 
-    // create point on lens
-    AtVector p(input.sx * data->tan_fov, input.sy * data->tan_fov, 1.0);
-
+    // create point on sensor (camera space)
+    AtVector p(input.sx * tl->tan_fov, input.sy * tl->tan_fov, -1.0);
     // calculate direction vector from origin to point on lens
-    output.dir = AiV3Normalize(p - output.origin);
+    output.dir = AiV3Normalize(p); // or norm(p-origin)
 
     // either get uniformly distributed points on the unit disk or bokeh image
     AtVector2 lens(0.0, 0.0);
     concentricDiskSample(input.lensx, input.lensy, &lens);
 
     // scale points in [-1, 1] domain to actual aperture radius
-    lens *= data->apertureRadius;
+    lens *= tl->aperture_radius;
 
     // ca
     AtVector2 p2(p.x, p.y);
@@ -132,39 +91,38 @@ camera_create_ray
     AtVector2 aperture_2_center(p2 * distance_to_center * chr_abb_mult);
     output.weight = AtRGB(1.0);
     if (random_aperture == 0) {
-        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.r = 0.0;
         }
-        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.b = 0.0;
         }
-        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.g = 0.0;
         }
     } else if (random_aperture == 1) {
         lens += aperture_1_center;
-        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.r = 0.0;
         }
-        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.b = 0.0;
         }
-        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.g = 0.0;
         }
     } else if (random_aperture == 2) {
         lens += aperture_2_center;
-        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.r = 0.0;
         }
-        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.b = 0.0;
         }
-        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(data->apertureRadius, 2)) {
+        if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
             output.weight.g = 0.0;
         }
     }
-
     //ca, not sure if this should be done, evens out the intensity
     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
     // output.weight.r /= sum;
@@ -177,18 +135,21 @@ camera_create_ray
     output.origin.z = 0.0;
 
     // Compute point on plane of focus, intersection on z axis
-    float intersection = std::abs(data->focal_distance / output.dir.z);
+    float intersection = std::abs(tl->focus_distance / output.dir.z);
     AtVector focusPoint = output.dir * intersection;
     output.dir = AiV3Normalize(focusPoint - output.origin);
 
-    // now looking down -Z
-    output.dir.z *= -1.0;
+    // this will fuck up all kinds of optimisations, calculate proper derivs!
+    output.dOdx = output.origin;
+    output.dOdy = output.origin;
+    output.dDdx = output.dir;
+    output.dDdy = output.dir;
 }
 
 
 camera_reverse_ray
 {
-    // const Camera* data = (Camera*)AiNodeGetLocalData(node);
+    // const CameraThinLens* data = (CameraThinLens*)AiNodeGetLocalData(node);
     return false;
 }
 

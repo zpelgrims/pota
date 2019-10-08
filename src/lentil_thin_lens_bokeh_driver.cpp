@@ -6,8 +6,7 @@
 
 #include <ai.h>
 #include <vector>
-#include "lentil.h"
-#include "lens.h"
+#include "lentil_thinlens.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
@@ -24,6 +23,7 @@ struct ThinLensBokehDriver {
   float filter_width;
   std::vector<AtRGBA> image;
 };
+
 
 float gaussian(AtVector2 p, float width) {
     /* matches Arnold's exactly. */
@@ -48,7 +48,7 @@ float gaussian(AtVector2 p, float width) {
         return 0.0f;
     }
 }
- 
+
 
 node_parameters {}
  
@@ -66,7 +66,7 @@ node_update
 
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
-  AiNodeIs(node_camera, AtString("lentil_thin_lens")) ? bokeh->enabled = true : bokeh->enabled = false;
+  AiNodeIs(node_camera, AtString("lentil_thinlens")) ? bokeh->enabled = true : bokeh->enabled = false;
   
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
@@ -99,7 +99,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
 driver_process_bucket
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (!bokeh->enabled) return;
   
@@ -128,15 +128,14 @@ driver_process_bucket
 
 
       // ENERGY REDISTRIBUTION
-        if (sample_luminance > camera->minimum_rgb) {
+        if (sample_luminance > tl->minimum_rgb) {
           
           // convert sample world space position to camera space
           AtMatrix world_to_camera_matrix;
           Eigen::Vector2d sensor_position;
           AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
           
-          AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
-          Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_tmp.x, camera_space_sample_position_tmp.y, camera_space_sample_position_tmp.z);
+          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           
 
 
@@ -183,7 +182,7 @@ driver_process_bucket
 
           // double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
           // int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
-          int samples = 125;
+          int samples = 10000;
           samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
 
           sample /= static_cast<double>(samples);
@@ -191,19 +190,25 @@ driver_process_bucket
           int total_samples_taken = 0;
           for(int count=0; count<samples; count++) {
             ++total_samples_taken;
-              
-              // need to reverse this!!!!
-                // Compute point on plane of focus, intersection on z axis
-                float intersection = std::abs(data->focal_distance / output.dir.z);
-                AtVector focusPoint = output.dir * intersection;
-                output.dir = AiV3Normalize(focusPoint - output.origin);
+
+              // either get uniformly distributed points on the unit disk or bokeh image
+              AtVector2 lens(0.0, 0.0);
+              concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens);
+
+              // scale points in [-1, 1] domain to actual aperture radius
+              lens *= tl->aperture_radius;
+              AtVector lens3(lens.x,lens.y,0.0);
+
+              // intersect at -1? z plane.. this could be the sensor?
+              AtVector dir = AiV3Normalize(lens3 - camera_space_sample_position);
+              AtVector sensor_position = (lens3+dir) / tl->tan_fov; // could be so wrong, most likely inaccurate
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), 
-                              sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position[0], 
+                              sensor_position[1] * frame_aspect_ratio);
 
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+            const float pixel_x = ((-s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = (( s(1) + 1.0) / 2.0) * yres;
 
             //figure out why sometimes pixel is nan, can't just skip it
             // if ((pixel_x > xres) || 
@@ -228,7 +233,6 @@ driver_process_bucket
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             bokeh->image[pixelnumber] += sample;
-            
           }
         }
 
@@ -247,7 +251,7 @@ driver_write_bucket {}
 driver_close
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-  Camera *camera = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());  
+  CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());  
 
   if (!bokeh->enabled) return;
 
@@ -264,8 +268,8 @@ driver_close
     ++pixelnumber;
   }
 
-  SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, camera->bokeh_exr_path.c_str());
-  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", camera->bokeh_exr_path.c_str());
+  SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, tl->bokeh_exr_path.c_str());
+  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", tl->bokeh_exr_path.c_str());
 }
  
 node_finish
