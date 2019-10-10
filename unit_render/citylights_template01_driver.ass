@@ -101,7 +101,7 @@ lentil
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  vignetting_retries 15
- minimum_rgb 0.25
+ minimum_rgb 0.1
  fstop 1.4
  #empirical_ca_dist 60
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
@@ -119,9 +119,9 @@ lentil_thinlens
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  focal_length 4.9
- minimum_rgb 0.25
+ minimum_rgb 0.1
  fstop 2.8
- bias 0.5
+ bias 0.7
  optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"

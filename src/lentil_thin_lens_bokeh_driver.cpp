@@ -144,7 +144,7 @@ driver_process_bucket
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           
           // need to calculate sample count here!!
-          int samples = 2000;
+          int samples = 100000;
           samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
 
           sample /= static_cast<double>(samples);

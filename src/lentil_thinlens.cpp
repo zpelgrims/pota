@@ -90,7 +90,7 @@ camera_create_ray
     int maxtries = 15;
     while (!success && tries <= maxtries){
         // create point on sensor (camera space)
-        const AtVector p(input.sx * tl->tan_fov, input.sy * tl->tan_fov, -1.0);
+        const AtVector p(input.sx, input.sy, -1.0/tl->tan_fov);
         // calculate direction vector from origin to point on lens
         output.dir = AiV3Normalize(p); // or norm(p-origin)
 
@@ -154,8 +154,9 @@ camera_create_ray
         output.origin.y = lens.y;
         output.origin.z = 0.0;
 
+
         // Compute point on plane of focus, intersection on z axis
-        const float intersection = std::abs(tl->focus_distance / output.dir.z);
+        const float intersection = tl->focus_distance;//std::abs(tl->focus_distance / output.dir.z);
         const AtVector focusPoint = output.dir * intersection;
         output.dir = AiV3Normalize(focusPoint - output.origin);
 
