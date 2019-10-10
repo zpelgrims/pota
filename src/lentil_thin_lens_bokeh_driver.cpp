@@ -167,13 +167,13 @@ driver_process_bucket
             float intersection = std::abs(1.0 / dir.z);
             AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
             
-            // // add optical vignetting here
-            // if (tl->optical_vignetting_distance > 0.0){
-            //   if (!empericalOpticalVignetting(lens3d, dir, tl->aperture_radius / tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance)){
-            //       --count;
-            //       continue;
-            //   }
-            // }
+            // add optical vignetting here
+            if (tl->optical_vignetting_distance > 0.0){
+              if (!empericalOpticalVignetting(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance)){ //why doesn't this work? 
+                  --count;
+                  continue;
+              }
+            }
 
 
             // convert sensor position to pixel position
