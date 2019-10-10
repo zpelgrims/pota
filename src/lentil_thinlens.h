@@ -21,6 +21,10 @@ struct CameraThinLens
     float chr_abb_mult;
     float optical_vignetting_distance;
     float optical_vignetting_radius;
+
+    float bias;
+    float gain;
+    bool invert;
 };
 
 extern struct CameraThinLens tl;
@@ -34,10 +38,14 @@ inline uint32_t xor128(void){
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
 }
 
+inline float bias_symmetrical(float x, float b) {
+    b = -std::log2(1.0f - b);
+    return 1.0f - std::pow(1.0f - std::pow(x, 1.0f/b), b);
+}
 
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
+inline void concentricDiskSample(float ox, float oy, AtVector2 *lens, float bias)
 {
     float phi, r;
 
@@ -53,6 +61,8 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens)
         r = b;
         phi = (AI_PIOVER2)-(0.78539816339f) * (a / b);
     }
+
+    if (bias != 0.5) r = AiBias(std::abs(r), bias) * (r < 0 ? -1 : 1);
 
     lens->x = r * std::cos(phi);
     lens->y = r * std::sin(phi);

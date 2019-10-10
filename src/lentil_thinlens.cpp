@@ -14,7 +14,10 @@ enum
     p_bokeh_exr_path,
     p_chr_abb_mult,
     p_optical_vignetting_distance,
-    p_optical_vignetting_radius
+    p_optical_vignetting_radius,
+    p_bias,
+    p_gain,
+    p_invert
 };
 
 node_parameters
@@ -29,6 +32,10 @@ node_parameters
     AiParameterFlt("chr_abb_mult", 0.0);
     AiParameterFlt("optical_vignetting_distance", 0.0);
     AiParameterFlt("optical_vignetting_radius", 1.0);
+
+    AiParameterFlt("bias", 0.5);
+    AiParameterFlt("gain", 0.5);
+    AiParameterBool("invert", false);
 }
 
 
@@ -60,6 +67,10 @@ node_update
     tl->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distance");
     tl->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radius");
 
+    tl->bias = AiNodeGetFlt(node, "bias");
+    tl->gain = AiNodeGetFlt(node, "gain");
+    tl->invert = AiNodeGetBool(node, "invert");
+
     AiCameraUpdate(node, false);
 }
 
@@ -85,8 +96,8 @@ camera_create_ray
 
         // either get uniformly distributed points on the unit disk or bokeh image
         AtVector2 lens(0.0, 0.0);
-        if (tries == 0) concentricDiskSample(input.lensx, input.lensy, &lens);
-        else concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens);
+        if (tries == 0) concentricDiskSample(input.lensx, input.lensy, &lens, tl->bias);
+        else concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens, tl->bias);
 
         // scale points in [-1, 1] domain to actual aperture radius
         lens *= tl->aperture_radius;
