@@ -120,15 +120,15 @@ lentil_thinlens
  focus_distance 26.3
  focal_length 4.9
  minimum_rgb 1.0
- fstop 2.8
+ fstop 1.8
  bias 0.7
  optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
  # emperical_ca_dist 0.1
- square 0.4
- squeeze 0.5
+ square 0.0
+ squeeze 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
- use_image true
+ use_image false
  bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/teapot.png"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"

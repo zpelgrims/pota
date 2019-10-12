@@ -80,10 +80,7 @@ node_update
   bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
 
   AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
-          
-
-   AiMsgInfo("tl->aperture_radius: %f", tl->aperture_radius);
-
+  
   // construct buffer
   bokeh->image.clear();
   bokeh->image.reserve(bokeh->xres * bokeh->yres);
@@ -147,49 +144,53 @@ driver_process_bucket
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
           
 
-          // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-          // AtVector2 bbox_min (0, 0);
-          // AtVector2 bbox_max (0, 0);
-          // for(int count=0; count<64; count++) {
-          //   if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
-          //     --count;
-          //     continue;
-          //   }
+        // PROBE RAYS samples to determine size of bokeh & subsequent sample count
+          AtVector2 bbox_min (0, 0);
+          AtVector2 bbox_max (0, 0);
+          for(int count=0; count<128; count++) {
+            Eigen::Vector2d unit_disk(0, 0);
+            float r1 = xor128() / 4294967296.0;
+            float r2 = xor128() / 4294967296.0;
+            concentricDiskSample(r1, r2, unit_disk, 0.8, 0.0, 1.0);
+            unit_disk *= -1.0;
+            
+            // tmp copy
+            AtVector2 lens(unit_disk(0), unit_disk(1));
+            
+            // scale points in [-1, 1] domain to actual aperture radius
+            lens *= tl->aperture_radius / tl->focus_distance;
+            AtVector lens3d(lens.x, lens.y, 0.0);
 
-          //   // convert sensor position to pixel position
-          //   Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
+            // intersect at -1? z plane.. this could be the sensor?
+            AtVector dir = AiV3Normalize(camera_space_sample_position - lens3d);
+            float intersection = std::abs(1.0 / dir.z);
+            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            
 
-          //   const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-          //   const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+            // convert sensor position to pixel position
+            Eigen::Vector2d s(sensor_position.x / (tl->sensor_width * 0.5), sensor_position.y / (tl->sensor_width * 0.5) * frame_aspect_ratio);
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-          //   //figure out why sometimes pixel is nan, can't just skip it
-          //   if ((pixel_x > xres) || 
-          //       (pixel_x < 0)    || 
-          //       (pixel_y > yres) || 
-          //       (pixel_y < 0)    || 
-          //       (pixel_x != pixel_x) ||  //nan checking
-          //       (pixel_y != pixel_y)) // nan checking
-          //   {
-          //     --count;
-          //     continue;
-          //   }
+            // expand bbox
+            if (count == 0) {
+              bbox_min[0] = pixel_x;
+              bbox_min[1] = pixel_y;
+              bbox_max[0] = pixel_x;
+              bbox_max[1] = pixel_y;
+            } else {
+              if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
+              if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
+              if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
+              if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
+            }
+          }
 
-          //   // expand bbox
-          //   if (count == 0) {
-          //     bbox_min[0] = pixel_x;
-          //     bbox_min[1] = pixel_y;
-          //     bbox_max[0] = pixel_x;
-          //     bbox_max[1] = pixel_y;
-          //   } else {
-          //     if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
-          //     if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
-          //     if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
-          //     if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
-          //   }
-          // }
+          double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
+          int samples = std::floor(bbox_area * 20.0);
 
           // need to calculate sample count here!!
-          int samples = 200000;
+          // int samples = 200000;
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
 
           sample /= (double)(samples);
