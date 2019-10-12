@@ -123,6 +123,7 @@ driver_process_bucket
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
+        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
         
       // GAUSSIAN FILTER
         //float filter_width = 1.8;
@@ -130,7 +131,7 @@ driver_process_bucket
         //sample *= gaussian(offset, filter_width) * inv_density;
         sample *= inv_density;
 
-        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+
 
 
       // ENERGY REDISTRIBUTION
@@ -144,19 +145,19 @@ driver_process_bucket
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
           
           // need to calculate sample count here!!
-          int samples = 100000;
-          samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
+          int samples = 200000;
+          samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
 
-          sample /= static_cast<double>(samples);
+          sample /= (double)(samples);
 
           int total_samples_taken = 0;
-          int max_total_samples = samples*2;
+          int max_total_samples = samples*1.5;
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
 
             // either get uniformly distributed points on the unit disk or bokeh image
             AtVector2 lens(0.0, 0.0);
-            concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens, tl->bias);
+            concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens, tl->bias, tl->square, tl->squeeze);
 
             // scale points in [-1, 1] domain to actual aperture radius
             lens *= tl->aperture_radius / tl->focus_distance;

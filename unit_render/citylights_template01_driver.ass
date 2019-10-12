@@ -9,7 +9,7 @@
 
 options
 {
- AA_samples 6
+ AA_samples 3
  outputs 4 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver"
@@ -101,7 +101,7 @@ lentil
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  vignetting_retries 15
- minimum_rgb 0.1
+ minimum_rgb 0.05
  fstop 1.4
  #empirical_ca_dist 60
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
@@ -119,11 +119,14 @@ lentil_thinlens
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  focal_length 4.9
- minimum_rgb 0.1
+ minimum_rgb 1.0
  fstop 2.8
  bias 0.7
  optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
+ # emperical_ca_dist 0.1
+ square 0.4
+ squeeze 0.5
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
