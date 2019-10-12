@@ -19,7 +19,9 @@ enum
     p_gain,
     p_invert,
     p_square,
-    p_squeeze
+    p_squeeze,
+    p_use_image,
+    p_bokeh_input_path
 };
 
 node_parameters
@@ -41,6 +43,9 @@ node_parameters
 
     AiParameterFlt("square", 0.0);
     AiParameterFlt("squeeze", 1.0);
+
+    AiParameterBool("use_image", false);
+    AiParameterStr("bokeh_input_path", "");
 }
 
 
@@ -79,6 +84,18 @@ node_update
     tl->square = AiNodeGetFlt(node, "square");
     tl->squeeze = AiNodeGetFlt(node, "squeeze");
 
+    tl->use_image = AiNodeGetBool(node, "use_image");
+    tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
+
+    // make probability functions of the bokeh image
+    // if (parms.bokehChanged(camera->params)) {
+        tl->image.invalidate();
+        if (tl->use_image && !tl->image.read(tl->bokeh_input_path.c_str())){
+        AiMsgError("[LENTIL] Couldn't open bokeh image!");
+        AiRenderAbort();
+        }
+    // }
+
     AiCameraUpdate(node, false);
 }
 
@@ -91,7 +108,7 @@ node_finish
 
 camera_create_ray
 {
-    const CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
+    CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
 
     bool success = false;
     int tries = 0;
@@ -103,9 +120,30 @@ camera_create_ray
         output.dir = AiV3Normalize(p); // or norm(p-origin)
 
         // either get uniformly distributed points on the unit disk or bokeh image
-        AtVector2 lens(0.0, 0.0);
-        if (tries == 0) concentricDiskSample(input.lensx, input.lensy, &lens, tl->bias, tl->square, tl->squeeze);
-        else concentricDiskSample(xor128() / 4294967296.0, xor128() / 4294967296.0, &lens, tl->bias, tl->square, tl->squeeze);
+        
+        Eigen::Vector2d unit_disk(0, 0);
+        if (tries == 0) {
+            if (tl->use_image) {
+                tl->image.bokehSample(input.lensx, input.lensy, unit_disk);
+            } else {
+                concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->bias, tl->square, tl->squeeze);
+            }
+        } else {
+            float r1 = xor128() / 4294967296.0;
+            float r2 = xor128() / 4294967296.0;
+
+            if (tl->use_image) {
+                tl->image.bokehSample(r1, r2, unit_disk);
+            } else {
+                concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
+            }
+        }
+
+        unit_disk(0) *= tl->squeeze;
+        unit_disk *= -1.0;
+
+        // tmp copy
+        AtVector2 lens(unit_disk(0), unit_disk(1));
 
         // scale points in [-1, 1] domain to actual aperture radius
         lens *= tl->aperture_radius;

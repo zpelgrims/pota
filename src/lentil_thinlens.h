@@ -3,9 +3,12 @@
 #include <cmath>
 #include "../../Eigen/Eigen/Dense"
 
+#include "imagebokeh.h"
 
 struct CameraThinLens
 {
+    imageData image;
+
 	float fov;
     float tan_fov;
     float sensor_width;
@@ -28,6 +31,9 @@ struct CameraThinLens
 
     float square;
     float squeeze;
+
+    bool use_image;
+    AtString bokeh_input_path;
 };
 
 extern struct CameraThinLens tl;
@@ -71,11 +77,11 @@ inline float fastCos(float x){
 
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, AtVector2 *lens, float bias, float squarelerp, float squeeze_x)
+inline void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens, float bias, float squarelerp, float squeeze_x)
 {
     if (ox == 0.0 && oy == 0.0){
-        lens->x = 0.0;
-        lens->y = 0.0;
+        lens(0) = 0.0;
+        lens(1) = 0.0;
         return;
     }
 
@@ -101,15 +107,13 @@ inline void concentricDiskSample(float ox, float oy, AtVector2 *lens, float bias
 
     const float cos_phi = fast_trigo ? fastCos(phi) : std::cos(phi);
     const float sin_phi = fast_trigo ? fastSin(phi) : std::sin(phi);
-    lens->x = r * cos_phi;
-    lens->y = r * sin_phi;
+    lens(0) = r * cos_phi;
+    lens(1) = r * sin_phi;
 
     if (squarelerp > 0.0){
-        lens->x = linearInterpolate(squarelerp, lens->x, a);
-        lens->y = linearInterpolate(squarelerp, lens->y, b);
+        lens(0) = linearInterpolate(squarelerp, lens(0), a);
+        lens(1) = linearInterpolate(squarelerp, lens(1), b);
     }
-
-    lens->x *= squeeze_x;
 }
 
 

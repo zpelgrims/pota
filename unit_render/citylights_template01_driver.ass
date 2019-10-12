@@ -128,6 +128,8 @@ lentil_thinlens
  square 0.4
  squeeze 0.5
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
+ use_image true
+ bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/teapot.png"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }
