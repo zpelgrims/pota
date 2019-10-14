@@ -21,7 +21,8 @@ enum
     p_square,
     p_squeeze,
     p_use_image,
-    p_bokeh_input_path
+    p_bokeh_input_path,
+    p_bokeh_samples_mult
 };
 
 node_parameters
@@ -46,6 +47,8 @@ node_parameters
 
     AiParameterBool("use_image", false);
     AiParameterStr("bokeh_input_path", "");
+
+    AiParameterInt("bokeh_samples_mult", 10);
 }
 
 
@@ -86,6 +89,8 @@ node_update
 
     tl->use_image = AiNodeGetBool(node, "use_image");
     tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
+
+    tl->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_mult");
 
     // make probability functions of the bokeh image
     // if (parms.bokehChanged(camera->params)) {
@@ -167,55 +172,44 @@ camera_create_ray
         }
 
 
-        // ca
-        if (tl->emperical_ca_dist > 0.0){
-            const AtVector2 p2(p.x, p.y);
-            const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
-            const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-            AtVector2 aperture_0_center(0.0, 0.0);
-            AtVector2 aperture_1_center(- p2 * distance_to_center * tl->emperical_ca_dist);
-            AtVector2 aperture_2_center(p2 * distance_to_center * tl->emperical_ca_dist);
-            output.weight = AtRGB(1.0);
-            if (random_aperture == 0) {
-                if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.r = 0.0;
-                }
-                if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.b = 0.0;
-                }
-                if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.g = 0.0;
-                }
-            } else if (random_aperture == 1) {
-                lens += aperture_1_center;
-                if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.r = 0.0;
-                }
-                if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.b = 0.0;
-                }
-                if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.g = 0.0;
-                }
-            } else if (random_aperture == 2) {
-                lens += aperture_2_center;
-                if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.r = 0.0;
-                }
-                if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.b = 0.0;
-                }
-                if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-                    output.weight.g = 0.0;
-                }
-            }
-            //ca, not sure if this should be done, evens out the intensity?
-            // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
-            // output.weight.r /= sum;
-            // output.weight.g /= sum;
-            // output.weight.b /= sum;
-        }
+        // ca .. not sure about this technique, test on a focused scene.
+        // can't have this shift to the green aperture when everything is focused.
+        // AtRGB weight = AI_RGB_WHITE;
+        // if (tl->emperical_ca_dist > 0.0){
+        //     const AtVector2 p2(p.x, p.y);
+        //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
+        //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+        //     AtVector2 aperture_0_center(0.0, 0.0);
+        //     AtVector2 aperture_1_center(- p2 * distance_to_center * tl->emperical_ca_dist);
+        //     AtVector2 aperture_2_center(p2 * distance_to_center * tl->emperical_ca_dist);
+            
 
+        //     if (random_aperture == 1)      lens += aperture_1_center;
+        //     else if (random_aperture == 2) lens += aperture_2_center;
+
+        //     if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+        //         weight.r = 0.0;
+        //     }
+        //     if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+        //         weight.b = 0.0;
+        //     }
+        //     if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+        //         weight.g = 0.0;
+        //     }
+
+        //     if (weight == AI_RGB_ZERO){
+        //         ++tries;
+        //         continue;
+        //     }
+        
+        //     //ca, not sure if this should be done, evens out the intensity?
+        //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
+        //     // output.weight.r /= sum;
+        //     // output.weight.g /= sum;
+        //     // output.weight.b /= sum;
+        // }
+        
+        // output.weight = weight;
 
         // this will fuck up all kinds of optimisations, calculate proper derivs!
         output.dOdx = output.origin;

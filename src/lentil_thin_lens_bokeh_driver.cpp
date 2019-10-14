@@ -1,9 +1,7 @@
 // initially try to only do it for rgba, support multiple aovs at later point
-// doesn't seem to like AA_samples at 1 .. takes long?
-// add image based bokeh & chromatic aberrations & optical vignetting to backtracing
+// chromatic aberrations
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
-// filter is losing 40% of the energy, look into how these actually work
-
+// filter is losing 40% of the energy, look into how these actually work .. might have to divide by weight? see example arnold
 // circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
 
@@ -22,6 +20,7 @@ struct ThinLensBokehDriver {
   int yres;
   int samples;
   int aa_samples;
+  int min_aa_samples;
   bool enabled;
   float filter_width;
   std::vector<AtRGBA> image;
@@ -35,22 +34,16 @@ float gaussian(AtVector2 p, float width) {
     // const float sigma = 0.5f;
     // const float sharpness = 1.0f / (2.0f * sigma * sigma);
 
-    p /= (width * 0.5f);
+    p /= (width * 0.5);
     float dist_squared = (p.x * p.x + p.y * p.y);
-    if (dist_squared > (1.0f)) {
-        return 0.0f;
-    }
+    if (dist_squared > (1.0)) return 0.0;
 
     // const float normalization_factor = 1;
     // Float weight = normalization_factor * expf(-dist_squared * sharpness);
 
-    float weight = AiFastExp(-dist_squared * 2.0f); // was:
-
-    if (weight > 0.0f) {
-        return weight;
-    } else {
-        return 0.0f;
-    }
+    float weight = AiFastExp(-dist_squared * 2.0f);
+    
+    return (weight > 0) ? weight : 0.0;
 }
 
 
@@ -78,6 +71,9 @@ node_update
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
   bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  bokeh->min_aa_samples = 2;
+  
+  if (bokeh->aa_samples <= bokeh->min_aa_samples) bokeh->enabled = false;
 
   AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
   
@@ -120,27 +116,24 @@ driver_process_bucket
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
+        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
         AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
-        float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
         
-      // GAUSSIAN FILTER
-        //float filter_width = 1.8;
-        //const AtVector2& offset = AiAOVSampleIteratorGetOffset(sample_iterator);
-        //sample *= gaussian(offset, filter_width) * inv_density;
+        // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
+        // float filter_width = 2.0;
+        // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
+        // float weight = gaussian(offset, filter_width);
+        // sample *= weight;
         sample *= inv_density;
-
-
 
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
 
           // convert sample world space position to camera space
-
-          Eigen::Vector2d sensor_position;
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
           
 
@@ -187,10 +180,7 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          int samples = std::floor(bbox_area * 20.0);
-
-          // need to calculate sample count here!!
-          // int samples = 200000;
+          int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
 
           sample /= (double)(samples);
@@ -235,7 +225,6 @@ driver_process_bucket
               }
             }
 
-
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position[0], 
                               sensor_position[1] * frame_aspect_ratio);
@@ -255,7 +244,7 @@ driver_process_bucket
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            bokeh->image[pixelnumber] += sample;
+            bokeh->image[pixelnumber] += sample / weight;
           }
         }
 

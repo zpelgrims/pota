@@ -34,6 +34,8 @@ struct CameraThinLens
 
     bool use_image;
     AtString bokeh_input_path;
+
+    int bokeh_samples_mult;
 };
 
 extern struct CameraThinLens tl;
