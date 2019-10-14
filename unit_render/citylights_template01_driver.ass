@@ -19,7 +19,8 @@ options
  yres 720
  texture_per_file_stats on
  texture_automip off
- camera "renderCamShape"
+ # camera "renderCamShape"
+ camera "rendercamLentilThinLensShape"
  sss_use_autobump on
  frame 1
  GI_transmission_depth 0
@@ -131,6 +132,8 @@ lentil_thinlens
  use_image false
  bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/bokeh_28_graded.jpg"
  bokeh_samples_mult 1
+ additional_luminance 20.0
+ luminance_remap_transition_width 1.0
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }

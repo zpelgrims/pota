@@ -49,6 +49,9 @@ node_parameters
     AiParameterStr("bokeh_input_path", "");
 
     AiParameterInt("bokeh_samples_mult", 10);
+
+    AiParameterFlt("additional_luminance", 0.0);
+    AiParameterFlt("luminance_remap_transition_width", 1.0);
 }
 
 
@@ -91,6 +94,9 @@ node_update
     tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
 
     tl->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_mult");
+
+    tl->additional_luminance = AiNodeGetFlt(node, "additional_luminance");
+    tl->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_width");
 
     // make probability functions of the bokeh image
     // if (parms.bokehChanged(camera->params)) {

@@ -1,9 +1,10 @@
 // initially try to only do it for rgba, support multiple aovs at later point
 // chromatic aberrations
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
-// filter is losing 40% of the energy, look into how these actually work .. might have to divide by weight? see example arnold
 // circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
+
+// need a vector (buffer) that holds a vector of AtRGBA
 
 #include <ai.h>
 #include <vector>
@@ -110,6 +111,7 @@ driver_process_bucket
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
 
+
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
 		for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
 
@@ -117,7 +119,9 @@ driver_process_bucket
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+
         AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
+
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
@@ -132,6 +136,15 @@ driver_process_bucket
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
+
+          // add additional luminance with soft transition
+          if (sample_luminance > tl->minimum_rgb && sample_luminance < tl->minimum_rgb+tl->luminance_remap_transition_width){
+            float perc = (sample_luminance - tl->minimum_rgb) / tl->luminance_remap_transition_width;
+            sample += tl->additional_luminance * perc;          
+          } else if (sample_luminance > tl->minimum_rgb+tl->luminance_remap_transition_width) {
+            sample += tl->additional_luminance;
+          } 
+
 
           // convert sample world space position to camera space
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
@@ -244,7 +257,7 @@ driver_process_bucket
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            bokeh->image[pixelnumber] += sample / weight;
+            bokeh->image[pixelnumber] += sample;
           }
         }
 

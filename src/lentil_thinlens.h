@@ -36,6 +36,9 @@ struct CameraThinLens
     AtString bokeh_input_path;
 
     int bokeh_samples_mult;
+
+    float additional_luminance;
+    float luminance_remap_transition_width;
 };
 
 extern struct CameraThinLens tl;

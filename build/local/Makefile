@@ -26,7 +26,6 @@ $(info    LENSES: $(LENSES))
 CXXFLAGS=\
 	-Wall\
 	-std=c++17\
-	-O3\
 	-shared\
 	-fPIC\
 	-Wno-narrowing\
@@ -36,7 +35,10 @@ CXXFLAGS=\
 	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
-#	-g
+	-O3\
+	#-g\
+	
+
 
 LDFLAGS=-L${ARNOLD_PATH}/bin -lai 
 
