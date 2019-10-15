@@ -11,6 +11,9 @@
     // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
     // float weight = gaussian(offset, filter_width);
     // sample *= weight;
+  
+    // CLOSEST FILTER
+    // i think this just takes the sample with the least Z value.
 
 
 #include <ai.h>
