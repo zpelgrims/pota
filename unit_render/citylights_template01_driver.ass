@@ -13,7 +13,7 @@ options
  outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
-  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.P"
+  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
  xres 1280
@@ -64,10 +64,6 @@ driver_exr
 lentil_thin_lens_bokeh_driver
 {
  name aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA
-}
-lentil_thin_lens_bokeh_driver
-{
- name aiAOVDriver1@lentil_thin_lens_bokeh_driver.P
 }
 
 driver_png

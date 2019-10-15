@@ -50,27 +50,6 @@ float gaussian(AtVector2 p, float width) {
     return (weight > 0) ? weight : 0.0;
 }
 
-std::vector<std::string> split_string_whitespace(std::string str){
-    std::string buf;
-    std::stringstream ss(str);
-    std::vector<std::string> tokens; // Create vector to hold our words
-    while (ss >> buf) tokens.push_back(buf);
-    return tokens;
-}
-
-std::vector<std::string> split_string_comma(std::string str) {
-  std::vector<std::string> result;
-  std::stringstream ss(str);
-
-  while( ss.good()) {
-      std::string substr;
-      std::getline( ss, substr, ',' );
-      result.push_back( substr );
-  }
-  return result;
-}
-
-
 
 node_parameters {}
  
@@ -128,11 +107,6 @@ driver_open {
     bokeh->image[i].clear();
     bokeh->image[i].reserve(bokeh->xres * bokeh->yres);
   }
-  // bokeh->image.reserve(bokeh->xres * bokeh->yres);
-
-  for (auto &buffer: bokeh->image) {
-    AiMsgWarning("aovname loop open %s\n", buffer.first.c_str());
-  }
 }
  
 driver_extension
@@ -169,9 +143,6 @@ driver_process_bucket
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
-        AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
-
-
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
@@ -188,17 +159,20 @@ driver_process_bucket
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
           
-          float add_lum = 0.0;
-          // add additional luminance with soft transition
-          if (sample_luminance > tl->minimum_rgb && sample_luminance < tl->minimum_rgb+tl->luminance_remap_transition_width){
-            float perc = (sample_luminance - tl->minimum_rgb) / tl->luminance_remap_transition_width;
-            add_lum = tl->additional_luminance * perc;          
-          } else if (sample_luminance > tl->minimum_rgb+tl->luminance_remap_transition_width) {
-            add_lum = tl->additional_luminance;
-          } 
+          // additional luminance with soft transition
+          float fitted_additional_luminance = 0.0;
+          if (tl->additional_luminance > 0.0){
+            if (sample_luminance > tl->minimum_rgb && sample_luminance < tl->minimum_rgb+tl->luminance_remap_transition_width){
+              float perc = (sample_luminance - tl->minimum_rgb) / tl->luminance_remap_transition_width;
+              fitted_additional_luminance = tl->additional_luminance * perc;          
+            } else if (sample_luminance > tl->minimum_rgb+tl->luminance_remap_transition_width) {
+              fitted_additional_luminance = tl->additional_luminance;
+            } 
+          }
 
 
           // convert sample world space position to camera space
+          AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
           AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
           
 
@@ -313,7 +287,7 @@ driver_process_bucket
             AtRGBA energy = AI_RGBA_ZERO;
             for (int i=0; i<bokeh->aov_list_name.size(); i++){
               if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
-                AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density)+add_lum) / (double)(samples);
+                AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density)+fitted_additional_luminance) / (double)(samples);
                 energy = rgba_energy;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
               } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
@@ -328,8 +302,17 @@ driver_process_bucket
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          for (auto &aov_name : bokeh->aov_list_name) {
-            bokeh->image[aov_name][pixelnumber] += sample;
+          AtRGBA energy = AI_RGBA_ZERO;
+          for (int i=0; i<bokeh->aov_list_name.size(); i++){
+            if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
+              AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density;
+              energy = rgba_energy;
+              bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+            } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
+              AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
+              energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+              bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+            }
           }
         }
       }
