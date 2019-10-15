@@ -13,7 +13,7 @@
     // sample *= weight;
   
     // CLOSEST FILTER
-    // i think this just takes the sample with the least Z value.
+    // i think this just takes the sample with the least Z value. Can just check that at sample writing time. No need for other loop after I think.
 
 
 #include <ai.h>
@@ -296,6 +296,11 @@ driver_process_bucket
                 AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
                 energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+
+              } else if (bokeh->aov_list_type[i] == AI_TYPE_FLOAT){
+                float vec_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
+                energy = AtRGBA(vec_energy, vec_energy, vec_energy, 1.0);
+                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
               }
             }
             
@@ -315,6 +320,11 @@ driver_process_bucket
             } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
               AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
               energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+              bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+
+            } else if (bokeh->aov_list_type[i] == AI_TYPE_FLOAT){
+              float vec_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
+              energy = AtRGBA(vec_energy, vec_energy, vec_energy, 1.0);
               bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
             }
           }
