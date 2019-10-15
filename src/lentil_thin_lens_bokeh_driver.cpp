@@ -3,14 +3,14 @@
 // circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
 
-// need to collect the samples and apply closest filter for non-rgba types, gaussian for rgba
+// need to collect the samples and apply CLOSEST filter for non-rgba types, gaussian for rgba
   // think i'll end up with a near total copy of the samples..
 
-        // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
-        // float filter_width = 2.0;
-        // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
-        // float weight = gaussian(offset, filter_width);
-        // sample *= weight;
+    // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
+    // float filter_width = 2.0;
+    // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
+    // float weight = gaussian(offset, filter_width);
+    // sample *= weight;
 
 
 #include <ai.h>
@@ -98,7 +98,6 @@ driver_open {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  // maybe i can collect the aovs properly here?
   const char *name = 0;
 	int pixelType = 0;
   bokeh->aov_list_name.clear();
@@ -284,7 +283,7 @@ driver_process_bucket
 
             AtRGBA energy = AI_RGBA_ZERO;
             for (int i=0; i<bokeh->aov_list_name.size(); i++){
-              
+
               if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
                 AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density)+fitted_additional_luminance) / (double)(samples);
                 energy = rgba_energy;
