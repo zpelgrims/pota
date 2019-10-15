@@ -4,10 +4,9 @@
 // circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
 
-// need a vector (buffer) that holds a vector of AtRGBA
-
 #include <ai.h>
 #include <vector>
+#include <map>
 #include "lentil_thinlens.h"
 
 #define TINYEXR_IMPLEMENTATION
@@ -16,6 +15,7 @@
  
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
+
 struct ThinLensBokehDriver {
   int xres;
   int yres;
@@ -24,7 +24,8 @@ struct ThinLensBokehDriver {
   int min_aa_samples;
   bool enabled;
   float filter_width;
-  std::vector<AtRGBA> image;
+  std::map<std::string, std::vector<AtRGBA>> image;
+  std::vector<std::string> aov_list;
   AtMatrix world_to_camera_matrix;
 };
 
@@ -46,6 +47,16 @@ float gaussian(AtVector2 p, float width) {
     
     return (weight > 0) ? weight : 0.0;
 }
+
+std::vector<std::string> split_string(std::string str){
+    std::string buf;
+    std::stringstream ss(str);
+    std::vector<std::string> tokens; // Create vector to hold our words
+    while (ss >> buf) tokens.push_back(buf);
+    return tokens;
+}
+
+
 
 
 node_parameters {}
@@ -78,9 +89,14 @@ node_update
 
   AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
   
+  bokeh->aov_list = split_string("P RGBA"); // replace for param or arnold call
+  
   // construct buffer
-  bokeh->image.clear();
-  bokeh->image.reserve(bokeh->xres * bokeh->yres);
+  for (auto const& i : bokeh->aov_list) {
+    bokeh->image[i].clear();
+    bokeh->image[i].reserve(bokeh->xres * bokeh->yres);
+  }
+  // bokeh->image.reserve(bokeh->xres * bokeh->yres);
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -105,6 +121,7 @@ driver_process_bucket
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
+
   if (!bokeh->enabled) return;
   
   const double xres = (double)bokeh->xres;
@@ -121,6 +138,7 @@ driver_process_bucket
         float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
         AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
+
 
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
@@ -257,13 +275,18 @@ driver_process_bucket
 
             // write sample to image
             int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            bokeh->image[pixelnumber] += sample;
+            energy = 
+            for (auto &aov_name : bokeh->aov_list) {
+              bokeh->image[aov_name][pixelnumber] += sample;
+            }
           }
         }
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          bokeh->image[pixelnumber] += sample;
+          for (auto &aov_name : bokeh->aov_list) {
+            bokeh->image[aov_name][pixelnumber] += sample;
+          }
         }
       }
     }
@@ -279,21 +302,26 @@ driver_close
 
   if (!bokeh->enabled) return;
 
-  // dump framebuffer to exr
-  std::vector<float> image(bokeh->yres * bokeh->xres * 4);
-  int offset = -1;
-  int pixelnumber = 0;
+  // dump framebuffers to exrs
+  for (auto const& [aovname, buffer] : bokeh->image) {
+    std::vector<float> image(bokeh->yres * bokeh->xres * 4);
+    int offset = -1;
+    int pixelnumber = 0;
 
-  for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
-    image[++offset] = bokeh->image[pixelnumber].r;
-    image[++offset] = bokeh->image[pixelnumber].g;
-    image[++offset] = bokeh->image[pixelnumber].b;
-    image[++offset] = bokeh->image[pixelnumber].a;
-    ++pixelnumber;
+    for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
+      image[++offset] = buffer[pixelnumber].r;
+      image[++offset] = buffer[pixelnumber].g;
+      image[++offset] = buffer[pixelnumber].b;
+      image[++offset] = buffer[pixelnumber].a;
+      ++pixelnumber;
+    }
+
+    std::string path = tl->bokeh_exr_path.c_str();
+    std::string substr = path.substr(0, path.size() - 4);
+    std::string bokeh_aov_name = substr + "." + aovname + ".exr";
+    SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, bokeh_aov_name.c_str());
+    AiMsgWarning("[LENTIL] Bokeh AOV written to %s", bokeh_aov_name.c_str());
   }
-
-  SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, tl->bokeh_exr_path.c_str());
-  AiMsgWarning("[LENTIL] Bokeh AOV written to %s", tl->bokeh_exr_path.c_str());
 }
  
 node_finish
