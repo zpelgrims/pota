@@ -10,9 +10,10 @@
 options
 {
  AA_samples 3
- outputs 4 1 STRING
+ outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
+  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.P"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
  xres 1280
@@ -62,7 +63,11 @@ driver_exr
 
 lentil_thin_lens_bokeh_driver
 {
- name aiAOVDriver1@lentil_thin_lens_bokeh_driver
+ name aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA
+}
+lentil_thin_lens_bokeh_driver
+{
+ name aiAOVDriver1@lentil_thin_lens_bokeh_driver.P
 }
 
 driver_png
@@ -132,8 +137,8 @@ lentil_thinlens
  use_image false
  bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/bokeh_28_graded.jpg"
  bokeh_samples_mult 1
- additional_luminance 20.0
- luminance_remap_transition_width 1.0
+ #additional_luminance 20.0
+ #luminance_remap_transition_width 1.0
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }
