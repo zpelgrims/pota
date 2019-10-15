@@ -1,8 +1,17 @@
-// initially try to only do it for rgba, support multiple aovs at later point
 // chromatic aberrations
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
 // circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
+
+// need to collect the samples and apply closest filter for non-rgba types, gaussian for rgba
+  // think i'll end up with a near total copy of the samples..
+
+        // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
+        // float filter_width = 2.0;
+        // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
+        // float weight = gaussian(offset, filter_width);
+        // sample *= weight;
+
 
 #include <ai.h>
 #include <vector>
@@ -80,8 +89,6 @@ node_update
   if (bokeh->aa_samples <= bokeh->min_aa_samples) bokeh->enabled = false;
 
   AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
-  
-  
 
 }
  
@@ -96,7 +103,7 @@ driver_open {
 	int pixelType = 0;
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
-	while(AiOutputIteratorGetNext(iterator, &name, &pixelType, 0)){ // why is there only 1 aov.. should be more
+	while(AiOutputIteratorGetNext(iterator, &name, &pixelType, 0)){
     bokeh->aov_list_name.push_back(std::string(name));
     bokeh->aov_list_type.push_back(pixelType); 
   }
@@ -146,15 +153,6 @@ driver_process_bucket
         float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
-        
-        // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
-        // float filter_width = 2.0;
-        // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
-        // float weight = gaussian(offset, filter_width);
-        // sample *= weight;
-
-        // sample *= inv_density;
-
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
@@ -286,10 +284,12 @@ driver_process_bucket
 
             AtRGBA energy = AI_RGBA_ZERO;
             for (int i=0; i<bokeh->aov_list_name.size(); i++){
+              
               if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
                 AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density)+fitted_additional_luminance) / (double)(samples);
                 energy = rgba_energy;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+
               } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
                 AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
                 energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
@@ -304,10 +304,12 @@ driver_process_bucket
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           AtRGBA energy = AI_RGBA_ZERO;
           for (int i=0; i<bokeh->aov_list_name.size(); i++){
+
             if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
               AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density;
               energy = rgba_energy;
               bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+
             } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
               AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()));
               energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
@@ -328,13 +330,9 @@ driver_close
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());  
 
   if (!bokeh->enabled) return;
-    for (auto &buffer: bokeh->image) {
-    AiMsgWarning("aovname loop %s\n", buffer.first.c_str());
-    }
 
   // dump framebuffers to exrs
   for (auto &buffer: bokeh->image) {
-    AiMsgWarning("aovname %s\n", buffer.first.c_str());
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
     int pixelnumber = 0;
