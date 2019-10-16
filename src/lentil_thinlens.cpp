@@ -131,7 +131,6 @@ camera_create_ray
         output.dir = AiV3Normalize(p); // or norm(p-origin)
 
         // either get uniformly distributed points on the unit disk or bokeh image
-        
         Eigen::Vector2d unit_disk(0, 0);
         if (tries == 0) {
             if (tl->use_image) {
@@ -177,45 +176,46 @@ camera_create_ray
             }
         }
 
-
-        // ca .. not sure about this technique, test on a focused scene.
-        // can't have this shift to the green aperture when everything is focused.
-        // AtRGB weight = AI_RGB_WHITE;
-        // if (tl->emperical_ca_dist > 0.0){
-        //     const AtVector2 p2(p.x, p.y);
-        //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
-        //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-        //     AtVector2 aperture_0_center(0.0, 0.0);
-        //     AtVector2 aperture_1_center(- p2 * distance_to_center * tl->emperical_ca_dist);
-        //     AtVector2 aperture_2_center(p2 * distance_to_center * tl->emperical_ca_dist);
+        // this is most likely wrong!
+        float coc = std::abs((tl->aperture_radius*unit_disk(0)) * (tl->focal_length * (tl->focus_distance - focusPoint.z)) / (tl->focus_distance * (focusPoint.z - tl->focal_length)));
+        // CoC = abs(aperture * (focallength * (objectdistance - planeinfocus)) /
+        //   (objectdistance * (planeinfocus - focallength)))
+        AtRGB weight = AI_RGB_WHITE;
+        if (tl->emperical_ca_dist > 0.0){
+            const AtVector2 p2(p.x, p.y);
+            const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
+            const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+            AtVector2 aperture_0_center(0.0, 0.0);
+            AtVector2 aperture_1_center(- p2 * coc * tl->emperical_ca_dist); //previous: change coc for dist_to_center
+            AtVector2 aperture_2_center(p2 * coc * tl->emperical_ca_dist);//previous: change coc for dist_to_center
             
 
-        //     if (random_aperture == 1)      lens += aperture_1_center;
-        //     else if (random_aperture == 2) lens += aperture_2_center;
+            if (random_aperture == 1)      lens += aperture_1_center;
+            else if (random_aperture == 2) lens += aperture_2_center;
 
-        //     if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.r = 0.0;
-        //     }
-        //     if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.b = 0.0;
-        //     }
-        //     if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.g = 0.0;
-        //     }
+            if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+                weight.r = 0.0;
+            }
+            if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+                weight.b = 0.0;
+            }
+            if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
+                weight.g = 0.0;
+            }
 
-        //     if (weight == AI_RGB_ZERO){
-        //         ++tries;
-        //         continue;
-        //     }
+            if (weight == AI_RGB_ZERO){
+                ++tries;
+                continue;
+            }
         
         //     //ca, not sure if this should be done, evens out the intensity?
         //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
         //     // output.weight.r /= sum;
         //     // output.weight.g /= sum;
         //     // output.weight.b /= sum;
-        // }
+        }
         
-        // output.weight = weight;
+        output.weight = weight;
 
         // this will fuck up all kinds of optimisations, calculate proper derivs!
         output.dOdx = output.origin;

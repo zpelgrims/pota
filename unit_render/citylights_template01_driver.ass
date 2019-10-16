@@ -61,6 +61,7 @@ driver_exr
  append off
 }
 
+
 lentil_thin_lens_bokeh_driver
 {
  name aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA
@@ -124,9 +125,9 @@ lentil_thinlens
  minimum_rgb 1.0
  fstop 1.4
  #bias 0.7
- optical_vignetting_distance 5.0
+ #optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
- #emperical_ca_dist 0.3
+ #emperical_ca_dist 1
  square 0.0
  squeeze 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
