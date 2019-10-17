@@ -198,10 +198,15 @@ driver_process_bucket
             lens *= tl->aperture_radius / tl->focus_distance;
             AtVector lens3d(lens.x, lens.y, 0.0);
 
-            // intersect at -1? z plane.. this could be the sensor?
-            AtVector dir = AiV3Normalize(camera_space_sample_position - lens3d);
+            // intersect at z=focusdistance
+            AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
+            float focusplane_intersection = std::abs(tl->focus_distance/dir_tobase.z);
+            AtVector focusplanepoint = dir_tobase * focusplane_intersection;
+
+            // intersect at z=1
+            AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
             float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov;
             
 
             // convert sensor position to pixel position
@@ -250,6 +255,7 @@ driver_process_bucket
             // tmp copy
             AtVector2 lens(unit_disk(0), unit_disk(1));
 
+            // intersect at z=focusdistance
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
             float focusplane_intersection = std::abs(tl->focus_distance/dir_tobase.z);
             AtVector focusplanepoint = dir_tobase * focusplane_intersection;
@@ -258,18 +264,59 @@ driver_process_bucket
             lens *= tl->aperture_radius / tl->focus_distance;
             AtVector lens3d(lens.x, lens.y, 0.0);
 
-            // intersect at -1? z plane.. this could be the sensor?
+            // intersect at z=1
             AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
             float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
+            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov;
             
             // add optical vignetting here
             if (tl->optical_vignetting_distance > 0.0){
-              if (!empericalOpticalVignetting(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance)){ //why doesn't this work? 
+              if (!empericalOpticalVignetting(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance)){
                   --count;
                   continue;
               }
-            }            
+            }
+
+                
+            // this is most likely wrong!
+            // float coc = std::abs((tl->aperture_radius*unit_disk(0)) * (tl->focal_length * (tl->focus_distance - focusPoint.z)) / (tl->focus_distance * (focusPoint.z - tl->focal_length)));
+            float coc = 0.05; // need to implement this!
+            // CoC = abs(aperture * (focallength * (objectdistance - planeinfocus)) /
+            //   (objectdistance * (planeinfocus - focallength)))
+            AtRGB weight = AI_RGB_WHITE;
+            if (tl->emperical_ca_dist > 0.0){
+                const AtVector2 p2(lens3d.x, lens3d.y);
+                const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), AtVector2((lens3d + (dir*intersection)).x, (lens3d + (dir*intersection)).y));
+                const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+                AtVector2 aperture_0_center(0.0, 0.0);
+                AtVector2 aperture_1_center(- p2 * coc * distance_to_center * tl->emperical_ca_dist);
+                AtVector2 aperture_2_center(p2 * coc * distance_to_center * tl->emperical_ca_dist);
+                
+
+                if (random_aperture == 1)      lens += aperture_1_center;
+                else if (random_aperture == 2) lens += aperture_2_center;
+
+                if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+                    weight.r = 0.0;
+                }
+                if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+                    weight.b = 0.0;
+                }
+                if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+                    weight.g = 0.0;
+                }
+
+                if (weight == AI_RGB_ZERO){
+                    --count;
+                    continue;
+                }
+            
+            //     //ca, not sure if this should be done, evens out the intensity?
+            //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
+            //     // output.weight.r /= sum;
+            //     // output.weight.g /= sum;
+            //     // output.weight.b /= sum;
+            }
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position[0], 
@@ -296,7 +343,7 @@ driver_process_bucket
 
               if (bokeh->aov_list_type[i] == AI_TYPE_RGBA) {
                 AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString(bokeh->aov_list_name[i].c_str()))*inv_density)+fitted_additional_luminance) / (double)(samples);
-                energy = rgba_energy;
+                energy = rgba_energy * weight;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
 
               } else if (bokeh->aov_list_type[i] == AI_TYPE_VECTOR){
