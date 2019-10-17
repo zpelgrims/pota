@@ -1,6 +1,5 @@
 // chromatic aberrations, instead of scaling by dist(p, 0), scale by circle of confusion
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
-// circle of confusion on sensor is just ...slightly... bigger
 // compute analytical size of circle of confusion
 
 
@@ -18,6 +17,7 @@
 
     // check if closest filter is working, do comparison to forward rendered version (high samples)
 
+// if bokeh ends up in the middle, i need to do: ~lens3d~ + (dir*intersection)!
 
 #include <ai.h>
 #include <vector>
@@ -249,13 +249,17 @@ driver_process_bucket
             
             // tmp copy
             AtVector2 lens(unit_disk(0), unit_disk(1));
+
+            AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
+            float focusplane_intersection = std::abs(tl->focus_distance/dir_tobase.z);
+            AtVector focusplanepoint = dir_tobase * focusplane_intersection;
             
             // scale points in [-1, 1] domain to actual aperture radius
             lens *= tl->aperture_radius / tl->focus_distance;
             AtVector lens3d(lens.x, lens.y, 0.0);
 
             // intersect at -1? z plane.. this could be the sensor?
-            AtVector dir = AiV3Normalize(camera_space_sample_position - lens3d);
+            AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
             float intersection = std::abs(1.0 / dir.z);
             AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov; // could be so wrong, most likely inaccurate
             

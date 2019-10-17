@@ -9,7 +9,7 @@
 
 options
 {
- AA_samples 3
+ AA_samples 12
  outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
