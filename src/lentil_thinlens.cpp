@@ -170,7 +170,7 @@ camera_create_ray
         output.dir = AiV3Normalize(focusPoint - output.origin);
 
         if (tl->optical_vignetting_distance > 0.0){
-            if (!empericalOpticalVignetting(output.origin, output.dir, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance)){
+            if (!empericalOpticalVignettingSquare(output.origin, output.dir, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
                 ++tries;
                 continue;
             }
