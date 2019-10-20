@@ -143,7 +143,7 @@ lentil_thinlens
  optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
  # emperical_ca_dist 3
- square 0.7
+ #square 0.7
  squeeze 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  use_image false

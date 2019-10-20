@@ -351,6 +351,15 @@ driver_process_bucket
                   break;
                 }
 
+                case AI_TYPE_RGB: {
+                  AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
+                  rgb_energy *= weight;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  // bokeh->samplebuffer[pixelnumber].push_back(energy);
+                  
+                  break;
+                }
+
                 case AI_TYPE_VECTOR: {
                   if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
                     AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
@@ -389,6 +398,15 @@ driver_process_bucket
 
                 break;
               }
+
+              case AI_TYPE_RGB: {
+                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density;
+                  rgb_energy *= weight;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  // bokeh->samplebuffer[pixelnumber].push_back(energy);
+                  
+                  break;
+                }
 
               case AI_TYPE_VECTOR: {
                 if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
