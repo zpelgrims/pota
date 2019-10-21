@@ -17,8 +17,8 @@ options
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.Z"
- xres 1280
- yres 720
+ xres 1920
+ yres 1080
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
@@ -137,17 +137,17 @@ lentil_thinlens
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  focal_length 4.9
- minimum_rgb 1.5
+ minimum_rgb 1.0
  fstop 1.4
  #bias 0.7
- optical_vignetting_distance 5.0
+ #optical_vignetting_distance 5.0
  optical_vignetting_radius 1.0
  # emperical_ca_dist 3
  #square 0.7
  squeeze 1.0
  bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
- use_image false
- bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/bokeh_28_graded.jpg"
+ use_image true
+ bokeh_input_path "/Users/zeno/lentil/pota/bokeh_imgs/teapot.png"
  bokeh_samples_mult 1
  #additional_luminance 20.0
  #luminance_remap_transition_width 1.0

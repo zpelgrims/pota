@@ -134,7 +134,7 @@ camera_create_ray
         Eigen::Vector2d unit_disk(0, 0);
         if (tries == 0) {
             if (tl->use_image) {
-                tl->image.bokehSample(input.lensx, input.lensy, unit_disk);
+                tl->image.bokehSample(input.lensx, input.lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
                 concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->bias, tl->square, tl->squeeze);
             }
@@ -143,7 +143,7 @@ camera_create_ray
             float r2 = xor128() / 4294967296.0;
 
             if (tl->use_image) {
-                tl->image.bokehSample(r1, r2, unit_disk);
+                tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
                 concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
             }

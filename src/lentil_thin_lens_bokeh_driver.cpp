@@ -154,9 +154,7 @@ driver_process_bucket
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         const AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
-
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z"));
-        
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
         
@@ -183,8 +181,8 @@ driver_process_bucket
           AtVector2 bbox_max (0, 0);
           for(int count=0; count<128; count++) {
             Eigen::Vector2d unit_disk(0, 0);
-            float r1 = xor128() / 4294967296.0;
-            float r2 = xor128() / 4294967296.0;
+            const float r1 = xor128() / 4294967296.0;
+            const float r2 = xor128() / 4294967296.0;
             concentricDiskSample(r1, r2, unit_disk, 0.8, 0.0, 1.0);
             unit_disk *= -1.0;
             
@@ -241,7 +239,7 @@ driver_process_bucket
             float r2 = xor128() / 4294967296.0;
 
             if (tl->use_image) {
-                tl->image.bokehSample(r1, r2, unit_disk);
+                tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
                 concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
             }
@@ -393,15 +391,13 @@ driver_process_bucket
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density;
-                energy = rgba_energy;
-                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
 
                 break;
               }
 
               case AI_TYPE_RGB: {
                   AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density;
-                  rgb_energy *= weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
                   // bokeh->samplebuffer[pixelnumber].push_back(energy);
                   

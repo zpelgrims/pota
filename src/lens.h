@@ -621,7 +621,7 @@ inline void trace_ray(bool original_ray, int &tries,
 
 		  if (tries == 0) {
         if (camera->use_image) {
-          camera->image.bokehSample(input_lensx, input_lensy, unit_disk);
+          camera->image.bokehSample(input_lensx, input_lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
         } else {
           concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
         }
@@ -632,7 +632,7 @@ inline void trace_ray(bool original_ray, int &tries,
 			  }
 
         if (camera->use_image) {
-          camera->image.bokehSample(r1, r2, unit_disk);
+          camera->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
         } else {
           concentric_disk_sample(r1, r2, unit_disk, true);
         }

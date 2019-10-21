@@ -2,6 +2,16 @@
 
 #include "../../Eigen/Eigen/Core"
 
+
+// xorshift fast random number generator
+inline uint32_t xor128_02(void){
+  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
+  uint32_t t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
+}
+
+
 // arnold texture loading function
 inline bool LoadTexture(const AtString path, void *pixelData){
     return AiTextureLoad(path, true, 0, pixelData);
@@ -328,11 +338,11 @@ public:
     }
 
     // Sample image
-    void bokehSample(float randomNumberRow, float randomNumberColumn, Eigen::Vector2d &lens){
+    void bokehSample(float randomNumberRow, float randomNumberColumn, Eigen::Vector2d &lens, float stratification_r1, float stratification_r2){
         if (!isValid()){
             AiMsgWarning("Invalid bokeh image data.");
-            lens[0] = 0.0f;
-            lens[1] = 0.0f;
+            lens(0) = 0.0;
+            lens(1) = 0.0;
             return;
         }
 
@@ -371,7 +381,7 @@ public:
         int c = 0;
         pUpperBoundColumn >= cdfColumn + startPixel + x ? c = startPixel + x - 1 : c = static_cast<int>(pUpperBoundColumn - cdfColumn);
 
-        // find actual pixel column
+        // find actual pxel column
         int actualPixelColumn = columnIndices[c];
         int relativePixelColumn = actualPixelColumn - startPixel;
         int recalulatedPixelColumn = relativePixelColumn - ((y - 1) / 2);
@@ -393,5 +403,11 @@ public:
         // send values back
         lens[0] = static_cast<float>(flippedRow) / static_cast<float>(x)* 2.0;
         lens[1] = static_cast<float>(flippedColumn) / static_cast<float>(y)* 2.0;
+
+        stratification_r1 = (stratification_r1 - 0.5) * 2.0;
+        stratification_r2 = (stratification_r2 - 0.5) * 2.0;
+
+        lens[0] = lens(0) + stratification_r1/(double)x;
+        lens[1] = lens(1) + stratification_r2/(double)y;
     }
 };
