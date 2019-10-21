@@ -9,11 +9,11 @@
 *.pdf
 
 /bin/*
-/polynomialOptics/*
 /tests/*
-/src/*.dll
 
 !releases/*.dll
 !releases/*.dylib
 !releases/*.ae
 !releases/*.mtd
+
+!bokeh_imgs/*.png

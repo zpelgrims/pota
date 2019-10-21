@@ -324,7 +324,7 @@ driver_process_bucket
 
             // if outside of image
             if ((pixel_x >= xres) || 
-                (pixel_x < 0)    || 
+                (pixel_x < 0)     || 
                 (pixel_y >= yres) || 
                 (pixel_y < 0))
             {
