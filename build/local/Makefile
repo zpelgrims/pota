@@ -14,7 +14,7 @@ ifeq ($(OS), Darwin)
 	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-linux
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.2.0-linux
 endif
 
 

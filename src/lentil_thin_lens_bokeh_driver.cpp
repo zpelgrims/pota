@@ -456,6 +456,8 @@ driver_close
       ++pixelnumber;
     }
 
+
+    // need to check if it ends with .exr or not
     std::string path = tl->bokeh_exr_path.c_str();
     std::string substr = path.substr(0, path.size() - 4);
     std::string bokeh_aov_name = substr + "." + buffer.first.c_str() + ".exr";
