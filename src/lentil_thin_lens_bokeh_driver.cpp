@@ -34,8 +34,9 @@ struct ThinLensBokehDriver {
   std::map<AtString, std::vector<AtRGBA> > image;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
+  std::vector<int> sample_per_pixel_counter;
   std::vector<AtString> aov_list_name;
-  std::vector<int> aov_list_type;
+  std::vector<unsigned int> aov_list_type;
   AtMatrix world_to_camera_matrix;
 };
 
@@ -85,7 +86,7 @@ node_update
   // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->filter_width = AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
+  bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
   bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
   bokeh->min_aa_samples = 2;
   
@@ -98,6 +99,9 @@ node_update
 
   bokeh->filter_weight_buffer.clear();
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
+
+  bokeh->sample_per_pixel_counter.clear();
+  bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -343,7 +347,7 @@ driver_process_bucket
             
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
             subpixel_position -= 0.5;
-            float filter_weight = gaussian(subpixel_position, 4.0) * inv_density;
+            float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
             // std::cout << filter_weight << std::endl;
             // std::cout << subpixel_position.x << " " << subpixel_position.y << std::endl;
 
@@ -356,6 +360,7 @@ driver_process_bucket
                   energy = rgba_energy * weight * filter_weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                  ++bokeh->sample_per_pixel_counter[pixelnumber];
 
                   break;
                 }
@@ -406,6 +411,10 @@ driver_process_bucket
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
+                float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
+                bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                ++bokeh->sample_per_pixel_counter[pixelnumber];
 
                 break;
               }
@@ -463,10 +472,11 @@ driver_close
 
     for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
       float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
-      image[++offset] = buffer.second[pixelnumber].r / filter_weight_accum;
-      image[++offset] = buffer.second[pixelnumber].g / filter_weight_accum;
-      image[++offset] = buffer.second[pixelnumber].b / filter_weight_accum;
-      image[++offset] = buffer.second[pixelnumber].a / filter_weight_accum;
+      unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
+      image[++offset] = buffer.second[pixelnumber].r / (filter_weight_accum/samples_per_pixel);
+      image[++offset] = buffer.second[pixelnumber].g / (filter_weight_accum/samples_per_pixel);
+      image[++offset] = buffer.second[pixelnumber].b / (filter_weight_accum/samples_per_pixel);
+      image[++offset] = buffer.second[pixelnumber].a / (filter_weight_accum/samples_per_pixel);
     }
 
 

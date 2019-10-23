@@ -148,7 +148,7 @@ lentil_thinlens
  bokeh_exr_path "/home/cactus/lentil/pota/unit_render/test_driver.exr"
  use_image false
  bokeh_input_path "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
- bokeh_samples_mult 3
+ bokeh_samples_mult 15
  #additional_luminance 20.0
  #luminance_remap_transition_width 1.0
  declare maya_full_name constant STRING
