@@ -36,6 +36,7 @@ struct ThinLensBokehDriver {
   float filter_width;
   std::map<AtString, std::vector<AtRGBA> > image;
   std::vector<float> zbuffer;
+  std::vector<float> filter_weight_buffer;
   std::vector<AtString> aov_list_name;
   std::vector<int> aov_list_type;
   AtMatrix world_to_camera_matrix;
@@ -97,6 +98,9 @@ node_update
 
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
+
+  bokeh->filter_weight_buffer.clear();
+  bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
 
   // for future aov filtering shenanigans
   // bokeh->bucket_samples.clear();
@@ -347,6 +351,12 @@ driver_process_bucket
             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             AtRGBA energy = AI_RGBA_ZERO;
+            
+            AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
+            subpixel_position = 2.0*subpixel_position - 1;
+            float filter_weight = gaussian(subpixel_position, 2.0);
+            // std::cout << filter_weight << std::endl;
+            // std::cout << subpixel_position.x << " " << subpixel_position.y << std::endl;
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
 
@@ -355,7 +365,8 @@ driver_process_bucket
                 case AI_TYPE_RGBA: {
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
                   energy = rgba_energy * weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy * filter_weight;
+                  bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   // current_bucket_samples.emplace_back(energy); // for future aov filtering shenanigans
                   break;
                 }
@@ -397,6 +408,10 @@ driver_process_bucket
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           AtRGBA energy = AI_RGBA_ZERO;
+
+          // do pixel filter weights
+
+
           for (int i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
@@ -458,20 +473,19 @@ driver_close
 
   if (!bokeh->enabled) return;
 
-  // for future aov filtering shenanigans
-    // organise sample data in a meaningful way (per pixel)
-
   // dump framebuffers to exrs
   for (auto &buffer: bokeh->image) {
+    
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
     int pixelnumber = 0;
 
     for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
-      image[++offset] = buffer.second[pixelnumber].r;
-      image[++offset] = buffer.second[pixelnumber].g;
-      image[++offset] = buffer.second[pixelnumber].b;
-      image[++offset] = buffer.second[pixelnumber].a;
+      float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
+      image[++offset] = buffer.second[pixelnumber].r / filter_weight_accum;
+      image[++offset] = buffer.second[pixelnumber].g / filter_weight_accum;
+      image[++offset] = buffer.second[pixelnumber].b / filter_weight_accum;
+      image[++offset] = buffer.second[pixelnumber].a / filter_weight_accum;
       ++pixelnumber;
     }
 
