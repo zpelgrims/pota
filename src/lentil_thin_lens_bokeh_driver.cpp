@@ -2,10 +2,7 @@
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
 // compute analytical size of circle of confusion
 
-// GAUSSIAN FILTER .. probably has to be moved after the image is completed??
-
-  // seems like i might have to calculate the sub-pixel offset and pass that along
-
+// GAUSSIAN FILTER
   // float filter_width = 2.0;
   // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
   // float weight = gaussian(offset, filter_width);
@@ -40,29 +37,29 @@ struct ThinLensBokehDriver {
   std::vector<AtString> aov_list_name;
   std::vector<int> aov_list_type;
   AtMatrix world_to_camera_matrix;
-
-  // for future aov filtering shenanigans
-  // std::vector<std::vector<AtRGBA> > bucket_samples; // make sure to put this into an encapsulating map for all the aovs
-  // AtCritSec critical_section;
 };
 
 
 float gaussian(AtVector2 p, float width) {
-    /* matches Arnold's exactly. */
-    /* Sharpness=2 is good for width 2, sigma=1/sqrt(8) for the width=4,sharpness=4 case */
-    // const float sigma = 0.5f;
-    // const float sharpness = 1.0f / (2.0f * sigma * sigma);
+    // /* matches Arnold's exactly. */
+    // /* Sharpness=2 is good for width 2, sigma=1/sqrt(8) for the width=4,sharpness=4 case */
+    // // const float sigma = 0.5f;
+    // // const float sharpness = 1.0f / (2.0f * sigma * sigma);
 
-    p /= (width * 0.5);
-    float dist_squared = (p.x * p.x + p.y * p.y);
-    if (dist_squared > (1.0)) return 0.0;
+    // p /= (width * 0.5);
+    // float dist_squared = (p.x * p.x + p.y * p.y);
+    // if (dist_squared > (1.0)) return 0.0;
 
-    // const float normalization_factor = 1;
-    // Float weight = normalization_factor * expf(-dist_squared * sharpness);
+    // // const float normalization_factor = 1;
+    // // Float weight = normalization_factor * expf(-dist_squared * sharpness);
 
-    float weight = AiFastExp(-dist_squared * 2.0f);
+    // float weight = AiFastExp(-dist_squared * 2.0f);
     
-    return (weight > 0) ? weight : 0.0;
+    // return (weight > 0) ? weight : 0.0;
+
+    const float r = AiSqr(2 / width) * (AiSqr(p.x) + AiSqr(p.y));
+    if (r > 1.0f) return 0.0;
+    return AiFastExp(2 * -r);
 }
 
 
@@ -101,14 +98,6 @@ node_update
 
   bokeh->filter_weight_buffer.clear();
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
-
-  // for future aov filtering shenanigans
-  // bokeh->bucket_samples.clear();
-  // bokeh->bucket_samples.resize(1000); // TMP: how do i figure out how many there will be? there must be some general algorithm.. std::ceil(xres/bucket_size) * std::ceil(yres/bucket_size) ?
-  // AiCritSecInit(&bokeh->critical_section);
-  
-
-
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -173,7 +162,7 @@ driver_process_bucket
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z"));
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
-        
+
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
@@ -353,8 +342,8 @@ driver_process_bucket
             AtRGBA energy = AI_RGBA_ZERO;
             
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
-            subpixel_position = 2.0*subpixel_position - 1;
-            float filter_weight = gaussian(subpixel_position, 2.0);
+            subpixel_position -= 0.5;
+            float filter_weight = gaussian(subpixel_position, 4.0) * inv_density;
             // std::cout << filter_weight << std::endl;
             // std::cout << subpixel_position.x << " " << subpixel_position.y << std::endl;
 
@@ -364,10 +353,10 @@ driver_process_bucket
 
                 case AI_TYPE_RGBA: {
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
-                  energy = rgba_energy * weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy * filter_weight;
+                  energy = rgba_energy * weight * filter_weight;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
-                  // current_bucket_samples.emplace_back(energy); // for future aov filtering shenanigans
+
                   break;
                 }
 
@@ -417,7 +406,6 @@ driver_process_bucket
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
-                // current_bucket_samples.emplace_back(rgba_energy); // for future aov filtering shenanigans
 
                 break;
               }
@@ -456,12 +444,6 @@ driver_process_bucket
       }
     }
   }
-
-  // for future aov filtering shenanigans
-  // AiCritSecEnter(&bokeh->critical_section);
-  // bokeh->bucket_samples.emplace_back(current_bucket_samples);
-  // AiCritSecLeave(&bokeh->critical_section); 
-
 }
  
 driver_write_bucket {}
@@ -478,15 +460,13 @@ driver_close
     
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
-    int pixelnumber = 0;
 
-    for(auto i = 0; i < bokeh->xres * bokeh->yres; i++){
+    for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
       float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
       image[++offset] = buffer.second[pixelnumber].r / filter_weight_accum;
       image[++offset] = buffer.second[pixelnumber].g / filter_weight_accum;
       image[++offset] = buffer.second[pixelnumber].b / filter_weight_accum;
       image[++offset] = buffer.second[pixelnumber].a / filter_weight_accum;
-      ++pixelnumber;
     }
 
 
@@ -502,10 +482,6 @@ driver_close
 node_finish
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-   
-  // for future aov filtering shenanigans  
-  // AiCritSecClose(&bokeh->critical_section);
-
   delete bokeh;
 }
 
