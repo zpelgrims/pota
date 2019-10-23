@@ -3,10 +3,13 @@
 // compute analytical size of circle of confusion
 
 // GAUSSIAN FILTER .. probably has to be moved after the image is completed??
-// float filter_width = 2.0;
-// const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
-// float weight = gaussian(offset, filter_width);
-// sample *= weight;
+
+  // seems like i might have to calculate the sub-pixel offset and pass that along
+
+  // float filter_width = 2.0;
+  // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
+  // float weight = gaussian(offset, filter_width);
+  // sample *= weight;
 
 // if bokeh ends up in the middle, i need to do: ~lens3d~ + (dir*intersection)!
 
@@ -36,7 +39,10 @@ struct ThinLensBokehDriver {
   std::vector<AtString> aov_list_name;
   std::vector<int> aov_list_type;
   AtMatrix world_to_camera_matrix;
-  // std::vector<std::vector<AtRGBA> > samplebuffer; // make sure to put this into an encapsulating map
+
+  // for future aov filtering shenanigans
+  // std::vector<std::vector<AtRGBA> > bucket_samples; // make sure to put this into an encapsulating map for all the aovs
+  // AtCritSec critical_section;
 };
 
 
@@ -92,8 +98,12 @@ node_update
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
 
-  // bokeh->samplebuffer.clear();
-  // bokeh->samplebuffer.resize(bokeh->xres * bokeh->yres);
+  // for future aov filtering shenanigans
+  // bokeh->bucket_samples.clear();
+  // bokeh->bucket_samples.resize(1000); // TMP: how do i figure out how many there will be? there must be some general algorithm.. std::ceil(xres/bucket_size) * std::ceil(yres/bucket_size) ?
+  // AiCritSecInit(&bokeh->critical_section);
+  
+
 
 }
  
@@ -141,6 +151,8 @@ driver_process_bucket
   const double xres = (double)bokeh->xres;
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
+
+  // std::vector<AtRGBA> current_bucket_samples; // for future aov filtering shenanigans
 
 
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
@@ -333,10 +345,10 @@ driver_process_bucket
             }
 
             // write sample to image
-            int pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
+            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             AtRGBA energy = AI_RGBA_ZERO;
 
-            for (int i=0; i<bokeh->aov_list_name.size(); i++){
+            for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
 
               switch(bokeh->aov_list_type[i]){
 
@@ -344,8 +356,7 @@ driver_process_bucket
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
                   energy = rgba_energy * weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
-                  // bokeh->samplebuffer[pixelnumber].push_back(energy);
-                  
+                  // current_bucket_samples.emplace_back(energy); // for future aov filtering shenanigans
                   break;
                 }
 
@@ -353,7 +364,6 @@ driver_process_bucket
                   AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
                   rgb_energy *= weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  // bokeh->samplebuffer[pixelnumber].push_back(energy);
                   
                   break;
                 }
@@ -392,6 +402,7 @@ driver_process_bucket
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density;
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                // current_bucket_samples.emplace_back(rgba_energy); // for future aov filtering shenanigans
 
                 break;
               }
@@ -399,7 +410,6 @@ driver_process_bucket
               case AI_TYPE_RGB: {
                   AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  // bokeh->samplebuffer[pixelnumber].push_back(energy);
                   
                   break;
                 }
@@ -431,6 +441,12 @@ driver_process_bucket
       }
     }
   }
+
+  // for future aov filtering shenanigans
+  // AiCritSecEnter(&bokeh->critical_section);
+  // bokeh->bucket_samples.emplace_back(current_bucket_samples);
+  // AiCritSecLeave(&bokeh->critical_section); 
+
 }
  
 driver_write_bucket {}
@@ -441,6 +457,9 @@ driver_close
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());  
 
   if (!bokeh->enabled) return;
+
+  // for future aov filtering shenanigans
+    // organise sample data in a meaningful way (per pixel)
 
   // dump framebuffers to exrs
   for (auto &buffer: bokeh->image) {
@@ -468,18 +487,22 @@ driver_close
  
 node_finish
 {
-   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-   delete bokeh;
+  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
+   
+  // for future aov filtering shenanigans  
+  // AiCritSecClose(&bokeh->critical_section);
+
+  delete bokeh;
 }
 
 node_loader
 {
-   if (i>0) return false;
-   node->methods = (AtNodeMethods*) ThinLensBokehDriverMtd;
-   node->output_type = AI_TYPE_NONE;
-   node->name = "lentil_thin_lens_bokeh_driver";
-   node->node_type = AI_NODE_DRIVER;
-   strcpy(node->version, AI_VERSION);
-   return true;
+  if (i>0) return false;
+  node->methods = (AtNodeMethods*) ThinLensBokehDriverMtd;
+  node->output_type = AI_TYPE_NONE;
+  node->name = "lentil_thin_lens_bokeh_driver";
+  node->node_type = AI_NODE_DRIVER;
+  strcpy(node->version, AI_VERSION);
+  return true;
 }
  
