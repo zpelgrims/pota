@@ -36,9 +36,9 @@ struct ThinLensBokehDriver {
 
 
 inline float gaussian(AtVector2 p, float width) {
-    const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
-    if (r > 1.0f) return 0.0;
-    return AiFastExp(2 * -r);
+  const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
+  if (r > 1.0f) return 0.0;
+  return AiFastExp(2 * -r);
 }
 
 
@@ -61,23 +61,21 @@ node_update
   AtNode *node_camera = AiUniverseGetCamera();
   AiNodeIs(node_camera, AtString("lentil_thinlens")) ? bokeh->enabled = true : bokeh->enabled = false;
   
-  // get general options
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
-  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  bokeh->min_aa_samples = 2;
   
-  if (bokeh->aa_samples <= bokeh->min_aa_samples) bokeh->enabled = false;
+  // don't compute for interactive previews
+  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  bokeh->min_aa_samples = 3;
+  if (bokeh->aa_samples < bokeh->min_aa_samples) bokeh->enabled = false;
 
   AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
 
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
-
   bokeh->filter_weight_buffer.clear();
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
-
   bokeh->sample_per_pixel_counter.clear();
   bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
 }
@@ -88,7 +86,7 @@ driver_open {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  // prepare buffers
+  // get name/type of connected aovs
   const char *name = 0;
   int pixelType = 0;
   bokeh->aov_list_name.clear();
@@ -139,6 +137,7 @@ driver_process_bucket
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         const AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z"));
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
@@ -196,10 +195,8 @@ driver_process_bucket
 
             // expand bbox
             if (count == 0) {
-              bbox_min[0] = pixel_x;
-              bbox_min[1] = pixel_y;
-              bbox_max[0] = pixel_x;
-              bbox_max[1] = pixel_y;
+              bbox_min = {pixel_x, pixel_y};
+              bbox_max = {pixel_x, pixel_y};
             } else {
               if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
               if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
@@ -230,7 +227,7 @@ driver_process_bucket
             }
 
             unit_disk(0) *= tl->squeeze;
-            unit_disk *= -1.0;
+            unit_disk *= -1.0; // flip&flop sample.. not quite sure why this is necessary
             
             // tmp copy
             AtVector2 lens(unit_disk(0), unit_disk(1));
