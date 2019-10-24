@@ -1,13 +1,6 @@
 // chromatic aberrations, split up in Longitudinal/lateral
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
 // compute analytical size of circle of confusion
-
-// GAUSSIAN FILTER
-  // float filter_width = 2.0;
-  // const AtVector2 &offset = AiAOVSampleIteratorGetOffset(sample_iterator);
-  // float weight = gaussian(offset, filter_width);
-  // sample *= weight;
-
 // if bokeh ends up in the middle, i need to do: ~lens3d~ + (dir*intersection)!
 
 #include <ai.h>
@@ -58,7 +51,7 @@ float gaussian(AtVector2 p, float width) {
     
     // return (weight > 0) ? weight : 0.0;
 
-    const float r = AiSqr(2 / width) * (AiSqr(p.x) + AiSqr(p.y));
+    const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
     if (r > 1.0f) return 0.0;
     return AiFastExp(2 * -r);
 }
@@ -346,10 +339,7 @@ driver_process_bucket
             AtRGBA energy = AI_RGBA_ZERO;
             
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
-            subpixel_position -= 0.5;
-            float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
-            // std::cout << filter_weight << std::endl;
-            // std::cout << subpixel_position.x << " " << subpixel_position.y << std::endl;
+            float filter_weight = gaussian(subpixel_position - 0.5, bokeh->filter_width);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
 
@@ -403,16 +393,14 @@ driver_process_bucket
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           AtRGBA energy = AI_RGBA_ZERO;
 
-          // do pixel filter weights
-
 
           for (int i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
-                AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density;
-                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
                 const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
                 float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
+                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
 
@@ -470,6 +458,7 @@ driver_close
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
 
+    // watch out, will only need to divide teh buffer by the accum filter value if it's of types rgba/rgb
     for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
       float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
       unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
