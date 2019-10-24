@@ -24,33 +24,18 @@ struct ThinLensBokehDriver {
   int min_aa_samples;
   bool enabled;
   float filter_width;
+  AtMatrix world_to_camera_matrix;
   std::map<AtString, std::vector<AtRGBA> > image;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
   std::vector<int> sample_per_pixel_counter;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
-  AtMatrix world_to_camera_matrix;
+  std::vector<int> aov_types;
 };
 
 
-float gaussian(AtVector2 p, float width) {
-    // /* matches Arnold's exactly. */
-    // /* Sharpness=2 is good for width 2, sigma=1/sqrt(8) for the width=4,sharpness=4 case */
-    // // const float sigma = 0.5f;
-    // // const float sharpness = 1.0f / (2.0f * sigma * sigma);
-
-    // p /= (width * 0.5);
-    // float dist_squared = (p.x * p.x + p.y * p.y);
-    // if (dist_squared > (1.0)) return 0.0;
-
-    // // const float normalization_factor = 1;
-    // // Float weight = normalization_factor * expf(-dist_squared * sharpness);
-
-    // float weight = AiFastExp(-dist_squared * 2.0f);
-    
-    // return (weight > 0) ? weight : 0.0;
-
+inline float gaussian(AtVector2 p, float width) {
     const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
     if (r > 1.0f) return 0.0;
     return AiFastExp(2 * -r);
@@ -141,8 +126,6 @@ driver_process_bucket
   const double xres = (double)bokeh->xres;
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
-
-  // std::vector<AtRGBA> current_bucket_samples; // for future aov filtering shenanigans
 
 
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
@@ -266,7 +249,7 @@ driver_process_bucket
             float intersection = std::abs(1.0 / dir.z);
             AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov;
             
-            // add optical vignetting here
+
             if (tl->optical_vignetting_distance > 0.0){
               if (!empericalOpticalVignettingSquare(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance, lerp_squircle_mapping(tl->square))){
                   --count;
@@ -336,8 +319,6 @@ driver_process_bucket
 
             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            AtRGBA energy = AI_RGBA_ZERO;
-            
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
             float filter_weight = gaussian(subpixel_position - 0.5, bokeh->filter_width);
 
@@ -347,8 +328,8 @@ driver_process_bucket
 
                 case AI_TYPE_RGBA: {
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
-                  energy = rgba_energy * weight * filter_weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += energy;
+                  rgba_energy = rgba_energy * weight * filter_weight;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
 
@@ -357,8 +338,10 @@ driver_process_bucket
 
                 case AI_TYPE_RGB: {
                   AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
-                  rgb_energy *= weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight * filter_weight;
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                  bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                  ++bokeh->sample_per_pixel_counter[pixelnumber];
                   
                   break;
                 }
@@ -366,8 +349,8 @@ driver_process_bucket
                 case AI_TYPE_VECTOR: {
                   if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
                     AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
-                    energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-                    bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+                    AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+                    bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
                     bokeh->zbuffer[pixelnumber] = std::abs(depth);
                   }
 
@@ -376,9 +359,9 @@ driver_process_bucket
 
                 case AI_TYPE_FLOAT: {
                   if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                    float vec_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
-                    energy = AtRGBA(vec_energy, vec_energy, vec_energy, 1.0);
-                    bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+                    float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
+                    AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+                    bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
                     bokeh->zbuffer[pixelnumber] = std::abs(depth);
                   }
 
@@ -391,15 +374,13 @@ driver_process_bucket
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          AtRGBA energy = AI_RGBA_ZERO;
-
+          const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
+          float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
 
           for (int i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-                const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-                float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
@@ -408,8 +389,11 @@ driver_process_bucket
               }
 
               case AI_TYPE_RGB: {
-                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                  ++bokeh->sample_per_pixel_counter[pixelnumber];
                   
                   break;
                 }
@@ -417,8 +401,8 @@ driver_process_bucket
               case AI_TYPE_VECTOR: {
                 if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
                   AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
-                  energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+                  AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
                   bokeh->zbuffer[pixelnumber] = std::abs(depth);
                 }
 
@@ -427,9 +411,9 @@ driver_process_bucket
 
               case AI_TYPE_FLOAT: {
                 if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                  float vec_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
-                  energy = AtRGBA(vec_energy, vec_energy, vec_energy, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = energy;
+                  float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
+                  AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
                   bokeh->zbuffer[pixelnumber] = std::abs(depth);
                 }
 
@@ -453,26 +437,37 @@ driver_close
   if (!bokeh->enabled) return;
 
   // dump framebuffers to exrs
-  for (auto &buffer: bokeh->image) {
+  for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
     
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
 
-    // watch out, will only need to divide teh buffer by the accum filter value if it's of types rgba/rgb
     for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
-      float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
-      unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
-      image[++offset] = buffer.second[pixelnumber].r / (filter_weight_accum/samples_per_pixel);
-      image[++offset] = buffer.second[pixelnumber].g / (filter_weight_accum/samples_per_pixel);
-      image[++offset] = buffer.second[pixelnumber].b / (filter_weight_accum/samples_per_pixel);
-      image[++offset] = buffer.second[pixelnumber].a / (filter_weight_accum/samples_per_pixel);
+      
+      // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
+      if (bokeh->aov_list_type[i] == AI_TYPE_RGBA || bokeh->aov_list_type[i] == AI_TYPE_RGB){
+
+        float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
+        unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
+        
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r / (filter_weight_accum/samples_per_pixel);
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g / (filter_weight_accum/samples_per_pixel);
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b / (filter_weight_accum/samples_per_pixel);
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a / (filter_weight_accum/samples_per_pixel);
+      } else {
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r;
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g;
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b;
+        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a;
+      }
+      
     }
 
 
     // need to check if it ends with .exr or not
     std::string path = tl->bokeh_exr_path.c_str();
     std::string substr = path.substr(0, path.size() - 4);
-    std::string bokeh_aov_name = substr + "." + buffer.first.c_str() + ".exr";
+    std::string bokeh_aov_name = substr + "." + bokeh->aov_list_name[i].c_str() + ".exr";
     SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, bokeh_aov_name.c_str());
     AiMsgWarning("[LENTIL] Bokeh AOV written to %s", bokeh_aov_name.c_str());
   }
