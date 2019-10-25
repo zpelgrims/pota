@@ -7,18 +7,18 @@ As often is the case in CG, there's a choice between speed (thin-lens) and physi
 #### Thin-Lens features:
 
 - Many times faster than default Arnold camera (~30x), achieved by decoupling camera rays from primary rays
-- Cateye bokeh (optical vignetting)
+- Empirical Cateye bokeh (optical vignetting)
 - Anamorphic bokeh
 - Image-based bokeh
-- Add additional energy to bokeh only
+- Add additional luminance to bokeh only
 - Circle to square transitions (useful for anamorphic look)
-- Chromatic aberration
+- Empirical Chromatic aberration
 
 #### Polynomial optics features:
 
 - State-of-the-art in speed/physical correctness trade-off
 - Many times faster than [pota]() due to bidirectional sampling
-- Takes data from lens patents (render through a 1900's Petzal, 1930's Cooke Speed Panchro or [any of the available lenses]()). Custom lenses can be implemented if the geometrical data is available.
+- Takes data from lens patents (render through a 1900's Petzal, 1930's Cooke Speed Panchro or [any of the available lenses]())
 - Spectrally correct chromatic aberration
 - Physically correct distortion, cat-eye, etc ...
 - Prime lenses only
@@ -27,7 +27,7 @@ As often is the case in CG, there's a choice between speed (thin-lens) and physi
 
 ## A few considerations
 
-Lentil has to balance on the cusp of what is possible to do through Arnold's public API. It is not *currently* possible to feed the bidirectionally sampled bokeh back into an interactive render session. You still get a 1-to-1 preview in interactive sessions (using regular forward tracing), just not the result of the resolved bidirectional tracing. 
+Lentil has to balance on the cusp of what is possible to do through Arnold's public API. It is not currently possible to feed the bidirectionally sampled bokeh back into an interactive render session. You still get a 1-to-1 preview in interactive sessions (using regular forward tracing), just not the result of the resolved bidirectional tracing.
 
 > **Note:** If an interactive preview of the clean bokeh is required for your workflow, there are some possibilities -- e.g through [aton](). If there is interest in this route, [let us know]().
 
@@ -35,10 +35,12 @@ Lentil has to balance on the cusp of what is possible to do through Arnold's pub
 
 > Add all available lenses
 
+> **Note:** Custom lenses can be implemented if the geometrical data is available.
+
 ## Documentation
 
 ### Bidirectional sampling
-The bidirectional component of Lentil comes as a custom driver, which means that it'll output additional AOV's which contain the supersampled bokeh *to disk*. To enable this for certain AOVs, add an additional driver to the AOV:
+The bidirectional component of Lentil comes as a custom driver, which means that it will output additional AOV's which contain the supersampled bokeh *to disk*. To enable this for certain AOVs, add an additional driver to the AOV:
 
 > INSERT IMAGE ON ADDING ADDITIONAL DRIVER
 
