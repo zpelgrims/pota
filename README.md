@@ -1,14 +1,61 @@
+#### Lentil is an advanced camera toolkit for the Arnold renderer. It is a set of shaders that extends creative control and physical correctness, while significantly reducing the time (~30x) needed to render bokeh through bidirectional sampling of camera rays.
 
-**POTA** is an implementation of [Sparse high-degree polynomials for wide-angle lenses [2016]](https://cg.ivd.kit.edu/publications/2016/lens_sparse_poly/2016_optics.pdf) for the [Arnold renderer](www.solidangle.com). It renders images with high-order aberrations, at a fraction of the cost of tracing rays through lens elements. It is done by pre-calculating fitted polynomials, which serve as a black-box to transform the rays on the sensor to rays on the outer pupil. All credit goes out to the authors of the paper, I only wrote the implementation for Arnold.
+> ADD COMPARISON OF ARNOLD DEFAULT, THINLENS & POLYNOMIAL OPTICS (inlude rendertimes)
 
-**Read the full documentation [here](http://zenopelgrims.com/polynomial-optics-arnold/).**
+As often is the case in CG, there's a choice between speed (thin-lens) and physical correctness (polynomial optics). This is why multiple camera models are provided:
+
+#### Thin-Lens features:
+
+- Many times faster than default Arnold camera (~30x), achieved by decoupling camera rays from primary rays
+- Empirical Cateye bokeh (optical vignetting)
+- Anamorphic bokeh
+- Image-based bokeh
+- Add additional luminance to bokeh only
+- Circle to square transitions (useful for anamorphic look)
+- Empirical Chromatic aberration
+
+#### Polynomial optics features:
+
+- State-of-the-art in speed/physical correctness trade-off
+- Many times faster than [pota]() due to bidirectional sampling
+- Takes data from lens patents (render through a 1900's Petzal, 1930's Cooke Speed Panchro or [any of the available lenses]())
+- Spectrally correct chromatic aberration
+- Physically correct distortion, cat-eye, etc ...
+- Prime lenses only
 
 
-![pota_comparison_thinlens_polynomial_optics_zeiss_biotar](https://raw.githubusercontent.com/zpelgrims/pota/master/tests/website_comparison_images/pota_arnold_camera_shader_comparison_biotar_thinlens.gif)
 
+## A few considerations
 
-***
+Lentil has to balance on the cusp of what is possible to do through Arnold's public API. It is not currently possible to feed the bidirectionally sampled bokeh back into an interactive render session. You still get a 1-to-1 preview in interactive sessions (using regular forward tracing), just not the result of the resolved bidirectional tracing.
 
-**Compile instructions:**
-This repo currently depends on another, private repository. Apologies!
-***
+> **Note:** If an interactive preview of the clean bokeh is required for your workflow, there are some possibilities -- e.g through [aton](). If there is interest in this route, [let us know]().
+
+## Available lenses
+
+> Add all available lenses
+
+> **Note:** Custom lenses can be implemented if the geometrical data is available.
+
+## Documentation
+
+### Bidirectional sampling
+The bidirectional component of Lentil comes as a custom driver, which means that it will output additional AOV's which contain the supersampled bokeh *to disk*. To enable this for certain AOVs, add an additional driver to the AOV:
+
+> INSERT IMAGE ON ADDING ADDITIONAL DRIVER
+
+All AOVs that need to contain the supersampled bokeh need to point to the same driver node.
+
+> INSERT GIF ON CONNECTING TO SAME DRIVER
+
+> **Note**: RGBA/RGB type-aov's will be filtered using a gaussian filter with radius specified in the driver settings (not the global settings). All other AOV datatypes will automatically use a closest filter.
+
+Lentil will output the images in the location specified in the lentil camera options: [bokeh_exr_path]().
+
+### Image based bokeh
+
+Custom bokeh images can be used. Since probability functions need to be calculated before rendering, it is advised to use low-resolution images (e.g 250px * 250 px). There is no noticeable visual difference to high resolution images.
+
+We've sourced a few example images that can be used:
+
+> ADD IMAGES OF BOKEH KERNELS
