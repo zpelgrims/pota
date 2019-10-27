@@ -12,7 +12,6 @@ struct CameraThinLens
 	float fov;
     float tan_fov;
     float sensor_width;
-    float sensor_height;
     float focal_length;
     float fstop;
     float focus_distance;
@@ -35,7 +34,7 @@ struct CameraThinLens
     bool use_image;
     AtString bokeh_input_path;
 
-    int bokeh_samples_mult;
+    unsigned int bokeh_samples_mult;
 
     float additional_luminance;
     float luminance_remap_transition_width;
@@ -43,6 +42,17 @@ struct CameraThinLens
 
 extern struct CameraThinLens tl;
 
+
+inline float clamp(float in, const float min, const float max) {
+    if (in < min) in = min;
+    if (in > max) in = max;
+    return in;
+}
+
+inline float clamp_min(float in, const float min) {
+    if (in < min) in = min;
+    return in;
+}
 
 // xorshift fast random number generator
 inline uint32_t xor128(void){

@@ -135,22 +135,22 @@ lentil_thinlens
  0.0374014676 0.998347104 -0.043637041 0
  0.649698555 -0.0574722625 -0.758016288 0
  17.601759 1.98807669 -19.9616642 1
- focus_distance 26.3
- focal_length 4.9
- minimum_rgb 0.2
- fstop 1.4
- #bias 0.7
- #optical_vignetting_distance 5.0
- optical_vignetting_radius 1.0
- # emperical_ca_dist 3
- #square 0.7
- squeeze 1.0
- bokeh_exr_path "/home/cactus/lentil/pota/unit_render/test_driver.exr"
- use_image false
- bokeh_input_path "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
- bokeh_samples_mult 5
- #additional_luminance 20.0
- #luminance_remap_transition_width 1.0
+ focus_distanceTL 26.3
+ focal_lengthTL 4.9
+ minimum_rgbTL 0.2
+ fstopTL 1.4
+ #biasTL 0.7
+ #optical_vignetting_distanceTL 5.0
+ optical_vignetting_radiusTL 1.0
+ # emperical_ca_distTL 3
+ #squareTL 0.7
+ squeezeTL 1.0
+ bokeh_exr_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
+ use_imageTL false
+ bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
+ bokeh_samples_multTL 5
+ #additional_luminanceTL 20.0
+ #luminance_remap_transition_widthTL 1.0
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }

@@ -46,7 +46,7 @@ node_parameters {
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focal_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);

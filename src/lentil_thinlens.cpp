@@ -5,53 +5,49 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentil_thinlensMethods)
 
 enum
 {
-    p_sensor_width,
-    p_sensor_height,
-    p_focal_length,
-    p_fstop,
-    p_focus_distance,
-    p_minimum_rgb,
-    p_bokeh_exr_path,
-    p_emperical_ca_dist,
-    p_optical_vignetting_distance,
-    p_optical_vignetting_radius,
-    p_bias,
-    p_gain,
-    p_invert,
-    p_square,
-    p_squeeze,
-    p_use_image,
-    p_bokeh_input_path,
-    p_bokeh_samples_mult
+    p_sensor_widthTL,
+    p_focal_lengthTL,
+    p_fstopTL,
+    p_focus_distanceTL,
+    p_minimum_rgbTL,
+    p_bokeh_exr_pathTL,
+    p_emperical_ca_distTL,
+    p_optical_vignetting_distanceTL,
+    p_optical_vignetting_radiusTL,
+    p_biasTL,
+    p_invertTL,
+    p_squareTL,
+    p_squeezeTL,
+    p_use_imageTL,
+    p_bokeh_input_pathTL,
+    p_bokeh_samples_multTL
 };
 
 node_parameters
 {
-    AiParameterFlt("sensor_width", 3.6); // 35mm film
-    AiParameterFlt("sensor_height", 2.4); // 35 mm film
-    AiParameterFlt("focal_length", 3.5); // in cm
-    AiParameterFlt("fstop", 1.4);
-    AiParameterFlt("focus_distance", 100.0);
-    AiParameterFlt("minimum_rgb", 0.5);
-    AiParameterStr("bokeh_exr_path", "");
-    AiParameterFlt("emperical_ca_dist", 0.0);
-    AiParameterFlt("optical_vignetting_distance", 0.0);
-    AiParameterFlt("optical_vignetting_radius", 1.0);
+    AiParameterFlt("sensor_widthTL", 3.6); // 35mm film
+    AiParameterFlt("focal_lengthTL", 3.5); // in cm
+    AiParameterFlt("fstopTL", 1.4);
+    AiParameterFlt("focus_distanceTL", 100.0);
+    AiParameterFlt("minimum_rgbTL", 0.2);
+    AiParameterStr("bokeh_exr_pathTL", "");
+    AiParameterFlt("emperical_ca_distTL", 0.0);
+    AiParameterFlt("optical_vignetting_distanceTL", 0.0);
+    AiParameterFlt("optical_vignetting_radiusTL", 2.0);
 
-    AiParameterFlt("bias", 0.5);
-    AiParameterFlt("gain", 0.5);
-    AiParameterBool("invert", false);
+    AiParameterFlt("biasTL", 0.5);
+    AiParameterBool("invertTL", false);
 
-    AiParameterFlt("square", 0.0);
-    AiParameterFlt("squeeze", 1.0);
+    AiParameterFlt("squareTL", 0.0);
+    AiParameterFlt("squeezeTL", 1.0);
 
-    AiParameterBool("use_image", false);
-    AiParameterStr("bokeh_input_path", "");
+    AiParameterBool("use_imageTL", false);
+    AiParameterStr("bokeh_input_pathTL", "");
 
-    AiParameterInt("bokeh_samples_mult", 10);
+    AiParameterInt("bokeh_samples_multTL", 10);
 
-    AiParameterFlt("additional_luminance", 0.0);
-    AiParameterFlt("luminance_remap_transition_width", 1.0);
+    AiParameterFlt("additional_luminanceTL", 0.0);
+    AiParameterFlt("luminance_remap_transition_widthTL", 1.0);
 }
 
 
@@ -66,37 +62,44 @@ node_update
 {
     CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
 
-    tl->sensor_width = AiNodeGetFlt(node, "sensor_width");
-    tl->sensor_height = AiNodeGetFlt(node, "sensor_height");
-    tl->focal_length = AiNodeGetFlt(node, "focal_length");
-    tl->fstop = AiNodeGetFlt(node, "fstop");
-    tl->focus_distance = AiNodeGetFlt(node, "focus_distance");
+    tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL");
+    tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL");
+    tl->focal_length = clamp_min(tl->focal_length, 0.01);
+
+    tl->fstop = AiNodeGetFlt(node, "fstopTL");
+    tl->fstop = clamp_min(tl->fstop, 0.01);
+
+    tl->focus_distance = AiNodeGetFlt(node, "focus_distanceTL");
 
     tl->fov = 2.0 * atan((tl->sensor_width / (2.0 * tl->focal_length))); // in radians
     tl->tan_fov = tanf(tl->fov / 2.0);
     tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
 
-    tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-    tl->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+    tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgbTL");
+    tl->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_pathTL");
 
-    tl->emperical_ca_dist = AiNodeGetFlt(node, "emperical_ca_dist");
-    tl->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distance");
-    tl->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radius");
+    tl->emperical_ca_dist = AiNodeGetFlt(node, "emperical_ca_distTL");
+    tl->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distanceTL");
+    tl->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radiusTL");
 
-    tl->bias = AiNodeGetFlt(node, "bias");
-    tl->gain = AiNodeGetFlt(node, "gain");
-    tl->invert = AiNodeGetBool(node, "invert");
+    tl->bias = AiNodeGetFlt(node, "biasTL");
+    tl->bias = clamp(tl->bias, 0.01, 0.99);
+    tl->invert = AiNodeGetBool(node, "invertTL");
 
-    tl->square = AiNodeGetFlt(node, "square");
-    tl->squeeze = AiNodeGetFlt(node, "squeeze");
+    tl->square = AiNodeGetFlt(node, "squareTL");
+    tl->square = clamp(tl->square, 0.01, 0.99);
+    tl->squeeze = AiNodeGetFlt(node, "squeezeTL");
+    tl->squeeze = clamp(tl->squeeze, 0.01, 99999.0);
 
-    tl->use_image = AiNodeGetBool(node, "use_image");
-    tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
+    tl->use_image = AiNodeGetBool(node, "use_imageTL");
+    tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_pathTL");
 
-    tl->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_mult");
+    tl->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_multTL");
 
-    tl->additional_luminance = AiNodeGetFlt(node, "additional_luminance");
-    tl->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_width");
+    tl->additional_luminance = AiNodeGetFlt(node, "additional_luminanceTL");
+    tl->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_widthTL");
+
+
 
     // make probability functions of the bokeh image
     // if (parms.bokehChanged(camera->params)) {
@@ -150,7 +153,6 @@ camera_create_ray
         }
 
         unit_disk(0) *= tl->squeeze;
-        unit_disk *= -1.0;
 
         // tmp copy
         AtVector2 lens(unit_disk(0), unit_disk(1));

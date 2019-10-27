@@ -3,10 +3,10 @@ import pymel.core as pm
 import maya.cmds as cmds
 import mtoa.ui.ae.utils as aeUtils
 
-class aiLentilTemplate(templates.AttributeTemplate):
+class aiLentilThinlensTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehOutput(self, mData) :
-        attr = self.nodeAttr('aiBokehExrPath')
+        attr = self.nodeAttr('aiBokehExrPathTL')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehOutput(self, *args):
@@ -26,7 +26,7 @@ class aiLentilTemplate(templates.AttributeTemplate):
 
     
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('aiBokehInputPath')
+        attr = self.nodeAttr('aiBokehInputPathTL')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -46,39 +46,38 @@ class aiLentilTemplate(templates.AttributeTemplate):
 
 
 
-
     def setup(self):
 
-        self.beginLayout("Polynomial Optics", collapse=False)
-        self.addControl("aiLensModel", label="Lens Model")
-        self.addControl("aiSensorWidth", label="Sensor Width (mm)")
-        self.addControl("aiWavelength", label="Wavelength (nm)")
-        self.addControl("aiDof", label="Enable depth of field")
-        self.addControl("aiFstop", label="F-stop", dynamic=True)
-        self.addControl("aiFocusDistance", label="Focus distance (unit)")
-        self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
-        self.addControl("aiVignettingRetries", label="Vignetting retries")
-        self.addControl("aiApertureBlades", label="Aperture blades")
-        self.addControl("aiEmpiricalCaDist", label="Chromatic Aberration Distance")
+        self.beginLayout("Thin Lens", collapse=False)
+        self.addControl("aiSensorWidthTL", label="Sensor Width (cm)")
+        self.addControl("aiFocalLengthTL", label="Focal Length (cm)")
+        self.addControl("aiFstopTL", label="F-stop", dynamic=True)
+        self.addControl("aiFocusDistanceTL", label="Focus distance (cm)")
+
+        self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
+        self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")
+        self.addControl("aiBiasTL", label="Bias")
+        
+        self.addControl("aiSquareTL", label="Circle to Square mapping")
+        self.addControl("aiSqueezeTL", label="Anamorphic stretch")
+
+        self.addControl("aiEmpericalCaDistTL", label="Chromatic Aberration")
+
         self.endLayout()
 
-        self.beginLayout("Bidirectional")
-        self.addCustom("aiBokehExrPath", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
-        self.addControl("aiBackwardSamples", label="Extra backward samples")
-        self.addControl("aiMinimumRgb", label="Min bidirectional")
-        self.endLayout()
-
-        self.beginLayout("Bokeh Image")
-        self.addControl("aiUseImage", label="Use Bokeh Image")
-        self.addCustom("aiBokehInputPath", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
-
+        
+        self.beginLayout("Bidirectional", collapse=False)
+        self.addControl("aiMinimumRgbTL", label="Bidirectional Trigger")
+        self.addControl("aiBokehSamplesMultTL", label="Samples")
+        self.addCustom("aiBokehExrPathTL", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
+        self.addControl("aiAdditionalLuminanceTL", label="Add bokeh luminance")
+        self.addControl("aiLuminanceRemapTransitionWidthTL", label="Add Lum transition")
         self.endLayout()
         
-
-        self.beginLayout("Advanced options")
-        self.addControl("aiUnitModel", label="Units")
-        self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
+        self.beginLayout("Bokeh Image")
+        self.addControl("aiUseImageTL", label="Use Bokeh Image")
+        self.addCustom("aiBokehInputPathTL", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
         self.endLayout()
 
 
-templates.registerTranslatorUI(aiLentilTemplate, "camera", "lentil")
+templates.registerTranslatorUI(aiLentilThinlensTemplate, "camera", "lentil_thinlens")

@@ -2,6 +2,8 @@
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
 // compute analytical size of circle of confusion
 // if bokeh ends up in the middle, i need to do: ~lens3d~ + (dir*intersection)!
+// samples outside of frame are wasted, i can probably abuse the bounding box to guide these samples
+// blue noise redistribution
 
 #include <ai.h>
 #include <vector>
@@ -59,8 +61,18 @@ node_update
   
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
+  AiMsgInfo("[LENTIL_BIDIRECTIONAL] Camera name: %s", AiNodeGetName(node_camera));
   AiNodeIs(node_camera, AtString("lentil_thinlens")) ? bokeh->enabled = true : bokeh->enabled = false;
   
+  if (!tl->bokeh_exr_path) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL] No path specified for bidirectional sampling.");
+    tl->bokeh_exr_path ? bokeh->enabled = true : bokeh->enabled = false;
+    return;
+  }
+
+  if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
+  
+
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
@@ -227,7 +239,6 @@ driver_process_bucket
             }
 
             unit_disk(0) *= tl->squeeze;
-            unit_disk *= -1.0; // flip&flop sample.. not quite sure why this is necessary
             
             // tmp copy
             AtVector2 lens(unit_disk(0), unit_disk(1));
@@ -466,7 +477,7 @@ driver_close
     std::string substr = path.substr(0, path.size() - 4);
     std::string bokeh_aov_name = substr + "." + bokeh->aov_list_name[i].c_str() + ".exr";
     SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, bokeh_aov_name.c_str());
-    AiMsgWarning("[LENTIL] Bokeh AOV written to %s", bokeh_aov_name.c_str());
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Bokeh AOV written to %s", bokeh_aov_name.c_str());
   }
 }
  

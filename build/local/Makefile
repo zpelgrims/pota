@@ -36,7 +36,8 @@ CXXFLAGS=\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
 	-O3\
-	#-g\
+	#-g
+
 	
 
 

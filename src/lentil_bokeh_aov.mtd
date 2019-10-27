@@ -1,7 +1,7 @@
 [node lentil_bokeh_aov]
     desc STRING "Bidirectional component of LENTIL, to provide extra sampling for highlights"
     maya.name               STRING  "lentil_bokeh_aov"
-    maya.id                 INT     0x00070507
+    maya.id                 INT     0x00070508
     maya.classification     STRING  "shader/surface"
     maya.translator         STRING  "lentil_bokeh_aov"
 
