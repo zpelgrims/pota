@@ -58,15 +58,21 @@ node_update
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  bokeh->enabled = true;
   
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
-  AiMsgInfo("[LENTIL_BIDIRECTIONAL] Camera name: %s", AiNodeGetName(node_camera));
-  AiNodeIs(node_camera, AtString("lentil_thinlens")) ? bokeh->enabled = true : bokeh->enabled = false;
-  
-  if (!tl->bokeh_exr_path) {
-    AiMsgWarning("[LENTIL BIDIRECTIONAL] No path specified for bidirectional sampling.");
-    tl->bokeh_exr_path ? bokeh->enabled = true : bokeh->enabled = false;
+  if (!AiNodeIs(node_camera, AtString("lentil_thinlens"))) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Camera is not of type lentil_thinlens");
+    bokeh->enabled = false;
+    return;
+  }
+
+  if (tl->bokeh_exr_path.empty()) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] No path specified for bidirectional sampling.");
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bokeh_exr_path.c_str());
+    bokeh->enabled = false;
     return;
   }
 
@@ -96,7 +102,6 @@ driver_supports_pixel_type { return true; } // not needed for raw drivers
  
 driver_open {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
-  CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   // get name/type of connected aovs
   const char *name = 0;

@@ -17,7 +17,7 @@ class aiLentilTemplate(templates.AttributeTemplate):
             cmds.textFieldButtonGrp("filenameBokehGrpOutput", edit=True, text=ret[0])
 
     def filenameNewBokehOutput(self, nodeName):
-        path = cmds.textFieldButtonGrp("filenameBokehGrpOutput", label="Bidirectional bokeh .exr path", changeCommand=self.filenameEditBokehOutput, width=300)
+        path = cmds.textFieldButtonGrp("filenameBokehGrpOutput", label="Bidirectional output", changeCommand=self.filenameEditBokehOutput, width=300)
         cmds.textFieldButtonGrp(path, edit=True, text=cmds.getAttr(nodeName))
         cmds.textFieldButtonGrp(path, edit=True, buttonLabel="...", buttonCommand=self.LoadFilenameButtonPushBokehOutput)
 

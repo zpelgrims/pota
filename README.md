@@ -48,7 +48,7 @@ All AOVs that need to contain the supersampled bokeh need to point to the same d
 
 > INSERT GIF ON CONNECTING TO SAME DRIVER
 
-> **Note**: RGBA/RGB type-aov's will be filtered using a gaussian filter with radius specified in the driver settings (not the global settings). All other AOV datatypes will automatically use a closest filter.
+> **Note**: RGBA/RGB type-aov's will be filtered using a gaussian filter with radius specified in the driver settings (not the global settings). All other AOV datatypes will automatically use a closest filter. The filter set next to the driver does not get used.
 
 Lentil will output the images in the location specified in the lentil camera options: [bokeh_exr_path]().
 

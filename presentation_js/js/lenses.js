@@ -28,7 +28,7 @@ var LENS_IOR=2;
 var LENS_VNO=3;
 var LENS_HOUSING_RADIUS=4;
 
-var lens_curr = 2;
+var lens_curr = 0;
 var lensdb = new Object();
 var lensdb_cnt = 0;
 var lensdb_name = new Object();
@@ -242,7 +242,7 @@ function handle_lens_event(evnt, action)
       sensor = [0,0,0,0,0.5];
       
       // why does second one not work?
-      error = lt_aperture_sample_angenieux(lensdb[lens_curr], 0.0, m.y, 0.0, mousepointer.y, -mousepointer.x, sensor, out, 0);
+      error = lt_aperture_sample_fisheye_ii(lensdb[lens_curr], 0.0, m.y, 0.0, mousepointer.y, -mousepointer.x, sensor, out, 0);
       //error = lt_aperture_sample_angenieux(lensdb[lens_curr], 0.0, m.y, -1282.898560, 52.338915, -4435.324402, sensor, out, 0);
       
       // opp = [0,0,0,0,0,0];
@@ -960,8 +960,8 @@ function lt_aperture_sample_angenieux(lenses, ap_x, ap_y, scene_x, scene_y, scen
     invJ[1][0] = -domega2_dx0[1][0]*invdet;
     for(var i=0;i<2;i++)
     {
-      sensor[0] += 0.1*invJ[0][i]*delta_out[i];
-      sensor[1] += 0.1*invJ[1][i]*delta_out[i];
+      sensor[0] += 0.72*invJ[0][i]*delta_out[i];
+      sensor[1] += 0.72*invJ[1][i]*delta_out[i];
     }
     if(sqr_err>prev_sqr_err) error |= 1;
     if(sqr_ap_err>prev_sqr_ap_err) error |= 2;
@@ -986,7 +986,7 @@ function lt_aperture_sample_angenieux(lenses, ap_x, ap_y, scene_x, scene_y, scen
 
     if(k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0)
     {
-      setTimeout(lt_aperture_sample_angenieux, 40,
+      setTimeout(lt_aperture_sample_fisheye_ii, 40,
           lenses, ap_x, ap_y, scene_x, scene_y, scene_z, sensor, out, k);
       return error;
     }
