@@ -38,6 +38,8 @@ struct CameraThinLens
 
     float additional_luminance;
     float luminance_remap_transition_width;
+
+    bool proper_ray_derivatives;
 };
 
 extern struct CameraThinLens tl;

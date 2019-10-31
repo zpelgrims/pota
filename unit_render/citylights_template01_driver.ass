@@ -45,14 +45,14 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/beauty.exr"
+ filename "/Users/zeno/lentil/pota/tests/unit_render_tmp/beauty.exr"
  color_space ""
 }
 
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/P.exr"
+ filename "/Users/zeno/lentil/pota/tests/unit_render_tmp/P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -65,7 +65,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/Z.exr"
+ filename "/Users/zeno/lentil/pota/tests/unit_render_tmp/Z.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -85,7 +85,7 @@ lentil_thin_lens_bokeh_driver
 driver_png
 {
  name aiAOVDriver2@driver_png.RGBA
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/beauty.png"
+ filename "/Users/zeno/lentil/pota/tests/unit_render_tmp/beauty.png"
  color_space "sRGB"
 }
 
@@ -122,7 +122,7 @@ lentil
  minimum_rgb 0.05
  fstop 1.4
  #empirical_ca_dist 60
- bokeh_exr_path "/home/cactus/lentil/pota/unit_render/test_driver.exr"
+ bokeh_exr_path "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
 }
@@ -145,9 +145,9 @@ lentil_thinlens
  # emperical_ca_distTL 3
  #squareTL 0.7
  squeezeTL 1.0
- bokeh_exr_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
+ bokeh_exr_pathTL "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  use_imageTL false
- bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
+ bokeh_input_pathTL "/Users/zeno/lentil/pota/bokeh_imgs/teapot.png"
  bokeh_samples_multTL 5
  #additional_luminanceTL 20.0
  #luminance_remap_transition_widthTL 1.0

@@ -11,7 +11,7 @@ endif
 
 # these need to be changed to the envvar
 ifeq ($(OS), Darwin)
-	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.0.0-darwin
+	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.4.0.1-darwin
 endif
 ifeq ($(OS), Linux)
 	ARNOLD_PATH=${LENTIL_ARNOLD_SDKS}/Arnold-5.2.2.0-linux

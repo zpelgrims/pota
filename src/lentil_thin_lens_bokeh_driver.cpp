@@ -69,16 +69,6 @@ node_update
     return;
   }
 
-  if (tl->bokeh_exr_path.empty()) {
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] No path specified for bidirectional sampling.");
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bokeh_exr_path.c_str());
-    bokeh->enabled = false;
-    return;
-  }
-
-  if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
-  
-
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
@@ -96,6 +86,18 @@ node_update
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
   bokeh->sample_per_pixel_counter.clear();
   bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
+
+
+  // this is really sketchy, need to watch out for a race condition here :/ How should I handle this?
+  if (tl->bokeh_exr_path.empty()) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] No path specified for bidirectional sampling.");
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bokeh_exr_path.c_str());
+    bokeh->enabled = false;
+    return;
+  }
+
+  if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
+  
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -134,7 +136,6 @@ driver_process_bucket
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
-
 
   if (!bokeh->enabled) return;
   
