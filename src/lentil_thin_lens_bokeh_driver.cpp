@@ -37,7 +37,7 @@ struct ThinLensBokehDriver {
 };
 
 
-inline float gaussian(AtVector2 p, float width) {
+inline float filter_gaussian(AtVector2 p, float width) {
   const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
@@ -159,10 +159,21 @@ driver_process_bucket
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z"));
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
+        
 
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
+
+          // how do i make a generalised version of these two forms of the same equation? seems somewhat arbitrary ..
+          // one seems to need a +
+          // one seems to need a -
+          const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
+          const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length - tl->focus_distance);
+          // or also correct:
+          // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance)); // WHY IS THIS CORRECT??
+          // float image_dist_samplepos = 1.0 / ((1.0/tl->focal_length) + (1.0/camera_space_sample_position.z));
+          
           
           // additional luminance with soft transition
           float fitted_additional_luminance = 0.0;
@@ -179,6 +190,7 @@ driver_process_bucket
           
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
+        // there's code duplication going on here.. handle that better
           AtVector2 bbox_min (0, 0);
           AtVector2 bbox_max (0, 0);
           for(int count=0; count<128; count++) {
@@ -188,26 +200,25 @@ driver_process_bucket
             concentricDiskSample(r1, r2, unit_disk, 0.8, 0.0, 1.0);
             unit_disk *= -1.0;
             
-            // tmp copy
-            AtVector2 lens(unit_disk(0), unit_disk(1));
-            
-            // scale points in [-1, 1] domain to actual aperture radius
-            lens *= tl->aperture_radius / tl->focus_distance;
-            AtVector lens3d(lens.x, lens.y, 0.0);
-
-            // intersect at z=focusdistance
+                        // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
-            float focusplane_intersection = std::abs(tl->focus_distance/dir_tobase.z);
-            AtVector focusplanepoint = dir_tobase * focusplane_intersection;
+            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
+            AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
 
-            // intersect at z=1
-            AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
-            float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->fov;
+            // depth of field
+            AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
+            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+            float focusdist_image_intersection = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z);
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
+
+            // takes care of correct coordinate mapping
+            AtVector2 sensor_position(- focusdist_image_point.x / focusdist_image_point.z,
+                                      - focusdist_image_point.y / focusdist_image_point.z);
+            sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
             
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x / (tl->sensor_width * 0.5), sensor_position.y / (tl->sensor_width * 0.5) * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
@@ -225,7 +236,6 @@ driver_process_bucket
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
           int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
-          samples = 500; // TMP REMOVE
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
 
           int total_samples_taken = 0;
@@ -247,16 +257,7 @@ driver_process_bucket
 
             unit_disk(0) *= tl->squeeze;
             
-            // how do i make a generalised version of these two forms of the same equation? seems somewhat arbitrary ..
-            // one seems to need a +
-            // one seems to need a -
-            float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
-            float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length - tl->focus_distance);
-            // or also correct:
-            // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance)); // WHY IS THIS CORRECT??
-            // float image_dist_samplepos = 1.0 / ((1.0/tl->focal_length) + (1.0/camera_space_sample_position.z));
             
-
             // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
             float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
@@ -326,8 +327,7 @@ driver_process_bucket
             // }
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, 
-                              sensor_position.y * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
 
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
@@ -338,14 +338,14 @@ driver_process_bucket
                 (pixel_y >= yres) || 
                 (pixel_y < 0))
             {
-              --count; // really need something better here, many samples are wasted outside of frame
+              --count; // much room for improvement here, many samples are wasted outside of frame
               continue;
             }
 
             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
-            float filter_weight = gaussian(subpixel_position - 0.5, bokeh->filter_width);
+            float filter_weight = filter_gaussian(subpixel_position - 0.5, bokeh->filter_width);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
 
@@ -400,7 +400,7 @@ driver_process_bucket
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-          float filter_weight = gaussian(subpixel_position, bokeh->filter_width);
+          float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
 
           for (int i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
