@@ -171,9 +171,8 @@ driver_process_bucket
           const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
           const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length - tl->focus_distance);
           // or also correct:
-          // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance)); // WHY IS THIS CORRECT??
           // float image_dist_samplepos = 1.0 / ((1.0/tl->focal_length) + (1.0/camera_space_sample_position.z));
-          
+          // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance));          
           
           // additional luminance with soft transition
           float fitted_additional_luminance = 0.0;
@@ -191,6 +190,7 @@ driver_process_bucket
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
         // there's code duplication going on here.. handle that better
+        // might as well just use analytical CoC here.
           AtVector2 bbox_min (0, 0);
           AtVector2 bbox_max (0, 0);
           for(int count=0; count<128; count++) {
@@ -200,7 +200,7 @@ driver_process_bucket
             concentricDiskSample(r1, r2, unit_disk, 0.8, 0.0, 1.0);
             unit_disk *= -1.0;
             
-                        // ray through center of lens
+            // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
             float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
             AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
