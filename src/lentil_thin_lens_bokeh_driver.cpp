@@ -203,7 +203,7 @@ driver_process_bucket
             // intersect at z=1
             AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
             float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov;
+            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->fov;
             
 
             // convert sensor position to pixel position
@@ -225,6 +225,7 @@ driver_process_bucket
 
           double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
           int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
+          samples = 500; // TMP REMOVE
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
 
           int total_samples_taken = 0;
@@ -246,77 +247,87 @@ driver_process_bucket
 
             unit_disk(0) *= tl->squeeze;
             
-            // tmp copy
-            AtVector2 lens(unit_disk(0), unit_disk(1));
+            // how do i make a generalised version of these two forms of the same equation? seems somewhat arbitrary ..
+            // one seems to need a +
+            // one seems to need a -
+            float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
+            float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length - tl->focus_distance);
+            // or also correct:
+            // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance)); // WHY IS THIS CORRECT??
+            // float image_dist_samplepos = 1.0 / ((1.0/tl->focal_length) + (1.0/camera_space_sample_position.z));
+            
 
-            // intersect at z=focusdistance
+            // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
-            float focusplane_intersection = std::abs(tl->focus_distance/dir_tobase.z);
-            AtVector focusplanepoint = dir_tobase * focusplane_intersection;
-            
-            // scale points in [-1, 1] domain to actual aperture radius
-            lens *= tl->aperture_radius / tl->focus_distance;
-            AtVector lens3d(lens.x, lens.y, 0.0);
+            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
+            AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
 
-            // intersect at z=1
-            AtVector dir = AiV3Normalize(focusplanepoint - lens3d);
-            float intersection = std::abs(1.0 / dir.z);
-            AtVector sensor_position = (lens3d + (dir*intersection)) / tl->tan_fov;
-            
+            // depth of field
+            AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
+            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+            float focusdist_image_intersection = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z);
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
 
-            if (tl->optical_vignetting_distance > 0.0){
-              if (!empericalOpticalVignettingSquare(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance, lerp_squircle_mapping(tl->square))){
-                  --count;
-                  continue;
-              }
-            }
+            // takes care of correct coordinate mapping
+            AtVector2 sensor_position(- focusdist_image_point.x / focusdist_image_point.z,
+                                      - focusdist_image_point.y / focusdist_image_point.z);
+            sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
+
+
+
+            // if (tl->optical_vignetting_distance > 0.0){
+            //   if (!empericalOpticalVignettingSquare(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance, lerp_squircle_mapping(tl->square))){
+            //       --count;
+            //       continue;
+            //   }
+            // }
 
                 
-            // this is most likely wrong!
-            float coc_aperture = (tl->aperture_radius*unit_disk(0))/tl->focus_distance;
-            AtVector coc_focuspoint = (lens3d + (dir*intersection));
-            float coc = std::abs(coc_aperture * (tl->focal_length * (tl->focus_distance - coc_focuspoint.z)) / (tl->focus_distance * (coc_focuspoint.z - tl->focal_length)));
-            //float coc = 0.05; // need to implement this!
-            // CoC = abs(aperture * (focallength * (objectdistance - planeinfocus)) /
-            //   (objectdistance * (planeinfocus - focallength)))
+            // // this is most likely wrong!
+            // float coc_aperture = (tl->aperture_radius*unit_disk(0))/tl->focus_distance;
+            // AtVector coc_focuspoint = (lens3d + (dir*intersection));
+            // float coc = std::abs(coc_aperture * (tl->focal_length * (tl->focus_distance - coc_focuspoint.z)) / (tl->focus_distance * (coc_focuspoint.z - tl->focal_length)));
+            // //float coc = 0.05; // need to implement this!
+            // // CoC = abs(aperture * (focallength * (objectdistance - planeinfocus)) /
+            // //   (objectdistance * (planeinfocus - focallength)))
             AtRGB weight = AI_RGB_WHITE;
-            if (tl->emperical_ca_dist > 0.0){
-                const AtVector2 p2(lens3d.x, lens3d.y);
-                const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), AtVector2((lens3d + (dir*intersection)).x, (lens3d + (dir*intersection)).y));
-                const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-                AtVector2 aperture_0_center(0.0, 0.0);
-                AtVector2 aperture_1_center(- p2 * coc * distance_to_center * tl->emperical_ca_dist);
-                AtVector2 aperture_2_center(p2 * coc * distance_to_center * tl->emperical_ca_dist);
+            // if (tl->emperical_ca_dist > 0.0){
+            //     const AtVector2 p2(lens3d.x, lens3d.y);
+            //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), AtVector2((lens3d + (dir*intersection)).x, (lens3d + (dir*intersection)).y));
+            //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+            //     AtVector2 aperture_0_center(0.0, 0.0);
+            //     AtVector2 aperture_1_center(- p2 * coc * distance_to_center * tl->emperical_ca_dist);
+            //     AtVector2 aperture_2_center(p2 * coc * distance_to_center * tl->emperical_ca_dist);
                 
 
-                if (random_aperture == 1)      lens += aperture_1_center;
-                else if (random_aperture == 2) lens += aperture_2_center;
+            //     if (random_aperture == 1)      lens += aperture_1_center;
+            //     else if (random_aperture == 2) lens += aperture_2_center;
 
-                if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-                    weight.r = 0.0;
-                }
-                if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-                    weight.b = 0.0;
-                }
-                if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-                    weight.g = 0.0;
-                }
+            //     if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+            //         weight.r = 0.0;
+            //     }
+            //     if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+            //         weight.b = 0.0;
+            //     }
+            //     if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
+            //         weight.g = 0.0;
+            //     }
 
-                if (weight == AI_RGB_ZERO){
-                    --count;
-                    continue;
-                }
+            //     if (weight == AI_RGB_ZERO){
+            //         --count;
+            //         continue;
+            //     }
             
-            //     //ca, not sure if this should be done, evens out the intensity?
-            //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
-            //     // output.weight.r /= sum;
-            //     // output.weight.g /= sum;
-            //     // output.weight.b /= sum;
-            }
+            // //     //ca, not sure if this should be done, evens out the intensity?
+            // //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
+            // //     // output.weight.r /= sum;
+            // //     // output.weight.g /= sum;
+            // //     // output.weight.b /= sum;
+            // }
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position[0], 
-                              sensor_position[1] * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position.x, 
+                              sensor_position.y * frame_aspect_ratio);
 
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;

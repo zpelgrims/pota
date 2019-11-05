@@ -20,7 +20,8 @@ enum
     p_squeezeTL,
     p_use_imageTL,
     p_bokeh_input_pathTL,
-    p_bokeh_samples_multTL
+    p_bokeh_samples_multTL,
+    p_sensor_distanceTL
 };
 
 node_parameters
@@ -48,6 +49,8 @@ node_parameters
 
     AiParameterFlt("additional_luminanceTL", 0.0);
     AiParameterFlt("luminance_remap_transition_widthTL", 1.0);
+
+    AiParameterFlt("sensor_distanceTL", 1.0);
 }
 
 
@@ -71,8 +74,7 @@ node_update
 
     tl->focus_distance = AiNodeGetFlt(node, "focus_distanceTL");
 
-    tl->fov = 2.0 * atan((tl->sensor_width / (2.0 * tl->focal_length))); // in radians
-    tl->tan_fov = tanf(tl->fov / 2.0);
+    tl->fov = ((tl->sensor_width*0.5));
     tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
 
     tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgbTL");
@@ -99,7 +101,7 @@ node_update
     tl->additional_luminance = AiNodeGetFlt(node, "additional_luminanceTL");
     tl->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_widthTL");
 
-
+    tl->sensor_distance = AiNodeGetFlt(node, "sensor_distanceTL");
 
     // make probability functions of the bokeh image
     // if (parms.bokehChanged(camera->params)) {
@@ -129,7 +131,10 @@ camera_create_ray
     int maxtries = 15;
     while (!success && tries <= maxtries){
         // create point on sensor (camera space)
-        const AtVector p(input.sx, input.sy, -1.0/tl->tan_fov);
+        const AtVector p(input.sx * (tl->sensor_width*0.5), 
+                         input.sy * (tl->sensor_width*0.5), 
+                         -tl->focal_length);
+
         // calculate direction vector from origin to point on lens
         output.dir = AiV3Normalize(p); // or norm(p-origin)
 

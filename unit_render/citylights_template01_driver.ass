@@ -9,7 +9,7 @@
 
 options
 {
- AA_samples 6
+ AA_samples 3
  outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
@@ -148,7 +148,7 @@ lentil_thinlens
  bokeh_exr_pathTL "/Users/zeno/lentil/pota/unit_render/test_driver.exr"
  use_imageTL false
  bokeh_input_pathTL "/Users/zeno/lentil/pota/bokeh_imgs/teapot.png"
- bokeh_samples_multTL 5
+ bokeh_samples_multTL 1
  #additional_luminanceTL 20.0
  #luminance_remap_transition_widthTL 1.0
  declare maya_full_name constant STRING
