@@ -140,7 +140,7 @@ lentil_thinlens
  minimum_rgbTL 0.2
  fstopTL 1.4
  #biasTL 0.7
- #optical_vignetting_distanceTL 5.0
+ optical_vignetting_distanceTL 5.0
  optical_vignetting_radiusTL 1.0
  # emperical_ca_distTL 3
  #squareTL 0.7

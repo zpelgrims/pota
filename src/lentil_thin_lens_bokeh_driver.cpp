@@ -274,13 +274,13 @@ driver_process_bucket
             sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
 
 
-
-            // if (tl->optical_vignetting_distance > 0.0){
-            //   if (!empericalOpticalVignettingSquare(lens3d, dir, tl->aperture_radius/tl->focus_distance, tl->optical_vignetting_radius, tl->optical_vignetting_distance/tl->focus_distance, lerp_squircle_mapping(tl->square))){
-            //       --count;
-            //       continue;
-            //   }
-            // }
+            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
+            if (tl->optical_vignetting_distance > 0.0){
+              if (!empericalOpticalVignettingSquare(lens, -dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
+                  --count;
+                  continue;
+              }
+            }
 
                 
             // // this is most likely wrong!
