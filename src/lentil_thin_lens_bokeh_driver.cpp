@@ -1,7 +1,6 @@
 // chromatic aberrations, split up in Longitudinal/lateral
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
 // compute analytical size of circle of confusion
-// if bokeh ends up in the middle, i need to do: ~lens3d~ + (dir*intersection)!
 // samples outside of frame are wasted, i can probably abuse the bounding box to guide these samples
 // blue noise redistribution
 
@@ -13,6 +12,10 @@
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
+
+// need to sleep the updating of the initialization of this node for a bit
+#include <chrono>
+#include <thread>
 
  
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
@@ -58,6 +61,10 @@ node_update
 {
   ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  // this is an UGLY solution, sleep this node initialization for x amount of time
+  // this is required to try and make sure the data in shared CameraThinLens is filled in first.
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   bokeh->enabled = true;
   
@@ -165,14 +172,10 @@ driver_process_bucket
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
 
-          // how do i make a generalised version of these two forms of the same equation? seems somewhat arbitrary ..
-          // one seems to need a +
-          // one seems to need a -
+
           const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
-          const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length - tl->focus_distance);
-          // or also correct:
-          // float image_dist_samplepos = 1.0 / ((1.0/tl->focal_length) + (1.0/camera_space_sample_position.z));
-          // float image_dist_focusdist = 1.0 / ((1.0/tl->focal_length) - (1.0/tl->focus_distance));          
+          const float image_dist_focusdist = (tl->focal_length * -tl->focus_distance) / (tl->focal_length + -tl->focus_distance); // focus distance is required to be at the negative side
+        
           
           // additional luminance with soft transition
           float fitted_additional_luminance = 0.0;
@@ -185,7 +188,7 @@ driver_process_bucket
             } 
           }
 
-
+        
           
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
@@ -275,6 +278,7 @@ driver_process_bucket
             sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
 
 
+            // optical vignetting
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
             if (tl->optical_vignetting_distance > 0.0){
               if (!empericalOpticalVignettingSquare(lens, -dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
