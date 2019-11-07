@@ -242,7 +242,7 @@ driver_process_bucket
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
           int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
-          samples = std::min(samples, 10);
+          if (samples < 10) samples = 10; // min clamp sample count
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
