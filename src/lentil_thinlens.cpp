@@ -136,7 +136,7 @@ camera_create_ray
                          -tl->focal_length);
 
         // calculate direction vector from origin to point on lens
-        output.dir = AiV3Normalize(p); // or norm(p-origin)
+        AtVector dir_from_center = AiV3Normalize(p); // or norm(p-origin)
 
         // either get uniformly distributed points on the unit disk or bokeh image
         Eigen::Vector2d unit_disk(0, 0);
@@ -160,28 +160,20 @@ camera_create_ray
         unit_disk(0) *= tl->squeeze;
 
 
-        AtVector2 lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius);
-
-        // new origin is these points on the lens
-        output.origin.x = lens.x;
-        output.origin.y = lens.y;
-        output.origin.z = 0.0;
-
-
-        // Compute point on plane of focus, intersection on z axis
-        const float intersection = std::abs(tl->focus_distance / output.dir.z); // or tl->focus_distance; (spherical/plane, test!)
-        const AtVector focusPoint = output.dir * intersection;
-        output.dir = AiV3Normalize(focusPoint - output.origin);
+        AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
+        const float intersection = std::abs(tl->focus_distance / dir_from_center.z); // or tl->focus_distance; (spherical/plane, test!)
+        const AtVector focusPoint = dir_from_center * intersection;
+        AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
 
         if (tl->optical_vignetting_distance > 0.0){
-            if (!empericalOpticalVignettingSquare(output.origin, output.dir, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
+            if (!empericalOpticalVignettingSquare(lens, dir_from_lens, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
                 ++tries;
                 continue;
             }
         }
 
         // this is most likely wrong!
-        float coc = std::abs((tl->aperture_radius*unit_disk(0)) * (tl->focal_length * (tl->focus_distance - focusPoint.z)) / (tl->focus_distance * (focusPoint.z - tl->focal_length)));
+        // float coc = std::abs((tl->aperture_radius*unit_disk(0)) * (tl->focal_length * (tl->focus_distance - focusPoint.z)) / (tl->focus_distance * (focusPoint.z - tl->focal_length)));
         // CoC = abs(aperture * (focallength * (objectdistance - planeinfocus)) /
         //   (objectdistance * (planeinfocus - focallength)))
         AtRGB weight = AI_RGB_WHITE;
@@ -219,6 +211,8 @@ camera_create_ray
         // //     // output.weight.b /= sum;
         // }
         
+        output.origin = lens;
+        output.dir = dir_from_lens;
         output.weight = weight;
 
         // this will fuck up all kinds of optimisations, calculate proper derivs!
@@ -229,6 +223,8 @@ camera_create_ray
 
         success = true;
     }
+
+    if (!success) output.weight = AI_RGB_BLACK;
 }
 
 

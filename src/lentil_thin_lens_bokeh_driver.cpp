@@ -1,7 +1,6 @@
 // chromatic aberrations, split up in Longitudinal/lateral
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
 // samples outside of frame are wasted, i can probably abuse the bounding box to guide these samples
-// blue noise redistribution
 // do i need to account for possible REALLY large COCs? E.g for highlights closer than focal length?
 
 #include <ai.h>
@@ -27,7 +26,6 @@ struct ThinLensBokehDriver {
   int samples;
   int aa_samples;
   int min_aa_samples;
-  int bucket_size;
   bool enabled;
   float filter_width;
   AtMatrix world_to_camera_matrix;
@@ -78,9 +76,6 @@ node_update
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 
-  bokeh->bucket_size = AiNodeGetInt(AiUniverseGetOptions(), "bucket_size");
-
-
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
   if (!AiNodeIs(node_camera, AtString("lentil_thinlens"))) {
@@ -113,6 +108,8 @@ node_update
   }
 
   if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
+
+  if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting bidirectional sampling.");
   
 }
  
@@ -243,8 +240,9 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-          unsigned int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
+          int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
+          samples = std::min(samples, 10);
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
