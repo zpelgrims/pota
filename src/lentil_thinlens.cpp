@@ -159,11 +159,8 @@ camera_create_ray
 
         unit_disk(0) *= tl->squeeze;
 
-        // tmp copy
-        AtVector2 lens(unit_disk(0), unit_disk(1));
 
-        // scale points in [-1, 1] domain to actual aperture radius
-        lens *= tl->aperture_radius;
+        AtVector2 lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius);
 
         // new origin is these points on the lens
         output.origin.x = lens.x;

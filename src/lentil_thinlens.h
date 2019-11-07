@@ -139,7 +139,8 @@ inline void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens, floa
 // creates a secondary, virtual aperture resembling the exit pupil on a real lens
 inline bool empericalOpticalVignetting(AtVector origin, AtVector direction, float apertureRadius, float opticalVignettingRadius, float opticalVignettingDistance){
     // because the first intersection point of the aperture is already known, I can just linearly scale it by the distance to the second aperture
-    AtVector opticalVignetPoint = (direction * opticalVignettingDistance) - origin;
+    float intersection = std::abs(opticalVignettingDistance / direction.z);
+    AtVector opticalVignetPoint = (direction * intersection) - origin;
     float pointHypotenuse = std::sqrt((opticalVignetPoint.x * opticalVignetPoint.x) + (opticalVignetPoint.y * opticalVignetPoint.y));
     float virtualApertureTrueRadius = apertureRadius * opticalVignettingRadius;
 
@@ -147,7 +148,8 @@ inline bool empericalOpticalVignetting(AtVector origin, AtVector direction, floa
 }
 
 inline bool empericalOpticalVignettingSquare(AtVector origin, AtVector direction, float apertureRadius, float opticalVignettingRadius, float opticalVignettingDistance, float squarebias){
-    AtVector opticalVignetPoint = (direction * opticalVignettingDistance) - origin;
+    float intersection = std::abs(opticalVignettingDistance / direction.z);
+    AtVector opticalVignetPoint = (direction * intersection) - origin;
 
     float power = 1.0 + squarebias;
     float radius = apertureRadius * opticalVignettingRadius;
