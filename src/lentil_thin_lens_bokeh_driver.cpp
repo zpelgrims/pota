@@ -173,9 +173,8 @@ driver_process_bucket
 
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->minimum_rgb) {
-          float focusdist_tmp = tl->focus_distance - 1.0;
           const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
-          const float image_dist_focusdist = (tl->focal_length * focusdist_tmp) / (tl->focal_length + focusdist_tmp);
+          const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length + tl->focus_distance);
           
           // additional luminance with soft transition
           float fitted_additional_luminance = 0.0;

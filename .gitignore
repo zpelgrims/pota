@@ -10,10 +10,6 @@
 
 /bin/*
 /tests/*
-
-!releases/*.dll
-!releases/*.dylib
-!releases/*.ae
-!releases/*.mtd
+!/tests/driver_dof
 
 !bokeh_imgs/*.png
