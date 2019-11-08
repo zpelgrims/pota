@@ -853,10 +853,13 @@ void trace_backwards_for_fstop(Camera *camera, const double fstop_target, double
     if (fstop < fstop_target) {
       calculated_fstop = best_valid_fstop;
       calculated_aperture_radius = best_valid_aperture_radius;
-      break;
+      return;
     } else {
       best_valid_fstop = fstop;
       best_valid_aperture_radius = parallel_ray_height;
     }
   }
+
+  calculated_fstop = best_valid_fstop;
+  calculated_aperture_radius = best_valid_aperture_radius;
 }
