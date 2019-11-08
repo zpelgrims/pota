@@ -51,7 +51,6 @@ node_parameters {}
 node_initialize
 {
   AiNodeSetLocalData(node, new ThinLensBokehDriver());
-
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", NULL};
   AiRawDriverInitialize(node, required_aovs, false);
 }
@@ -156,9 +155,9 @@ driver_process_bucket
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
 
-
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
     for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
+
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
       while (AiAOVSampleIteratorGetNext(sample_iterator)) {
@@ -202,7 +201,7 @@ driver_process_bucket
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bokeh_samples_mult * 0.01; // pixel area as baseline for sample count
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
-
+  
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -214,10 +213,11 @@ driver_process_bucket
             Eigen::Vector2d unit_disk(0, 0);
             float r1 = xor128() / 4294967296.0;
             float r2 = xor128() / 4294967296.0;
+
             if (tl->use_image) tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             else concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
             unit_disk(0) *= tl->squeeze;
-          
+
             
             // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
@@ -231,8 +231,8 @@ driver_process_bucket
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
 
             // takes care of correct screenspace coordinate mapping
-            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
-                                      focusdist_image_point.y / focusdist_image_point.z);
+            AtVector2 sensor_position(focusdist_image_point.x / image_dist_focusdist,
+                                      focusdist_image_point.y / image_dist_focusdist);
             sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
 
 

@@ -28,7 +28,7 @@ enum
 
     p_additional_lumninanceTL,
     p_luminance_remap_transition_widthTL,
-    
+
     p_sensor_distanceTL
 };
 
@@ -137,6 +137,7 @@ camera_create_ray
     bool success = false;
     int tries = 0;
     int maxtries = 15;
+    
     while (!success && tries <= maxtries){
         // create point on sensor (camera space)
         const AtVector p(input.sx * (tl->sensor_width*0.5), 
@@ -148,7 +149,7 @@ camera_create_ray
 
         // either get uniformly distributed points on the unit disk or bokeh image
         Eigen::Vector2d unit_disk(0, 0);
-        if (tries == 0) {
+        if (tries == 0) { // make use of blue noise sampler in arnold
             if (tl->use_image) {
                 tl->image.bokehSample(input.lensx, input.lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
