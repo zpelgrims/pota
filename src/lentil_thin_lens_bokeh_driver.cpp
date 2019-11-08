@@ -167,7 +167,7 @@ driver_process_bucket
 
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
-        const AtVector camera_space_sample_position = -AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+        const AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
         
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
@@ -182,8 +182,8 @@ driver_process_bucket
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
         
 
-          const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
-          const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length + tl->focus_distance);
+          const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position.z) / (-tl->focal_length + camera_space_sample_position.z);
+          const float image_dist_focusdist = (-tl->focal_length * -tl->focus_distance) / (-tl->focal_length + -tl->focus_distance);
 
 
           // additional luminance with soft transition
@@ -202,6 +202,7 @@ driver_process_bucket
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bokeh_samples_mult * 0.01; // pixel area as baseline for sample count
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
+
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
