@@ -66,13 +66,13 @@ inline uint32_t xor128(void){
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
 }
 
-inline float linearInterpolate(float perc, float a, float b){
+inline float linear_interpolate(float perc, float a, float b){
     return a + perc * (b - a);
 }
 
 
 // sin approximation, not completely accurate but faster than std::sin
-inline float fastSin(float x){
+inline float fast_sin(float x){
     x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
     const float B = 4.0f / AI_PI;
     const float C = -4.0f / (AI_PI*AI_PI);
@@ -82,7 +82,7 @@ inline float fastSin(float x){
 }
 
 
-inline float fastCos(float x){
+inline float fast_cos(float x){
     // conversion from sin to cos
     x += AI_PI * 0.5;
 
@@ -124,14 +124,14 @@ inline void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens, floa
 
     bool fast_trigo = true;
 
-    const float cos_phi = fast_trigo ? fastCos(phi) : std::cos(phi);
-    const float sin_phi = fast_trigo ? fastSin(phi) : std::sin(phi);
+    const float cos_phi = fast_trigo ? fast_cos(phi) : std::cos(phi);
+    const float sin_phi = fast_trigo ? fast_sin(phi) : std::sin(phi);
     lens(0) = r * cos_phi;
     lens(1) = r * sin_phi;
 
     if (squarelerp > 0.0){
-        lens(0) = linearInterpolate(squarelerp, lens(0), a);
-        lens(1) = linearInterpolate(squarelerp, lens(1), b);
+        lens(0) = linear_interpolate(squarelerp, lens(0), a);
+        lens(1) = linear_interpolate(squarelerp, lens(1), b);
     }
 }
 

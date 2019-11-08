@@ -86,9 +86,10 @@ lentil_thinlens
  0.759009302 0.0262688324 0.65054965 0
  10.6906643 1.369997144 9.16300678 1
  focus_distanceTL 18.0
+ fstopTL 1.0
  minimum_rgbTL 1.0
  bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.exr"
- bokeh_samples_multTL 2
+ bokeh_samples_multTL 20
  declare maya_full_name constant STRING
  maya_full_name "|persp|perspShape"
  #optical_vignetting_distanceTL 5.0

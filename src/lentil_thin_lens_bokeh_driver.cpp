@@ -167,7 +167,7 @@ driver_process_bucket
 
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
-        const AtVector camera_space_sample_position = - AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+        const AtVector camera_space_sample_position = -AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
         
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
@@ -184,7 +184,8 @@ driver_process_bucket
 
           const float image_dist_samplepos = (tl->focal_length * camera_space_sample_position.z) / (tl->focal_length + camera_space_sample_position.z);
           const float image_dist_focusdist = (tl->focal_length * tl->focus_distance) / (tl->focal_length + tl->focus_distance);
-          
+
+
           // additional luminance with soft transition
           float fitted_additional_luminance = 0.0;
           if (tl->additional_luminance > 0.0){
@@ -196,53 +197,11 @@ driver_process_bucket
             } 
           }
 
-        
-          
 
-        // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-        // there's code duplication going on here.. handle that better
-          AtVector2 bbox_min (0, 0);
-          AtVector2 bbox_max (0, 0);
-          for(int count=0; count<2; count++) {
-            Eigen::Vector2d unit_disk(-0.99, -0.99);
-            if (count == 1) unit_disk = {0.99, 0.99};
-
-            // ray through center of lens
-            AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
-            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
-            AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
-
-            // depth of field
-            AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
-            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-            float focusdist_image_intersection = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
-
-            // takes care of correct coordinate mapping
-            AtVector2 sensor_position(- focusdist_image_point.x / focusdist_image_point.z,
-                                      - focusdist_image_point.y / focusdist_image_point.z);
-            sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
-            
-
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
-
-            // expand bbox
-            if (count == 0) {
-              bbox_min = {pixel_x, pixel_y};
-              bbox_max = {pixel_x, pixel_y};
-            } else {
-              bbox_min = {std::min(bbox_min.x, pixel_x), std::min(bbox_min.y, pixel_y)};
-              bbox_max = {std::max(bbox_max.x, pixel_x), std::max(bbox_max.y, pixel_y)};
-            }
-          }
-
-          double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-          int samples = std::floor(bbox_area * tl->bokeh_samples_mult);
-          samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
-          if (samples < 10) samples = 10; // min clamp sample count
+          const float circle_of_confusion = std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos);
+          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bokeh_samples_mult * 0.01; // pixel area as baseline for sample count
+          int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
+          samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -394,56 +353,56 @@ driver_process_bucket
           }
         }
 
-        else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-          int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-          float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
+        // else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+        //   int pixelnumber = static_cast<int>(bokeh->xres * py + px);
+        //   const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
+        //   float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
 
-          for (int i=0; i<bokeh->aov_list_name.size(); i++){
-            switch(bokeh->aov_list_type[i]){
-              case AI_TYPE_RGBA: {
-                AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
-                bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
-                ++bokeh->sample_per_pixel_counter[pixelnumber];
+        //   for (int i=0; i<bokeh->aov_list_name.size(); i++){
+        //     switch(bokeh->aov_list_type[i]){
+        //       case AI_TYPE_RGBA: {
+        //         AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+        //         bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+        //         bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+        //         ++bokeh->sample_per_pixel_counter[pixelnumber];
 
-                break;
-              }
+        //         break;
+        //       }
 
-              case AI_TYPE_RGB: {
-                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
-                  bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
-                  ++bokeh->sample_per_pixel_counter[pixelnumber];
+        //       case AI_TYPE_RGB: {
+        //           AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+        //           AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+        //           bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+        //           bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+        //           ++bokeh->sample_per_pixel_counter[pixelnumber];
                   
-                  break;
-                }
+        //           break;
+        //         }
 
-              case AI_TYPE_VECTOR: {
-                if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                  AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
-                  AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
-                }
+        //       case AI_TYPE_VECTOR: {
+        //         if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+        //           AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
+        //           AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+        //           bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+        //           bokeh->zbuffer[pixelnumber] = std::abs(depth);
+        //         }
 
-                break;
-              }
+        //         break;
+        //       }
 
-              case AI_TYPE_FLOAT: {
-                if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                  float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
-                  AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
-                }
+        //       case AI_TYPE_FLOAT: {
+        //         if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+        //           float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
+        //           AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+        //           bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+        //           bokeh->zbuffer[pixelnumber] = std::abs(depth);
+        //         }
 
-                break;
-              }
-            }
-          }
-        }
+        //         break;
+        //       }
+        //     }
+        //   }
+        // }
       }
     }
   }
