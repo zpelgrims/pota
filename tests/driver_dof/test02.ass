@@ -90,7 +90,7 @@ lentil_thinlens
  minimum_rgbTL 1.0
  bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.exr"
  bokeh_samples_multTL 20
- use_imageTL true
+ use_imageTL false
  bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
  declare maya_full_name constant STRING
  maya_full_name "|persp|perspShape"
