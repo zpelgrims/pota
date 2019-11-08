@@ -231,9 +231,9 @@ driver_process_bucket
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
 
             // takes care of correct screenspace coordinate mapping
-            AtVector2 sensor_position(- focusdist_image_point.x / focusdist_image_point.z,
-                                      - focusdist_image_point.y / focusdist_image_point.z);
-            sensor_position /= (tl->sensor_width*0.5)/tl->focal_length;
+            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                      focusdist_image_point.y / focusdist_image_point.z);
+            sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
 
 
             // optical vignetting

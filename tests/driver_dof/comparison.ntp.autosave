@@ -349,7 +349,7 @@
 				<count>0</count>
 				<item_version>0</item_version>
 			</Inputs_map>
-			<KnobsAge>171</KnobsAge>
+			<KnobsAge>177</KnobsAge>
 			<MasterNode></MasterNode>
 			<HasRotoContext>0</HasRotoContext>
 			<HasTrackerContext>0</HasTrackerContext>
@@ -1684,7 +1684,7 @@
 		</item>
 		<item>
 			<Name>Read1</Name>
-			<X_position>1.49450000000000000e+03</X_position>
+			<X_position>1.49550000000000000e+03</X_position>
 			<Y_position>2.97500000000000000e+02</Y_position>
 			<Preview_enabled>1</Preview_enabled>
 			<r>6.999923587e-01</r>
@@ -1828,9 +1828,9 @@
 		<item class_id="19" tracking_level="0" version="0">
 			<first>Viewer1</first>
 			<second class_id="20" tracking_level="0" version="14">
-				<zoomLeft>-4.39852209470986963e+02</zoomLeft>
-				<zoomBottom>1.10328694351227568e+02</zoomBottom>
-				<zoomFactor>9.09133447739323142e-01</zoomFactor>
+				<zoomLeft>-6.41648883666274742e+02</zoomLeft>
+				<zoomBottom>-2.16000000000000014e+01</zoomBottom>
+				<zoomFactor>7.57656695156695315e-01</zoomFactor>
 				<UserRoIEnabled>0</UserRoIEnabled>
 				<UserRoI class_id="21" tracking_level="0" version="0">
 					<Left>4.80000000000000000e+02</Left>
@@ -1848,7 +1848,7 @@
 				<Channels>RGB</Channels>
 				<RenderScaleActivated>0</RenderScaleActivated>
 				<MipMapLevel>0</MipMapLevel>
-				<ZoomOrPanSinceFit>1</ZoomOrPanSinceFit>
+				<ZoomOrPanSinceFit>0</ZoomOrPanSinceFit>
 				<CompositingOP>1</CompositingOP>
 				<LeftBound>1</LeftBound>
 				<RightBound>250</RightBound>
@@ -1863,7 +1863,7 @@
 				<CheckerboardEnabled>0</CheckerboardEnabled>
 				<Fps>2.40000000000000000e+01</Fps>
 				<FpsLocked>1</FpsLocked>
-				<aInput>0</aInput>
+				<aInput>1</aInput>
 				<bInput>0</bInput>
 				<fullFrame>0</fullFrame>
 			</second>
