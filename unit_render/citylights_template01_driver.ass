@@ -12,8 +12,8 @@ options
  AA_samples 3
  outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_bokeh_driver.RGBA"
-  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_bokeh_driver.RGBA"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
+  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.Z"
@@ -22,7 +22,7 @@ options
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
- camera "rendercamLentilShape"
+ camera "rendercamLentilThinLensShape"
  sss_use_autobump on
  frame 1
  GI_transmission_depth 0
@@ -77,9 +77,9 @@ driver_exr
 
 
 
-lentil_bokeh_driver
+lentil_thin_lens_bokeh_driver
 {
- name aiAOVDriver1@lentil_bokeh_driver.RGBA
+ name aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA
 }
 
 driver_png
@@ -119,7 +119,7 @@ lentil
  17.601759 1.98807669 -19.9616642 1
  focus_distance 26.3
  vignetting_retries 15
- minimum_rgb 0.2
+ minimum_rgb 0.5
  fstop 1.4
  #empirical_ca_dist 60
  bokeh_exr_path "/home/cactus/lentil/pota/unit_render/test_driver.exr"
@@ -148,7 +148,7 @@ lentil_thinlens
  bokeh_exr_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
  use_imageTL false
  bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
- bokeh_samples_multTL 100
+ bokeh_samples_multTL 
  #additional_luminanceTL 20.0
  #luminance_remap_transition_widthTL 1.0
  declare maya_full_name constant STRING

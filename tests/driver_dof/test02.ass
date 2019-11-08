@@ -12,13 +12,13 @@ options
 {
  AA_samples 8
  outputs 4 1 STRING
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_thin_lens_bokeh_driver"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.Z"
  xres 1920
  yres 1080
- camera "rendercamLentilShape"
+ camera "perspShape"
  frame 1
  GI_diffuse_depth 1
  GI_specular_depth 1
@@ -64,10 +64,9 @@ gaussian_filter
  name defaultArnoldFilter@gaussian_filter
 }
 
-
-lentil_bokeh_driver
+lentil_thin_lens_bokeh_driver
 {
- name aiAOVDriver2@lentil_bokeh_driver
+ name aiAOVDriver2@lentil_thin_lens_bokeh_driver
 }
 
 driver_exr
@@ -75,25 +74,6 @@ driver_exr
  name defaultArnoldDriver@driver_exr.RGBA
  filename "/home/cactus/lentil/pota/tests/driver_dof/test01_1.exr"
  color_space ""
-}
-
-
-lentil
-{
- name rendercamLentilShape
- matrix
- 0.65077424 -1.73472348e-18 -0.759271324 0
- -0.0199451707 0.999654889 -0.0170950796 0
- 0.759009302 0.0262688324 0.65054965 0
- 10.6906643 1.369997144 9.16300678 1
- focus_distance 18
- vignetting_retries 15
- minimum_rgb 1.0
- fstop 1.0
- bokeh_samples_mult 20
- bokeh_exr_path "/home/cactus/lentil/pota/tests/driver_dof/test02_po.exr"
- declare maya_full_name constant STRING
- maya_full_name "|rendercam|rendercamLentilShape"
 }
 
 
