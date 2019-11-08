@@ -799,14 +799,14 @@ inline bool trace_backwards(Eigen::Vector3d target,
   // need to account for the ray_success==false case
   if (!ray_succes) return false;
 
-   // shift sensor
-   sensor(0) += sensor(2) * -sensor_shift;
-   sensor(1) += sensor(3) * -sensor_shift;
+  // shift sensor
+  sensor(0) += sensor(2) * -sensor_shift;
+  sensor(1) += sensor(3) * -sensor_shift;
 
-   sensor_position(0) = sensor(0);
-   sensor_position(1) = sensor(1);
+  sensor_position(0) = sensor(0);
+  sensor_position(1) = sensor(1);
 
-   return true;
+  return true;
 }
 
 

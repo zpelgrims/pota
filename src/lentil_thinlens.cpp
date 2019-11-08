@@ -14,13 +14,21 @@ enum
     p_emperical_ca_distTL,
     p_optical_vignetting_distanceTL,
     p_optical_vignetting_radiusTL,
+
     p_biasTL,
     p_invertTL,
+
     p_squareTL,
     p_squeezeTL,
+
     p_use_imageTL,
     p_bokeh_input_pathTL,
+
     p_bokeh_samples_multTL,
+
+    p_additional_lumninanceTL,
+    p_luminance_remap_transition_widthTL,
+    
     p_sensor_distanceTL
 };
 

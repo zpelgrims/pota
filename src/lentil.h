@@ -125,6 +125,10 @@ struct Camera
     AtString bokeh_input_path;
 
     float empirical_ca_dist;
+    float additional_luminance;
+    float luminance_remap_transition_width;
+
+    int bokeh_samples_mult;
 };
 
 extern struct Camera camera;
