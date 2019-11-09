@@ -239,6 +239,7 @@ driver_process_bucket
             // optical vignetting
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
             if (tl->optical_vignetting_distance > 0.0){
+              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
               if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
                   --count;
                   continue;

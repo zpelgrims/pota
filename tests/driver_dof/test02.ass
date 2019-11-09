@@ -86,10 +86,11 @@ lentil_thinlens
  0.759009302 0.0262688324 0.65054965 0
  10.6906643 1.369997144 9.16300678 1
  focus_distanceTL 18.0
- fstopTL 1.0
+ fstopTL 0.75
  minimum_rgbTL 1.0
  bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.exr"
- bokeh_samples_multTL 300
+ bokeh_samples_multTL 50
+ optical_vignetting_distanceTL 7.0
  use_imageTL false
  bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
  declare maya_full_name constant STRING
@@ -153,7 +154,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -184,7 +185,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -216,7 +217,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -249,7 +250,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -281,7 +282,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -312,7 +313,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -344,7 +345,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -377,7 +378,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
@@ -410,7 +411,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.02
+ radius 0.2
  declare maya_full_name constant STRING
  maya_full_name "|bglights_grp|pointLight63|pointLightShape63"
 }
