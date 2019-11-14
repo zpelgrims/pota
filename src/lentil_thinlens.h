@@ -162,3 +162,9 @@ inline bool empericalOpticalVignettingSquare(AtVector origin, AtVector direction
 inline float lerp_squircle_mapping(float amount) {
     return 1.0 + std::log(1.0+amount)*std::exp(amount*3.0);
 }
+
+std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
+    std::size_t pos = s.find(toReplace);
+    if (pos == std::string::npos) return s;
+    return s.replace(pos, toReplace.length(), replaceWith);
+}

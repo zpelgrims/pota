@@ -23,6 +23,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
 struct ThinLensBokehDriver {
   int xres;
   int yres;
+  int framenumber;
   int samples;
   int aa_samples;
   int min_aa_samples;
@@ -105,6 +106,8 @@ node_update
     bokeh->enabled = false;
     return;
   }
+
+  bokeh->framenumber = AiNodeGetInt(AiUniverseGetOptions(), "frame");
 
   if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
 
@@ -446,13 +449,16 @@ driver_close
       
     }
 
-
-    // need to check if it ends with .exr or not
+    // replace $AOV and $FRAME
     std::string path = tl->bokeh_exr_path.c_str();
-    std::string substr = path.substr(0, path.size() - 4);
-    std::string bokeh_aov_name = substr + "." + bokeh->aov_list_name[i].c_str() + ".exr";
-    SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, bokeh_aov_name.c_str());
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Bokeh AOV written to %s", bokeh_aov_name.c_str());
+    std::string path_replaced_aov = replace_first_occurence(path, "$AOV", bokeh->aov_list_name[i].c_str());
+    
+    std::string frame_str = std::to_string(bokeh->framenumber);
+    std::string frame_padded = std::string(4 - frame_str.length(), '0') + frame_str;
+    std::string path_replaced_framenumber = replace_first_occurence(path, "$FRAME", frame_padded);
+
+    SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, path_replaced_framenumber.c_str());
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Bokeh AOV written to %s", path_replaced_framenumber.c_str());
   }
 }
  
