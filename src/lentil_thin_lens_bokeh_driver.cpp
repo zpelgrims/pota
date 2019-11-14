@@ -107,7 +107,7 @@ node_update
     return;
   }
 
-  bokeh->framenumber = AiNodeGetInt(AiUniverseGetOptions(), "frame");
+  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
 
