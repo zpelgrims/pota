@@ -415,7 +415,7 @@ driver_close
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
 
-    for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->y res; pixelnumber++){
+    for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
       
       // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
       if (bokeh->aov_list_type[i] == AI_TYPE_RGBA || bokeh->aov_list_type[i] == AI_TYPE_RGB){
