@@ -1,10 +1,6 @@
-// initially try to only do it for rgba, support multiple aovs at later point
 // figure out NaNs, probably related to image edge darkening
   // losing energy at the image edges, is this due to vignetting retries?
-// doesn't seem to like AA_samples at 1 .. takes long?
-// add image based bokeh & chromatic aberrations to backtracing
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
-// filter is losing 40% of the energy, look into how these actually work
 
 // when debugging newtonian iterations, if the squared error increases, the error code is 1.. might be ok to take the last iteration in that case?
 // what could the circle i'm getting possibly be?
@@ -178,7 +174,7 @@ driver_process_bucket
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         const AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
-        if (std::abs(camera_space_sample_position_tmp.z) < (po->lens_length*0.1)) redistribute = false;
+        if (std::abs(camera_space_sample_position_tmp.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
@@ -209,50 +205,53 @@ driver_process_bucket
           }
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-          // AtVector2 bbox_min (0, 0);
-          // AtVector2 bbox_max (0, 0);
-          // for(int count=0; count<64; count++) {
-          //   if(!trace_backwards(-camera_space_sample_position * 10.0, camera->aperture_radius, camera->lambda, sensor_position, camera->sensor_shift, camera)) {
-          //     --count;
-          //     continue;
-          //   }
+          AtVector2 bbox_min (0, 0);
+          AtVector2 bbox_max (0, 0);
+          int proberays_total_samples = 0;
+          int proberays_base_rays = 64;
+          int proberays_max_rays = proberays_base_rays * 5;
+          for(int count=0; count<proberays_base_rays; count++) {
+            ++proberays_total_samples;
+            if (proberays_total_samples >= proberays_max_rays) continue;
 
-          //   // convert sensor position to pixel position
-          //   Eigen::Vector2d s(sensor_position(0) / (camera->sensor_width * 0.5), sensor_position(1) / (camera->sensor_width * 0.5) * frame_aspect_ratio);
+            if(!trace_backwards(-camera_space_sample_position * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
+              --count;
+              continue;
+            }
 
-          //   const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-          //   const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+            // convert sensor position to pixel position
+            Eigen::Vector2d s(sensor_position(0) / (po->sensor_width * 0.5), sensor_position(1) / (po->sensor_width * 0.5) * frame_aspect_ratio);
 
-          //   //figure out why sometimes pixel is nan, can't just skip it
-          //   if ((pixel_x > xres) || 
-          //       (pixel_x < 0)    || 
-          //       (pixel_y > yres) || 
-          //       (pixel_y < 0)    || 
-          //       (pixel_x != pixel_x) ||  //nan checking
-          //       (pixel_y != pixel_y)) // nan checking
-          //   {
-          //     --count;
-          //     continue;
-          //   }
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-          //   // expand bbox
-          //   if (count == 0) {
-          //     bbox_min[0] = pixel_x;
-          //     bbox_min[1] = pixel_y;
-          //     bbox_max[0] = pixel_x;
-          //     bbox_max[1] = pixel_y;
-          //   } else {
-          //     if (pixel_x < bbox_min[0]) bbox_min[0] = pixel_x;
-          //     if (pixel_y < bbox_min[1]) bbox_min[1] = pixel_y;
-          //     if (pixel_x > bbox_max[0]) bbox_max[0] = pixel_x;
-          //     if (pixel_y > bbox_max[1]) bbox_max[1] = pixel_y;
-          //   }
-          // }
+            //figure out why sometimes pixel is nan, can't just skip it
+            if ((pixel_x > xres) || 
+                (pixel_x < 0)    || 
+                (pixel_y > yres) || 
+                (pixel_y < 0)    || 
+                (pixel_x != pixel_x) ||  //nan checking
+                (pixel_y != pixel_y)) // nan checking
+            {
+              --count;
+              continue;
+            }
 
-          // double bbox_area = (bbox_max[0] - bbox_min[0]) * (bbox_max[1] - bbox_min[1]);
-          // int samples = std::floor(bbox_area / 10.0); // what if area is lower than 10?
-          int samples = 1000;
-          samples = std::ceil(static_cast<float>(samples) / static_cast<float>(bokeh->aa_samples*bokeh->aa_samples));
+            // expand bbox
+            if (count == 0) {
+              bbox_min = {pixel_x, pixel_y};
+              bbox_max = {pixel_x, pixel_y};
+            } else {
+              bbox_min = {std::min(bbox_min.x, pixel_x), std::min(bbox_min.y, pixel_y)};
+              bbox_max = {std::max(bbox_max.x, pixel_x), std::max(bbox_max.y, pixel_y)};
+            }
+          }
+
+          double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
+          int samples = std::floor(bbox_area * po->bokeh_samples_mult * 0.01);
+          samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
+          samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
+          // int samples = 1000;
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -422,7 +421,7 @@ driver_close
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
 
-    for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->yres; pixelnumber++){
+    for(unsigned pixelnumber = 0; pixelnumber < bokeh->xres * bokeh->y res; pixelnumber++){
       
       // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
       if (bokeh->aov_list_type[i] == AI_TYPE_RGBA || bokeh->aov_list_type[i] == AI_TYPE_RGB){
