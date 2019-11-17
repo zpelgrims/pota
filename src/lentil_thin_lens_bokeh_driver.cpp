@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include "lentil_thinlens.h"
+#include "global.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"

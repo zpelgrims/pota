@@ -104,7 +104,6 @@ struct Camera
 	double lambda;
     int aperture_blades;
 	bool dof;
-    int backward_samples;
     double minimum_rgb;
     AtString bokeh_exr_path;
 

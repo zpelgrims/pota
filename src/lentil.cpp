@@ -18,7 +18,6 @@ enum {
   p_extra_sensor_shift,
   p_vignetting_retries,
   p_aperture_blades,
-  p_backward_samples,
   p_minimum_rgb,
   p_bokeh_exr_path,
   p_proper_ray_derivatives,
@@ -46,7 +45,7 @@ static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 node_parameters {
   AiParameterEnum("units", cm, Units);
-  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames); // what to do here..? Can i not specify one?
+  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterBool("dof", true);
@@ -55,7 +54,6 @@ node_parameters {
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 15);
   AiParameterInt("aperture_blades", 0);
-  AiParameterInt("backward_samples", 3);
   AiParameterFlt("minimum_rgb", 2.0);
   AiParameterStr("bokeh_exr_path", "");
   AiParameterBool("proper_ray_derivatives", true);
@@ -89,7 +87,6 @@ node_update {
   camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
   camera->dof = AiNodeGetBool(node, "dof");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  camera->backward_samples = AiNodeGetInt(node, "backward_samples");
   camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
   camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");

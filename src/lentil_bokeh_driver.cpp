@@ -13,6 +13,7 @@
 #include <vector>
 #include "lentil.h"
 #include "lens.h"
+#include "global.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
@@ -168,21 +169,26 @@ driver_process_bucket
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
 			while (AiAOVSampleIteratorGetNext(sample_iterator)) {
+        bool redistribute = false;
+
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
+        if (sample_luminance > po->minimum_rgb) redistribute = true;
 
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         const AtVector camera_space_sample_position_tmp = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+        if (std::abs(camera_space_sample_position_tmp.z) < (po->lens_length*0.1)) redistribute = false;
 
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
 
         
+        
 
       // ENERGY REDISTRIBUTION
-        if (sample_luminance > po->minimum_rgb) {
+        if (redistribute) {
 
           if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
@@ -345,57 +351,57 @@ driver_process_bucket
           }
         }
 
-      // // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-      //   else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-      //     int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-      //     const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-      //     float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
+      // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+        else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+          int pixelnumber = static_cast<int>(bokeh->xres * py + px);
+          const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
+          float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
 
-      //     for (int i=0; i<bokeh->aov_list_name.size(); i++){
-      //       switch(bokeh->aov_list_type[i]){
-      //         case AI_TYPE_RGBA: {
-      //           AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-      //           bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
-      //           bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
-      //           ++bokeh->sample_per_pixel_counter[pixelnumber];
+          for (int i=0; i<bokeh->aov_list_name.size(); i++){
+            switch(bokeh->aov_list_type[i]){
+              case AI_TYPE_RGBA: {
+                AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                ++bokeh->sample_per_pixel_counter[pixelnumber];
 
-      //           break;
-      //         }
+                break;
+              }
 
-      //         case AI_TYPE_RGB: {
-      //             AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-      //             AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-      //             bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
-      //             bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
-      //             ++bokeh->sample_per_pixel_counter[pixelnumber];
+              case AI_TYPE_RGB: {
+                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
+                  ++bokeh->sample_per_pixel_counter[pixelnumber];
                   
-      //             break;
-      //           }
+                  break;
+                }
 
-      //         case AI_TYPE_VECTOR: {
-      //           if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-      //             AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
-      //             AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-      //             bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-      //             bokeh->zbuffer[pixelnumber] = std::abs(depth);
-      //           }
+              case AI_TYPE_VECTOR: {
+                if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+                  AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
+                  AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
+                }
 
-      //           break;
-      //         }
+                break;
+              }
 
-      //         case AI_TYPE_FLOAT: {
-      //           if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-      //             float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
-      //             AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
-      //             bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-      //             bokeh->zbuffer[pixelnumber] = std::abs(depth);
-      //           }
+              case AI_TYPE_FLOAT: {
+                if ((std::abs(depth) < bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+                  float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
+                  AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
+                }
 
-      //           break;
-      //         }
-      //       }
-      //     }
-      //   }
+                break;
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -439,7 +445,7 @@ driver_close
 
 
     // replace $AOV and $FRAME
-    std::string path = tl->bokeh_exr_path.c_str();
+    std::string path = po->bokeh_exr_path.c_str();
     std::string path_replaced_aov = replace_first_occurence(path, "$AOV", bokeh->aov_list_name[i].c_str());
     
     std::string frame_str = std::to_string(bokeh->framenumber);
