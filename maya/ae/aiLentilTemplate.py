@@ -50,34 +50,35 @@ class aiLentilTemplate(templates.AttributeTemplate):
     def setup(self):
 
         self.beginLayout("Polynomial Optics", collapse=False)
-        self.addControl("aiLensModel", label="Lens Model")
-        self.addControl("aiSensorWidth", label="Sensor Width (mm)")
-        self.addControl("aiWavelength", label="Wavelength (nm)")
-        self.addControl("aiDof", label="Enable depth of field")
-        self.addControl("aiFstop", label="F-stop", dynamic=True)
-        self.addControl("aiFocusDistance", label="Focus distance (unit)")
-        self.addControl("aiExtraSensorShift", label="Extra Sensor shift (mm)")
-        self.addControl("aiVignettingRetries", label="Vignetting retries")
-        self.addControl("aiApertureBlades", label="Aperture blades")
-        self.addControl("aiEmpiricalCaDist", label="Chromatic Aberration Distance")
+        self.addControl("aiLensModelPO", label="Lens Model")
+        self.addControl("aiSensorWidthPO", label="Sensor Width (mm)")
+        self.addControl("aiWavelengthPO", label="Wavelength (nm)")
+        self.addControl("aiDofPO", label="Enable depth of field")
+        self.addControl("aiFstopPO", label="F-stop", dynamic=True)
+        self.addControl("aiFocusDistancePO", label="Focus distance (unit)")
+        self.addControl("aiExtraSensorShiftPO", label="Extra Sensor shift (mm)")
+        self.addControl("aiApertureBladesPO", label="Aperture blades")
         self.endLayout()
 
         self.beginLayout("Bidirectional")
-        self.addCustom("aiBokehExrPath", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
-        self.addControl("aiBackwardSamples", label="Extra backward samples")
-        self.addControl("aiMinimumRgb", label="Min bidirectional")
+        self.addCustom("aiBokehExrPathPO", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
+        self.addControl("aiBokehSamplesMultPO", label="Sampling multiplier")
+        self.addControl("aiMinimumRgbPO", label="Min bidir luminance")
+        self.addControl("aiAdditionalLuminancePO", label="Additional Luminance")
+        self.addControl("aiLuminanceRemapTransitionWidthPO", label="Add lum trans width")
         self.endLayout()
 
         self.beginLayout("Bokeh Image")
-        self.addControl("aiUseImage", label="Use Bokeh Image")
-        self.addCustom("aiBokehInputPath", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
+        self.addControl("aiUseImagePO", label="Use Bokeh Image")
+        self.addCustom("aiBokehInputPathPO", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
 
         self.endLayout()
         
 
         self.beginLayout("Advanced options")
-        self.addControl("aiUnitModel", label="Units")
-        self.addControl("aiProperRayDerivatives", label="Proper Ray Derivatives")
+        self.addControl("aiUnitsPO", label="Units")
+        self.addControl("aiProperRayDerivativesPO", label="Proper Ray Derivatives")
+        self.addControl("aiVignettingRetriesPO", label="Vignetting retries")
         self.endLayout()
 
 

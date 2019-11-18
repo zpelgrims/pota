@@ -8,27 +8,31 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
 enum {
-  p_units,
-  p_lens_model,
-  p_sensor_width,
-  p_wavelength,
-  p_dof,
-  p_fstop,
-  p_focus_distance,
-  p_extra_sensor_shift,
-  p_vignetting_retries,
-  p_aperture_blades,
-  p_minimum_rgb,
-  p_bokeh_exr_path,
-  p_proper_ray_derivatives,
-  p_use_image,
-  p_bokeh_input_path,
-  
-  p_empirical_ca_dist,
+  p_unitsPO,
+  p_lens_modelPO,
 
-  p_bokeh_samples_mult,
-  p_additional_luminance,
-  p_luminance_remap_transition_width
+  p_sensor_widthPO,
+  p_wavelengthPO,
+  p_dofPO,
+  p_fstopPO,
+  p_focus_distancePO,
+  p_extra_sensor_shiftPO,
+
+  p_aperture_bladesPO,
+  p_use_imagePO,
+  p_bokeh_input_pathPO,
+
+  p_minimum_rgbPO,
+  p_bokeh_exr_pathPO,
+  p_bokeh_samples_multPO,
+  
+  // p_empirical_ca_dist,
+
+  p_additional_luminancePO,
+  p_luminance_remap_transition_widthPO,
+
+  p_vignetting_retriesPO,
+  p_proper_ray_derivativesPO
 };
 
 
@@ -44,28 +48,33 @@ static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 
 node_parameters {
-  AiParameterEnum("units", cm, Units);
-  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
-  AiParameterFlt("sensor_width", 36.0); // 35mm film
-  AiParameterFlt("wavelength", 550.0); // wavelength in nm
-  AiParameterBool("dof", true);
-  AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
-  AiParameterFlt("extra_sensor_shift", 0.0);
-  AiParameterInt("vignetting_retries", 15);
-  AiParameterInt("aperture_blades", 0);
-  AiParameterFlt("minimum_rgb", 2.0);
-  AiParameterStr("bokeh_exr_path", "");
-  AiParameterBool("proper_ray_derivatives", true);
+  AiParameterEnum("unitsPO", cm, Units);
+  AiParameterEnum("lens_modelPO", angenieux__double_gauss__1953__49mm, LensModelNames);
 
-  AiParameterBool("use_image", false);
-  AiParameterStr("bokeh_input_path", "");
-  
-  AiParameterFlt("empirical_ca_dist", 0.0);
+  AiParameterFlt("sensor_widthPO", 36.0); // 35mm film
+  AiParameterFlt("wavelengthPO", 550.0); // wavelength in nm
+  AiParameterBool("dofPO", true);
+  AiParameterFlt("fstopPO", 0.0);
+  AiParameterFlt("focus_distancePO", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("extra_sensor_shiftPO", 0.0);
 
-  AiParameterInt("bokeh_samples_mult", 20);
-  AiParameterFlt("additional_luminance", 0.0);
-  AiParameterFlt("luminance_remap_transition_width", 1.0);
+
+  AiParameterInt("aperture_bladesPO", 0);
+  AiParameterBool("use_imagePO", false);
+  AiParameterStr("bokeh_input_pathPO", "");
+
+
+  AiParameterFlt("minimum_rgbPO", 1.5);
+  AiParameterStr("bokeh_exr_pathPO", "");
+  AiParameterInt("bokeh_samples_multPO", 20);
+
+  // AiParameterFlt("empirical_ca_dist", 0.0);
+
+  AiParameterFlt("additional_luminancePO", 0.0);
+  AiParameterFlt("luminance_remap_transition_widthPO", 1.0);
+
+  AiParameterInt("vignetting_retriesPO", 15);
+  AiParameterBool("proper_ray_derivativesPO", true);
 }
 
 
@@ -79,24 +88,24 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* camera = (Camera*)AiNodeGetLocalData(node);
 
-  camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
-  camera->input_fstop = AiNodeGetFlt(node, "fstop");
-  camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
-  camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
-  camera->unitModel = (UnitModel) AiNodeGetInt(node, "units");
-  camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
-  camera->dof = AiNodeGetBool(node, "dof");
-  camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-  camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
-  camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
-  camera->use_image = AiNodeGetBool(node, "use_image");
-  camera->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_path");
-  camera->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
+  camera->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
+  camera->input_fstop = AiNodeGetFlt(node, "fstopPO");
+  camera->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
+  camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_modelPO");
+  camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
+  camera->aperture_blades = AiNodeGetInt(node, "aperture_bladesPO");
+  camera->dof = AiNodeGetBool(node, "dofPO");
+  camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
+  camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgbPO");
+  camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_pathPO");
+  camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
+  camera->use_image = AiNodeGetBool(node, "use_imagePO");
+  camera->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_pathPO");
+  // camera->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
   
-  camera->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_mult");
-  camera->additional_luminance = AiNodeGetFlt(node, "additional_luminance");
-  camera->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_width");
+  camera->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_multPO");
+  camera->additional_luminance = AiNodeGetFlt(node, "additional_luminancePO");
+  camera->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_widthPO");
 
   // convert to cm
   switch (camera->unitModel){
@@ -139,7 +148,7 @@ node_update {
   AiMsgInfo("[LENTIL] --------------------------------------");
 
 
-  camera->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
+  camera->lambda = AiNodeGetFlt(node, "wavelengthPO") * 0.001;
   AiMsgInfo("[LENTIL] wavelength: %f nm", camera->lambda);
 
 
@@ -173,7 +182,7 @@ node_update {
   // logartihmic focus search
   double best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
   AiMsgInfo("[LENTIL] sensor_shift using logarithmic search: %f mm", best_sensor_shift);
-  camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shift");
+  camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shiftPO");
 
   /*
   // average guesses infinity focus search

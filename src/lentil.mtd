@@ -1,6 +1,6 @@
 [node lentil]
     desc STRING "Polynomial optics camera shader"
-    maya.name               STRING  "camera"
+    maya.name               STRING  "lentil"
     maya.id                 INT     0x00070507
     maya.classification     STRING  "shader/surface"
     maya.type               STRING  "camera"
@@ -13,8 +13,7 @@
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
 
-    [attr unitModel]
-        maya.name           STRING  "aiUnitModel"
+    [attr unitsPO]
         desc                STRING  "Units. Should be set to cm for Maya and meter for Houdini."
         default             STRING  "cm"
 
@@ -22,16 +21,13 @@
         houdini.default     STRING  "m"
 
 
-    [attr lensModel]
-        maya.name           STRING  "aiLensModel"
+    [attr lens_modelPO]
         desc                STRING  "Lens Model"
-        default             STRING  "petzval"
 
         houdini.label       STRING  "Lens Model"
 
 
-    [attr sensor_width]
-        maya.name           STRING  "aiSensorWidth"
+    [attr sensor_widthPO]
         min                 FLOAT   0.1
         max                 FLOAT   100
         default             FLOAT   36
@@ -40,8 +36,7 @@
         houdini.label       STRING  "Sensor Width (mm)"
 
 
-    [attr wavelength]
-        maya.name           STRING  "aiWavelength"
+    [attr wavelengthPO]
         min                 FLOAT   390.0
         max                 FLOAT   700.0
         default             FLOAT   550.0
@@ -50,17 +45,14 @@
         houdini.label       STRING  "Wavelength (nm)"
 
 
-    [attr dof]
-        maya.name           STRING  "aiDof"
+    [attr dofPO]
         default             BOOL    true
         desc                STRING  "Enable Depth of Field"
-        linkable            BOOL    FALSE
 
         houdini.label       STRING  "Enable Depth of Field"
 
 
-    [attr fstop]
-        maya.name           STRING  "aiFstop"
+    [attr fstopPO]
         min                 FLOAT   0.0
         max                 FLOAT   64.0
         default             FLOAT   2.8
@@ -69,19 +61,16 @@
         houdini.label       STRING  "f-stop"
 
 
-    [attr focal_distance]
-        maya.name           STRING  "aiFocalDistance"
+    [attr focus_distancePO]
         min                 FLOAT   0.0
         max                 FLOAT   1000000.0
         default             FLOAT   150.0
-        desc                STRING  "Focus distance in cm"
+        desc                STRING  "Focus distance in (unit)"
 
-        # is this correct, in meter?
-        houdini.label       STRING  "Focus Distance (m)"
+        houdini.label       STRING  "Focus Distance (unit)"
 
 
-    [attr extra_sensor_shift]
-        maya.name           STRING  "aiExtraSensorShift"
+    [attr extra_sensor_shiftPO]
         min                 FLOAT   -10.0
         max                 FLOAT   10.0
         default             FLOAT   0.0
@@ -90,18 +79,8 @@
         houdini.label       STRING  "Additional Sensor shift (mm)"
 
 
-    [attr vignetting_retries]
-        maya.name           STRING  "aiVignettingRetries"
-        min                 INT    1
-        max                 INT    50
-        default             INT    15
-        desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
 
-        houdini.label       STRING  "Vignetting Retries"
-
-
-    [attr aperture_blades]
-        maya.name           STRING  "aiApertureBlades"
+    [attr aperture_bladesPO]
         default             INT     0
         min                 INT     0
         max                 INT     8
@@ -110,8 +89,65 @@
         houdini.label       STRING  "Aperture Blades"
 
 
-    [attr proper_ray_derivatives]
-        maya.name           STRING  "aiProperRayDerivatives"
+    [attr use_imagePO]
+        default             BOOL     false
+        desc                STRING  "Enable image based bokeh"
+
+        houdini.label       STRING  "Use Bokeh Image"
+
+
+    [attr bokeh_input_pathPO]
+        desc                STRING  "Path to image based bokeh"
+
+        houdini.label       STRING  "Image bokeh path"
+
+
+    [attr minimum_rgbPO]
+        min                 FLOAT    0.0
+        max                 INT    10000
+        desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
+
+        houdini.label       STRING  "Min Bidirectional Luminance"
+
+
+    [attr bokeh_exr_pathPO]
+        desc                STRING  "Bidirectional output path. Should include $FRAME and $AOV tokens."
+
+        houdini.label       STRING  "Bokeh Output Path"
+
+    
+    [attr bokeh_samples_multPO]
+        min                 INT    0
+        max                 INT    1000
+        default             INT    20
+        desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
+
+        houdini.label       STRING  "Bokeh Samples Multiplier"
+
+
+    [attr additional_luminancePO]
+        desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
+
+        houdini.label       STRING  "Additional Luminance"
+
+
+    [attr luminance_remap_transition_widthPO]
+        desc                STRING  "Additional luminance transition"
+
+        houdini.label       STRING  "Additional luminance transition"
+
+
+    [attr vignetting_retriesPO]
+        min                 INT    1
+        max                 INT    50
+        default             INT    15
+        desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
+
+        houdini.label       STRING  "Vignetting Retries"
+
+
+
+    [attr proper_ray_derivativesPO]
         default             BOOL  true
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 

@@ -90,9 +90,9 @@ persp_camera
 lentil
 {
  name rendercamLentilShape
- focal_distance 185
- vignetting_retries 20
- minimum_rgb 0.25
+ focal_distancePO 185
+ vignetting_retriesPO 20
+ minimum_rgbPO 0.25
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
 }
