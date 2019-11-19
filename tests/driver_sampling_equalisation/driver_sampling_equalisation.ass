@@ -1,0 +1,172 @@
+### exported: Mon Nov 18 12:22:30 2019
+### from:     Arnold 5.4.0.1 [197d4d5e] darwin clang-5.0.2 oiio-2.1.0 osl-1.11.0 vdb-4.0.0 clm-1.0.3.513 rlm-12.4.2 2019/09/12 15:07:32
+### host app: MtoA 3.3.0.1 919d09a9 (master) Maya 2018
+### user: cactus
+### bounds: 0 0 0 0 0 0
+### render_layer: defaultRenderLayer
+### scene: /Users/zeno/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation.ma
+
+
+
+options
+{
+ AA_samples 10
+ outputs 5 1 STRING
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+  "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
+  "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
+ xres 960
+ yres 540
+ texture_per_file_stats on
+ texture_automip off
+ camera "rendercamPOShape"
+ color_manager "defaultColorMgtGlobals"
+ frame 1
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.RGBA
+ filename "/Users/zeno/Documents/maya/projects/default/images/beauty/driver_sampling_equalisation.exr"
+ color_space ""
+}
+
+lentil_bokeh_driver
+{
+ name aiAOVDriver2@lentil_bokeh_driver
+}
+
+lentil_thin_lens_bokeh_driver
+{
+ name aiAOVDriver3@lentil_thin_lens_bokeh_driver
+}
+
+closest_filter
+{
+ name aiAOVFilter1@closest_filter
+}
+
+closest_filter
+{
+ name aiAOVFilter2@closest_filter
+}
+
+color_manager_syncolor
+{
+ name defaultColorMgtGlobals
+ native_catalog_path "/Applications/Autodesk/maya2018/synColor"
+ custom_catalog_path "/Users/zeno/Library/Preferences/Autodesk/maya/synColor/Shared/"
+ rendering_color_space "scene-linear Rec 709/sRGB"
+}
+
+lentil_thinlens
+{
+ name rendercamTLShape
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 100 1
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ fstopTL 2.5
+ focus_distanceTL 30
+ focal_lengthTL 5
+ bokeh_exr_pathTL "/Users/zeno/lentil/pota/tests/driver_sampling_equalisation/tl.$AOV.$FRAME.exr"
+ declare maya_full_name constant STRING
+ maya_full_name "|rendercam|rendercamShape"
+}
+
+lentil
+{
+ name rendercamPOShape
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 100 1
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ lens_modelPO "cooke__speed_panchro__1920__50mm"
+ fstopPO 2
+ focus_distancePO 30
+ bokeh_exr_pathPO "/Users/zeno/lentil/pota/tests/driver_sampling_equalisation/po.$AOV.$FRAME.exr"
+ declare maya_full_name constant STRING
+ maya_full_name "|rendercam|rendercamShape"
+}
+
+point_light
+{
+ name pointLightShape1
+ exposure 5
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.1
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight1|pointLightShape1"
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.P
+ filename "/Users/zeno/Documents/maya/projects/default/images/P/driver_sampling_equalisation.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.Z
+ filename "/Users/zeno/Documents/maya/projects/default/images/Z/driver_sampling_equalisation.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+

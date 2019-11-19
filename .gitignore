@@ -11,5 +11,6 @@
 /bin/*
 /tests/*
 !/tests/driver_dof
+!/tests/driver_sampling_equalisation
 
 !bokeh_imgs/*.png
