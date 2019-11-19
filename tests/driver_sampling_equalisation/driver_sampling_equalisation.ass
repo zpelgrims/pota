@@ -112,29 +112,6 @@ lentil
  maya_full_name "|rendercam|rendercamShape"
 }
 
-point_light
-{
- name pointLightShape1
- exposure 5
- cast_shadows on
- cast_volumetric_shadows on
- shadow_density 1
- samples 1
- normalize on
- camera 1
- transmission 0
- diffuse 1
- specular 1
- sss 1
- indirect 1
- max_bounces 999
- volume_samples 2
- volume 1
- aov "default"
- radius 0.1
- declare maya_full_name constant STRING
- maya_full_name "|pointLight1|pointLightShape1"
-}
 
 driver_exr
 {
@@ -162,3 +139,27 @@ driver_exr
  append off
 }
 
+
+point_light
+{
+ name pointLightShape1
+ exposure 5
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.1
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight1|pointLightShape1"
+}

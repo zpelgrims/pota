@@ -198,7 +198,10 @@ driver_process_bucket
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bokeh_samples_mult * 0.01; // pixel area as baseline for sample count
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
-  
+
+          float abb_field_curvature = 0.0;
+          float abb_coma = 0.0;
+          float abb_spherical = 0.5;
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -224,12 +227,18 @@ driver_process_bucket
             // depth of field
             AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-            float focusdist_image_intersection = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection;
+            float unit_disk_dist = std::sqrt(unit_disk(0)*unit_disk(0) + unit_disk(1)*unit_disk(1));
+            AtVector dir_from_lens_to_image_sample_coma = {dir_from_lens_to_image_sample.x - (dir_tobase.x*unit_disk_dist*abb_coma*circle_of_confusion),
+                                                           dir_from_lens_to_image_sample.y - (dir_tobase.y*unit_disk_dist*abb_coma*circle_of_confusion),
+                                                           dir_from_lens_to_image_sample.z};
+            float focusdist_image_intersection = linear_interpolate(abb_field_curvature, std::abs(image_dist_focusdist/dir_from_lens_to_image_sample_coma.z), std::abs(image_dist_focusdist));
+            // unit_disk_dist = (unit_disk_dist/2.0)+0.5;
+            // float focusdist_image_intersection_spherical_abb = focusdist_image_intersection+(unit_disk_dist*abb_spherical);
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample_coma*focusdist_image_intersection;
 
             // takes care of correct screenspace coordinate mapping
-            AtVector2 sensor_position(focusdist_image_point.x / image_dist_focusdist,
-                                      focusdist_image_point.y / image_dist_focusdist);
+            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                      focusdist_image_point.y / focusdist_image_point.z);
             sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
 
 
