@@ -66,7 +66,7 @@ node_parameters {
 
   AiParameterFlt("minimum_rgbPO", 1.5);
   AiParameterStr("bokeh_exr_pathPO", "");
-  AiParameterInt("bokeh_samples_multPO", 20);
+  AiParameterInt("bokeh_samples_multPO", 10);
 
   // AiParameterFlt("empirical_ca_dist", 0.0);
 

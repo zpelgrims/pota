@@ -4,7 +4,7 @@
 ### user: cactus
 ### bounds: 0 0 0 0 0 0
 ### render_layer: defaultRenderLayer
-### scene: /Users/zeno/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation.ma
+### scene: /home/cactus/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation.ma
 
 
 
@@ -21,8 +21,7 @@ options
  yres 540
  texture_per_file_stats on
  texture_automip off
- camera "rendercamPOShape"
- color_manager "defaultColorMgtGlobals"
+ camera "rendercamTLShape"
  frame 1
  declare render_layer constant STRING
  render_layer "defaultRenderLayer"
@@ -36,7 +35,7 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/Users/zeno/Documents/maya/projects/default/images/beauty/driver_sampling_equalisation.exr"
+ filename "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation_RGBA.exr"
  color_space ""
 }
 
@@ -60,13 +59,6 @@ closest_filter
  name aiAOVFilter2@closest_filter
 }
 
-color_manager_syncolor
-{
- name defaultColorMgtGlobals
- native_catalog_path "/Applications/Autodesk/maya2018/synColor"
- custom_catalog_path "/Users/zeno/Library/Preferences/Autodesk/maya/synColor/Shared/"
- rendering_color_space "scene-linear Rec 709/sRGB"
-}
 
 lentil_thinlens
 {
@@ -89,7 +81,7 @@ lentil_thinlens
  fstopTL 2.5
  focus_distanceTL 30
  focal_lengthTL 5
- bokeh_exr_pathTL "/Users/zeno/lentil/pota/tests/driver_sampling_equalisation/tl.$AOV.$FRAME.exr"
+ bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/tl.$AOV.$FRAME.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
@@ -115,7 +107,7 @@ lentil
  lens_modelPO "cooke__speed_panchro__1920__50mm"
  fstopPO 2
  focus_distancePO 30
- bokeh_exr_pathPO "/Users/zeno/lentil/pota/tests/driver_sampling_equalisation/po.$AOV.$FRAME.exr"
+ bokeh_exr_pathPO "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/po.$AOV.$FRAME.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
@@ -147,7 +139,7 @@ point_light
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/Users/zeno/Documents/maya/projects/default/images/P/driver_sampling_equalisation.exr"
+ filename "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -160,7 +152,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/Users/zeno/Documents/maya/projects/default/images/Z/driver_sampling_equalisation.exr"
+ filename "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/driver_sampling_equalisation_Z.exr"
  compression "zip"
  half_precision off
  tiled on
