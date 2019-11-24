@@ -41,6 +41,7 @@ struct ThinLensBokehDriver {
 };
 
 
+
 node_parameters {}
  
 node_initialize
@@ -200,8 +201,8 @@ driver_process_bucket
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
 
           float abb_field_curvature = 0.0;
-          float abb_coma = 0.0;
-          float abb_spherical = 0.5;
+          // float abb_astigmatism_tangential = 0.5;
+          float abb_astigmatism_sagittal = 0.0;
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -215,7 +216,7 @@ driver_process_bucket
             float r2 = xor128() / 4294967296.0;
 
             if (tl->use_image) tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            else concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
+            else concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
             unit_disk(0) *= tl->squeeze;
 
             
@@ -227,20 +228,46 @@ driver_process_bucket
             // depth of field
             AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-            float unit_disk_dist = std::sqrt(unit_disk(0)*unit_disk(0) + unit_disk(1)*unit_disk(1));
-            AtVector dir_from_lens_to_image_sample_coma = {dir_from_lens_to_image_sample.x - (dir_tobase.x*unit_disk_dist*abb_coma*circle_of_confusion),
-                                                           dir_from_lens_to_image_sample.y - (dir_tobase.y*unit_disk_dist*abb_coma*circle_of_confusion),
-                                                           dir_from_lens_to_image_sample.z};
-            float focusdist_image_intersection = linear_interpolate(abb_field_curvature, std::abs(image_dist_focusdist/dir_from_lens_to_image_sample_coma.z), std::abs(image_dist_focusdist));
-            // unit_disk_dist = (unit_disk_dist/2.0)+0.5;
-            // float focusdist_image_intersection_spherical_abb = focusdist_image_intersection+(unit_disk_dist*abb_spherical);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample_coma*focusdist_image_intersection;
+            float focusdist_intersection = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z);
+            
 
+            // coma
+            // float unit_disk_dist = std::sqrt(unit_disk(0)*unit_disk(0) + unit_disk(1)*unit_disk(1));
+            // AtVector dir_from_lens_to_image_sample_coma = {dir_from_lens_to_image_sample.x,
+            //                                                dir_from_lens_to_image_sample.y,
+            //                                                dir_from_lens_to_image_sample.z - (dir_from_lens_to_image_sample.z*unit_disk_dist*tl->abb_coma)};
+          
+            // float image_dist_focusdist_coma = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample_coma.z);
+            
+            
+
+            // astimatism
+            // field curvature is supposed to come from average of sagittal and tangential astigmatism... implement tangential
+            // AtVector axis_tangential = AiV3Cross({0, 0, 1}, dir_from_lens_to_image_sample);
+            // AtVector axis_sagittal = AiV3Cross({0, 0, 1}, axis_tangential);
+
+            // AtVector unit_disk_3d(unit_disk(0), unit_disk(1), 0.0);
+            // float dist_to_tangential = AiV3Dot(unit_disk_3d, axis_sagittal); //project onto axis
+            // float dist_to_sagittal = AiV3Dot(unit_disk_3d, axis_tangential); //project onto axis
+            
+            // // float astigmatism_blend_tangential = std::abs(dist_to_tangential) * (1.0 - dir_tobase.z);
+            // float astigmatism_blend_sagittal = std::abs(dist_to_sagittal) * (1.0 - dir_tobase.z);
+
+            // float focusdist_image_intersection_astigmatism = linear_interpolate(astigmatism_blend_sagittal, 
+            //                                                                     std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z), 
+            //                                                                     std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z)-abb_astigmatism_sagittal);
+            
+            
+            // float focusdist_image_intersection_spherical_abb = focusdist_image_intersection+(unit_disk_dist*abb_spherical);
+            // AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection_astigmatism;
+            // AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample_coma*image_dist_focusdist_coma;
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+            
             // takes care of correct screenspace coordinate mapping
             AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
                                       focusdist_image_point.y / focusdist_image_point.z);
             sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
-
+            
 
             // optical vignetting
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
@@ -291,7 +318,7 @@ driver_process_bucket
             // }
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
+            Eigen::Vector2d s(sensorpos_distorted.x, sensorpos_distorted.y * frame_aspect_ratio);
 
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;

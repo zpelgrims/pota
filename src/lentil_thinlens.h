@@ -24,7 +24,8 @@ struct CameraThinLens
     float optical_vignetting_distance;
     float optical_vignetting_radius;
 
-    float bias;
+    float abb_spherical;
+    float abb_coma;
     float gain;
     bool invert;
 

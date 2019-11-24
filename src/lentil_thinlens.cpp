@@ -15,7 +15,8 @@ enum
     p_optical_vignetting_distanceTL,
     p_optical_vignetting_radiusTL,
 
-    p_biasTL,
+    p_abb_sphericalTL,
+    p_abb_comaTL,
     p_invertTL,
 
     p_squareTL,
@@ -44,7 +45,8 @@ node_parameters
     AiParameterFlt("optical_vignetting_distanceTL", 0.0);
     AiParameterFlt("optical_vignetting_radiusTL", 2.0);
 
-    AiParameterFlt("biasTL", 0.5);
+    AiParameterFlt("abb_sphericalTL", 0.5);
+    AiParameterFlt("abb_comaTL", 0.1);
     AiParameterBool("invertTL", false);
 
     AiParameterFlt("squareTL", 0.0);
@@ -92,8 +94,11 @@ node_update
     tl->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distanceTL");
     tl->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radiusTL");
 
-    tl->bias = AiNodeGetFlt(node, "biasTL");
-    tl->bias = clamp(tl->bias, 0.01, 0.99);
+    tl->abb_spherical = AiNodeGetFlt(node, "abb_sphericalTL");
+    tl->abb_spherical = clamp(tl->abb_spherical, 0.001, 0.999);
+
+    tl->abb_coma = AiNodeGetFlt(node, "abb_comaTL");
+
     tl->invert = AiNodeGetBool(node, "invertTL");
 
     tl->square = AiNodeGetFlt(node, "squareTL");
@@ -139,10 +144,16 @@ camera_create_ray
     int maxtries = 15;
     
     while (!success && tries <= maxtries){
+        
+        // distortion
+        AtVector s(input.sx, input.sy, 0.0);
+        // s = AiV3Normalize(s) * std::tan(std::asin(AiV3Length(s) * 1.5));
+
         // create point on sensor (camera space)
-        const AtVector p(input.sx * (tl->sensor_width*0.5), 
-                         input.sy * (tl->sensor_width*0.5), 
+        const AtVector p(s.x * (tl->sensor_width*0.5), 
+                         s.y * (tl->sensor_width*0.5), 
                          -tl->focal_length);
+        
 
         // calculate direction vector from origin to point on lens
         AtVector dir_from_center = AiV3Normalize(p); // or norm(p-origin)
@@ -153,7 +164,7 @@ camera_create_ray
             if (tl->use_image) {
                 tl->image.bokehSample(input.lensx, input.lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
-                concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->bias, tl->square, tl->squeeze);
+                concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
             }
         } else {
             float r1 = xor128() / 4294967296.0;
@@ -162,7 +173,7 @@ camera_create_ray
             if (tl->use_image) {
                 tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
-                concentricDiskSample(r1, r2, unit_disk, tl->bias, tl->square, tl->squeeze);
+                concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
             }
         }
 

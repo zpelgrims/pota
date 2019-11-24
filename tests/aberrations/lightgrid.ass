@@ -79,7 +79,9 @@ lentil_thinlens
  motion_end 0
  exposure 0
  fstopTL 2.5
- focus_distanceTL 30
+ #abb_sphericalTL 0.65
+ abb_comaTL 0.05
+ focus_distanceTL 100
  focal_lengthTL 5
  bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.$AOV.$FRAME.exr"
  declare maya_full_name constant STRING
