@@ -84,8 +84,6 @@ node_update
   bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
 
 
-  AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix); // can i use sg->time? do i have access to shaderglobals? setting this to a constant might disable motion blur..
-
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
   bokeh->filter_weight_buffer.clear();
@@ -162,10 +160,8 @@ driver_process_bucket
         AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
-        // convert sample world space position to camera space
+
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
-        const AtVector camera_space_sample_position = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
-        
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
@@ -178,8 +174,11 @@ driver_process_bucket
           if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
         
-
-          const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position.z) / (-tl->focal_length + camera_space_sample_position.z);
+          // world to camera space transform
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix);
+          const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+          
+          const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_static.z) / (-tl->focal_length + camera_space_sample_position_static.z);
           const float image_dist_focusdist = (-tl->focal_length * -tl->focus_distance) / (-tl->focal_length + -tl->focus_distance);
 
 
@@ -210,6 +209,12 @@ driver_process_bucket
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
 
+            AtMatrix world_to_camera_matrix_motionblurred;
+            float currenttime = linear_interpolate(xor128() / 4294967296.0, AiCameraGetShutterStart(), AiCameraGetShutterEnd());
+            AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+            const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+            const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
+
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
             float r1 = xor128() / 4294967296.0;
@@ -221,7 +226,7 @@ driver_process_bucket
 
             
             // ray through center of lens
-            AtVector dir_tobase = AiV3Normalize(camera_space_sample_position);
+            AtVector dir_tobase = AiV3Normalize(camera_space_sample_position_mb);
             float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
             AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
 
@@ -270,7 +275,7 @@ driver_process_bucket
             
 
             // optical vignetting
-            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
+            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
             if (tl->optical_vignetting_distance > 0.0){
               // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
               if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
@@ -318,7 +323,7 @@ driver_process_bucket
             // }
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensorpos_distorted.x, sensorpos_distorted.y * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
 
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;

@@ -10,7 +10,7 @@
 
 options
 {
- AA_samples 10
+ AA_samples 20
  outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
@@ -63,25 +63,29 @@ closest_filter
 lentil_thinlens
 {
  name rendercamTLShape
- matrix
+ matrix 1 2 MATRIX
  1 0 0 0
  0 1 0 0
  0 0 1 0
- 0 0 100 1
+ 0 0 75 1
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 125 1
  near_clip 0.100000001
  far_clip 10000
- shutter_start 0
- shutter_end 0
+ shutter_start -0.25
+ shutter_end 0.25
  shutter_type "box"
  rolling_shutter "off"
  rolling_shutter_duration 0
- motion_start 0
- motion_end 0
+ motion_start -0.25
+ motion_end 0.25
  exposure 0
  fstopTL 2.5
  #abb_sphericalTL 0.65
  abb_comaTL 0.05
- focus_distanceTL 100
+ focus_distanceTL 40
  focal_lengthTL 5
  bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.$AOV.$FRAME.exr"
  declare maya_full_name constant STRING
@@ -139,6 +143,42 @@ driver_exr
  preserve_layer_name off
  autocrop off
  append off
+}
+
+
+point_light
+{
+ name pointLightShape137
+ matrix 1 2 MATRIX
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 5.40458965 0 1
+  1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 10.40458965 0 1
+ motion_start -0.25
+ motion_end 0.25
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight137|pointLightShape137"
 }
 
 
@@ -4086,34 +4126,6 @@ point_light
  maya_full_name "|pointLight136|pointLightShape136"
 }
 
-point_light
-{
- name pointLightShape137
- matrix
- 1.08091795 0 0 0
- 0 1.08091795 0 0
- 0 0 1.08091795 0
- -27.0229473 5.40458965 0 1
- exposure 2
- cast_shadows on
- cast_volumetric_shadows on
- shadow_density 1
- samples 1
- normalize on
- camera 1
- transmission 0
- diffuse 1
- specular 1
- sss 1
- indirect 1
- max_bounces 999
- volume_samples 2
- volume 1
- aov "default"
- radius 0.123
- declare maya_full_name constant STRING
- maya_full_name "|pointLight137|pointLightShape137"
-}
 
 point_light
 {
