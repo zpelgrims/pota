@@ -30,7 +30,8 @@ struct ThinLensBokehDriver {
   int min_aa_samples;
   bool enabled;
   float filter_width;
-  AtMatrix world_to_camera_matrix;
+  float time_start;
+  float time_end;
   std::map<AtString, std::vector<AtRGBA> > image;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
@@ -90,6 +91,9 @@ node_update
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
   bokeh->sample_per_pixel_counter.clear();
   bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
+
+  bokeh->time_start = AiCameraGetShutterStart();
+  bokeh->time_end = AiCameraGetShutterEnd();
 
 
   // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
@@ -176,7 +180,8 @@ driver_process_bucket
         
           // world to camera space transform, static just for CoC
           AtMatrix world_to_camera_matrix_static;
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix_static);
+          float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
           const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           
           const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_static.z) / (-tl->focal_length + camera_space_sample_position_static.z);
@@ -212,7 +217,7 @@ driver_process_bucket
 
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
-            float currenttime = linear_interpolate(xor128() / 4294967296.0, AiCameraGetShutterStart(), AiCameraGetShutterEnd()); // should I create new random sample, or can I re-use another one?
+            float currenttime = linear_interpolate(xor128() / 4294967296.0, bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             const float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
