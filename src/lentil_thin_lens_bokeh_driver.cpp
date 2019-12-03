@@ -174,9 +174,10 @@ driver_process_bucket
           if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
         
-          // world to camera space transform
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), bokeh->world_to_camera_matrix);
-          const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(bokeh->world_to_camera_matrix, sample_pos_ws);
+          // world to camera space transform, static just for CoC
+          AtMatrix world_to_camera_matrix_static;
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), AiCameraGetShutterStart(), world_to_camera_matrix_static);
+          const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           
           const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_static.z) / (-tl->focal_length + camera_space_sample_position_static.z);
           const float image_dist_focusdist = (-tl->focal_length * -tl->focus_distance) / (-tl->focal_length + -tl->focus_distance);
@@ -209,11 +210,12 @@ driver_process_bucket
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
 
+            // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
-            float currenttime = linear_interpolate(xor128() / 4294967296.0, AiCameraGetShutterStart(), AiCameraGetShutterEnd());
+            float currenttime = linear_interpolate(xor128() / 4294967296.0, AiCameraGetShutterStart(), AiCameraGetShutterEnd()); // should I create new random sample, or can I re-use another one?
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
-            const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
+            const float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
@@ -227,7 +229,7 @@ driver_process_bucket
             
             // ray through center of lens
             AtVector dir_tobase = AiV3Normalize(camera_space_sample_position_mb);
-            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_tobase.z);
+            float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_tobase.z);
             AtVector samplepos_image_point = dir_tobase * samplepos_image_intersection;
 
             // depth of field
