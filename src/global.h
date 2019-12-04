@@ -11,3 +11,7 @@ inline float filter_gaussian(AtVector2 p, float width) {
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
 }
+
+inline float linear_interpolate(float perc, float a, float b){
+    return a + perc * (b - a);
+}

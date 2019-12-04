@@ -10,7 +10,7 @@
 
 options
 {
- AA_samples 20
+ AA_samples 10
  outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
@@ -95,20 +95,24 @@ lentil_thinlens
 lentil
 {
  name rendercamPOShape
- matrix
+ matrix 1 2 MATRIX
  1 0 0 0
  0 1 0 0
  0 0 1 0
- 0 0 100 1
+ 0 0 75 1
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 125 1
  near_clip 0.100000001
  far_clip 10000
- shutter_start 0
- shutter_end 0
+ shutter_start -0.25
+ shutter_end 0.25
  shutter_type "box"
  rolling_shutter "off"
  rolling_shutter_duration 0
- motion_start 0
- motion_end 0
+ motion_start -0.25
+ motion_end 0.25
  exposure 0
  lens_modelPO "cooke__speed_panchro__1920__50mm"
  fstopPO 2

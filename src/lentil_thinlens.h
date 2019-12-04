@@ -4,6 +4,7 @@
 #include "../../Eigen/Eigen/Dense"
 
 #include "imagebokeh.h"
+#include "global.h"
 
 struct CameraThinLens
 {
@@ -65,10 +66,6 @@ inline uint32_t xor128(void){
   uint32_t t = x ^ (x << 11);
   x = y; y = z; z = w;
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
-
-inline float linear_interpolate(float perc, float a, float b){
-    return a + perc * (b - a);
 }
 
 
