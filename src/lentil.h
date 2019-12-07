@@ -102,10 +102,10 @@ struct Camera
 	double sensor_shift;
     int vignetting_retries;
 	double lambda;
-    int aperture_blades;
+    int bokeh_aperture_blades;
 	bool dof;
-    double minimum_rgb;
-    AtString bokeh_exr_path;
+    double bidir_min_luminance;
+    AtString bidir_output_path;
 
     bool run_intersection_tests;
     int count;
@@ -120,14 +120,14 @@ struct Camera
 
     double anamorphic_stretch;
 
-    bool use_image;
-    AtString bokeh_input_path;
+    bool bokeh_enable_image;
+    AtString bokeh_image_path;
 
     float empirical_ca_dist;
-    float additional_luminance;
-    float luminance_remap_transition_width;
+    float bidir_add_luminance;
+    float bidir_add_luminance_transition;
 
-    int bokeh_samples_mult;
+    int bidir_sample_mult;
 };
 
 extern struct Camera camera;

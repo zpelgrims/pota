@@ -87,12 +87,12 @@ lentil_thinlens
  10.6906643 1.369997144 9.16300678 1
  focus_distanceTL 18.0
  fstopTL 0.75
- minimum_rgbTL 1.0
- bokeh_exr_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.$AOV.$FRAME.exr"
- bokeh_samples_multTL 50
+ bidir_min_luminanceTL 1.0
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.$AOV.$FRAME.exr"
+ bidir_sample_multTL 50
  optical_vignetting_distanceTL 7.0
- use_imageTL false
- bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
+ bokeh_enable_imageTL false
+ bokeh_image_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
  declare maya_full_name constant STRING
  maya_full_name "|persp|perspShape"
  #optical_vignetting_distanceTL 5.0

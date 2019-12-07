@@ -21,8 +21,8 @@ AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
 
 struct ThinLensBokehDriver {
-  int xres;
-  int yres;
+  unsigned xres;
+  unsigned yres;
   int framenumber;
   int samples;
   int aa_samples;
@@ -96,16 +96,16 @@ node_update
 
 
   // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
-  if (tl->bokeh_exr_path.empty()) {
+  if (tl->bidir_output_path.empty()) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL TL] No path specified for bidirectional sampling.");
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bokeh_exr_path.c_str());
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bidir_output_path.c_str());
     bokeh->enabled = false;
     return;
   }
 
   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
-  if (tl->bokeh_samples_mult == 0) bokeh->enabled = false;
+  if (tl->bidir_sample_mult == 0) bokeh->enabled = false;
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting bidirectional sampling.");
   
@@ -172,7 +172,7 @@ driver_process_bucket
 
 
       // ENERGY REDISTRIBUTION
-        if (sample_luminance > tl->minimum_rgb) {
+        if (sample_luminance > tl->bidir_min_luminance) {
           
           if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
@@ -188,25 +188,25 @@ driver_process_bucket
 
 
           // additional luminance with soft transition
-          float fitted_additional_luminance = 0.0;
-          if (tl->additional_luminance > 0.0){
-            if (sample_luminance > tl->minimum_rgb && sample_luminance < tl->minimum_rgb+tl->luminance_remap_transition_width){
-              float perc = (sample_luminance - tl->minimum_rgb) / tl->luminance_remap_transition_width;
-              fitted_additional_luminance = tl->additional_luminance * perc;          
-            } else if (sample_luminance > tl->minimum_rgb+tl->luminance_remap_transition_width) {
-              fitted_additional_luminance = tl->additional_luminance;
+          float fitted_bidir_add_luminance = 0.0;
+          if (tl->bidir_add_luminance > 0.0){
+            if (sample_luminance > tl->bidir_min_luminance && sample_luminance < tl->bidir_min_luminance+tl->bidir_add_luminance_transition){
+              float perc = (sample_luminance - tl->bidir_min_luminance) / tl->bidir_add_luminance_transition;
+              fitted_bidir_add_luminance = tl->bidir_add_luminance * perc;          
+            } else if (sample_luminance > tl->bidir_min_luminance+tl->bidir_add_luminance_transition) {
+              fitted_bidir_add_luminance = tl->bidir_add_luminance;
             } 
           }
 
 
           const float circle_of_confusion = std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
-          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bokeh_samples_mult * 0.01; // pixel area as baseline for sample count
+          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
 
-          float abb_field_curvature = 0.0;
+          // float abb_field_curvature = 0.0;
           // float abb_astigmatism_tangential = 0.5;
-          float abb_astigmatism_sagittal = 0.0;
+          // float abb_astigmatism_sagittal = 0.0;
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -226,9 +226,9 @@ driver_process_bucket
             float r1 = xor128() / 4294967296.0;
             float r2 = xor128() / 4294967296.0;
 
-            if (tl->use_image) tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            else concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
-            unit_disk(0) *= tl->squeeze;
+            if (tl->bokeh_enable_image) tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
+            else concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
+            unit_disk(0) *= tl->bokeh_anamorphic;
 
             
             // ray through center of lens
@@ -284,7 +284,7 @@ driver_process_bucket
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
             if (tl->optical_vignetting_distance > 0.0){
               // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
+              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){
                   --count;
                   continue;
               }
@@ -354,7 +354,7 @@ driver_process_bucket
               switch(bokeh->aov_list_type[i]){
 
                 case AI_TYPE_RGBA: {
-                  AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
+                  AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   rgba_energy = rgba_energy * weight * filter_weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
@@ -364,7 +364,7 @@ driver_process_bucket
                 }
 
                 case AI_TYPE_RGB: {
-                  AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
+                  AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight * filter_weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
@@ -404,7 +404,7 @@ driver_process_bucket
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
           float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
 
-          for (int i=0; i<bokeh->aov_list_name.size(); i++){
+          for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
@@ -491,7 +491,7 @@ driver_close
     }
 
     // replace $AOV and $FRAME
-    std::string path = tl->bokeh_exr_path.c_str();
+    std::string path = tl->bidir_output_path.c_str();
     std::string path_replaced_aov = replace_first_occurence(path, "$AOV", bokeh->aov_list_name[i].c_str());
     
     std::string frame_str = std::to_string(bokeh->framenumber);

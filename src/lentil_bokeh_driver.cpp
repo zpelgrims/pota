@@ -2,8 +2,6 @@
   // losing energy at the image edges, is this due to vignetting retries?
 // strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
 
-// when debugging newtonian iterations, if the squared error increases, the error code is 1.. might be ok to take the last iteration in that case?
-// what could the circle i'm getting possibly be?
 
 #include <ai.h>
 #include <vector>
@@ -23,8 +21,8 @@
 AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
  
 struct LentilBokehDriver {
-  int xres;
-  int yres;
+  unsigned xres;
+  unsigned yres;
   int framenumber;
   int samples;
   int aa_samples;
@@ -98,16 +96,16 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
   // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
-  if (po->bokeh_exr_path.empty()) {
+  if (po->bidir_output_path.empty()) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] No path specified for bidirectional sampling.");
-    AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Path: %s", po->bokeh_exr_path.c_str());
+    AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Path: %s", po->bidir_output_path.c_str());
     bokeh->enabled = false;
     return;
   }
 
    bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
-  if (po->bokeh_samples_mult == 0) bokeh->enabled = false;
+  if (po->bidir_sample_mult == 0) bokeh->enabled = false;
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL PO] Starting bidirectional sampling.");
 }
@@ -166,7 +164,7 @@ driver_process_bucket
 
 				AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
-        if (sample_luminance > po->minimum_rgb) redistribute = true;
+        if (sample_luminance > po->bidir_min_luminance) redistribute = true;
 
         // convert sample world space position to camera space
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
@@ -196,13 +194,13 @@ driver_process_bucket
           
 
           // additional luminance with soft transition
-          float fitted_additional_luminance = 0.0;
-          if (po->additional_luminance > 0.0){
-            if (sample_luminance > po->minimum_rgb && sample_luminance < po->minimum_rgb+po->luminance_remap_transition_width){
-              float perc = (sample_luminance - po->minimum_rgb) / po->luminance_remap_transition_width;
-              fitted_additional_luminance = po->additional_luminance * perc;          
-            } else if (sample_luminance > po->minimum_rgb+po->luminance_remap_transition_width) {
-              fitted_additional_luminance = po->additional_luminance;
+          float fitted_bidir_add_luminance = 0.0;
+          if (po->bidir_add_luminance > 0.0){
+            if (sample_luminance > po->bidir_min_luminance && sample_luminance < po->bidir_min_luminance+po->bidir_add_luminance_transition){
+              float perc = (sample_luminance - po->bidir_min_luminance) / po->bidir_add_luminance_transition;
+              fitted_bidir_add_luminance = po->bidir_add_luminance * perc;          
+            } else if (sample_luminance > po->bidir_min_luminance+po->bidir_add_luminance_transition) {
+              fitted_bidir_add_luminance = po->bidir_add_luminance;
             } 
           }
 
@@ -250,7 +248,7 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-          int samples = std::floor(bbox_area * po->bokeh_samples_mult * 0.01);
+          int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
           // int samples = 1000;
@@ -314,7 +312,7 @@ driver_process_bucket
               switch(bokeh->aov_list_type[i]){
 
                 case AI_TYPE_RGBA: {
-                  AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
+                  AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   rgba_energy = rgba_energy * weight * filter_weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
@@ -324,7 +322,7 @@ driver_process_bucket
                 }
 
                 case AI_TYPE_RGB: {
-                  AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_additional_luminance) / (double)(samples);
+                  AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight * filter_weight;
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
@@ -365,7 +363,7 @@ driver_process_bucket
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
           float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
 
-          for (int i=0; i<bokeh->aov_list_name.size(); i++){
+          for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
@@ -453,7 +451,7 @@ driver_close
 
 
     // replace $AOV and $FRAME
-    std::string path = po->bokeh_exr_path.c_str();
+    std::string path = po->bidir_output_path.c_str();
     std::string path_replaced_aov = replace_first_occurence(path, "$AOV", bokeh->aov_list_name[i].c_str());
     
     std::string frame_str = std::to_string(bokeh->framenumber);

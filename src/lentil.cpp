@@ -18,18 +18,17 @@ enum {
   p_focus_distancePO,
   p_extra_sensor_shiftPO,
 
-  p_aperture_bladesPO,
-  p_use_imagePO,
-  p_bokeh_input_pathPO,
+  p_bokeh_aperture_bladesPO,
+  p_bokeh_enable_imagePO,
+  p_bokeh_image_pathPO,
 
-  p_minimum_rgbPO,
-  p_bokeh_exr_pathPO,
-  p_bokeh_samples_multPO,
-  
+  p_bidir_min_luminancePO,
+  p_bidir_output_pathPO,
+  p_bidir_sample_multPO,
+  p_bidir_add_luminancePO,
+  p_bidir_add_luminance_transitionPO,
+
   // p_empirical_ca_dist,
-
-  p_additional_luminancePO,
-  p_luminance_remap_transition_widthPO,
 
   p_vignetting_retriesPO,
   p_proper_ray_derivativesPO
@@ -59,19 +58,18 @@ node_parameters {
   AiParameterFlt("extra_sensor_shiftPO", 0.0);
 
 
-  AiParameterInt("aperture_bladesPO", 0);
-  AiParameterBool("use_imagePO", false);
-  AiParameterStr("bokeh_input_pathPO", "");
+  AiParameterInt("bokeh_aperture_bladesPO", 0);
+  AiParameterBool("bokeh_enable_imagePO", false);
+  AiParameterStr("bokeh_image_pathPO", "");
 
 
-  AiParameterFlt("minimum_rgbPO", 1.5);
-  AiParameterStr("bokeh_exr_pathPO", "");
-  AiParameterInt("bokeh_samples_multPO", 10);
+  AiParameterFlt("bidir_min_luminancePO", 1.5);
+  AiParameterStr("bidir_output_pathPO", "");
+  AiParameterInt("bidir_sample_multPO", 10);
+  AiParameterFlt("bidir_add_luminancePO", 0.0);
+  AiParameterFlt("bidir_add_luminance_transitionPO", 1.0);
 
   // AiParameterFlt("empirical_ca_dist", 0.0);
-
-  AiParameterFlt("additional_luminancePO", 0.0);
-  AiParameterFlt("luminance_remap_transition_widthPO", 1.0);
 
   AiParameterInt("vignetting_retriesPO", 15);
   AiParameterBool("proper_ray_derivativesPO", true);
@@ -93,25 +91,29 @@ node_update {
   camera->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_modelPO");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
-  camera->aperture_blades = AiNodeGetInt(node, "aperture_bladesPO");
+  camera->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_bladesPO");
   camera->dof = AiNodeGetBool(node, "dofPO");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
-  camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgbPO");
-  camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_pathPO");
+  camera->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
+  camera->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathPO");
   camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
-  camera->use_image = AiNodeGetBool(node, "use_imagePO");
-  camera->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_pathPO");
+  camera->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
+  camera->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
   // camera->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
   
-  camera->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_multPO");
-  camera->additional_luminance = AiNodeGetFlt(node, "additional_luminancePO");
-  camera->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_widthPO");
+  camera->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_multPO");
+  camera->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminancePO");
+  camera->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transitionPO");
 
   // convert to cm
   switch (camera->unitModel){
     case mm:
     {
       camera->focus_distance *= 0.1;
+    } break;
+    case cm:
+    {
+      camera->focus_distance *= 1.0;
     } break;
     case dm:
     {
@@ -214,7 +216,7 @@ node_update {
   // make probability functions of the bokeh image
   // if (parms.bokehChanged(camera->params)) {
     camera->image.invalidate();
-    if (camera->use_image && !camera->image.read(camera->bokeh_input_path.c_str())){
+    if (camera->bokeh_enable_image && !camera->image.read(camera->bokeh_image_path.c_str())){
       AiMsgError("[LENTIL] Couldn't open bokeh image!");
       AiRenderAbort();
     }

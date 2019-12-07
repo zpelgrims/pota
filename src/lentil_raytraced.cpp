@@ -21,10 +21,10 @@ enum {
   p_focus_distance,
   p_extra_sensor_shift,
   p_vignetting_retries,
-  p_aperture_blades,
+  p_bokeh_aperture_blades,
   p_backward_samples,
-  p_minimum_rgb,
-  p_bokeh_exr_path,
+  p_bidir_min_luminance,
+  p_bidir_output_path,
   p_proper_ray_derivatives,
 
   p_rt_lens_focal_length,
@@ -104,10 +104,10 @@ node_parameters {
   AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
   AiParameterFlt("extra_sensor_shift", 0.0);
   AiParameterInt("vignetting_retries", 100);
-  AiParameterInt("aperture_blades", 0);
+  AiParameterInt("bokeh_aperture_blades", 0);
   AiParameterInt("backward_samples", 3);
-  AiParameterFlt("minimum_rgb", 3.0f);
-  AiParameterStr("bokeh_exr_path", "");
+  AiParameterFlt("bidir_min_luminance", 3.0f);
+  AiParameterStr("bidir_output_path", "");
   AiParameterBool("proper_ray_derivatives", false);
 
   AiParameterInt("rt_lens_focal_length", 100);
@@ -143,12 +143,12 @@ node_update {
   camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
   camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
-  //camera->aperture_blades = AiNodeGetInt(node, "aperture_blades");
+  //camera->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
   //camera->dof = AiNodeGetBool(node, "dof");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
   //camera->backward_samples = AiNodeGetInt(node, "backward_samples");
-  //camera->minimum_rgb = AiNodeGetFlt(node, "minimum_rgb");
-  //camera->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_path");
+  //camera->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminance");
+  //camera->bidir_output_path = AiNodeGetStr(node, "bidir_output_path");
   //camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 
   camera->anamorphic_stretch = AiNodeGetFlt(node, "anamorphic_stretch");

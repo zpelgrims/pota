@@ -6,7 +6,7 @@ import mtoa.ui.ae.utils as aeUtils
 class aiLentilThinlensTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehOutput(self, mData) :
-        attr = self.nodeAttr('aiBokehExrPathTL')
+        attr = self.nodeAttr('aiBidirOutputPathTL')
         cmds.setAttr(attr, mData,type="string")
 
     def LoadFilenameButtonPushBokehOutput(self, *args):
@@ -26,7 +26,7 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
 
     
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('aiBokehInputPathTL')
+        attr = self.nodeAttr('aiBokehImagePathTL')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -56,28 +56,27 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
 
         self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
         self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")
-        self.addControl("aiBiasTL", label="Bias")
-        
-        self.addControl("aiSquareTL", label="Circle to Square mapping")
-        self.addControl("aiSqueezeTL", label="Anamorphic stretch")
+        self.addControl("aiAbbSphericalTL", label="Abberation (spherical)")
+        self.addControl("aiBokehCircleToSquareTL", label="Circle to Square mapping")
+        self.addControl("aiBokehAnamorphicTL", label="Anamorphic stretch")
+        self.endLayout()
 
-        self.addControl("aiEmpericalCaDistTL", label="Chromatic Aberration")
 
+        self.beginLayout("Bokeh Image")
+        self.addControl("aiBokehEnableImageTL", label="Enable Bokeh Image")
+        self.addCustom("aiBokehImagePathTL", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
         self.endLayout()
 
         
         self.beginLayout("Bidirectional", collapse=False)
-        self.addControl("aiMinimumRgbTL", label="Bidirectional Trigger")
-        self.addControl("aiBokehSamplesMultTL", label="Samples")
-        self.addCustom("aiBokehExrPathTL", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
-        self.addControl("aiAdditionalLuminanceTL", label="Add bokeh luminance")
-        self.addControl("aiLuminanceRemapTransitionWidthTL", label="Add Lum transition")
+        self.addControl("aiBidirMinLuminanceTL", label="Bidirectional Trigger")
+        self.addControl("aiBidirSampleMultTL", label="Samples")
+        self.addCustom("aiBidirOutputPathTL", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
+        self.addControl("aiBidirAddLuminanceTL", label="Add bokeh luminance")
+        self.addControl("aiBidirAddLuminanceTransitionTL", label="Add Lum transition")
         self.endLayout()
         
-        self.beginLayout("Bokeh Image")
-        self.addControl("aiUseImageTL", label="Use Bokeh Image")
-        self.addCustom("aiBokehInputPathTL", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
-        self.endLayout()
+
 
 
 templates.registerTranslatorUI(aiLentilThinlensTemplate, "camera", "lentil_thinlens")

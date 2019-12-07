@@ -9,28 +9,25 @@ enum
     p_focal_lengthTL,
     p_fstopTL,
     p_focus_distanceTL,
-    p_minimum_rgbTL,
-    p_bokeh_exr_pathTL,
-    p_emperical_ca_distTL,
+    // p_emperical_ca_distTL,
     p_optical_vignetting_distanceTL,
     p_optical_vignetting_radiusTL,
 
     p_abb_sphericalTL,
-    p_abb_comaTL,
-    p_invertTL,
+    // p_abb_comaTL,
 
-    p_squareTL,
-    p_squeezeTL,
+    p_bokeh_circle_to_squareTL,
+    p_bokeh_anamorphicTL,
 
-    p_use_imageTL,
-    p_bokeh_input_pathTL,
+    p_bokeh_enable_imageTL,
+    p_bokeh_image_pathTL,
 
-    p_bokeh_samples_multTL,
+    p_bidir_min_luminanceTL,
+    p_bidir_output_pathTL,
+    p_bidir_sample_multTL,
 
-    p_additional_lumninanceTL,
-    p_luminance_remap_transition_widthTL,
-
-    p_sensor_distanceTL
+    p_bidir_add_luminanceTL,
+    p_bidir_add_luminance_transitionTL
 };
 
 node_parameters
@@ -39,28 +36,24 @@ node_parameters
     AiParameterFlt("focal_lengthTL", 3.5); // in cm
     AiParameterFlt("fstopTL", 1.4);
     AiParameterFlt("focus_distanceTL", 100.0);
-    AiParameterFlt("minimum_rgbTL", 0.2);
-    AiParameterStr("bokeh_exr_pathTL", "");
-    AiParameterFlt("emperical_ca_distTL", 0.0);
+
+    // AiParameterFlt("emperical_ca_distTL", 0.0);
     AiParameterFlt("optical_vignetting_distanceTL", 0.0);
     AiParameterFlt("optical_vignetting_radiusTL", 2.0);
 
     AiParameterFlt("abb_sphericalTL", 0.5);
-    AiParameterFlt("abb_comaTL", 0.1);
-    AiParameterBool("invertTL", false);
+    // AiParameterFlt("abb_comaTL", 0.1);
 
-    AiParameterFlt("squareTL", 0.0);
-    AiParameterFlt("squeezeTL", 1.0);
+    AiParameterFlt("bokeh_circle_to_squareTL", 0.0);
+    AiParameterFlt("bokeh_anamorphicTL", 1.0);
+    AiParameterBool("bokeh_enable_imageTL", false);
+    AiParameterStr("bokeh_image_pathTL", "");
 
-    AiParameterBool("use_imageTL", false);
-    AiParameterStr("bokeh_input_pathTL", "");
-
-    AiParameterInt("bokeh_samples_multTL", 10);
-
-    AiParameterFlt("additional_luminanceTL", 0.0);
-    AiParameterFlt("luminance_remap_transition_widthTL", 1.0);
-
-    AiParameterFlt("sensor_distanceTL", 1.0);
+    AiParameterFlt("bidir_min_luminanceTL", 0.2);
+    AiParameterStr("bidir_output_pathTL", "");
+    AiParameterInt("bidir_sample_multTL", 10);
+    AiParameterFlt("bidir_add_luminanceTL", 0.0);
+    AiParameterFlt("bidir_add_luminance_transitionTL", 1.0);
 }
 
 
@@ -87,39 +80,35 @@ node_update
     tl->fov = ((tl->sensor_width*0.5));
     tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
 
-    tl->minimum_rgb = AiNodeGetFlt(node, "minimum_rgbTL");
-    tl->bokeh_exr_path = AiNodeGetStr(node, "bokeh_exr_pathTL");
+    tl->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminanceTL");
+    tl->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathTL");
 
-    tl->emperical_ca_dist = AiNodeGetFlt(node, "emperical_ca_distTL");
+    // tl->emperical_ca_dist = AiNodeGetFlt(node, "emperical_ca_distTL");
     tl->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distanceTL");
     tl->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radiusTL");
 
     tl->abb_spherical = AiNodeGetFlt(node, "abb_sphericalTL");
     tl->abb_spherical = clamp(tl->abb_spherical, 0.001, 0.999);
 
-    tl->abb_coma = AiNodeGetFlt(node, "abb_comaTL");
+    // tl->abb_coma = AiNodeGetFlt(node, "abb_comaTL");
 
-    tl->invert = AiNodeGetBool(node, "invertTL");
+    tl->circle_to_square = AiNodeGetFlt(node, "bokeh_circle_to_squareTL");
+    tl->circle_to_square = clamp(tl->circle_to_square, 0.01, 0.99);
+    tl->bokeh_anamorphic = AiNodeGetFlt(node, "bokeh_anamorphicTL");
+    tl->bokeh_anamorphic = clamp(tl->bokeh_anamorphic, 0.01, 99999.0);
 
-    tl->square = AiNodeGetFlt(node, "squareTL");
-    tl->square = clamp(tl->square, 0.01, 0.99);
-    tl->squeeze = AiNodeGetFlt(node, "squeezeTL");
-    tl->squeeze = clamp(tl->squeeze, 0.01, 99999.0);
+    tl->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imageTL");
+    tl->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathTL");
 
-    tl->use_image = AiNodeGetBool(node, "use_imageTL");
-    tl->bokeh_input_path = AiNodeGetStr(node, "bokeh_input_pathTL");
+    tl->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_multTL");
 
-    tl->bokeh_samples_mult = AiNodeGetInt(node, "bokeh_samples_multTL");
-
-    tl->additional_luminance = AiNodeGetFlt(node, "additional_luminanceTL");
-    tl->luminance_remap_transition_width = AiNodeGetFlt(node, "luminance_remap_transition_widthTL");
-
-    tl->sensor_distance = AiNodeGetFlt(node, "sensor_distanceTL");
+    tl->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminanceTL");
+    tl->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transitionTL");
 
     // make probability functions of the bokeh image
     // if (parms.bokehChanged(camera->params)) {
         tl->image.invalidate();
-        if (tl->use_image && !tl->image.read(tl->bokeh_input_path.c_str())){
+        if (tl->bokeh_enable_image && !tl->image.read(tl->bokeh_image_path.c_str())){
         AiMsgError("[LENTIL] Couldn't open bokeh image!");
         AiRenderAbort();
         }
@@ -161,23 +150,23 @@ camera_create_ray
         // either get uniformly distributed points on the unit disk or bokeh image
         Eigen::Vector2d unit_disk(0, 0);
         if (tries == 0) { // make use of blue noise sampler in arnold
-            if (tl->use_image) {
+            if (tl->bokeh_enable_image) {
                 tl->image.bokehSample(input.lensx, input.lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
-                concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
+                concentricDiskSample(input.lensx, input.lensy, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
             }
         } else {
             float r1 = xor128() / 4294967296.0;
             float r2 = xor128() / 4294967296.0;
 
-            if (tl->use_image) {
+            if (tl->bokeh_enable_image) {
                 tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else {
-                concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->square, tl->squeeze);
+                concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
             }
         }
 
-        unit_disk(0) *= tl->squeeze;
+        unit_disk(0) *= tl->bokeh_anamorphic;
 
 
         AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
@@ -186,7 +175,7 @@ camera_create_ray
         AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
 
         if (tl->optical_vignetting_distance > 0.0){
-            if (!empericalOpticalVignettingSquare(lens, dir_from_lens, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->square))){
+            if (!empericalOpticalVignettingSquare(lens, dir_from_lens, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){
                 ++tries;
                 continue;
             }

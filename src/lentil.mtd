@@ -80,7 +80,7 @@
 
 
 
-    [attr aperture_bladesPO]
+    [attr bokeh_aperture_bladesPO]
         default             INT     0
         min                 INT     0
         max                 INT     8
@@ -89,20 +89,20 @@
         houdini.label       STRING  "Aperture Blades"
 
 
-    [attr use_imagePO]
+    [attr bokeh_enable_imagePO]
         default             BOOL     false
         desc                STRING  "Enable image based bokeh"
 
         houdini.label       STRING  "Use Bokeh Image"
 
 
-    [attr bokeh_input_pathPO]
+    [attr bokeh_image_pathPO]
         desc                STRING  "Path to image based bokeh"
 
         houdini.label       STRING  "Image bokeh path"
 
 
-    [attr minimum_rgbPO]
+    [attr bidir_min_luminancePO]
         min                 FLOAT    0.0
         max                 INT    10000
         desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
@@ -110,13 +110,13 @@
         houdini.label       STRING  "Min Bidirectional Luminance"
 
 
-    [attr bokeh_exr_pathPO]
+    [attr bidir_output_pathPO]
         desc                STRING  "Bidirectional output path. Should include $FRAME and $AOV tokens."
 
         houdini.label       STRING  "Bokeh Output Path"
 
     
-    [attr bokeh_samples_multPO]
+    [attr bidir_sample_multPO]
         min                 INT    0
         max                 INT    1000
         default             INT    20
@@ -125,13 +125,13 @@
         houdini.label       STRING  "Bokeh Samples Multiplier"
 
 
-    [attr additional_luminancePO]
+    [attr bidir_add_luminancePO]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
 
         houdini.label       STRING  "Additional Luminance"
 
 
-    [attr luminance_remap_transition_widthPO]
+    [attr bidir_add_luminance_transitionPO]
         desc                STRING  "Additional luminance transition"
 
         houdini.label       STRING  "Additional luminance transition"

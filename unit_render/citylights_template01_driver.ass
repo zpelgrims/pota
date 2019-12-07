@@ -119,9 +119,9 @@ lentil
  17.601759 1.98807669 -19.9616642 1
  focus_distancePO 26.3
  vignetting_retriesPO 15
- minimum_rgbPO 0.05
+ bidir_min_luminancePO 0.05
  fstopPO 1.4
- bokeh_exr_pathPO "/home/cactus/lentil/pota/unit_render/test_driver.exr"
+ bidir_output_pathPO "/home/cactus/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
 }
@@ -136,20 +136,20 @@ lentil_thinlens
  17.601759 1.98807669 -19.9616642 1
  focus_distanceTL 26.3
  focal_lengthTL 4.9
- minimum_rgbTL 0.2
+ bidir_min_luminanceTL 0.2
  fstopTL 1.4
  #biasTL 0.7
  optical_vignetting_distanceTL 4.0
  optical_vignetting_radiusTL 1.0
  # emperical_ca_distTL 3
- #squareTL 0.7
- #squeezeTL 0.7
- bokeh_exr_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
- use_imageTL false
- bokeh_input_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
- bokeh_samples_multTL 50
- #additional_luminanceTL 20.0
- #luminance_remap_transition_widthTL 1.0
+ #bokeh_circle_to_squareTL 0.7
+ #bokeh_anamorphicTL 0.7
+ bidir_output_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
+ bokeh_enable_imageTL false
+ bokeh_image_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
+ bidir_sample_multTL 50
+ #bidir_add_luminanceTL 20.0
+ #bidir_add_luminance_transitionTL 1.0
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }

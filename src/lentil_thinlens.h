@@ -10,40 +10,35 @@ struct CameraThinLens
 {
     imageData image;
 
-	float fov;
-    float tan_fov;
     float sensor_width;
     float focal_length;
+	float fov;
     float fstop;
     float focus_distance;
     float aperture_radius;
 
-    float minimum_rgb;
-    AtString bokeh_exr_path;
 
-    float emperical_ca_dist;
+    // float emperical_ca_dist;
     float optical_vignetting_distance;
     float optical_vignetting_radius;
 
     float abb_spherical;
-    float abb_coma;
-    float gain;
-    bool invert;
+    // float abb_coma;
 
-    float square;
-    float squeeze;
+    float circle_to_square;
+    float bokeh_anamorphic;
 
-    bool use_image;
-    AtString bokeh_input_path;
+    bool bokeh_enable_image;
+    AtString bokeh_image_path;
 
-    unsigned int bokeh_samples_mult;
 
-    float additional_luminance;
-    float luminance_remap_transition_width;
+    float bidir_min_luminance;
+    AtString bidir_output_path;
+    unsigned int bidir_sample_mult;
+    float bidir_add_luminance;
+    float bidir_add_luminance_transition;
 
     bool proper_ray_derivatives;
-
-    float sensor_distance;
 };
 
 extern struct CameraThinLens tl;

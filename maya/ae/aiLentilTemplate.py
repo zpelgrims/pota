@@ -6,7 +6,7 @@ import mtoa.ui.ae.utils as aeUtils
 class aiLentilTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehOutput(self, mData) :
-        attr = self.nodeAttr('aiBokehExrPath')
+        attr = self.nodeAttr('aiBidirOutputPathPO')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehOutput(self, *args):
@@ -26,7 +26,7 @@ class aiLentilTemplate(templates.AttributeTemplate):
 
     
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('aiBokehInputPath')
+        attr = self.nodeAttr('aiBokehImagePathPO')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -57,20 +57,20 @@ class aiLentilTemplate(templates.AttributeTemplate):
         self.addControl("aiFstopPO", label="F-stop", dynamic=True)
         self.addControl("aiFocusDistancePO", label="Focus distance (unit)")
         self.addControl("aiExtraSensorShiftPO", label="Extra Sensor shift (mm)")
-        self.addControl("aiApertureBladesPO", label="Aperture blades")
+        self.addControl("aiBokehApertureBladesPO", label="Aperture blades")
         self.endLayout()
 
         self.beginLayout("Bidirectional")
-        self.addCustom("aiBokehExrPathPO", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
-        self.addControl("aiBokehSamplesMultPO", label="Sampling multiplier")
-        self.addControl("aiMinimumRgbPO", label="Min bidir luminance")
-        self.addControl("aiAdditionalLuminancePO", label="Additional Luminance")
-        self.addControl("aiLuminanceRemapTransitionWidthPO", label="Add lum trans width")
+        self.addCustom("aiBidirOutputPathPO", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
+        self.addControl("aiBidirSampleMultPO", label="Sampling multiplier")
+        self.addControl("aiBidirMinLuminancePO", label="Minimum luminance")
+        self.addControl("aiBidirAddLuminancePO", label="Additional Luminance")
+        self.addControl("aiBidirAddLuminanceTransitionPO", label="Add lum trans width")
         self.endLayout()
 
         self.beginLayout("Bokeh Image")
-        self.addControl("aiUseImagePO", label="Use Bokeh Image")
-        self.addCustom("aiBokehInputPathPO", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
+        self.addControl("aiBokehEnableImagePO", label="Use Bokeh Image")
+        self.addCustom("aiBokehImagePathPO", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
 
         self.endLayout()
         

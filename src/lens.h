@@ -616,11 +616,11 @@ inline void trace_ray(bool original_ray, int &tries,
 
 
 	  if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
-	  else if (camera->dof && camera->aperture_blades <= 2) {
+	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
 		  Eigen::Vector2d unit_disk(0.0, 0.0);
 
 		  if (tries == 0) {
-        if (camera->use_image) {
+        if (camera->bokeh_enable_image) {
           camera->image.bokehSample(input_lensx, input_lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
         } else {
           concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
@@ -631,7 +631,7 @@ inline void trace_ray(bool original_ray, int &tries,
 				  r2 = xor128() / 4294967296.0;
 			  }
 
-        if (camera->use_image) {
+        if (camera->bokeh_enable_image) {
           camera->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
         } else {
           concentric_disk_sample(r1, r2, unit_disk, true);
@@ -641,15 +641,15 @@ inline void trace_ray(bool original_ray, int &tries,
       aperture(0) = unit_disk(0) * camera->aperture_radius;
       aperture(1) = unit_disk(1) * camera->aperture_radius;
 	  } 
-	  else if (camera->dof && camera->aperture_blades > 2) {
-	  	if (tries == 0) lens_sample_triangular_aperture(aperture(0), aperture(1), input_lensx, input_lensy, camera->aperture_radius, camera->aperture_blades);
+	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
+	  	if (tries == 0) lens_sample_triangular_aperture(aperture(0), aperture(1), input_lensx, input_lensy, camera->aperture_radius, camera->bokeh_aperture_blades);
 	  	else {
 	  		if (original_ray) {
 		  		r1 = xor128() / 4294967296.0;
 		  		r2 = xor128() / 4294967296.0;
 	  		}
 
-	  		lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->aperture_blades);
+	  		lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
 	  	}
 	  }
 
