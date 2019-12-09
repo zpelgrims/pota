@@ -654,13 +654,13 @@ inline void trace_ray(bool original_ray, int &tries,
 	  }
 
 
-    if (camera->empirical_ca_dist > 0.0) {
-      Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
-      Eigen::Vector2d aperture_pos(aperture[0], aperture[1]);
-      weight = chromatic_abberration_empirical(sensor_pos, camera->empirical_ca_dist, aperture_pos, camera->aperture_radius);
-      aperture(0) = aperture_pos(0);
-      aperture(1) = aperture_pos(1);
-    }
+    // if (camera->empirical_ca_dist > 0.0) {
+    //   Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
+    //   Eigen::Vector2d aperture_pos(aperture[0], aperture[1]);
+    //   weight = chromatic_abberration_empirical(sensor_pos, camera->empirical_ca_dist, aperture_pos, camera->aperture_radius);
+    //   aperture(0) = aperture_pos(0);
+    //   aperture(1) = aperture_pos(1);
+    // }
     
 
 	  if (camera->dof) {

@@ -38,6 +38,7 @@ struct CameraThinLens
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
 
+    int vignetting_retries;
     bool proper_ray_derivatives;
 };
 
