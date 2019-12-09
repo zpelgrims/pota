@@ -450,13 +450,13 @@ driver_close
     }
 
 
-    // replace $AOV and $FRAME
+    // replace <aov> and <frame>
     std::string path = po->bidir_output_path.c_str();
-    std::string path_replaced_aov = replace_first_occurence(path, "$AOV", bokeh->aov_list_name[i].c_str());
+    std::string path_replaced_aov = replace_first_occurence(path, "<aov>", bokeh->aov_list_name[i].c_str());
     
     std::string frame_str = std::to_string(bokeh->framenumber);
     std::string frame_padded = std::string(4 - frame_str.length(), '0') + frame_str;
-    std::string path_replaced_framenumber = replace_first_occurence(path, "$FRAME", frame_padded);
+    std::string path_replaced_framenumber = replace_first_occurence(path, "<frame>", frame_padded);
 
     SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, path_replaced_framenumber.c_str());
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Bokeh AOV written to %s", path_replaced_framenumber.c_str());

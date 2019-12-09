@@ -81,7 +81,7 @@ lentil_thinlens
  fstopTL 2.5
  focus_distanceTL 30
  focal_lengthTL 5
- bidir_output_pathTL "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/tl.$AOV.$FRAME.exr"
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/tl.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
@@ -107,7 +107,7 @@ lentil
  lens_modelPO "cooke__speed_panchro__1920__50mm"
  fstopPO 2
  focus_distancePO 30
- bidir_output_pathPO "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/po.$AOV.$FRAME.exr"
+ bidir_output_pathPO "/home/cactus/lentil/pota/tests/driver_sampling_equalisation/po.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }

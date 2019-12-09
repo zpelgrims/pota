@@ -111,7 +111,7 @@
 
 
     [attr bidir_output_pathPO]
-        desc                STRING  "Bidirectional output path. Should include $FRAME and $AOV tokens."
+        desc                STRING  "Bidirectional output path. Should include <frame> and <aov> tokens."
 
         houdini.label       STRING  "Bokeh Output Path"
 

@@ -88,7 +88,7 @@ lentil_thinlens
  focus_distanceTL 18.0
  fstopTL 0.75
  bidir_min_luminanceTL 1.0
- bidir_output_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.$AOV.$FRAME.exr"
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/driver_dof/test02.<aov>.<frame>.exr"
  bidir_sample_multTL 50
  optical_vignetting_distanceTL 7.0
  bokeh_enable_imageTL false
