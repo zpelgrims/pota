@@ -58,7 +58,7 @@ node_parameters
     AiParameterFlt("bidir_add_luminanceTL", 0.0);
     AiParameterFlt("bidir_add_luminance_transitionTL", 1.0);
 
-    AiParameterInt("vignetting_retriesTL", 15);
+    AiParameterInt("vignetting_retriesTL", 30);
     AiParameterBool("proper_ray_derivativesTL", true);
     
 }

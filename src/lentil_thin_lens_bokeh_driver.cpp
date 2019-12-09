@@ -202,7 +202,7 @@ driver_process_bucket
           const float circle_of_confusion = std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
-          samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
+          samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
 
           // float abb_field_curvature = 0.0;
           // float abb_astigmatism_tangential = 0.5;

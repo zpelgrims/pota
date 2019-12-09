@@ -208,7 +208,7 @@ driver_process_bucket
           AtVector2 bbox_min (0, 0);
           AtVector2 bbox_max (0, 0);
           int proberays_total_samples = 0;
-          int proberays_base_rays = 64;
+          int proberays_base_rays = 32;
           int proberays_max_rays = proberays_base_rays * 2;
           for(int count=0; count<proberays_base_rays; count++) {
             ++proberays_total_samples;
@@ -250,7 +250,7 @@ driver_process_bucket
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
-          samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
+          samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
           // int samples = 1000;
 
           unsigned int total_samples_taken = 0;

@@ -9,14 +9,13 @@
 
 options
 {
- AA_samples 10
- outputs 6 1 STRING
+ AA_samples 3
+ outputs 5 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
-  "P VECTOR defaultArnoldFilter@gaussian_filter aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@driver_png.RGBA"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
-  "Z FLOAT aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.Z"
+  "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
  xres 1920
  yres 1080
  texture_per_file_stats on
@@ -37,21 +36,40 @@ options
 gaussian_filter
 {
  name defaultArnoldFilter@gaussian_filter
- width 2.0
 }
-
 
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/beauty.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/unit_render_citylights.exr"
  color_space ""
 }
+
+lentil_bokeh_driver
+{
+ name aiAOVDriver2@lentil_bokeh_driver
+}
+
+lentil_thin_lens_bokeh_driver
+{
+ name aiAOVDriver3@lentil_thin_lens_bokeh_driver
+}
+
+closest_filter
+{
+ name aiAOVFilter1@closest_filter
+}
+
+closest_filter
+{
+ name aiAOVFilter2@closest_filter
+}
+
 
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/P.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -64,7 +82,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/Z.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -72,29 +90,6 @@ driver_exr
  preserve_layer_name off
  autocrop off
  append off
-}
-
-lentil_thin_lens_bokeh_driver
-{
- name aiAOVDriver1@lentil_thin_lens_bokeh_driver.RGBA
-}
-
-
-lentil_bokeh_driver
-{
- name aiAOVDriver1@lentil_bokeh_driver
-}
-
-driver_png
-{
- name aiAOVDriver2@driver_png.RGBA
- filename "/home/cactus/lentil/pota/tests/unit_render_tmp/beauty.png"
- color_space "sRGB"
-}
-
-closest_filter
-{
- name aiAOVFilter1@closest_filter
 }
 
 persp_camera
@@ -111,7 +106,7 @@ persp_camera
 lentil
 {
  name rendercamLentilShape
- focal_distancePO 185
+ focus_distancePO 185
  bidir_output_pathPO "/home/cactus/lentil/pota/unit_render/test_driver.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
@@ -121,14 +116,7 @@ lentil
 lentil_thinlens
 {
  name rendercamLentilThinLensShape
- matrix
- -0.759271324 3.46944695e-18 -0.65077424 0
- 0.0374014676 0.998347104 -0.043637041 0
- 0.649698555 -0.0574722625 -0.758016288 0
- 17.601759 1.98807669 -19.9616642 1
- focus_distanceTL 26.3
- focal_lengthTL 4.9
- fstopTL 1.4
+ focus_distanceTL 185
  optical_vignetting_distanceTL 4.0
  optical_vignetting_radiusTL 1.0
  #bokeh_circle_to_squareTL 0.7
@@ -136,7 +124,7 @@ lentil_thinlens
  bidir_output_pathTL "/home/cactus/lentil/pota/unit_render/test_driver.exr"
  bokeh_enable_imageTL false
  bokeh_image_pathTL "/home/cactus/lentil/pota/bokeh_imgs/teapot.png"
- bidir_sample_multTL 10
+
  #bidir_add_luminanceTL 20.0
  #bidir_add_luminance_transitionTL 1.0
  declare maya_full_name constant STRING
