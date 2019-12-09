@@ -134,108 +134,6 @@ node_finish
 }
 
 
-inline void trace_ray_fw_thinlens(bool original_ray, int &tries, 
-                                  float sx, float sy, float lensx, float lensy, 
-                                  AtVector &origin, AtVector &dir, AtRGB &weight,
-                                  float &r1, float &r2, 
-                                  CameraThinLens *tl){
-    tries = 0;
-    bool ray_succes = false;
-
-    while (!ray_succes && tries <= tl->vignetting_retries){
-        
-        // distortion
-        // AtVector s(sx, sy, 0.0);
-        // s = AiV3Normalize(s) * std::tan(std::asin(AiV3Length(s) * 1.5));
-
-        // create point on sensor (camera space)
-        const AtVector p(sx * (tl->sensor_width*0.5), 
-                         sy * (tl->sensor_width*0.5), 
-                         -tl->focal_length);
-            
-
-        // calculate direction vector from origin to point on lens
-        AtVector dir_from_center = AiV3Normalize(p); // or norm(p-origin)
-
-        // either get uniformly distributed points on the unit disk or bokeh image
-        Eigen::Vector2d unit_disk(0, 0);
-        if (tries == 0) { // make use of blue noise sampler in arnold
-            if (tl->bokeh_enable_image) {
-                tl->image.bokehSample(lensx, lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            } else {
-                concentricDiskSample(lensx, lensy, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
-            }
-        } else {
-            r1 = xor128() / 4294967296.0;
-            r2 = xor128() / 4294967296.0;
-
-            if (tl->bokeh_enable_image) {
-                tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            } else {
-                concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
-            }
-        }
-
-        unit_disk(0) *= tl->bokeh_anamorphic;
-
-
-        AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
-        const float intersection = std::abs(tl->focus_distance / dir_from_center.z); // or tl->focus_distance; (spherical/plane, test!)
-        const AtVector focusPoint = dir_from_center * intersection;
-        AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
-
-        if (tl->optical_vignetting_distance > 0.0){
-            if (!empericalOpticalVignettingSquare(lens, dir_from_lens, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){
-                ++tries;
-                continue;
-            }
-        }
-
-
-        // weight = AI_RGB_WHITE;
-        // if (tl->emperical_ca_dist > 0.0){
-        //     const AtVector2 p2(p.x, p.y);
-        //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
-        //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-        //     AtVector2 aperture_0_center(0.0, 0.0);
-        //     AtVector2 aperture_1_center(- p2 * coc * tl->emperical_ca_dist); //previous: change coc for dist_to_center
-        //     AtVector2 aperture_2_center(p2 * coc * tl->emperical_ca_dist);//previous: change coc for dist_to_center
-            
-
-        //     if (random_aperture == 1)      lens += aperture_1_center;
-        //     else if (random_aperture == 2) lens += aperture_2_center;
-
-        //     if (std::pow(lens.x-aperture_1_center.x, 2) + std::pow(lens.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.r = 0.0;
-        //     }
-        //     if (std::pow(lens.x-aperture_0_center.x, 2) + std::pow(lens.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.b = 0.0;
-        //     }
-        //     if (std::pow(lens.x-aperture_2_center.x, 2) + std::pow(lens.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius, 2)) {
-        //         weight.g = 0.0;
-        //     }
-
-        //     if (weight == AI_RGB_ZERO){
-        //         ++tries;
-        //         continue;
-        //     }
-        
-        // //     //ca, not sure if this should be done, evens out the intensity?
-        // //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
-        // //     // output.weight.r /= sum;
-        // //     // output.weight.g /= sum;
-        // //     // output.weight.b /= sum;
-        // }
-
-        origin = lens;
-        dir = dir_from_lens;
-        weight = AI_RGB_WHITE;
-        ray_succes = true;
-    }
-
-    if (!ray_succes) weight = AI_RGB_BLACK;
-}
-
 
 camera_create_ray
 {
@@ -257,8 +155,7 @@ camera_create_ray
             output.dOdy = origin;
             output.dDdx = dir;
             output.dDdy = dir;
-        } else {
-            // calculating the derivative rays here
+        } else { // calculating the derivative rays here
 
             float step = 0.001;
             AtCameraInput input_dx = input;
