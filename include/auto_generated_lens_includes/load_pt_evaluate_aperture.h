@@ -35,7 +35,11 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1971-nikon-retrofocus-wideangle/28/code/pt_evaluate_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1971-nikon-retrofocus-wideangle/18/code/pt_evaluate_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1971-nikon-retrofocus-wideangle/35/code/pt_evaluate_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/85/code/pt_evaluate_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/100/code/pt_evaluate_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/75/code/pt_evaluate_aperture.h"
 #endif

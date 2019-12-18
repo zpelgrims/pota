@@ -35,7 +35,11 @@
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	nikon__retrofocus_wideangle__1971__28mm,
+	nikon__retrofocus_wideangle__1971__18mm,
+	nikon__retrofocus_wideangle__1971__35mm,
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	unknown__petzval__1900__85mm,
+	unknown__petzval__1900__100mm,
+	unknown__petzval__1900__75mm,
 #endif
