@@ -7,6 +7,13 @@
 	#include "../../../polynomial-optics/database/lenses/1953-angenieux-double-gauss/105/code/lt_sample_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/45/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/50/code/lt_sample_aperture.h"
+#endif
+#ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/22/code/lt_sample_aperture.h"
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/14/code/lt_sample_aperture.h"
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/22/code/lt_sample_aperture.h"
 #endif
@@ -39,7 +46,17 @@
 	#include "../../../polynomial-optics/database/lenses/1971-nikon-retrofocus-wideangle/35/code/lt_sample_aperture.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/2014-nikon-unknown/65/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/2014-nikon-unknown/40/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/2014-nikon-unknown/50/code/lt_sample_aperture.h"
+#endif
+#ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/85/code/lt_sample_aperture.h"
 	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/100/code/lt_sample_aperture.h"
 	#include "../../../polynomial-optics/database/lenses/1900-unknown-petzval/75/code/lt_sample_aperture.h"
+#endif
+#ifdef LENS_ID_COMMERCIAL
+	#include "../../../polynomial-optics/database/lenses/1927-zeiss-biotar/65/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1927-zeiss-biotar/58/code/lt_sample_aperture.h"
+	#include "../../../polynomial-optics/database/lenses/1927-zeiss-biotar/85/code/lt_sample_aperture.h"
 #endif
