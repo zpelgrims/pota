@@ -9,9 +9,13 @@
 #ifdef LENS_ID_COMMERCIAL
 	"asahi__takumar__1969__45mm",
 	"asahi__takumar__1969__50mm",
+	"asahi__takumar__1969__65mm",
+	"asahi__takumar__1969__75mm",
+	"asahi__takumar__1969__58mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"asahi__takumar__1970__22mm",
+	"asahi__takumar__1970__28mm",
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	"canon__retrofocus_wideangle__1982__14mm",

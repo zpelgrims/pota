@@ -9,9 +9,13 @@
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/45/code/pt_evaluate.h"
 	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/50/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/65/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/75/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1969-asahi-takumar/58/code/pt_evaluate.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/22/code/pt_evaluate.h"
+	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/28/code/pt_evaluate.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/14/code/pt_evaluate.h"
