@@ -756,7 +756,7 @@ inline void trace_ray(bool original_ray, int &tries,
 // given camera space scene point, return point on sensor
 inline bool trace_backwards(Eigen::Vector3d target, 
                             const double aperture_radius, 
-                            const double lambda, 
+                            const double lambda,
                             Eigen::Vector2d &sensor_position, 
                             const double sensor_shift, 
                             Camera *camera)
@@ -771,8 +771,33 @@ inline bool trace_backwards(Eigen::Vector3d target,
   
   while(ray_succes == false && tries <= camera->vignetting_retries){
 
-    Eigen::Vector2d unit_disk;
-    concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, unit_disk, true);
+    Eigen::Vector2d unit_disk(0.0, 0.0);
+
+    // add image sampling!!!
+    if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
+	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
+		  
+      const double r1 = xor128() / 4294967296.0;
+      const double r2 = xor128() / 4294967296.0;
+
+      if (camera->bokeh_enable_image) {
+        camera->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
+      } else {
+        concentric_disk_sample(r1, r2, unit_disk, true);
+      }
+
+      aperture(0) = unit_disk(0) * camera->aperture_radius;
+      aperture(1) = unit_disk(1) * camera->aperture_radius;
+	  } 
+	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
+      const double r1 = xor128() / 4294967296.0;
+      const double r2 = xor128() / 4294967296.0;
+
+      lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
+    }
+
+    // Eigen::Vector2d unit_disk;
+    // concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, unit_disk, true);
     aperture(0) = unit_disk(0) * aperture_radius;
     aperture(1) = unit_disk(1) * aperture_radius;
 

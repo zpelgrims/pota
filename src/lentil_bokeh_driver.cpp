@@ -95,6 +95,8 @@ node_update
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
 
+  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
+
   // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
   if (po->bidir_output_path.empty()) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] No path specified for bidirectional sampling.");
@@ -103,11 +105,11 @@ node_update
     return;
   }
 
-   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   if (po->bidir_sample_mult == 0) bokeh->enabled = false;
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL PO] Starting bidirectional sampling.");
+
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
