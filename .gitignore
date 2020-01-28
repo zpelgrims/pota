@@ -13,5 +13,6 @@
 !/tests/driver_dof
 !/tests/driver_sampling_equalisation
 !/tests/aberrations
+!/tests/po_bidir_debug
 
 !bokeh_imgs/*.png
