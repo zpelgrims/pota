@@ -128,6 +128,8 @@ struct Camera
     float bidir_add_luminance_transition;
 
     int bidir_sample_mult;
+
+    float extra_sensor_shift;
 };
 
 extern struct Camera camera;

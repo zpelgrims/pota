@@ -55,6 +55,44 @@ node_update
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  // Camera *po;
+
+
+
+
+
+  // get camera params & recompute the node_update section to avoid race condition when sharing datastruct
+  // note this currently is DOUBLE code!! find a fix!!
+  AtNode *cameranode = AiUniverseGetCamera();
+  po->sensor_width = AiNodeGetFlt(cameranode, "sensor_widthPO");
+  po->input_fstop = AiNodeGetFlt(cameranode, "fstopPO");
+  po->focus_distance = AiNodeGetFlt(cameranode, "focus_distancePO") * 10.0; //converting to mm
+  po->lensModel = (LensModel) AiNodeGetInt(cameranode, "lens_modelPO");
+  po->unitModel = (UnitModel) AiNodeGetInt(cameranode, "unitsPO");
+  po->bokeh_aperture_blades = AiNodeGetInt(cameranode, "bokeh_aperture_bladesPO");
+  po->dof = AiNodeGetBool(cameranode, "dofPO");
+  po->vignetting_retries = AiNodeGetInt(cameranode, "vignetting_retriesPO");
+  po->bidir_min_luminance = AiNodeGetFlt(cameranode, "bidir_min_luminancePO");
+  po->bidir_output_path = AiNodeGetStr(cameranode, "bidir_output_pathPO");
+  po->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesPO");
+  po->bokeh_enable_image = AiNodeGetBool(cameranode, "bokeh_enable_imagePO");
+  po->bokeh_image_path = AiNodeGetStr(cameranode, "bokeh_image_pathPO");
+  // po->empirical_ca_dist = AiNodeGetFlt(cameranode, "empirical_ca_dist");
+  
+  po->bidir_sample_mult = AiNodeGetInt(cameranode, "bidir_sample_multPO");
+  po->bidir_add_luminance = AiNodeGetFlt(cameranode, "bidir_add_luminancePO");
+  po->bidir_add_luminance_transition = AiNodeGetFlt(cameranode, "bidir_add_luminance_transitionPO");
+
+  po->lambda = AiNodeGetFlt(cameranode, "wavelengthPO") * 0.001;
+  po->extra_sensor_shift = AiNodeGetFlt(cameranode, "extra_sensor_shiftPO");
+
+  #include "node_update_po.h"
+
+
+
+
+
+
 
   bokeh->enabled = true;
 
@@ -68,7 +106,7 @@ node_update
 
   // this is an UGLY solution, sleep this node initialization for x amount of time
   // this is required to try and make sure the data in shared CameraThinLens is filled in first.
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 
   // disable for non-lentil cameras

@@ -84,155 +84,42 @@ node_initialize {
 
 node_update { 
   AiCameraUpdate(node, false);
-  Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  camera->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
-  camera->input_fstop = AiNodeGetFlt(node, "fstopPO");
-  camera->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
-  camera->lensModel = (LensModel) AiNodeGetInt(node, "lens_modelPO");
-  camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
-  camera->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_bladesPO");
-  camera->dof = AiNodeGetBool(node, "dofPO");
-  camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
-  camera->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
-  camera->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathPO");
-  camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
-  camera->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
-  camera->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
-  // camera->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
+  po->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
+  po->input_fstop = AiNodeGetFlt(node, "fstopPO");
+  po->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
+  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_modelPO");
+  po->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
+  po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_bladesPO");
+  po->dof = AiNodeGetBool(node, "dofPO");
+  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
+  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
+  po->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathPO");
+  po->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
+  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
+  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
+  // po->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
   
-  camera->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_multPO");
-  camera->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminancePO");
-  camera->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transitionPO");
+  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_multPO");
+  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminancePO");
+  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transitionPO");
 
-  // convert to cm
-  switch (camera->unitModel){
-    case mm:
-    {
-      camera->focus_distance *= 0.1;
-    } break;
-    case cm:
-    {
-      camera->focus_distance *= 1.0;
-    } break;
-    case dm:
-    {
-      camera->focus_distance *= 10.0;
-    } break;
-    case m:
-    {
-      camera->focus_distance *= 100.0;
-    }
-  }
+  po->lambda = AiNodeGetFlt(node, "wavelengthPO") * 0.001;
+  po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shiftPO");
 
-
-  AiMsgInfo("");
-
-  load_lens_constants(camera);
-  AiMsgInfo("[LENTIL] ----------  LENS CONSTANTS  -----------");
-  AiMsgInfo("[LENTIL] Lens Name: %s", camera->lens_name);
-  AiMsgInfo("[LENTIL] Lens F-Stop: %f", camera->lens_fstop);
-#ifdef DEBUG_LOG
-  AiMsgInfo("[LENTIL] lens_outer_pupil_radius: %f", camera->lens_outer_pupil_radius);
-  AiMsgInfo("[LENTIL] lens_inner_pupil_radius: %f", camera->lens_inner_pupil_radius);
-  AiMsgInfo("[LENTIL] lens_length: %f", camera->lens_length);
-  AiMsgInfo("[LENTIL] lens_back_focal_length: %f", camera->lens_back_focal_length);
-  AiMsgInfo("[LENTIL] lens_effective_focal_length: %f", camera->lens_effective_focal_length);
-  AiMsgInfo("[LENTIL] lens_aperture_pos: %f", camera->lens_aperture_pos);
-  AiMsgInfo("[LENTIL] lens_aperture_housing_radius: %f", camera->lens_aperture_housing_radius);
-  AiMsgInfo("[LENTIL] lens_inner_pupil_curvature_radius: %f", camera->lens_inner_pupil_curvature_radius);
-  AiMsgInfo("[LENTIL] lens_outer_pupil_curvature_radius: %f", camera->lens_outer_pupil_curvature_radius);
-  AiMsgInfo("[LENTIL] lens_inner_pupil_geometry: %s", camera->lens_inner_pupil_geometry.c_str());
-  AiMsgInfo("[LENTIL] lens_outer_pupil_geometry: %s", camera->lens_outer_pupil_geometry.c_str());
-  AiMsgInfo("[LENTIL] lens_field_of_view: %f", camera->lens_field_of_view);
-  AiMsgInfo("[LENTIL] lens_aperture_radius_at_fstop: %f", camera->lens_aperture_radius_at_fstop);
-#endif
-  AiMsgInfo("[LENTIL] --------------------------------------");
-
-
-  camera->lambda = AiNodeGetFlt(node, "wavelengthPO") * 0.001;
-  AiMsgInfo("[LENTIL] wavelength: %f nm", camera->lambda);
-
-
-  if (camera->input_fstop == 0.0) {
-    camera->aperture_radius = camera->lens_aperture_radius_at_fstop;
-  } else {
-    double calculated_fstop = 0.0;
-    double calculated_aperture_radius = 0.0;
-    trace_backwards_for_fstop(camera, camera->input_fstop, calculated_fstop, calculated_aperture_radius);
-    
-    AiMsgInfo("[LENTIL] calculated fstop: %f", calculated_fstop);
-    AiMsgInfo("[LENTIL] calculated aperture radius: %f mm", calculated_aperture_radius);
-    
-    camera->aperture_radius = std::min(camera->lens_aperture_radius_at_fstop, calculated_aperture_radius);
-  }
-
-  AiMsgInfo("[LENTIL] lens wide open f-stop: %f", camera->lens_fstop);
-  AiMsgInfo("[LENTIL] lens wide open aperture radius: %f mm", camera->lens_aperture_radius_at_fstop);
-  AiMsgInfo("[LENTIL] fstop-calculated aperture radius: %f mm", camera->aperture_radius);
-  AiMsgInfo("[LENTIL] --------------------------------------");
-
-
-  AiMsgInfo("[LENTIL] user supplied focus distance: %f mm", camera->focus_distance);
-
-  /*
-  AiMsgInfo("[LENTIL] calculating sensor shift at focus distance:");
-  camera->sensor_shift = camera_set_focus(camera->focus_distance, camera);
-  AiMsgInfo("[LENTIL] sensor_shift to focus at %f: %f", camera->focus_distance, camera->sensor_shift);
-  */
-
-  // logartihmic focus search
-  double best_sensor_shift = logarithmic_focus_search(camera->focus_distance, camera);
-  AiMsgInfo("[LENTIL] sensor_shift using logarithmic search: %f mm", best_sensor_shift);
-  camera->sensor_shift = best_sensor_shift + AiNodeGetFlt(node, "extra_sensor_shiftPO");
-
-  /*
-  // average guesses infinity focus search
-  double infinity_focus_sensor_shift = camera_set_focus(AI_BIG, camera);
-  AiMsgInfo("[LENTIL] sensor_shift [average guesses backwards light tracing] to focus at infinity: %f", infinity_focus_sensor_shift);
-  */
-
-  // logarithmic infinity focus search
-  double best_sensor_shift_infinity = logarithmic_focus_search(999999999.0, camera);
-  AiMsgInfo("[LENTIL] sensor_shift [logarithmic forward tracing] to focus at infinity: %f mm", best_sensor_shift_infinity);
-      
-  // bidirectional parallel infinity focus search
-  double infinity_focus_parallel_light_tracing = camera_set_focus_infinity(camera);
-  AiMsgInfo("[LENTIL] sensor_shift [parallel backwards light tracing] to focus at infinity: %f mm", infinity_focus_parallel_light_tracing);
-
-  // double check where y=0 intersection point is, should be the same as focus distance
-  double test_focus_distance = 0.0;
-  bool focus_test = trace_ray_focus_check(camera->sensor_shift, test_focus_distance, camera);
-  AiMsgInfo("[LENTIL] focus test ray: %f mm", test_focus_distance);
-  if(!focus_test){
-    AiMsgWarning("[LENTIL] focus check failed. Either the lens system is not correct, or the sensor is placed at a wrong distance.");
-  }
-
-  camera->tan_fov = std::tan(camera->lens_field_of_view / 2.0);
-
-  AiMsgInfo("[LENTIL] --------------------------------------");
-  
-
-  // make probability functions of the bokeh image
-  // if (parms.bokehChanged(camera->params)) {
-    camera->image.invalidate();
-    if (camera->bokeh_enable_image && !camera->image.read(camera->bokeh_image_path.c_str())){
-      AiMsgError("[LENTIL] Couldn't open bokeh image!");
-      AiRenderAbort();
-    }
-  // }
-  AiMsgInfo("");
+  #include "node_update_po.h"
 }
 
 
 node_finish {
-  Camera* camera = (Camera*)AiNodeGetLocalData(node);
-  delete camera;
+  Camera* po = (Camera*)AiNodeGetLocalData(node);
+  delete po;
 }
 
 
 camera_create_ray {
-  Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  Camera* po = (Camera*)AiNodeGetLocalData(node);
 
   int tries = 0;
   double random1 = 0.0, random2 = 0.0; 
@@ -240,13 +127,13 @@ camera_create_ray {
   Eigen::Vector3d direction(0, 0, 0);
   Eigen::Vector3d weight(1, 1, 1);
 
-  trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, camera);
+  trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
   
   // calculate new ray derivatives
   // sucks a bit to have to trace 3 rays.. Bit slow
   // is there an analytical solution to this?..
   if (tries > 0){
-    if (!camera->proper_ray_derivatives){
+    if (!po->proper_ray_derivatives){
       for(int i=0; i<3; i++){
         output.dOdx[i] = origin(i); // is this necessary?
         output.dOdy[i] = origin(i);
@@ -266,12 +153,12 @@ camera_create_ray {
       Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
       Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
       Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, camera);
+      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
 
       Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
       Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
       Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-      trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, camera);
+      trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
 
       Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
       Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
@@ -318,7 +205,7 @@ camera_create_ray {
   }
 
   // now need to rotate the normal of the frame, in case you need any cosines later in light transport. if not, leave out:
-  const float R = camera->lens_outer_pupil_curvature_radius;
+  const float R = po->lens_outer_pupil_curvature_radius;
   // recompute full frame:
   float n[3] = {0.0f};
   for(int k=0;k<3;k++)
@@ -343,24 +230,24 @@ inline bool trace_backwards(const AtVector sample_position, AtVector2 &sensor_po
    const float target[3] = {sample_position.x, sample_position.y, sample_position.z};
 
    // initialize 5d light fields
-   float sensor[5] =  {0.0f, 0.0f, 0.0f, 0.0f, camera->lambda};
+   float sensor[5] =  {0.0f, 0.0f, 0.0f, 0.0f, po->lambda};
    float out[5] =    {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
    float aperture[2] =  {0.0f, 0.0f};
 
    //randoms are always 0?
-   aperture[0] = camera->random1 * camera->aperture_radius;
-   aperture[1] = camera->random2 * camera->aperture_radius;
+   aperture[0] = po->random1 * po->aperture_radius;
+   aperture[1] = po->random2 * po->aperture_radius;
 
-   if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0f) return false;
+   if(lens_lt_sample_aperture(target, aperture, sensor, out, po->lambda, camera) <= 0.0f) return false;
 
    // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
-   const float px = sensor[0] + sensor[2] * camera->lens_back_focal_length;
-   const float py = sensor[1] + sensor[3] * camera->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
-   if (px*px + py*py > camera->lens_inner_pupil_radius*camera->lens_inner_pupil_radius) return false;
+   const float px = sensor[0] + sensor[2] * po->lens_back_focal_length;
+   const float py = sensor[1] + sensor[3] * po->lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+   if (px*px + py*py > po->lens_inner_pupil_radius*po->lens_inner_pupil_radius) return false;
 
    // shift sensor
-   sensor[0] += sensor[2] * -camera->sensor_shift;
-   sensor[1] += sensor[3] * -camera->sensor_shift;
+   sensor[0] += sensor[2] * -po->sensor_shift;
+   sensor[1] += sensor[3] * -po->sensor_shift;
 
    sensor_position.x = sensor[0];
    sensor_position.y = sensor[1];
@@ -390,8 +277,8 @@ camera_reverse_ray
 
   if( trace_backwards( -camera_space_sample_position * 10.0, sensor_position, camera) )
   {
-    AtVector2 s(sensor_position.x / (camera->sensor_width * 0.5), 
-          sensor_position.y / (camera->sensor_width * 0.5) * frame_aspect_ratio);
+    AtVector2 s(sensor_position.x / (po->sensor_width * 0.5), 
+          sensor_position.y / (po->sensor_width * 0.5) * frame_aspect_ratio);
 
     AiMsgInfo("sensorposition: %f \t %f", s.x, s.y);
 
@@ -407,9 +294,9 @@ camera_reverse_ray
 
 // approximation using pinhole camera FOV
 camera_reverse_ray {
-  const Camera* camera = (Camera*)AiNodeGetLocalData(node);
+  const Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  double coeff = 1.0 / AiMax(fabs(Po.z * camera->tan_fov), 1e-3);
+  double coeff = 1.0 / AiMax(fabs(Po.z * po->tan_fov), 1e-3);
   Ps.x = Po.x * coeff;
   Ps.y = Po.y * coeff;
 

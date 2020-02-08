@@ -73,8 +73,11 @@ node_initialize
 
 node_update
 {
+    AiCameraUpdate(node, false);
     CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
 
+    
+    // THIS IS DOUBLE CODE, also in driver!
     tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL");
     tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL");
     tl->focal_length = clamp_min(tl->focal_length, 0.01);
@@ -124,7 +127,6 @@ node_update
         }
     // }
 
-    AiCameraUpdate(node, false);
 }
 
 node_finish
