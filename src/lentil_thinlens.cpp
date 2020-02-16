@@ -35,10 +35,10 @@ enum
 
 node_parameters
 {
-    AiParameterFlt("sensor_widthTL", 3.6); // 35mm film
-    AiParameterFlt("focal_lengthTL", 3.5); // in cm
+    AiParameterFlt("sensor_widthTL", 36.0); // 35mm film
+    AiParameterFlt("focal_lengthTL", 35.0); // in mm
     AiParameterFlt("fstopTL", 1.4);
-    AiParameterFlt("focus_distanceTL", 100.0);
+    AiParameterFlt("focus_distanceTL", 100.0); // in cm
 
     // AiParameterFlt("emperical_ca_distTL", 0.0);
     AiParameterFlt("optical_vignetting_distanceTL", 0.0);
@@ -78,8 +78,8 @@ node_update
 
     
     // THIS IS DOUBLE CODE, also in driver!
-    tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL");
-    tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL");
+    tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL") / 10.0;
+    tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL") / 10.0;
     tl->focal_length = clamp_min(tl->focal_length, 0.01);
 
     tl->fstop = AiNodeGetFlt(node, "fstopTL");

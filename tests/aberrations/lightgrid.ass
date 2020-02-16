@@ -86,7 +86,7 @@ lentil_thinlens
  #abb_sphericalTL 0.65
  abb_comaTL 0.05
  focus_distanceTL 40
- focal_lengthTL 5
+ focal_lengthTL 50
  bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"

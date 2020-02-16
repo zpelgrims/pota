@@ -135,7 +135,7 @@ lentil_thinlens
  0.649698555 -0.0574722625 -0.758016288 0
  17.601759 1.98807669 -19.9616642 1
  focus_distanceTL 26.3
- focal_lengthTL 4.9
+ focal_lengthTL 49
  fstopTL 1.4
  optical_vignetting_distanceTL 4.0
  optical_vignetting_radiusTL 1.0

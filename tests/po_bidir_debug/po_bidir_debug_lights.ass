@@ -4,26 +4,25 @@
 ### user: cactus
 ### bounds: 0 0 0 0 0 0
 ### render_layer: defaultRenderLayer
-### scene: /Users/zeno/test01.ma
+### scene: /home/cactus/test01.ma
 
 
 
 options
 {
  AA_samples 10
- outputs 4 1 STRING
+ outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
- xres 960
- yres 540
- texture_per_file_stats on
- texture_searchpath "/Users/zeno/Documents/maya/projects/default/sourceimages"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+ xres 1920
+ yres 1080
  texture_automip off
  camera "rendercamLentilThinLensShape"
  frame 1
- procedural_searchpath "/Users/zeno/Documents/maya/projects/default/"
  GI_diffuse_depth 1
  GI_specular_depth 1
  GI_transmission_depth 8
@@ -39,7 +38,7 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/rgba.exr"
+ filename "/home/cactus/lentil/pota/tests/po_bidir_debug/rgba_lights.exr"
  color_space ""
 }
 
@@ -62,7 +61,7 @@ closest_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/p.exr"
+ filename "/home/cactus/lentil/pota/tests/po_bidir_debug/p.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -75,7 +74,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/z.exr"
+ filename "/home/cactus/lentil/pota/tests/po_bidir_debug/z.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -94,10 +93,10 @@ lentil_thinlens
  0.779105663 0.0785507262 0.621951878 0
  105.483185 10.6349897 84.2061157 1
  focus_distanceTL 165
- focal_lengthTL 4.9
- fstopTL 0.5
- bidir_output_pathTL "/Users/zeno/lentil/pota/tests/po_bidir_debug/test.<aov>.<frame>.exr"
- bidir_sample_multTL 100
+ focal_lengthTL 49
+ fstopTL 0.3
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/po_bidir_debug/test_lights.<aov>.<frame>.exr"
+ bidir_sample_multTL 50
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }
@@ -110,7 +109,7 @@ point_light
  0 1 0 0
  0 0 1 0
  -25.3767529 15.5772448 -19.163763 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -126,7 +125,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight9|pointLightShape9"
 }
@@ -134,7 +133,7 @@ point_light
 point_light
 {
  name pointLightShape8
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -150,7 +149,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight8|pointLightShape8"
 }
@@ -163,7 +162,7 @@ point_light
  0 1 0 0
  0 0 1 0
  74.8654327 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -179,7 +178,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight7|pointLightShape7"
 }
@@ -192,7 +191,7 @@ point_light
  0 1 0 0
  0 0 1 0
  27.2441635 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -208,7 +207,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight1|pointLightShape1"
 }
@@ -221,7 +220,7 @@ point_light
  0 1 0 0
  0 0 1 0
  50.3045464 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -237,7 +236,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight6|pointLightShape6"
 }
@@ -250,7 +249,7 @@ point_light
  0 1 0 0
  0 0 1 0
  -28.0852795 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -266,7 +265,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight5|pointLightShape5"
 }
@@ -279,7 +278,7 @@ point_light
  0 1 0 0
  0 0 1 0
  -54.3455734 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -295,7 +294,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight4|pointLightShape4"
 }
@@ -308,7 +307,7 @@ point_light
  0 1 0 0
  0 0 1 0
  -95.5926514 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -324,7 +323,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight3|pointLightShape3"
 }
@@ -337,7 +336,7 @@ point_light
  0 1 0 0
  0 0 1 0
  -135.892685 0 0 1
- exposure 0
+ exposure 5
  cast_shadows on
  cast_volumetric_shadows on
  shadow_density 1
@@ -353,7 +352,7 @@ point_light
  volume_samples 2
  volume 1
  aov "default"
- radius 0.5
+ radius 1.5
  declare maya_full_name constant STRING
  maya_full_name "|pointLight2|pointLightShape2"
 }

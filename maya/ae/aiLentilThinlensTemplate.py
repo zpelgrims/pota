@@ -49,8 +49,8 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
     def setup(self):
 
         self.beginLayout("Thin Lens", collapse=False)
-        self.addControl("aiSensorWidthTL", label="Sensor Width (cm)")
-        self.addControl("aiFocalLengthTL", label="Focal Length (cm)")
+        self.addControl("aiSensorWidthTL", label="Sensor Width (mm)")
+        self.addControl("aiFocalLengthTL", label="Focal Length (mm)")
         self.addControl("aiFstopTL", label="F-stop", dynamic=True)
         self.addControl("aiFocusDistanceTL", label="Focus distance (cm)")
 
