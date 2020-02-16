@@ -13,6 +13,7 @@ struct CameraThinLens
     float sensor_width;
     float focal_length;
 	float fov;
+    float tan_fov;
     float fstop;
     float focus_distance;
     float aperture_radius;

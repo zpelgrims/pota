@@ -87,7 +87,8 @@ node_update
 
     tl->focus_distance = AiNodeGetFlt(node, "focus_distanceTL");
 
-    tl->fov = ((tl->sensor_width*0.5));
+    tl->fov = tl->sensor_width*0.5;
+    tl->tan_fov = std::tan(tl->fov);
     tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
 
     tl->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminanceTL");
@@ -188,8 +189,13 @@ camera_create_ray
 
 camera_reverse_ray
 {
-    // const CameraThinLens* data = (CameraThinLens*)AiNodeGetLocalData(node);
-    return false;
+    const CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
+
+    double coeff = 1.0 / AiMax(fabs(Po.z * tl->tan_fov), 1e-3);
+    Ps.x = Po.x * coeff;
+    Ps.y = Po.y * coeff;
+
+    return true;
 }
 
 node_loader
