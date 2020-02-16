@@ -1,28 +1,22 @@
-[node lentil]
-    desc STRING "Polynomial optics camera shader"
-    maya.name               STRING  "lentil"
-    maya.id                 INT     0x00070507
+[node lentil_thinlens]
+    desc STRING "Advanced thinlens camera shader, part of the lentil toolkit."
+    maya.name               STRING  "lentil_thinlens"
+    maya.id                 INT     0x00070508
     maya.classification     STRING  "shader/surface"
     maya.type               STRING  "camera"
-    maya.translator         STRING  "lentil"
+    maya.translator         STRING  "lentil_thinlens"
 
     c4d.classification      STRING  "generic"
 
     houdini.icon            STRING  "SHOP_surface"
-    houdini.label           STRING  "lentil"
+    houdini.label           STRING  "lentil_thinlens"
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;7;Bokeh;3;Bidirectional;5;Additional;2"
+    houdini.parm.folder.first STRING  "General;4;Bokeh;7;Bidirectional;5;Additional;2"
     
 
-    [attr lens_modelPO]
-        desc                STRING  "Lens Model"
-
-        houdini.label       STRING  "Lens Model"
-
-
-    [attr sensor_widthPO]
+    [attr sensor_widthTL]
         min                 FLOAT   0.1
         max                 FLOAT   100
         default             FLOAT   36
@@ -31,24 +25,19 @@
         houdini.label       STRING  "Sensor Width (mm)"
 
 
-    [attr wavelengthPO]
-        min                 FLOAT   390.0
-        max                 FLOAT   700.0
-        default             FLOAT   550.0
-        desc                STRING  "Wavelength in nanometers."
+    [attr focal_lengthTL]
+        min                 FLOAT   0.01
+        max                 FLOAT   99999.0
+        softmin             FLOAT   5.0
+        softmax             FLOAT   500.0
+        default             FLOAT   35.0
+        desc                STRING  "Focal length in mm"
 
-        houdini.label       STRING  "Wavelength (nm)"
-
-
-    [attr dofPO]
-        default             BOOL    true
-        desc                STRING  "Enable Depth of Field"
-
-        houdini.label       STRING  "Enable Depth of Field"
+        houdini.label       STRING  "Focal Length (mm)"
 
 
-    [attr fstopPO]
-        min                 FLOAT   0.0
+    [attr fstopTL]
+        min                 FLOAT   0.01
         max                 FLOAT   64.0
         default             FLOAT   2.8
         desc                STRING  "F-Stop"
@@ -56,7 +45,7 @@
         houdini.label       STRING  "F-stop"
 
 
-    [attr focus_distancePO]
+    [attr focus_distanceTL]
         min                 FLOAT   0.0
         max                 FLOAT   1000000.0
         default             FLOAT   150.0
@@ -65,53 +54,79 @@
         houdini.label       STRING  "Focus Distance (cm)"
 
 
-    [attr extra_sensor_shiftPO]
-        min                 FLOAT   -10.0
-        max                 FLOAT   10.0
+    [attr optical_vignetting_distanceTL]
+        min                 FLOAT   0.0
+        max                 FLOAT   20.0
         default             FLOAT   0.0
-        desc                STRING  "Additional Sensor shift (mm)"
+        desc                STRING  ""
 
-        houdini.label       STRING  "Additional Sensor shift (mm)"
-
-
-
-    [attr bokeh_aperture_bladesPO]
-        default             INT     0
-        min                 INT     0
-        max                 INT     8
-        desc                STRING  "Number of aperture blades. < 3 is perfectly circular."
-
-        houdini.label       STRING  "Aperture Blades"
+        houdini.label       STRING  "Optical Vignetting Distance"
 
 
-    [attr bokeh_enable_imagePO]
+    [attr optical_vignetting_radiusTL]
+        min                 FLOAT   1.0
+        max                 FLOAT   5.0
+        default             FLOAT   2.0
+        desc                STRING  ""
+
+        houdini.label       STRING  "Optical Vignetting Radius"
+
+
+    [attr abb_sphericalTL]
+        min                 FLOAT   0.0
+        max                 FLOAT   1.0
+        default             FLOAT   0.5
+        desc                STRING  ""
+
+        houdini.label       STRING  "Spherical Abberation"
+
+
+    [attr bokeh_circle_to_squareTL]
+        min                 FLOAT   0.0
+        max                 FLOAT   1.0
+        default             FLOAT   0.0
+        desc                STRING  "0 is a perfectly circular highlight, 1 is perfectly square. Squarish ones look nice when using anamorphic type highlights."
+
+        houdini.label       STRING  "Circle <-> Square"
+
+
+    [attr bokeh_anamorphicTL]
+        min                 FLOAT   0.0
+        max                 FLOAT   1.0
+        default             FLOAT   0.0
+        desc                STRING  "Squeeze the aperture in the y-axis."
+
+        houdini.label       STRING  "Anamorphic"
+
+
+    [attr bokeh_enable_imageTL]
         default             BOOL     false
         desc                STRING  "Enable image based bokeh"
 
         houdini.label       STRING  "Use Bokeh Image"
 
 
-    [attr bokeh_image_pathPO]
+    [attr bokeh_image_pathTL]
         desc                STRING  "Path to image based bokeh"
 
         houdini.label       STRING  "Image bokeh path"
 
 
-    [attr bidir_min_luminancePO]
+    [attr bidir_min_luminanceTL]
         min                 FLOAT    0.0
         max                 INT    10000
-        desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
+        desc                STRING  "Minimum threshold luminance for the bidirectional comTLnent to kick in."
 
         houdini.label       STRING  "Trigger treshold"
 
 
-    [attr bidir_output_pathPO]
+    [attr bidir_output_pathTL]
         desc                STRING  "Bidirectional output path. Should include <frame> and <aov> tokens."
 
         houdini.label       STRING  "Output path"
 
     
-    [attr bidir_sample_multPO]
+    [attr bidir_sample_multTL]
         min                 INT    0
         max                 INT    1000
         default             INT    10
@@ -120,19 +135,19 @@
         houdini.label       STRING  "Samples Multiplier"
 
 
-    [attr bidir_add_luminancePO]
+    [attr bidir_add_luminanceTL]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
 
         houdini.label       STRING  "Additional Luminance"
 
 
-    [attr bidir_add_luminance_transitionPO]
+    [attr bidir_add_luminance_transitionTL]
         desc                STRING  "Additional luminance transition"
 
         houdini.label       STRING  "Additional luminance transition"
 
 
-    [attr vignetting_retriesPO]
+    [attr vignetting_retriesTL]
         min                 INT    1
         max                 INT    50
         default             INT    15
@@ -142,7 +157,7 @@
 
 
 
-    [attr proper_ray_derivativesPO]
+    [attr proper_ray_derivativesTL]
         default             BOOL  true
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
