@@ -78,8 +78,8 @@ node_update
 
     
     // THIS IS DOUBLE CODE, also in driver!
-    tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL") / 10.0;
-    tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL") / 10.0;
+    tl->sensor_width = AiNodeGetFlt(node, "sensor_widthTL");
+    tl->focal_length = AiNodeGetFlt(node, "focal_lengthTL");
     tl->focal_length = clamp_min(tl->focal_length, 0.01);
 
     tl->fstop = AiNodeGetFlt(node, "fstopTL");
@@ -87,9 +87,9 @@ node_update
 
     tl->focus_distance = AiNodeGetFlt(node, "focus_distanceTL");
 
-    tl->fov = tl->sensor_width*0.5;
-    tl->tan_fov = std::tan(tl->fov);
-    tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
+    tl->fov = 2.0 * std::atan(tl->sensor_width / (2.0*tl->focal_length));
+    tl->tan_fov = std::tan(tl->fov/2.0);
+    tl->aperture_radius = (tl->focal_length / (2.0 * tl->fstop)) / 10.0;
 
     tl->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminanceTL");
     tl->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathTL");

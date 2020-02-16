@@ -68,7 +68,6 @@ node_update
   po->input_fstop = AiNodeGetFlt(cameranode, "fstopPO");
   po->focus_distance = AiNodeGetFlt(cameranode, "focus_distancePO") * 10.0; //converting to mm
   po->lensModel = (LensModel) AiNodeGetInt(cameranode, "lens_modelPO");
-  po->unitModel = (UnitModel) AiNodeGetInt(cameranode, "unitsPO");
   po->bokeh_aperture_blades = AiNodeGetInt(cameranode, "bokeh_aperture_bladesPO");
   po->dof = AiNodeGetBool(cameranode, "dofPO");
   po->vignetting_retries = AiNodeGetInt(cameranode, "vignetting_retriesPO");

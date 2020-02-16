@@ -74,8 +74,9 @@ node_update
 
   tl->focus_distance = AiNodeGetFlt(cameranode, "focus_distanceTL");
 
-  tl->fov = ((tl->sensor_width*0.5));
-  tl->aperture_radius = (tl->focal_length) / (2.0 * tl->fstop);
+  tl->fov = 2.0 * std::atan(tl->sensor_width / (2.0*tl->focal_length));
+  tl->tan_fov = std::tan(tl->fov/2.0);
+  tl->aperture_radius = (tl->focal_length / (2.0 * tl->fstop)) / 10.0;
 
   tl->bidir_min_luminance = AiNodeGetFlt(cameranode, "bidir_min_luminanceTL");
   tl->bidir_output_path = AiNodeGetStr(cameranode, "bidir_output_pathTL");

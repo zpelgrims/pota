@@ -18,15 +18,6 @@ enum LensModel{
     #include "../include/auto_generated_lens_includes/pota_h_lenses.h"
 };
 
-
-// enum to switch between units in interface dropdown
-enum UnitModel{
-    mm,
-    cm,
-    dm,
-    m
-};
-
 /*
 struct Draw
 {
@@ -64,7 +55,6 @@ struct Timing
 struct Camera
 {
 	LensModel lensModel;
-    UnitModel unitModel;
     CameraRaytraced camera_rt;
     imageData image;
 

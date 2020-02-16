@@ -13,7 +13,6 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentil_raytracedMethods)
 
 
 enum {
-  p_unitModel,
   p_lensModel,
   p_sensor_width,
   p_wavelength,
@@ -41,9 +40,6 @@ static const char* LensModelNames[] = {
   #include "../include/auto_generated_lens_includes/pota_cpp_lenses.h"
   NULL
 };
-
-// to switch between units in interface dropdown
-static const char* UnitModelNames[] = {"mm", "cm", "dm", "m", NULL};
 
 
 double get_lens_length(Camera *camera) {
@@ -96,7 +92,6 @@ void rt_logarithmic_focus_search(
 
 
 node_parameters {
-  AiParameterEnum("unitModel", cm, UnitModelNames);
   AiParameterEnum("lensModel", angenieux__double_gauss__1953__49mm, LensModelNames); // what to do here..? Can i not specify one?
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
@@ -142,7 +137,6 @@ node_update {
   camera->sensor_width = AiNodeGetFlt(node, "sensor_width");
   camera->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //convert to mm
   camera->lensModel = (LensModel) AiNodeGetInt(node, "lensModel");
-  camera->unitModel = (UnitModel) AiNodeGetInt(node, "unitModel");
   //camera->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
   //camera->dof = AiNodeGetBool(node, "dof");
   camera->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
@@ -152,22 +146,6 @@ node_update {
   //camera->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivatives");
 
   camera->anamorphic_stretch = AiNodeGetFlt(node, "anamorphic_stretch");
-
-  // convert to cm
-  switch (camera->unitModel){
-    case mm:
-    {
-      camera->focus_distance *= 0.1;
-    } break;
-    case dm:
-    {
-      camera->focus_distance *= 10.0;
-    } break;
-    case m:
-    {
-      camera->focus_distance *= 100.0;
-    }
-  }
 
   AiMsgInfo("");
   AiMsgInfo("[lentil raytraced] ----------  LENS CONSTANTS  -----------");
@@ -275,31 +253,8 @@ camera_create_ray {
   }
   
   for (int i = 0; i<3; i++){
-    output.origin[i] = pos(i);
-    output.dir[i] = dir(i);
-  }
-
-  switch (camera->unitModel) {
-    case mm:
-    {
-      output.origin *= -1.0; // reverse rays and convert to cm
-      output.dir *= -1.0; //reverse rays and convert to cm
-    } break;
-    case cm:
-    { 
-      output.origin *= -0.1; // reverse rays and convert to cm
-      output.dir *= -0.1; //reverse rays and convert to cm
-    } break;
-    case dm:
-    {
-      output.origin *= -0.01; // reverse rays and convert to cm
-      output.dir *= -0.01; //reverse rays and convert to cm
-    } break;
-    case m:
-    {
-      output.origin *= -0.001; // reverse rays and convert to cm
-      output.dir *= -0.001; //reverse rays and convert to cm
-    }
+    output.origin[i] = pos(i) / -10.0;
+    output.dir[i] = dir(i) / -10.0;
   }
 
 

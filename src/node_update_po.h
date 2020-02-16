@@ -1,24 +1,3 @@
-  // convert to cm
-  switch (po->unitModel){
-    case mm:
-    {
-      po->focus_distance *= 0.1;
-    } break;
-    case cm:
-    {
-      po->focus_distance *= 1.0;
-    } break;
-    case dm:
-    {
-      po->focus_distance *= 10.0;
-    } break;
-    case m:
-    {
-      po->focus_distance *= 100.0;
-    }
-  }
-
-
   AiMsgInfo("");
 
   load_lens_constants(po);
