@@ -95,6 +95,7 @@
         desc                STRING  "Path to image based bokeh"
 
         houdini.label       STRING  "Image bokeh path"
+        houdini.type        STRING  "file:image"
 
 
     [attr bidir_min_luminancePO]
