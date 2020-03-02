@@ -26,9 +26,10 @@ struct CameraThinLens
     float abb_spherical;
     // float abb_coma;
 
+    int bokeh_aperture_blades;
     float circle_to_square;
     float bokeh_anamorphic;
-
+    
     bool bokeh_enable_image;
     AtString bokeh_image_path;
 
@@ -46,48 +47,8 @@ struct CameraThinLens
 extern struct CameraThinLens tl;
 
 
-inline float clamp(float in, const float min, const float max) {
-    if (in < min) in = min;
-    if (in > max) in = max;
-    return in;
-}
-
-inline float clamp_min(float in, const float min) {
-    if (in < min) in = min;
-    return in;
-}
-
-// xorshift fast random number generator
-inline uint32_t xor128(void){
-  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-  uint32_t t = x ^ (x << 11);
-  x = y; y = z; z = w;
-  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
 
 
-// sin approximation, not completely accurate but faster than std::sin
-inline float fast_sin(float x){
-    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
-    const float B = 4.0f / AI_PI;
-    const float C = -4.0f / (AI_PI*AI_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
-
-
-inline float fast_cos(float x){
-    // conversion from sin to cos
-    x += AI_PI * 0.5;
-
-    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
-    const float B = 4.0f / AI_PI;
-    const float C = -4.0f / (AI_PI*AI_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
 
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
@@ -188,8 +149,10 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         if (tries == 0) { // make use of blue noise sampler in arnold
             if (tl->bokeh_enable_image) {
                 tl->image.bokehSample(lensx, lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            } else {
+            } else if (tl->bokeh_aperture_blades < 2) {
                 concentricDiskSample(lensx, lensy, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
+            } else {
+                lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), lensx, lensy, 1.0, tl->bokeh_aperture_blades);
             }
         } else {
             r1 = xor128() / 4294967296.0;
@@ -197,8 +160,10 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
 
             if (tl->bokeh_enable_image) {
                 tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            } else {
+            } else if (tl->bokeh_aperture_blades < 2) {
                 concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
+            } else {
+                lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, tl->bokeh_aperture_blades);
             }
         }
 

@@ -12,11 +12,6 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
-
-// need to sleep the updating of the initialization of this node for a bit
-#include <chrono>
-#include <thread>
-
  
 AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
  
