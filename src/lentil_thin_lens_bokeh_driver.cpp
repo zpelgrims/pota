@@ -101,7 +101,7 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
+  // this is really sketchy, need to watch out for a race condition here, currently avoided by double compute of params
   if (tl->bidir_output_path.empty()) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL TL] No path specified for bidirectional sampling.");
     AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Path: %s", tl->bidir_output_path.c_str());

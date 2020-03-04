@@ -27,9 +27,13 @@ struct LentilBokehDriver {
   float time_start;
   float time_end;
   std::map<AtString, std::vector<AtRGBA> > image;
+  std::map<AtString, std::vector<AtRGBA> > image_redist;
+  std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
   std::vector<int> sample_per_pixel_counter;
+  std::vector<float> redist_weight_per_pixel;
+  std::vector<float> unredist_weight_per_pixel;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
   std::vector<int> aov_types;
@@ -123,13 +127,18 @@ node_update
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
   bokeh->sample_per_pixel_counter.clear();
   bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
+  bokeh->redist_weight_per_pixel.clear();
+  bokeh->redist_weight_per_pixel.resize(bokeh->xres*bokeh->yres);
+  bokeh->unredist_weight_per_pixel.clear();
+  bokeh->unredist_weight_per_pixel.resize(bokeh->xres*bokeh->yres);
+
 
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
 
   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
-  // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by 1000ms sleep
+  // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by double-computing these params
   if (po->bidir_output_path.empty()) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] No path specified for bidirectional sampling.");
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Path: %s", po->bidir_output_path.c_str());
@@ -159,6 +168,10 @@ driver_open {
     bokeh->aov_list_type.push_back(pixelType); 
     bokeh->image[AtString(name)].clear();
     bokeh->image[AtString(name)].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_redist[AtString(name)].clear();
+    bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_unredist[AtString(name)].clear();
+    bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
   }
   AiOutputIteratorReset(iterator);
 
@@ -351,6 +364,7 @@ driver_process_bucket
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
+                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
 
                   break;
                 }
@@ -361,7 +375,8 @@ driver_process_bucket
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  
+                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
+
                   break;
                 }
 
@@ -404,6 +419,7 @@ driver_process_bucket
                 bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
+                bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
 
                 break;
               }
@@ -414,7 +430,8 @@ driver_process_bucket
                   bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  
+                  bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
+
                   break;
                 }
 
@@ -470,10 +487,20 @@ driver_close
         float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
         unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
         
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a / (filter_weight_accum/samples_per_pixel);
+        float filter_norm = filter_weight_accum/(double)samples_per_pixel;
+
+        // combine the redistributed and non-redistributed samples
+        // e.g if 1/4 samples is original, it should only add up to 1/4th of the final pixel value
+        // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
+        if (bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) bokeh->redist_weight_per_pixel[pixelnumber] = 1.0;
+        AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / bokeh->redist_weight_per_pixel[pixelnumber];
+        AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
+        AtRGBA combined_redist_unredist = (unredist * bokeh->unredist_weight_per_pixel[pixelnumber]) + (redist * (1.0-bokeh->unredist_weight_per_pixel[pixelnumber]));
+        
+        image[++offset] = combined_redist_unredist.r / filter_norm;
+        image[++offset] = combined_redist_unredist.g / filter_norm;
+        image[++offset] = combined_redist_unredist.b / filter_norm;
+        image[++offset] = combined_redist_unredist.a / filter_norm;
       } else {
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r;
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g;
