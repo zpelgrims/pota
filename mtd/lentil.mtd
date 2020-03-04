@@ -96,6 +96,7 @@
 
         houdini.label       STRING  "Image bokeh path"
         houdini.type        STRING  "file:image"
+        c4d.gui_type        INT     3
 
 
     [attr bidir_min_luminancePO]
@@ -110,6 +111,7 @@
         desc                STRING  "Bidirectional output path. Should include <frame> and <aov> tokens."
 
         houdini.label       STRING  "Output path"
+        c4d.gui_type        INT     2
 
     
     [attr bidir_sample_multPO]
