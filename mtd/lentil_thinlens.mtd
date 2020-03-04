@@ -79,6 +79,15 @@
         desc                STRING  ""
 
         houdini.label       STRING  "Spherical Abberation"
+    
+
+    [attr bokeh_aperture_bladesTL]
+        default             INT     0
+        min                 INT     0
+        max                 INT     8
+        desc                STRING  "Number of aperture blades. Less than 3 is perfectly circular."
+
+        houdini.label       STRING  "Aperture Blades"
 
 
     [attr bokeh_circle_to_squareTL]
