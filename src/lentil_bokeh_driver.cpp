@@ -492,10 +492,9 @@ driver_close
         // combine the redistributed and non-redistributed samples
         // e.g if 1/4 samples is original, it should only add up to 1/4th of the final pixel value
         // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
-        if (bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) bokeh->redist_weight_per_pixel[pixelnumber] = 1.0;
-        AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / bokeh->redist_weight_per_pixel[pixelnumber];
+        AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->redist_weight_per_pixel[pixelnumber]);
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
-        AtRGBA combined_redist_unredist = (unredist * bokeh->unredist_weight_per_pixel[pixelnumber]) + (redist * (1.0-bokeh->unredist_weight_per_pixel[pixelnumber]));
+        AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
         image[++offset] = combined_redist_unredist.r / filter_norm;
         image[++offset] = combined_redist_unredist.g / filter_norm;
