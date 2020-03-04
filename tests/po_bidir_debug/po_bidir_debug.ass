@@ -19,8 +19,8 @@ options
   "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
   "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
- xres 1920
- yres 1080
+ xres 1280
+ yres 720
  camera "rendercamLentilThinLensShape"
  frame 1
  GI_diffuse_depth 1
@@ -38,7 +38,7 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/home/cactus/lentil/pota/tests/po_bidir_debug/rgba_spheres.exr"
+ filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/rgba_spheres.exr"
  color_space ""
 }
 
@@ -56,7 +56,7 @@ closest_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/po_bidir_debug/p.exr"
+ filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/p.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -69,7 +69,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/po_bidir_debug/z.exr"
+ filename "/Users/zeno/lentil/pota/tests/po_bidir_debug/z.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -91,8 +91,8 @@ lentil_thinlens
  focal_lengthTL 49
  fstopTL 1.4
  bidir_min_luminanceTL 0.1
- bidir_output_pathTL "/home/cactus/lentil/pota/tests/po_bidir_debug/test_spheres.<aov>.<frame>.exr"
- bidir_sample_multTL 100
+ bidir_output_pathTL "/Users/zeno/lentil/pota/tests/po_bidir_debug/test_spheres_100spp.<aov>.<frame>.exr"
+ bidir_sample_multTL 10
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilThinLensShape"
 }
@@ -139,39 +139,6 @@ quad_light
  maya_full_name "|group1|aiAreaLight1|aiAreaLightShape1"
 }
 
-skydome_light
-{
- name aiSkyDomeLightShape1
- matrix
- 8 0 0 0
- 0 8 0 0
- 0 0 8 0
- 0 0 0 1
- intensity 0.0735294074
- exposure 0
- cast_shadows on
- cast_volumetric_shadows on
- shadow_density 1
- shadow_color 0 0 0
- samples 1
- normalize on
- camera 1
- transmission 1
- diffuse 1
- specular 1
- sss 1
- indirect 1
- max_bounces 999
- volume_samples 2
- volume 1
- aov "default"
- resolution 1000
- format "latlong"
- portal_mode "interior_only"
- aov_indirect off
- declare maya_full_name constant STRING
- maya_full_name "|group1|aiSkyDomeLight1|aiSkyDomeLightShape1"
-}
 
 sphere
 {

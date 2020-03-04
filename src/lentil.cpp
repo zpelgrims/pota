@@ -289,7 +289,7 @@ camera_reverse_ray
 camera_reverse_ray {
   const Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  double coeff = 1.0 / std::max(std::abs(Po.z * po->tan_fov), 1e-3f);
+  double coeff = 1.0 / std::max(std::abs(Po.z * po->tan_fov), 1e-3);
   Ps.x = Po.x * coeff;
   Ps.y = Po.y * coeff;
 

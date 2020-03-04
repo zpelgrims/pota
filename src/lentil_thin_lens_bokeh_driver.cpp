@@ -28,9 +28,14 @@ struct ThinLensBokehDriver {
   float time_start;
   float time_end;
   std::map<AtString, std::vector<AtRGBA> > image;
+  std::map<AtString, std::vector<AtRGBA> > image_redist;
+  std::map<AtString, std::vector<AtRGBA> > image_unredist;
+  std::map<AtString, std::vector<AtRGBA> > image_orig;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
   std::vector<int> sample_per_pixel_counter;
+  std::vector<float> redist_weight_per_pixel;
+  std::vector<float> unredist_weight_per_pixel;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
   std::vector<int> aov_types;
@@ -88,6 +93,10 @@ node_update
   bokeh->filter_weight_buffer.resize(bokeh->xres * bokeh->yres);
   bokeh->sample_per_pixel_counter.clear();
   bokeh->sample_per_pixel_counter.resize(bokeh->xres*bokeh->yres);
+  bokeh->redist_weight_per_pixel.clear();
+  bokeh->redist_weight_per_pixel.resize(bokeh->xres*bokeh->yres);
+  bokeh->unredist_weight_per_pixel.clear();
+  bokeh->unredist_weight_per_pixel.resize(bokeh->xres*bokeh->yres);
 
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
@@ -124,6 +133,12 @@ driver_open {
     bokeh->aov_list_type.push_back(pixelType); 
     bokeh->image[AtString(name)].clear();
     bokeh->image[AtString(name)].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_orig[AtString(name)].clear();
+    bokeh->image_orig[AtString(name)].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_redist[AtString(name)].clear();
+    bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_unredist[AtString(name)].clear();
+    bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
   }
   AiOutputIteratorReset(iterator);
 }
@@ -355,10 +370,11 @@ driver_process_bucket
 
                 case AI_TYPE_RGBA: {
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
-                  rgba_energy = rgba_energy * weight * filter_weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                  rgba_energy = rgba_energy * weight;// * filter_weight;
+                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
+                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
 
                   break;
                 }
@@ -408,9 +424,10 @@ driver_process_bucket
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;// * filter_weight;
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
+                bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
 
                 break;
               }
@@ -449,6 +466,17 @@ driver_process_bucket
             }
           }
         }
+
+        int pixelnumber = static_cast<int>(bokeh->xres * py + px);
+        for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
+            switch(bokeh->aov_list_type[i]){
+              case AI_TYPE_RGBA: {
+                AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
+                bokeh->image_orig[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                break;
+              }
+            }
+        }
       }
     }
   }
@@ -476,11 +504,34 @@ driver_close
 
         float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
         unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
+
+        // float filter_norm = filter_weight_accum/(double)samples_per_pixel;
+        // float alpha = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a / filter_norm;
+
+        // only if alpha is 1 in original pixel, do the normalization trick (to account for differences in deposited amount of samples, per pixel). 
+        // I expect problems to arise with this..
+        // if (bokeh->image_orig[bokeh->aov_list_name[i]][pixelnumber].a == 1.0) {
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r / filter_norm / alpha;
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g / filter_norm / alpha;
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b / filter_norm / alpha;
+        //   image[++offset] = 1.0;
+        // } else {
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r / filter_norm;
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g / filter_norm;
+        //   image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b / filter_norm;
+        //   image[++offset] = alpha;
+        // }
+
+        if (bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) bokeh->redist_weight_per_pixel[pixelnumber] = 1.0;
+        AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / bokeh->redist_weight_per_pixel[pixelnumber];
+        AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
+        AtRGBA final_color = (unredist * bokeh->unredist_weight_per_pixel[pixelnumber]) + (redist * (1.0-bokeh->unredist_weight_per_pixel[pixelnumber]));
         
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b / (filter_weight_accum/samples_per_pixel);
-        image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a / (filter_weight_accum/samples_per_pixel);
+        image[++offset] = final_color.r;
+        image[++offset] = final_color.g;
+        image[++offset] = final_color.b;
+        image[++offset] = final_color.a;
+
       } else {
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r;
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g;
