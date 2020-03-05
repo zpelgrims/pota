@@ -178,15 +178,15 @@ driver_process_bucket
         const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
+
+
         
-
-
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->bidir_min_luminance) {
-          
+
           if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
-        
+
           // world to camera space transform, static just for CoC
           AtMatrix world_to_camera_matrix_static;
           float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
@@ -290,7 +290,7 @@ driver_process_bucket
             AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
                                       focusdist_image_point.y / focusdist_image_point.z);
             sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
-            
+
 
             // optical vignetting
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
