@@ -44,10 +44,17 @@ class aiLentilTemplate(templates.AttributeTemplate):
     def filenameReplaceBokehInput(self, nodeName):
         cmds.textFieldButtonGrp("filenameBokehGrpInput", edit=True, text=cmds.getAttr(nodeName) )
 
+    def launchgui_button_create(self, *args):
+        # userinterface.py needs to be in the PYTHONPATH envvar!
+        cmds.button(label="Launch Lentil UI", align="center", command="import userinterface as lentil_ui;ld = lentil_ui.ArnoldMayaTranslator(parent=lentil_ui.getMainWindowPtrMaya())")
 
+    def launchgui_button_update(self):
+        pass
 
 
     def setup(self):
+
+        self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
 
         self.beginLayout("Polynomial Optics", collapse=False)
         self.addControl("aiLensModelPO", label="Lens Model")
