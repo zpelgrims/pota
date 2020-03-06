@@ -54,7 +54,6 @@ node_update
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
-  // Camera *po;
 
 
   const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
@@ -89,10 +88,6 @@ node_update
   po->extra_sensor_shift = AiNodeGetFlt(cameranode, "extra_sensor_shiftPO");
 
   #include "node_update_po.h"
-
-
-
-
 
 
 
