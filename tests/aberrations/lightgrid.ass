@@ -11,12 +11,13 @@
 options
 {
  AA_samples 10
- outputs 5 1 STRING
+ outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
  xres 960
  yres 540
  texture_per_file_stats on
@@ -35,13 +36,8 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_RGBA.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_RGBA.exr"
  color_space ""
-}
-
-lentil_bokeh_driver
-{
- name aiAOVDriver2@lentil_bokeh_driver
 }
 
 lentil_thin_lens_bokeh_driver
@@ -74,50 +70,22 @@ lentil_thinlens
  0 0 125 1
  near_clip 0.100000001
  far_clip 10000
- shutter_start -0.25
- shutter_end 0.25
+ shutter_start 0
+ shutter_end 0
  shutter_type "box"
  rolling_shutter "off"
  rolling_shutter_duration 0
- motion_start -0.25
- motion_end 0.25
+ motion_start 0
+ motion_end 0
  exposure 0
- fstopTL 2.5
- #abb_sphericalTL 0.65
- abb_comaTL 0.05
+ fstopTL 1.0
  focus_distanceTL 40
+ bidir_sample_multTL 100
+ bidir_min_luminanceTL 0.2
+ optical_vignetting_distanceTL 3.0
+ optical_vignetting_radiusTL 1.0
  focal_lengthTL 50
- bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
- declare maya_full_name constant STRING
- maya_full_name "|rendercam|rendercamShape"
-}
-
-lentil
-{
- name rendercamPOShape
- matrix 1 2 MATRIX
- 1 0 0 0
- 0 1 0 0
- 0 0 1 0
- 0 0 75 1
- 1 0 0 0
- 0 1 0 0
- 0 0 1 0
- 0 0 125 1
- near_clip 0.100000001
- far_clip 10000
- shutter_start -0.25
- shutter_end 0.25
- shutter_type "box"
- rolling_shutter "off"
- rolling_shutter_duration 0
- motion_start -0.25
- motion_end 0.25
- exposure 0
- lens_modelPO "cooke__speed_panchro__1920__50mm"
- fstopPO 2
- focus_distancePO 30
- bidir_output_pathPO "/home/cactus/lentil/pota/tests/aberrations/po.<aov>.<frame>.exr"
+ bidir_output_pathTL "/Users/zeno/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
@@ -126,7 +94,7 @@ lentil
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -139,7 +107,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_Z.exr"
  compression "zip"
  half_precision off
  tiled on
