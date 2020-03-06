@@ -57,6 +57,11 @@ node_update
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
+  const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
+  if (AiNodeEntryGetCount(nentry) > 1){
+    AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_thin_lens_bokeh_driver exist. All of bidirectional AOVs should be connected to a single lentil_thin_lens_bokeh_driver node. This is to avoid doing the bidirectional sampling multiple times.");
+  }
+
   // THIS IS DOUBLE CODE, also in camera!
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct
   AtNode *cameranode = AiUniverseGetCamera();

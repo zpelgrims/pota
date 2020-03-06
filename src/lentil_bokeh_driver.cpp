@@ -57,6 +57,10 @@ node_update
   // Camera *po;
 
 
+  const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
+  if (AiNodeEntryGetCount(nentry) > 1){
+    AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_bokeh_driver exist. All of bidirectional AOVs should be connected to a single lentil_bokeh_driver node. This is to avoid doing the bidirectional sampling multiple times.");
+  }
 
 
 
@@ -101,11 +105,6 @@ node_update
     bokeh->enabled = false;
     return;
   }
-
-  // this is an UGLY solution, sleep this node initialization for x amount of time
-  // this is required to try and make sure the data in shared CameraThinLens is filled in first.
-  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
 
   // disable for non-lentil cameras
   AtNode *node_camera = AiUniverseGetCamera();
