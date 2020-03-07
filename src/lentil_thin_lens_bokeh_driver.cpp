@@ -346,11 +346,13 @@ driver_process_bucket
 
 
             // barrel distortion
-            AtVector2 sensor_position_2 = AtVector2(sensor_position.x, sensor_position.y);
-            AtVector2 sensor_position_distorted = inverseBarrelDistortion(sensor_position_2, tl->abb_distortion);
+            if (tl->abb_distortion > 0.0){
+              AtVector2 sensor_position_2 = AtVector2(sensor_position.x, sensor_position.y);
+              sensor_position = inverseBarrelDistortion(sensor_position_2, tl->abb_distortion);
+            }
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position_distorted.x, sensor_position_distorted.y * frame_aspect_ratio);
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
 
 
 

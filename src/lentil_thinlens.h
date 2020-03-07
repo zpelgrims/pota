@@ -151,9 +151,11 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         
         // distortion
         AtVector s(sx, sy, 0.0);
-        // s = AiV3Normalize(s) * std::tan(std::asin(AiV3Length(s) * 1.5));
-        AtVector2 s2 = barrelDistortion(AtVector2(sx, sy), tl->abb_distortion);
-        s = {s2.x, s2.y, 0.0};
+        if (tl->abb_distortion > 0.0){
+            AtVector2 s2 = barrelDistortion(AtVector2(sx, sy), tl->abb_distortion);
+            s = {s2.x, s2.y, 0.0};
+        }
+        
 
         // create point on sensor (camera space)
         const AtVector p(s.x * (tl->sensor_width*0.5), 
