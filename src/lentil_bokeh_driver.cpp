@@ -331,7 +331,7 @@ driver_process_bucket
             }
             
 
-            // write sample to image
+             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
             AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
             float filter_weight = filter_gaussian(subpixel_position - 0.5, bokeh->filter_width);
@@ -358,7 +358,7 @@ driver_process_bucket
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
                   bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
-
+                  
                   break;
                 }
 
@@ -450,11 +450,11 @@ driver_write_bucket {}
 driver_close
 {
   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
-  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());  
+  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (!bokeh->enabled) return;
 
-  // dump framebuffer to exr
+   // dump framebuffers to exrs
   for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
     
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
@@ -480,6 +480,7 @@ driver_close
         image[++offset] = combined_redist_unredist.g / filter_norm;
         image[++offset] = combined_redist_unredist.b / filter_norm;
         image[++offset] = combined_redist_unredist.a / filter_norm;
+        
       } else {
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r;
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g;

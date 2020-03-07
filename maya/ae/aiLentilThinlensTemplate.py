@@ -57,6 +57,7 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
         self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
         self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")
         self.addControl("aiAbbSphericalTL", label="Abberation (spherical)")
+        self.addControl("aiAbbDistortionTL", label="Abberation (distortion)")
         self.addControl("aiBokehApertureBladesTL", label="Aperture Blades")
         self.addControl("aiBokehCircleToSquareTL", label="Circle to Square mapping")
         self.addControl("aiBokehAnamorphicTL", label="Anamorphic stretch")

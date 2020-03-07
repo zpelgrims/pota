@@ -78,7 +78,16 @@
         default             FLOAT   0.5
         desc                STRING  ""
 
-        houdini.label       STRING  "Spherical Abberation"
+        houdini.label       STRING  "Abberation (spherical)"
+
+
+    attr abb_distortionTL]
+        min                 FLOAT   -20.0
+        max                 FLOAT   20.0
+        default             FLOAT   0.0
+        desc                STRING  "Barrel/pincushion distortion"
+
+        houdini.label       STRING  "Abberation (distortion)"
     
 
     [attr bokeh_aperture_bladesTL]

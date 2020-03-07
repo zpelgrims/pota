@@ -25,6 +25,7 @@ struct CameraThinLens
 
     float abb_spherical;
     // float abb_coma;
+    float abb_distortion;
 
     int bokeh_aperture_blades;
     float circle_to_square;
@@ -119,6 +120,23 @@ inline float lerp_squircle_mapping(float amount) {
     return 1.0 + std::log(1.0+amount)*std::exp(amount*3.0);
 }
 
+AtVector2 barrelDistortion(AtVector2 uv, float distortion) {    
+    uv *= 1. + AiV2Dot(uv, uv) * distortion;
+    return uv;
+}
+
+AtVector2 inverseBarrelDistortion(AtVector2 uv, float distortion) {    
+    
+    float b = distortion;
+    float l = AiV2Length(uv);
+    
+    float x0 = std::pow(9.*b*b*l + std::sqrt(3.) * std::sqrt(27.*b*b*b*b*l*l + 4.*b*b*b), 1./3.);
+    float x = x0 / (std::pow(2., 1./3.) * std::pow(3., 2./3.) * b) - std::pow(2./3., 1./3.) / x0;
+       
+    return uv * (x / l);
+}
+
+
 
 
 inline void trace_ray_fw_thinlens(bool original_ray, int &tries, 
@@ -132,12 +150,14 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
     while (!ray_succes && tries <= tl->vignetting_retries){
         
         // distortion
-        // AtVector s(sx, sy, 0.0);
+        AtVector s(sx, sy, 0.0);
         // s = AiV3Normalize(s) * std::tan(std::asin(AiV3Length(s) * 1.5));
+        AtVector2 s2 = barrelDistortion(AtVector2(sx, sy), tl->abb_distortion);
+        s = {s2.x, s2.y, 0.0};
 
         // create point on sensor (camera space)
-        const AtVector p(sx * (tl->sensor_width*0.5), 
-                         sy * (tl->sensor_width*0.5), 
+        const AtVector p(s.x * (tl->sensor_width*0.5), 
+                         s.y * (tl->sensor_width*0.5), 
                          -tl->focal_length);
             
 

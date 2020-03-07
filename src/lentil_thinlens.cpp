@@ -14,6 +14,7 @@ enum
     p_optical_vignetting_radiusTL,
 
     p_abb_sphericalTL,
+    p_abb_distortionTL,
     // p_abb_comaTL,
 
     p_bokeh_aperture_bladesTL,
@@ -46,7 +47,9 @@ node_parameters
     AiParameterFlt("optical_vignetting_radiusTL", 2.0);
 
     AiParameterFlt("abb_sphericalTL", 0.5);
+    AiParameterFlt("abb_distortionTL", 0.0);
     // AiParameterFlt("abb_comaTL", 0.1);
+
     AiParameterInt("bokeh_aperture_bladesTL", 0);
     AiParameterFlt("bokeh_circle_to_squareTL", 0.0);
     AiParameterFlt("bokeh_anamorphicTL", 1.0);

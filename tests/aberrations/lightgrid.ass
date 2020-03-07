@@ -82,7 +82,7 @@ lentil
  focus_distancePO 40
  bidir_sample_multPO 10
  bidir_min_luminancePO 0.2
- #optical_vignetting_distanceTL 3.0
+ #optical_vignetting_distanceTL 0.0
  #optical_vignetting_radiusTL 1.0
  #focal_lengthTL 50
  bidir_output_pathPO "/Users/zeno/lentil/pota/tests/aberrations/po.<aov>.<frame>.exr"

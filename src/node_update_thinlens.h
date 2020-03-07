@@ -14,13 +14,12 @@ tl->aperture_radius = (tl->focal_length / (2.0 * tl->fstop)) / 10.0;
 tl->bidir_min_luminance = AiNodeGetFlt(cameranode, "bidir_min_luminanceTL");
 tl->bidir_output_path = AiNodeGetStr(cameranode, "bidir_output_pathTL");
 
-// tl->emperical_ca_dist = AiNodeGetFlt(cameranode, "emperical_ca_distTL");
 tl->optical_vignetting_distance = AiNodeGetFlt(cameranode, "optical_vignetting_distanceTL");
 tl->optical_vignetting_radius = AiNodeGetFlt(cameranode, "optical_vignetting_radiusTL");
 
 tl->abb_spherical = AiNodeGetFlt(cameranode, "abb_sphericalTL");
 tl->abb_spherical = clamp(tl->abb_spherical, 0.001, 0.999);
-
+tl->abb_distortion = AiNodeGetFlt(cameranode, "abb_distortionTL");
 // tl->abb_coma = AiNodeGetFlt(cameranode, "abb_comaTL");
 
 tl->bokeh_aperture_blades = AiNodeGetInt(cameranode, "bokeh_aperture_bladesTL");
