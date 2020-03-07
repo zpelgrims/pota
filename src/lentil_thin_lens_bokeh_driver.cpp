@@ -32,7 +32,7 @@ struct ThinLensBokehDriver {
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
-  std::vector<int> sample_per_pixel_counter;
+  std::vector<unsigned int> sample_per_pixel_counter;
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
   std::vector<AtString> aov_list_name;
@@ -88,7 +88,7 @@ node_update
 
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->filter_width = 2.0;//AiNodeGetFlt(AiUniverseGetOptions(), "filter_width");
+  bokeh->filter_width = 2.0;
 
 
   bokeh->zbuffer.clear();
@@ -171,7 +171,6 @@ driver_process_bucket
 
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
     for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
-
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
       while (AiAOVSampleIteratorGetNext(sample_iterator)) {
@@ -357,7 +356,7 @@ driver_process_bucket
                 (pixel_y >= yres) || 
                 (pixel_y < 0))
             {
-              --count; // much room for improvement here, many samples are wasted outside of frame
+              --count; // much room for improvement here, potentially many samples are wasted outside of frame
               continue;
             }
 
@@ -376,7 +375,7 @@ driver_process_bucket
                   bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
+                  bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
 
                   break;
                 }
@@ -387,7 +386,7 @@ driver_process_bucket
                   bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
+                  bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
                   
                   break;
                 }
@@ -497,7 +496,6 @@ driver_close
 
         float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
         unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
-
         float filter_norm = filter_weight_accum/(double)samples_per_pixel;
 
         // combine the redistributed and non-redistributed samples

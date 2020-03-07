@@ -31,7 +31,7 @@ struct LentilBokehDriver {
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::vector<float> zbuffer;
   std::vector<float> filter_weight_buffer;
-  std::vector<int> sample_per_pixel_counter;
+  std::vector<unsigned int> sample_per_pixel_counter;
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
   std::vector<AtString> aov_list_name;
@@ -78,7 +78,6 @@ node_update
   po->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesPO");
   po->bokeh_enable_image = AiNodeGetBool(cameranode, "bokeh_enable_imagePO");
   po->bokeh_image_path = AiNodeGetStr(cameranode, "bokeh_image_pathPO");
-  // po->empirical_ca_dist = AiNodeGetFlt(cameranode, "empirical_ca_dist");
   
   po->bidir_sample_mult = AiNodeGetInt(cameranode, "bidir_sample_multPO");
   po->bidir_add_luminance = AiNodeGetFlt(cameranode, "bidir_add_luminancePO");
@@ -102,8 +101,7 @@ node_update
   }
 
   // disable for non-lentil cameras
-  AtNode *node_camera = AiUniverseGetCamera();
-  if (!AiNodeIs(node_camera, AtString("lentil"))) {
+  if (!AiNodeIs(cameranode, AtString("lentil"))) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Camera is not of type lentil");
     bokeh->enabled = false;
     return;
@@ -126,11 +124,9 @@ node_update
   bokeh->unredist_weight_per_pixel.clear();
   bokeh->unredist_weight_per_pixel.resize(bokeh->xres*bokeh->yres);
 
-
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
 
-  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   // this is really sketchy, need to watch out for a race condition here :/ Currently avoided by double-computing these params
   if (po->bidir_output_path.empty()) {
@@ -139,6 +135,8 @@ node_update
     bokeh->enabled = false;
     return;
   }
+
+  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
 
   if (po->bidir_sample_mult == 0) bokeh->enabled = false;
@@ -194,7 +192,6 @@ driver_process_bucket
   const double xres = (double)bokeh->xres;
   const double yres = (double)bokeh->yres;
   const double frame_aspect_ratio = xres/yres;
-
 
   for (int py = bucket_yo; py < bucket_yo + bucket_size_y; py++) {
 		for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
@@ -292,7 +289,6 @@ driver_process_bucket
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
-          // int samples = 1000;
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -321,24 +317,16 @@ driver_process_bucket
             const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
-            //figure out why sometimes pixel is nan, can't just skip it
-            // if ((pixel_x > xres) || 
-            //     (pixel_x < 0)    || 
-            //     (pixel_y > yres) || 
-            //     (pixel_y < 0)    || 
-            //     (pixel_x != pixel_x) ||  //nan checking
-            //     (pixel_y != pixel_y)) // nan checking
-            // {
-            //   continue;
-            // }
 
             // if outside of image
             if ((pixel_x >= xres) || 
                 (pixel_x < 0)    || 
                 (pixel_y >= yres) || 
                 (pixel_y < 0))
+                // (pixel_x != pixel_x) ||  //nan checking
+                // (pixel_y != pixel_y)) // nan checking
             {
-              --count;
+              --count; // much room for improvement here, potentially many samples are wasted outside of frame
               continue;
             }
             
@@ -355,10 +343,10 @@ driver_process_bucket
                 case AI_TYPE_RGBA: {
                   AtRGBA rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   rgba_energy = rgba_energy * weight * filter_weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
+                  bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
 
                   break;
                 }
@@ -366,10 +354,10 @@ driver_process_bucket
                 case AI_TYPE_RGB: {
                   AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i])*inv_density)+fitted_bidir_add_luminance) / (double)(samples);
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight * filter_weight;
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
+                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
-                  bokeh->redist_weight_per_pixel[pixelnumber] += 1.0 * inv_density / double(samples);
+                  bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
 
                   break;
                 }
@@ -400,7 +388,6 @@ driver_process_bucket
           }
         }
 
-      // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
@@ -410,7 +397,7 @@ driver_process_bucket
             switch(bokeh->aov_list_type[i]){
               case AI_TYPE_RGBA: {
                 AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
-                bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
                 bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
@@ -421,7 +408,7 @@ driver_process_bucket
               case AI_TYPE_RGB: {
                   AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]) * inv_density;
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
                   bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                   ++bokeh->sample_per_pixel_counter[pixelnumber];
                   bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
@@ -480,7 +467,6 @@ driver_close
 
         float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
         unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
-        
         float filter_norm = filter_weight_accum/(double)samples_per_pixel;
 
         // combine the redistributed and non-redistributed samples

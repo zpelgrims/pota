@@ -10,14 +10,14 @@
 
 options
 {
- AA_samples 10
+ AA_samples 4
  outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
-  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
-  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_bokeh_driver"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_bokeh_driver"
  xres 960
  yres 540
  texture_per_file_stats on
@@ -40,9 +40,9 @@ driver_exr
  color_space ""
 }
 
-lentil_thin_lens_bokeh_driver
+lentil_bokeh_driver
 {
- name aiAOVDriver3@lentil_thin_lens_bokeh_driver
+ name aiAOVDriver3@lentil_bokeh_driver
 }
 
 closest_filter
@@ -56,7 +56,7 @@ closest_filter
 }
 
 
-lentil_thinlens
+lentil
 {
  name rendercamTLShape
  matrix 1 2 MATRIX
@@ -78,14 +78,14 @@ lentil_thinlens
  motion_start 0
  motion_end 0
  exposure 0
- fstopTL 1.0
- focus_distanceTL 40
- bidir_sample_multTL 100
- bidir_min_luminanceTL 0.2
- optical_vignetting_distanceTL 3.0
- optical_vignetting_radiusTL 1.0
- focal_lengthTL 50
- bidir_output_pathTL "/Users/zeno/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
+ fstopPO 1.0
+ focus_distancePO 40
+ bidir_sample_multPO 10
+ bidir_min_luminancePO 0.2
+ #optical_vignetting_distanceTL 3.0
+ #optical_vignetting_radiusTL 1.0
+ #focal_lengthTL 50
+ bidir_output_pathPO "/Users/zeno/lentil/pota/tests/aberrations/po.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
