@@ -16,6 +16,8 @@
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/22/code/lens_constants.h"
 	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/28/code/lens_constants.h"
+	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/50/code/lens_constants.h"
+	#include "../../../polynomial-optics/database/lenses/1970-asahi-takumar/35/code/lens_constants.h"
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	#include "../../../polynomial-optics/database/lenses/1982-canon-retrofocus-wideangle/14/code/lens_constants.h"

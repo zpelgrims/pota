@@ -16,6 +16,8 @@
 #ifdef LENS_ID_COMMERCIAL
 	asahi__takumar__1970__22mm,
 	asahi__takumar__1970__28mm,
+	asahi__takumar__1970__50mm,
+	asahi__takumar__1970__35mm,
 #endif
 #ifdef LENS_ID_COMMERCIAL
 	canon__retrofocus_wideangle__1982__14mm,

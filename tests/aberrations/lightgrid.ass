@@ -4,7 +4,7 @@
 ### user: cactus
 ### bounds: 0 0 0 0 0 0
 ### render_layer: defaultRenderLayer
-### scene: /Users/zeno/lentil/pota/tests/aberrations/aberrations.ma
+### scene: /home/cactus/lentil/pota/tests/aberrations/aberrations.ma
 
 
 
@@ -13,13 +13,13 @@ options
  AA_samples 4
  outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_bokeh_driver"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
-  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_bokeh_driver"
-  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_bokeh_driver"
- xres 960
- yres 540
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
+ xres 1280
+ yres 720
  texture_per_file_stats on
  texture_automip off
  camera "rendercamTLShape"
@@ -36,13 +36,13 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_RGBA.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_RGBA.exr"
  color_space ""
 }
 
-lentil_bokeh_driver
+lentil_thin_lens_bokeh_driver
 {
- name aiAOVDriver3@lentil_bokeh_driver
+ name aiAOVDriver3@lentil_thin_lens_bokeh_driver
 }
 
 closest_filter
@@ -56,7 +56,7 @@ closest_filter
 }
 
 
-lentil
+lentil_thinlens
 {
  name rendercamTLShape
  matrix 1 2 MATRIX
@@ -78,14 +78,17 @@ lentil
  motion_start 0
  motion_end 0
  exposure 0
- fstopPO 1.0
- focus_distancePO 40
- bidir_sample_multPO 10
- bidir_min_luminancePO 0.2
- #optical_vignetting_distanceTL 0.0
- #optical_vignetting_radiusTL 1.0
- #focal_lengthTL 50
- bidir_output_pathPO "/Users/zeno/lentil/pota/tests/aberrations/po.<aov>.<frame>.exr"
+ fstopTL 1.0
+ focus_distanceTL 35
+ bidir_sample_multTL 100
+ bidir_min_luminanceTL 0.2
+ abb_distortionTL 0.1
+ optical_vignetting_distanceTL 0.0
+ optical_vignetting_radiusTL 1.0
+ focal_lengthTL 40
+ bokeh_enable_imageTL true
+ bokeh_image_pathTL "/home/cactus/lentil/pota/bokeh_imgs/002_remapped.jpg"
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
@@ -94,7 +97,7 @@ lentil
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_P.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -107,7 +110,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_Z.exr"
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
  compression "zip"
  half_precision off
  tiled on
