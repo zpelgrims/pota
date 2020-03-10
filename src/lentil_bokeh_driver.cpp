@@ -290,6 +290,7 @@ driver_process_bucket
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
 
+
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
 
@@ -302,7 +303,8 @@ driver_process_bucket
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
-
+            camera_space_sample_position_mb_eigen = {158.5496674, -30.4962273, -444.1391296};
+            // camera_space_sample_position_mb_eigen = {232.1868744, -15.4829674, -947.5090332};  
             if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
               --count;
               continue;

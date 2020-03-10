@@ -683,7 +683,6 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
     Eigen::Vector2d unit_disk(0.0, 0.0);
 
-    // add image sampling!!!
     if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
 	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
 		  
@@ -706,8 +705,8 @@ inline bool trace_backwards(Eigen::Vector3d target,
       lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
     }
 
-    // Eigen::Vector2d unit_disk;
-    // concentric_disk_sample(xor128() / 4294967296.0, xor128() / 4294967296.0, unit_disk, true);
+    unit_disk = {0.5, 0.5};
+
     aperture(0) = unit_disk(0) * aperture_radius;
     aperture(1) = unit_disk(1) * aperture_radius;
 
