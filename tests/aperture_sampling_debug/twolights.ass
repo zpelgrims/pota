@@ -1,0 +1,140 @@
+### exported: Wed Mar 11 10:23:52 2020
+### from:     Arnold 6.0.2.0 [f2a1d573] darwin clang-5.0.2 oiio-2.1.4 osl-1.11.0 vdb-4.0.0 clm-1.1.2.132 rlm-12.4.2 2020/02/12 13:47:52
+### host app: MtoA 4.0.2 46d4a92e (master) Maya 2018
+### bounds: 0 0 0 0 0 0
+### user: cactus
+### render_layer: defaultRenderLayer
+
+
+
+options
+{
+ AA_samples 3
+ outputs 6 1 STRING
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
+  "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
+  "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver2@lentil_bokeh_driver"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver2@lentil_bokeh_driver"
+ xres 1000
+ yres 1000
+ texture_per_file_stats on
+ texture_automip off
+ camera "rendercamLentilShape"
+ sss_use_autobump on
+ frame 1
+ GI_transmission_depth 0
+ GI_total_depth 0
+ GI_diffuse_samples 1
+ GI_specular_samples 1
+ GI_transmission_samples 1
+ GI_sss_samples 1
+ GI_volume_samples 1
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.RGBA
+ filename "/Users/zeno/lentil/pota/tests/aberrations/unit_render_citylights.exr"
+ color_space ""
+}
+
+lentil_bokeh_driver
+{
+ name aiAOVDriver2@lentil_bokeh_driver
+}
+
+closest_filter
+{
+ name aiAOVFilter1@closest_filter
+}
+
+closest_filter
+{
+ name aiAOVFilter2@closest_filter
+}
+
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.P
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_P.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.Z
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_Z.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+
+lentil
+{
+ name rendercamLentilShape
+ focus_distancePO 40.0
+ fstopPO 1.4
+ lens_modelPO "angenieux__double_gauss__1953__49mm"
+ vignetting_retriesPO 5
+ bidir_sample_multPO 10
+ bidir_min_luminancePO 1.0
+ bidir_output_pathPO "/Users/zeno/lentil/pota/tests/aperture_sampling_debug/po.<aov>.<frame>.exr"
+ declare maya_full_name constant STRING
+ maya_full_name "|rendercam|rendercamLentilShape"
+}
+
+
+
+point_light
+{
+ name bglights_grp|pointLight65|pointLightShape65
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 300 -1000 1
+ color 0.869000018 0.32135728 0.161633998
+ exposure 8.5
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 0
+ specular 0
+ sss 0
+ indirect 0
+ max_bounces 999
+ volume_samples 2
+ volume 0
+ aov "default"
+ radius 1.0
+ declare maya_full_name constant STRING
+ maya_full_name "|bglights_grp|pointLight65|pointLightShape65"
+}
+
+

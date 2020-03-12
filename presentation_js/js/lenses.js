@@ -86,7 +86,7 @@ lensdb[lensdb_cnt++] = [
 [28.598135058219665, 11.30818744979568, 1.6913, 53.8, 20.20199065105111],
 [1257.0072768267435, 1.271247216578338, 1.6751, 32.3, 20.20199065105111],
 [15.959572614330376, 7.716174965742935, 1.0, 1.0, 13.303749940936095],
-[49272.65519791365, 7.3909721894089415, 1.0, 1.0, 12.564652721995202],
+[49272.65519791365, 7.3909721894089415, 1.0, 0.0, 12.564652721995202],
 [-19.91620639306063, 1.3500842532653667, 1.6992, 30.2, 12.318286982348237],
 [95.0873208741425, 13.757062901886512, 1.6204, 60.2, 17.738333254581462],
 [-27.361379045191903, 0.11332824023760378, 1.0, 1.0, 17.738333254581462],
@@ -112,6 +112,11 @@ function handle_lens_event(evnt, action)
   // manually undo bloody transform:
   m.x = -(1000*(pt.x - box.left)/box.width  - 500)/global_scale;
   m.y =  ( 400*(pt.y - box.top )/box.height - 200)/global_scale;
+
+  var pos = [0.0, -3050, -9999];
+  // var pos = [0.0, 2300, -9999];
+
+
   // console.log("x = "+m.x+" y = "+m.y);
   if(m.x > 20)
   {
@@ -142,7 +147,7 @@ function handle_lens_event(evnt, action)
       target.setAttribute('cy', m.y);
       target.setAttribute('r', 1);
       out = [0,0,0,0,0];
-      sensor = [0,0,0,0,0.5];
+      sensor = [0,0,0,0,0.55];
       
       // why does second one not work?
       // error = lt_aperture_sample_fisheye_ii(lensdb[lens_curr], 0.0, m.y, 0.0, mousepointer.y, -mousepointer.x, sensor, out, 0);
@@ -169,8 +174,8 @@ function handle_lens_event(evnt, action)
   target.setAttribute('r', 1);
   // (re-)raytrace
   m = mousepointer;
-  m.x = -500;
-  m.y = 190;
+  m.x = pos[2];
+  m.y = pos[1];
   for(var i=0;i<ray_num[lens_curr];i++)
   {
     var o = (i-((ray_num[lens_curr]-1.0)/2.0))/(ray_num[lens_curr]-1.0) * 2.0 * h * ray_scale;
@@ -795,13 +800,27 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
   // visualise progress:
   opp = [0,0,0,0,0,0];
   raytrace_from_sensor(lenses, sensor, opp);
-  var lens_outer_pupil_curvature_radius = lensdb[lens_curr][0][LENS_RADIUS];
-  var lens_outer_pupil_radius = lensdb[lens_curr][0][LENS_HOUSING_RADIUS];
+
+  // ap_x = 2.5;
+  // ap_y = 2.5;
+
+  scene_x = 0.0;
+  scene_y = -3050;
+  scene_z = 9999;
+
   var error = 0;
 
-  var eps = 1e-8;
+  var lens_outer_pupil_curvature_radius = lensdb[lens_curr][0][LENS_RADIUS];
+  var lens_outer_pupil_radius = lensdb[lens_curr][0][LENS_HOUSING_RADIUS];
+
+  var eps = 1e-6;
   var sqr_err = 1e30, sqr_ap_err = 1e30;
   var prev_sqr_err = 1e32, prev_sqr_ap_err = 1e32;
+
+
+  var cnt_err_up = 0;
+  var cnt_ap_err_up = 0;
+
   for(;k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0;k++)
   {
     console.log("count (k): ", k);
@@ -876,10 +895,10 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
     sqr_err = delta_out[0]*delta_out[0]+delta_out[1]*delta_out[1];
     console.log("sqr_err: ", sqr_err);
     domega2_dx0 = [[0,0],[0,0]];
-    domega2_dx0[0][0] =  + -0.0841526  + 0.0180182 *lens_ipow(begin_dy, 2) + 0.0627794 *lens_ipow(begin_dx, 2) + 0.0014138 *begin_y*begin_dy + 6.7031e-05 *lens_ipow(begin_y, 2) + 0.00539724 *begin_x*begin_dx + 0.000241426 *lens_ipow(begin_x, 2) + -1.91925e-05 *begin_x*begin_y*begin_dx*begin_dy + -6.95202e-06 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 3) + 0.128222 *begin_x*lens_ipow(begin_dx, 3)*lens_ipow(begin_dy, 2) + -6.09124e-06 *begin_x*lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_lambda, 2) + 1.94672e-06 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 2) + -0.00176443 *lens_ipow(begin_lambda, 8) + -0.0310725 *begin_x*begin_y*begin_dx*lens_ipow(begin_dy, 5) + 0.000176266 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 5) + -0.0150674 *lens_ipow(begin_x, 2)*lens_ipow(begin_dx, 6) + -1.52378e-11 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 6) + -1.64675e-07 *lens_ipow(begin_x, 5)*begin_dx*lens_ipow(begin_lambda, 2) + -1.11794 *lens_ipow(begin_dx, 4)*lens_ipow(begin_lambda, 6) + -3.65549e-15 *lens_ipow(begin_y, 10) + 7.65407e-08 *lens_ipow(begin_x, 5)*begin_y*begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + -3.05221e-09 *lens_ipow(begin_x, 6)*lens_ipow(begin_lambda, 4) + -2.93555e-13 *lens_ipow(begin_x, 6)*lens_ipow(begin_y, 4) + -1.60463e-13 *lens_ipow(begin_x, 8)*lens_ipow(begin_y, 2) + -3.61904e-14 *lens_ipow(begin_x, 10);
-    domega2_dx0[0][1] =  + 0.0445784 *begin_dx*begin_dy + 0.00270553 *begin_y*begin_dx + 0.0014138 *begin_x*begin_dy + 0.000134062 *begin_x*begin_y + 0.00458532 *begin_y*lens_ipow(begin_dx, 3) + -9.59623e-06 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -0.0028004 *lens_ipow(begin_y, 2)*begin_dx*lens_ipow(begin_dy, 3) + -2.08561e-05 *begin_x*lens_ipow(begin_y, 2)*lens_ipow(begin_dy, 3) + -6.09124e-06 *lens_ipow(begin_x, 2)*begin_y*begin_dx*lens_ipow(begin_lambda, 2) + 1.29781e-06 *lens_ipow(begin_x, 3)*begin_y*lens_ipow(begin_dy, 2) + -2.57134e-05 *lens_ipow(begin_y, 4)*lens_ipow(begin_dx, 3)*begin_dy + -0.0155363 *lens_ipow(begin_x, 2)*begin_dx*lens_ipow(begin_dy, 5) + 0.000176266 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 5) + -3.04756e-11 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 5) + -0.121145 *begin_dx*begin_dy*lens_ipow(begin_lambda, 8) + -3.65549e-14 *begin_x*lens_ipow(begin_y, 9) + 1.27568e-08 *lens_ipow(begin_x, 6)*begin_dx*begin_dy*lens_ipow(begin_lambda, 2) + -1.67746e-13 *lens_ipow(begin_x, 7)*lens_ipow(begin_y, 3) + -3.56585e-14 *lens_ipow(begin_x, 9)*begin_y;
-    domega2_dx0[1][0] =  + 1.58352e-06  + 0.037641 *begin_dx*begin_dy + 0.00114241 *begin_y*begin_dx + 0.00232168 *begin_x*begin_dy + 0.000185005 *begin_x*begin_y + -0.0122638 *lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 2) + -0.000485762 *begin_y*begin_dx*lens_ipow(begin_dy, 2) + -8.08543e-06 *begin_x*lens_ipow(begin_y, 2)*begin_dy*begin_lambda + -0.000863194 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 3)*begin_dy + 0.061474 *begin_x*lens_ipow(begin_dy, 5) + 0.0636202 *begin_x*lens_ipow(begin_dx, 4)*begin_dy + -1.23491e-09 *begin_x*lens_ipow(begin_y, 5) + -4.62094e-05 *lens_ipow(begin_x, 2)*begin_y*lens_ipow(begin_dx, 3) + 2.4501e-07 *lens_ipow(begin_x, 5)*lens_ipow(begin_dy, 3) + 8.40323e-08 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 4)*begin_dx*begin_dy*begin_lambda + 1.86325e-11 *lens_ipow(begin_y, 8)*begin_dx*begin_dy + 5.56914e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 8.51035e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + -2.29075e-13 *lens_ipow(begin_x, 7)*lens_ipow(begin_y, 3);
-    domega2_dx0[1][1] =  + -0.0841902  + 0.0628713 *lens_ipow(begin_dy, 2) + 0.000197341 *begin_dx*begin_dy + 0.0140972 *lens_ipow(begin_dx, 2) + 0.00543763 *begin_y*begin_dy + 0.000245926 *lens_ipow(begin_y, 2) + 0.00114241 *begin_x*begin_dx + 9.25026e-05 *lens_ipow(begin_x, 2) + 5.93229e-05 *lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2) + -0.000485762 *begin_x*begin_dx*lens_ipow(begin_dy, 2) + -8.08543e-06 *lens_ipow(begin_x, 2)*begin_y*begin_dy*begin_lambda + 0.134065 *begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + -0.00172639 *begin_x*begin_y*lens_ipow(begin_dx, 3)*begin_dy + -3.08727e-09 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 4) + -1.54031e-05 *lens_ipow(begin_x, 3)*lens_ipow(begin_dx, 3) + -0.000968929 *lens_ipow(begin_lambda, 7) + 0.00053879 *lens_ipow(begin_y, 3)*lens_ipow(begin_dy, 5) + -2.07699e-07 *lens_ipow(begin_y, 5)*begin_dy*lens_ipow(begin_lambda, 2) + -7.57489e-12 *lens_ipow(begin_y, 8) + 1.12043e-07 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 3)*begin_dx*begin_dy*begin_lambda + -1.13772 *lens_ipow(begin_dy, 4)*lens_ipow(begin_lambda, 6) + -3.63686e-09 *lens_ipow(begin_y, 6)*lens_ipow(begin_lambda, 4) + 1.4906e-10 *begin_x*lens_ipow(begin_y, 7)*begin_dx*begin_dy + 2.78457e-05 *lens_ipow(begin_x, 4)*begin_y*lens_ipow(begin_dx, 2)*lens_ipow(begin_dy, 3) + 6.38276e-08 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 2)*lens_ipow(begin_dx, 2)*lens_ipow(begin_lambda, 2) + -8.59032e-14 *lens_ipow(begin_x, 8)*lens_ipow(begin_y, 2);
+    domega2_dx0[0][0] =  + -0.0123666  + -0.0098959 *begin_lambda + 1.35313e-05 *lens_ipow(begin_y, 2) + 6.19861e-05 *lens_ipow(begin_x, 2) + 0.00755466 *lens_ipow(begin_lambda, 2) + -2.10891e-05 *lens_ipow(begin_x, 2)*begin_lambda + 2.11676e-08 *lens_ipow(begin_y, 4) + 9.62976e-05 *begin_x*begin_y*begin_dx*begin_dy + -1.63535e-06 *lens_ipow(begin_x, 2)*begin_y*begin_dy + -0.000273529 *lens_ipow(begin_x, 2)*lens_ipow(begin_dy, 4) + 8.19045e-10 *lens_ipow(begin_x, 4)*lens_ipow(begin_y, 2) + -1.8274e-08 *lens_ipow(begin_x, 5)*begin_dx+0.0;
+    domega2_dx0[0][1] =  + 2.70627e-05 *begin_x*begin_y + 8.46706e-08 *begin_x*lens_ipow(begin_y, 3) + 4.81488e-05 *lens_ipow(begin_x, 2)*begin_dx*begin_dy + -5.45117e-07 *lens_ipow(begin_x, 3)*begin_dy + 0.00186345 *begin_y*lens_ipow(begin_dx, 3)*lens_ipow(begin_lambda, 2) + 3.27618e-10 *lens_ipow(begin_x, 5)*begin_y+0.0;
+    domega2_dx0[1][0] =  + -0.000126838 *begin_y*begin_dx + 2.00195e-05 *begin_x*begin_y + 0.00425551 *begin_dx*begin_dy + 9.80827e-08 *lens_ipow(begin_x, 3)*begin_y + 9.80352e-08 *begin_x*lens_ipow(begin_y, 3) + -1.53531e-08 *lens_ipow(begin_x, 3)*lens_ipow(begin_y, 2)*begin_dy+0.0;
+    domega2_dx0[1][1] =  + -0.0116902  + -0.0100684 *begin_lambda + -0.000126838 *begin_x*begin_dx + -0.00465873 *lens_ipow(begin_dx, 2) + 1.00098e-05 *lens_ipow(begin_x, 2) + 3.89883e-05 *lens_ipow(begin_y, 2) + 0.00685957 *lens_ipow(begin_lambda, 2) + -2.20262e-06 *lens_ipow(begin_y, 3)*begin_dy + 2.45207e-08 *lens_ipow(begin_x, 4) + 1.47053e-07 *lens_ipow(begin_x, 2)*lens_ipow(begin_y, 2) + 3.24034e-10 *lens_ipow(begin_y, 6) + -7.67656e-09 *lens_ipow(begin_x, 4)*begin_y*begin_dy+0.0;
     console.log("domega2_dx0: ", domega2_dx0[0][0], domega2_dx0[0][1], domega2_dx0[1][0], domega2_dx0[1][1]);
     invJ = [[0,0],[0,0]];
     invdet = 1.0/(domega2_dx0[0][0]*domega2_dx0[1][1] - domega2_dx0[0][1]*domega2_dx0[1][0]);
@@ -891,20 +910,22 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
     console.log("invJ: ", invJ[0][0], invJ[1][1], invJ[0][1], invJ[1][0]);
     for(var i=0;i<2;i++)
     {
-      sensor[0] += 0.72*invJ[0][i]*delta_out[i];
-      sensor[1] += 0.72*invJ[1][i]*delta_out[i];
+      sensor[0] += 0.5*invJ[0][i]*delta_out[i];
+      sensor[1] += 0.5*invJ[1][i]*delta_out[i];
     }
     console.log("x: ", sensor[0]);
     console.log("y: ", sensor[1]);
-    if(sqr_err>prev_sqr_err){
+    if(sqr_err < prev_sqr_err) cnt_err_up = 0;
+    if(sqr_ap_err < prev_sqr_ap_err) cnt_ap_err_up = 0;
+    if(sqr_err>prev_sqr_err && ++cnt_err_up > 6){
       error |= 1;
       console.log("error |= 1");
     }
-    if(sqr_ap_err>prev_sqr_ap_err){
+    if(sqr_ap_err>prev_sqr_ap_err && ++cnt_ap_err_up > 6){
       error |= 2;
       console.log("error |= 2");
     }
-    if(out[0]!=out  [0]){
+    if(out[0]!=out[0]){
       error |= 4;
       console.log("error |= 4");
     } 
@@ -918,6 +939,7 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
       console.log("error reset (k<10)");
     }
 
+    
     // visualise newton error deltas:
     d = 'M' + (-pred_out_cs[2]) + ' ' + pred_out_cs[1] + ' L'+(-scene_z)+' '+scene_y;
     set_ray(d, 1337, 0);
@@ -931,14 +953,29 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
     set_ray(d, 2337, 0);
     d = 'M' + (lens_length) +' '+(sensor[1])+' L'+(lens_length-10)+' '+(sensor[1]+10*sensor[3]);
     set_ray(d, 2338, 0);
-    // if(k<100&&(sqr_err>eps||sqr_ap_err>eps)&&error==0)
-    // {
-    //   setTimeout(lt_aperture_sample_angenieux, 150,
-    //       lenses, ap_x, ap_y, scene_x, scene_y, scene_z, sensor, out, k);
-    //   return error;
-    // }
+
+
+    if((k<100&&sqr_err>eps||sqr_ap_err>eps&&error==0))
+    {
+      setTimeout(lt_aperture_sample_angenieux_writeout, 150,
+          lenses, ap_x, ap_y, scene_x, scene_y, scene_z, sensor, out, k);
+      return error;
+    }
+  
   }
-  if(out[0]*out[0]+out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius) error |= 16;
+  if(out[0]*out[0]+out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius){
+    error |= 16;
+    console.log("outer pupil occlusion: ", error);
+  }
+
+  var lens_back_focal_length = 27.465837;
+  var lens_inner_pupil_radius = 17.245601;
+  var px = sensor[0] + sensor[2] * lens_back_focal_length;
+  var py = sensor[1] + sensor[3] * lens_back_focal_length; //(note that lens_focal_length is the back focal length, i.e. the distance unshifted sensor -> pupil)
+  if (px*px + py*py > Math.abs(lens_inner_pupil_radius*lens_inner_pupil_radius)) {
+    error |= 16;
+    console.log("inner pupil occlusion");
+  }
   // converged and all good! mark in green:
   opp = [0,0,0,0,0,0];
   raytrace_from_sensor(lenses, sensor, opp);
@@ -949,7 +986,6 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
   set_ray('',1338,1);
   set_ray('',2337,1);
   set_ray('',2338,1);
-
   /*
 const float begin_x = x;
 const float begin_y = y;

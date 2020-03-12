@@ -6,7 +6,7 @@
 ### scene: C:/ZENO_2019/projects/unit_render/002.ma
 
 
-# kick /home/cactus/lentil/pota/tests/aperture_sampling_debug/citylights_template01_driver.ass -set options.texture_searchpath /home/cactus/lentil/pota/unit_render/tex -dp
+# kick /Users/zeno/lentil/pota/tests/aperture_sampling_debug/citylights_template01_driver.ass -set options.texture_searchpath /Users/zeno/lentil/pota/unit_render/tex -dp
 
 options
 {
@@ -18,8 +18,8 @@ options
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
   "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver2@lentil_bokeh_driver"
   "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver2@lentil_bokeh_driver"
- xres 1920
- yres 1080
+ xres 1000
+ yres 1000
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
@@ -46,7 +46,7 @@ gaussian_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.RGBA
- filename "/home/cactus/lentil/pota/tests/aberrations/unit_render_citylights.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/unit_render_citylights.exr"
  color_space ""
 }
 
@@ -69,7 +69,7 @@ closest_filter
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -82,7 +82,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
+ filename "/Users/zeno/lentil/pota/tests/aberrations/aberrations_Z.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -97,14 +97,14 @@ lentil
 {
  name rendercamLentilShape
  matrix
- -0.759271324 3.46944695e-18 -0.65077424 0
- 0.0374014676 0.998347104 -0.043637041 0
- 0.649698555 -0.0574722625 -0.758016288 0
- 17.601759 1.98807669 -19.9616642 1
+ -0.759271324 0 0 0
+ 0 1 0 0
+ 0 -0 -0.758016288 0
+ 17.601759 0 -19.9616642 1
  focus_distancePO 40.0
  fstopPO 1.4
- bidir_min_luminancePO 1.0
- bidir_output_pathPO "/home/cactus/lentil/pota/tests/aperture_sampling_debug/po.<aov>.<frame>.exr"
+ bidir_min_luminancePO 100.0
+ bidir_output_pathPO "/Users/zeno/lentil/pota/tests/aperture_sampling_debug/po.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
 }
@@ -118,7 +118,7 @@ point_light
  1 0 0 0
  0 1 0 0
  0 0 1 0
- -774.710693 41.8337059 548.347778 1
+ -774.710693 0 548.347778 1
  color 0.869000018 0.32135728 0.161633998
  exposure 8.0
  cast_shadows on
@@ -148,7 +148,7 @@ point_light
  1 0 0 0
  0 1 0 0
  0 0 1 0
- -393.213196 -2.26140046 214.948013 1
+ -393.213196 0 214.948013 1
  color 0.855927587 0.380755335 0.241465956
  exposure 8.0
  cast_shadows on

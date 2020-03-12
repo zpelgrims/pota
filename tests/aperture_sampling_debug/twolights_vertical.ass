@@ -1,0 +1,151 @@
+### exported: Wed Mar 11 10:28:33 2020
+### from:     Arnold 6.0.2.0 [f2a1d573] darwin clang-5.0.2 oiio-2.1.4 osl-1.11.0 vdb-4.0.0 clm-1.1.2.132 rlm-12.4.2 2020/02/12 13:47:52
+### host app: MtoA 4.0.2 46d4a92e (master) Maya 2018
+### bounds: 0 0 0 0 0 0
+### user: cactus
+### render_layer: defaultRenderLayer
+### scene: /Users/zeno/lentil/pota/tests/aperture_sampling_debug/twolights.ma
+
+
+
+options
+{
+ AA_samples 3
+ outputs "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
+ xres 1024
+ yres 1024
+ texture_per_file_stats on
+ texture_searchpath "/Users/zeno/Documents/maya/projects/default/sourceimages"
+ texture_automip off
+ camera "/persp1/persp1Shape"
+ color_manager "defaultColorMgtGlobals"
+ frame 1
+ procedural_searchpath "/Users/zeno/Documents/maya/projects/default/"
+ GI_diffuse_depth 1
+ GI_specular_depth 1
+ GI_transmission_depth 8
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.RGBA
+ filename "/Users/zeno/Documents/maya/projects/default/images/persp1/twolights.exr"
+ color_space ""
+}
+
+color_manager_syncolor
+{
+ name defaultColorMgtGlobals
+ native_catalog_path "/Applications/Autodesk/maya2018/synColor"
+ custom_catalog_path "/Users/zeno/Library/Preferences/Autodesk/maya/synColor/Shared/"
+ rendering_color_space "scene-linear Rec 709/sRGB"
+}
+
+persp_camera
+{
+ name /persp/perspShape
+ matrix
+ 0.707106769 0 -0.707106769 0
+ -0.330933779 0.883722603 -0.330933779 0
+ 0.624886274 0.468011051 0.624886274 0
+ 239 179 239 1
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ fov 54.4322243
+ uv_remap 0 0 0 1
+ declare dcc_name constant STRING
+ dcc_name "perspShape"
+}
+
+persp_camera
+{
+ name /persp1/persp1Shape
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ fov 40.3413086
+ uv_remap 0 0 0 1
+ declare dcc_name constant STRING
+ dcc_name "persp1Shape"
+}
+
+point_light
+{
+ name /pointLight2/pointLightShape2
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 250 -1000 1
+ exposure 9
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 0
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 1
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape2"
+}
+
+point_light
+{
+ name /pointLight3/pointLightShape3
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 200 -1000 1
+ exposure 9
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 0
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 1
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape3"
+}
+
