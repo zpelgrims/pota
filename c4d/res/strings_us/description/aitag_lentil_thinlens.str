@@ -1,7 +1,8 @@
-STRINGTABLE ainode_lentil_thinlens
+STRINGTABLE aitag_lentil_thinlens
 {
-   ainode_lentil_thinlens         "Arnold lentil_thinlens node";
+   aitag_lentil_thinlens         "Arnold lentil_thinlens node";
 
+   C4DAI_LENTIL_THINLENS_MAIN_GRP                     "Parameters";
    C4DAI_LENTIL_THINLENS_GENERAL_GRP                     "General";
    C4DAI_LENTIL_THINLENS_BOKEH_IMAGE_GRP                     "Bokeh Image";
    C4DAI_LENTIL_THINLENS_BIDIRECTIONAL_GRP                     "Bidirectional";
@@ -20,8 +21,8 @@ STRINGTABLE ainode_lentil_thinlens
    C4DAIP_LENTIL_THINLENS_BOKEH_CIRCLE_TO_SQUARETL "Circle to Square mapping";
    C4DAIP_LENTIL_THINLENS_BOKEH_ANAMORPHICTL "Anamorphic Stretch";
 
-   C4DAIP_LENTIL_THINLENS_BOKEH_ENABLE_IMAGETL "Enable Bokeh Image";
-   C4DAIP_LENTIL_THINLENS_BOKEH_IMAGE_PATHTL "Bokeh Image Path";
+   C4DAIP_LENTIL_THINLENS_IMAGE_BOKEH_ENABLE_IMAGETL "Enable Bokeh Image";
+   C4DAIP_LENTIL_THINLENS_IMAGE_BOKEH_IMAGE_PATHTL "Bokeh Image Path";
 
    C4DAIP_LENTIL_THINLENS_BIDIR_MIN_LUMINANCETL "Bidirectional Trigger";
    C4DAIP_LENTIL_THINLENS_BIDIR_OUTPUT_PATHTL "Bidirectional Output Path";
