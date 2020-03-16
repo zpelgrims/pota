@@ -18,7 +18,7 @@ options
   "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver2@lentil_bokeh_driver"
   "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver2@lentil_bokeh_driver"
  xres 1920
- yres 1080
+ yres 817
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
@@ -115,14 +115,16 @@ lentil
  0.0374014676 0.998347104 -0.043637041 0
  0.649698555 -0.0574722625 -0.758016288 0
  17.601759 1.98807669 -19.9616642 1
- focus_distancePO 26.3
+ focus_distancePO 40
  fstopPO 1.4
+ bidir_sample_multPO 250
+
  bidir_output_pathPO "/home/cactus/lentil/pota/unit_render/test_driver.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamLentilShape"
 }
 
-lentil_thinlens
+#lentil_thinlens
 {
  name rendercamLentilThinLensShape
  matrix
@@ -130,7 +132,7 @@ lentil_thinlens
  0.0374014676 0.998347104 -0.043637041 0
  0.649698555 -0.0574722625 -0.758016288 0
  17.601759 1.98807669 -19.9616642 1
- focus_distanceTL 26.3
+ focus_distanceTL 40
  focal_lengthTL 49
  fstopTL 1.4
  optical_vignetting_distanceTL 4.0
