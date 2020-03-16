@@ -1,10 +1,11 @@
-STRINGTABLE ainode_lentil
+STRINGTABLE aitag_lentil
 {
-   ainode_lentil         "Arnold lentil node";
+   aitag_lentil         "Arnold lentil node";
 
+   C4DAI_LENTIL_MAIN_GRP "Parameters";
    C4DAI_LENTIL_GENERAL_GRP "General";
    C4DAI_LENTIL_BOKEH_IMAGE_GRP "Bokeh Image";
-   C4DAI_LENTIL_BIDIRECTIONAL_GRP "Bidirectional;
+   C4DAI_LENTIL_BIDIRECTIONAL_GRP "Bidirectional";
    C4DAI_LENTIL_ADVANCED_GRP "Advanced";
    C4DAI_LENTIL_ARNOLDNATIVE_GRP "Arnold Native";
 

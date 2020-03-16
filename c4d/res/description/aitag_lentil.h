@@ -1,13 +1,14 @@
-#ifndef _ainode_lentil_h_
-#define _ainode_lentil_h_
+#ifndef _aitag_lentil_h_
+#define _aitag_lentil_h_
 
 enum
 {
-   C4DAI_LENTIL_GENERAL_GRP                     = 2001,
-   C4DAI_LENTIL_BOKEH_IMAGE_GRP                 = 2002,
-   C4DAI_LENTIL_BIDIRECTIONAL_GRP               = 2003,
-   C4DAI_LENTIL_ADVANCED_GRP                    = 2004,
-   C4DAI_LENTIL_ARNOLDNATIVE_GRP                = 2005,
+   C4DAI_LENTIL_MAIN_GRP                     = 2001,
+   C4DAI_LENTIL_GENERAL_GRP,
+   C4DAI_LENTIL_BOKEH_IMAGE_GRP,
+   C4DAI_LENTIL_BIDIRECTIONAL_GRP,
+   C4DAI_LENTIL_ADVANCED_GRP,
+   C4DAI_LENTIL_ARNOLDNATIVE_GRP,
 
    C4DAIP_LENTIL_POSITION                             = 1271837232,
    C4DAIP_LENTIL_LOOK_AT                              = 1748112668,
