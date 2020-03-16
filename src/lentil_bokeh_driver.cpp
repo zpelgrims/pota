@@ -1,8 +1,3 @@
-// figure out NaNs, probably related to image edge darkening
-  // losing energy at the image edges, is this due to vignetting retries?
-// strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared
-
-
 #include <ai.h>
 #include <vector>
 #include "lentil.h"
@@ -325,9 +320,9 @@ driver_process_bucket
             if ((pixel_x >= xres) || 
                 (pixel_x < 0)    || 
                 (pixel_y >= yres) || 
-                (pixel_y < 0))
-                // (pixel_x != pixel_x) ||  //nan checking
-                // (pixel_y != pixel_y)) // nan checking
+                (pixel_y < 0) ||
+                (pixel_x != pixel_x) ||  //nan checking
+                (pixel_y != pixel_y)) // nan checking
             {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame
               continue;

@@ -10,18 +10,19 @@
 options
 {
  AA_samples 3
- outputs 5 1 STRING
+ outputs 6 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
   "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
   "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
   "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
+  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver2@lentil_bokeh_driver"
+  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver2@lentil_bokeh_driver"
  xres 1920
  yres 1080
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
- camera "rendercamLentilThinLensShape"
+ camera "rendercamLentilShape"
  sss_use_autobump on
  frame 1
  GI_transmission_depth 0
@@ -51,11 +52,6 @@ driver_exr
 lentil_bokeh_driver
 {
  name aiAOVDriver2@lentil_bokeh_driver
-}
-
-lentil_thin_lens_bokeh_driver
-{
- name aiAOVDriver3@lentil_thin_lens_bokeh_driver
 }
 
 closest_filter

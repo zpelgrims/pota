@@ -113,7 +113,7 @@ function handle_lens_event(evnt, action)
   m.x = -(1000*(pt.x - box.left)/box.width  - 500)/global_scale;
   m.y =  ( 400*(pt.y - box.top )/box.height - 200)/global_scale;
 
-  var pos = [0.0, -3050, -9999];
+  var pos = [0.0, -2500, -9999];
   // var pos = [0.0, 2300, -9999];
 
 
@@ -805,7 +805,7 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
   // ap_y = 2.5;
 
   scene_x = 0.0;
-  scene_y = -3050;
+  scene_y = -2500;
   scene_z = 9999;
 
   var error = 0;
@@ -813,7 +813,7 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
   var lens_outer_pupil_curvature_radius = lensdb[lens_curr][0][LENS_RADIUS];
   var lens_outer_pupil_radius = lensdb[lens_curr][0][LENS_HOUSING_RADIUS];
 
-  var eps = 1e-6;
+  var eps = 1e-8;
   var sqr_err = 1e30, sqr_ap_err = 1e30;
   var prev_sqr_err = 1e32, prev_sqr_ap_err = 1e32;
 
@@ -955,12 +955,12 @@ function lt_aperture_sample_angenieux_writeout(lenses, ap_x, ap_y, scene_x, scen
     set_ray(d, 2338, 0);
 
 
-    if((k<100&&sqr_err>eps||sqr_ap_err>eps&&error==0))
-    {
-      setTimeout(lt_aperture_sample_angenieux_writeout, 150,
-          lenses, ap_x, ap_y, scene_x, scene_y, scene_z, sensor, out, k);
-      return error;
-    }
+    // if((k<100&&sqr_err>eps||sqr_ap_err>eps&&error==0))
+    // {
+    //   setTimeout(lt_aperture_sample_angenieux_writeout, 150,
+    //       lenses, ap_x, ap_y, scene_x, scene_y, scene_z, sensor, out, k);
+    //   return error;
+    // }
   
   }
   if(out[0]*out[0]+out[1]*out[1] > lens_outer_pupil_radius*lens_outer_pupil_radius){

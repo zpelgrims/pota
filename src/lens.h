@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include "../../Eigen/Eigen/Core"
+#include "../../Eigen/Eigen/LU"
 
 #include "../../polynomial-optics/src/raytrace.h"
 #include "global.h"
@@ -722,10 +723,10 @@ inline bool trace_backwards(Eigen::Vector3d target,
   // target(2) = 9999; 
 
     float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera);
-    // if(transmittance <= 0) {
-    //   ++tries;
-    //   continue;
-    // }
+    if(transmittance <= 0) {
+      ++tries;
+      continue;
+    }
 
     // crop at inward facing pupil, not needed to crop by outgoing because already done in lens_lt_sample_aperture()
     const double px = sensor(0) + sensor(2) * camera->lens_back_focal_length;
@@ -769,7 +770,7 @@ void trace_backwards_for_fstop(Camera *camera, const double fstop_target, double
     // just point through center of aperture
     Eigen::Vector2d aperture(0.01, parallel_ray_height);
 
-    lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera);
+    if (!lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera)) continue;
 
     // crop at inner pupil
     const double px = sensor(0) + (sensor(2) * camera->lens_back_focal_length);
