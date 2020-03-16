@@ -706,21 +706,10 @@ inline bool trace_backwards(Eigen::Vector3d target,
       lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
     }
 
-    // unit_disk(0) = 0.5;
-    // unit_disk(1) = 0.5;
-
     aperture(0) = unit_disk(0) * aperture_radius;
     aperture(1) = unit_disk(1) * aperture_radius;
 
-    // aperture(0) = 2.5;
-    // aperture(1) = 2.5;
-
     sensor(0) = sensor(1) = 0.0;
-
-    // AiMsgInfo("target: %f %f %f", target(0), target(1), target(2));
-  //   target(0) = 0.0;
-  // target(1) = -2750;
-  // target(2) = 9999; 
 
     float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera);
     if(transmittance <= 0) {
@@ -770,7 +759,8 @@ void trace_backwards_for_fstop(Camera *camera, const double fstop_target, double
     // just point through center of aperture
     Eigen::Vector2d aperture(0.01, parallel_ray_height);
 
-    if (!lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera)) continue;
+    // if (!lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera)) continue;
+    if(lens_lt_sample_aperture(target, aperture, sensor, out, camera->lambda, camera) <= 0.0) continue;
 
     // crop at inner pupil
     const double px = sensor(0) + (sensor(2) * camera->lens_back_focal_length);
