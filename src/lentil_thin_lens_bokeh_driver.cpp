@@ -215,6 +215,7 @@ driver_process_bucket
 
           const float circle_of_confusion = std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
+          if (std::pow(circle_of_confusion * bokeh->yres, 2) < 20.0) goto no_redist;
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 6, 1000000); // not sure if a million is actually ever hit..
 
@@ -427,6 +428,7 @@ driver_process_bucket
         }
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+        no_redist:
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
           float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);

@@ -88,9 +88,8 @@ lentil
  0.779105663 0.0785507262 0.621951878 0
  105.483185 10.6349897 84.2061157 1
  focus_distancePO 165
- focal_lengthPO 49
- fstopPO 2.0
- bidir_min_luminancePO 0.1
+ fstopPO 1.4
+ bidir_min_luminancePO 0.15
  bidir_output_pathPO "/home/cactus/lentil/pota/tests/po_bidir_debug/test_spheres.<aov>.<frame>.exr"
  bidir_sample_multPO 20
  declare maya_full_name constant STRING

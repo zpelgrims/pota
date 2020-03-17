@@ -281,6 +281,7 @@ driver_process_bucket
           }
 
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
+          if (bbox_area < 20.0) goto no_redist;
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
@@ -386,7 +387,10 @@ driver_process_bucket
           }
         }
 
+
+
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+          no_redist:
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
           float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
