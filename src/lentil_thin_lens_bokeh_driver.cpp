@@ -173,13 +173,16 @@ driver_process_bucket
     for (int px = bucket_xo; px < bucket_xo + bucket_size_x; px++) {
 
       AiAOVSampleIteratorInitPixel(sample_iterator, px, py);
+      unsigned subsample_cnt = -1;
       while (AiAOVSampleIteratorGetNext(sample_iterator)) {
         AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
 
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
-        const float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
+        float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
+        float depth_transmitted = tl->zbuffer_transmitted[(py*xres) + px][++subsample_cnt]; // what should the sample index be? :/
+        if (depth_transmitted > 0.0) depth = depth_transmitted; // necessary to get true ray path depth instead of Z of first-hit
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
 

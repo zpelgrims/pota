@@ -43,6 +43,10 @@ struct CameraThinLens
 
     int vignetting_retries;
     bool proper_ray_derivatives;
+
+    unsigned xres;
+    unsigned yres;
+    std::vector<std::vector<float>> zbuffer_transmitted;
 };
 
 extern struct CameraThinLens tl;
