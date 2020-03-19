@@ -185,32 +185,25 @@ driver_process_bucket
         // AiMsgInfo("subsample_cnt %d", subsample_cnt);
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
-        // const void *pointer_to_void = AiAOVSampleIteratorGetAOVPtr(sample_iterator, AtString("SH")); 
-        // const AtNode *shader_current = (const AtNode *)pointer_to_void;
-        // const AtNodeEntry *ne_curr_shader = AiNodeGetNodeEntry(shader_current);
-        
-        // AtNode *shader_current = *AtNode();
-        // AiMsgInfo("shader_current: %s", shader_current);
-        float transmitted_depth = tl->zbuffer_transmitted[(py*xres) + px][++subsample_cnt]; // what should the sample index be? :/
+        // float transmitted_depth = tl->zbuffer_transmitted[(py*xres) + px][++subsample_cnt]; // what should the sample index be? :/
         // if (transmitted_depth > 0.0) redistribute = false;
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
 
-
         
         const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
-        sample -= sample_transmission;
-        // AiMsgInfo("sample_transmission: %f %f %f", sample_transmission.r, sample_transmission.g, sample_transmission.b);
-
+        bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
+        if (transmitted_energy_in_sample){
+          sample.r -= sample_transmission.r;
+          sample.g -= sample_transmission.g;
+          sample.b -= sample_transmission.b;
+        }
+          
+        if (!std::isfinite(depth)) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
+        if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
         
       // ENERGY REDISTRIBUTION
         if (redistribute) {
-          
-          // AiMsgInfo("pointer: %p", pointer_to_void);
-          // AiMsgInfo("Name: %s", AiNodeEntryGetName(ne_curr_shader));
-
-          if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
-          if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
 
           // world to camera space transform, static just for CoC
           AtMatrix world_to_camera_matrix_static;
@@ -236,7 +229,7 @@ driver_process_bucket
 
           const float circle_of_confusion = std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
-          // if (std::pow(circle_of_confusion * bokeh->yres, 2) < 20.0) goto no_redist;
+          if (std::pow(circle_of_confusion * bokeh->yres, 2) < 20.0) goto no_redist;
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 6, 1000000); // not sure if a million is actually ever hit..
 
@@ -448,13 +441,17 @@ driver_process_bucket
             }
           }
 
-          if (sample_transmission.r > 0.0) goto no_redist;
+          if (transmitted_energy_in_sample) goto no_redist;
         }
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         no_redist:
         
-          if (sample_transmission.r > 0.0) sample = sample_transmission;
+          if (transmitted_energy_in_sample) {
+            sample.r = sample_transmission.r;
+            sample.g = sample_transmission.g;
+            sample.b = sample_transmission.b;
+          }
 
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
           const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
@@ -469,7 +466,6 @@ driver_process_bucket
                 bokeh->filter_weight_buffer[pixelnumber] += filter_weight;
                 ++bokeh->sample_per_pixel_counter[pixelnumber];
                 bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
-
                 break;
               }
 
@@ -535,7 +531,7 @@ driver_close
 
         float filter_weight_accum = (bokeh->filter_weight_buffer[pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[pixelnumber] : 1.0;
         unsigned int samples_per_pixel = (bokeh->sample_per_pixel_counter[pixelnumber] != 0) ? bokeh->sample_per_pixel_counter[pixelnumber] : 1;
-        float filter_norm = filter_weight_accum/(double)samples_per_pixel;
+        float filter_norm = filter_weight_accum/(double)samples_per_pixel/2.0;
 
         // combine the redistributed and non-redistributed samples
         // e.g if 1/4 samples is original, it should only add up to 1/4th of the final pixel value
