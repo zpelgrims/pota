@@ -116,8 +116,8 @@ shader_evaluate
     if (sg->Rt & AI_RAY_ALL_TRANSMIT){
 
         AtNode *curr_shader = sg->shader;
-        AtNode *linked_shader = AiNodeGetLink(curr_shader, "input", NULL);
-        const char *node_name = AiNodeGetName(linked_shader);
+        // AtNode *linked_shader = AiNodeGetLink(curr_shader, "input", NULL);
+        // const char *node_name = AiNodeGetName(linked_shader);
         // AiMsgInfo("nodename: %s", node_name);
         // AiMsgInfo("transm_val: %f", AiNodeGetFlt(linked_shader, "transmission"));
         // if (local_data->zbuffer_stop_ray[pixelnumber][sg->si] == false){
