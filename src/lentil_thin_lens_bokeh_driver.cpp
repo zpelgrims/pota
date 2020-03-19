@@ -178,11 +178,13 @@ driver_process_bucket
         AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
 
-
+        // AiMsgInfo("subsample_cnt %d", subsample_cnt);
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
         float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         float depth_transmitted = tl->zbuffer_transmitted[(py*xres) + px][++subsample_cnt]; // what should the sample index be? :/
-        if (depth_transmitted > 0.0) depth = depth_transmitted; // necessary to get true ray path depth instead of Z of first-hit
+        if (depth_transmitted > 0.0){
+          depth = depth_transmitted; // necessary to get true ray path depth instead of Z of first-hit
+        } 
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
 
@@ -191,7 +193,7 @@ driver_process_bucket
       // ENERGY REDISTRIBUTION
         if (sample_luminance > tl->bidir_min_luminance) {
 
-          if (!std::isfinite(depth)) continue; // not sure if this works.. Z AOV has inf values at skydome hits
+          if (!std::isfinite(depth)) goto no_redist; // not sure if this works.. Z AOV has inf values at skydome hits
           if (AiV3IsSmall(sample_pos_ws)) continue; // not sure if this works .. position is 0,0,0 at skydome hits
 
           // world to camera space transform, static just for CoC

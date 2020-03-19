@@ -47,12 +47,3 @@ tl->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesTL
     AiRenderAbort();
     }
 // }
-
-unsigned aa = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-tl->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-tl->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-tl->zbuffer_transmitted.clear();
-tl->zbuffer_transmitted.resize(tl->xres * tl->yres);
-for (auto &element : tl->zbuffer_transmitted) {
-    element.resize(aa*aa); // not sure about this, what about adaptive sampling? Unsure if i'm able to allocate this correctly for every case
-}
