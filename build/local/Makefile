@@ -58,7 +58,7 @@ all: lentil_debug_filter_5.2.0.0\
 	 lentil_bokeh_driver_5.2.0.0\
 	 lentil_5.2.0.0\
 	 lentil_thinlens_5.2.0.0\
-	 lentil_transmitted_z_5.2.0.0\
+	#  lentil_transmitted_z_5.2.0.0\
 	#  lentil_debug_filter_6.0.0.0\
 	#  lentil_thin_lens_bokeh_driver_6.0.0.0\
 	#  lentil_bokeh_driver_6.0.0.0\
@@ -83,8 +83,8 @@ lentil_thinlens_5.2.0.0: Makefile ../../src/lentil_thinlens.cpp ${HEADERS}
 lentil_debug_filter_5.2.0.0: Makefile ../../src/lentil_debug_filter.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_5.2.0.0}/include ../../src/lentil_debug_filter.cpp -o ${user_build_folder}/bin/5.2.0.0/lentil_debug_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_5.2.0.0}/bin -lai 
 
-lentil_transmitted_z_5.2.0.0: Makefile ../../src/transmitted_z.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_5.2.0.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/5.2.0.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_5.2.0.0}/bin -lai 
+# lentil_transmitted_z_5.2.0.0: Makefile ../../src/transmitted_z.cpp ${HEADERS}
+# 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_5.2.0.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/5.2.0.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_5.2.0.0}/bin -lai 
 
 # pointerdriver_test_5.2.0.0: Makefile ../../src/pointerdriver_test.cpp ${HEADERS}
 # 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_5.2.0.0}/include ../../src/pointerdriver_test.cpp -o ${user_build_folder}/bin/5.2.0.0/pointerdriver_test.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_5.2.0.0}/bin -lai 

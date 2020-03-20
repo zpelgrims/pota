@@ -83,16 +83,6 @@ node_update
     // this pointer could be buggy (untested)
     AtNode* cameranode = node;
     #include "node_update_thinlens.h"
-
-    unsigned aa = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-    tl->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-    tl->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-    tl->zbuffer_transmitted.clear();
-    tl->zbuffer_transmitted.resize(tl->xres * tl->yres);
-    for (auto &element : tl->zbuffer_transmitted) {
-        element.resize(aa*aa); // not sure about this, what about adaptive sampling? Unsure if i'm able to allocate this correctly for every case
-    }
-
 }
 
 node_finish

@@ -75,27 +75,27 @@ node_update
 node_finish
 {
     PotaBokehAOV *local_data = (PotaBokehAOV*)AiNodeGetLocalData(node);
-    CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(local_data->camera_node);
+    // CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(local_data->camera_node);
 
-    unsigned xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-    unsigned yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-    std::vector<float> image(yres * xres * 4);
-    int offset = -1;
+    // unsigned xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+    // unsigned yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+    // std::vector<float> image(yres * xres * 4);
+    // int offset = -1;
 
-    for(unsigned pixelnumber = 0; pixelnumber < (xres * yres); pixelnumber++){
-        float pixelvalue = 0.0;
-        for (unsigned si = 0; si < tl->zbuffer_transmitted[pixelnumber].size(); si++){
-            pixelvalue += tl->zbuffer_transmitted[pixelnumber][si];
-        }
-        pixelvalue /= double(tl->zbuffer_transmitted[pixelnumber].size());
+    // for(unsigned pixelnumber = 0; pixelnumber < (xres * yres); pixelnumber++){
+    //     float pixelvalue = 0.0;
+    //     for (unsigned si = 0; si < tl->zbuffer_transmitted[pixelnumber].size(); si++){
+    //         pixelvalue += tl->zbuffer_transmitted[pixelnumber][si];
+    //     }
+    //     pixelvalue /= double(tl->zbuffer_transmitted[pixelnumber].size());
         
-        image[++offset] = pixelvalue;
-        image[++offset] = pixelvalue;
-        image[++offset] = pixelvalue;
-        image[++offset] = pixelvalue;
-    }
+    //     image[++offset] = pixelvalue;
+    //     image[++offset] = pixelvalue;
+    //     image[++offset] = pixelvalue;
+    //     image[++offset] = pixelvalue;
+    // }
       
-    SaveEXR(image.data(), xres, yres, 4, 0, "/home/cactus/lentil/pota/tests/zdepth_transmission/zdepth_transmitted_buffer.exr");
+    // SaveEXR(image.data(), xres, yres, 4, 0, "/home/cactus/lentil/pota/tests/zdepth_transmission/zdepth_transmitted_buffer.exr");
     
     delete local_data;
 }

@@ -88,3 +88,14 @@ static inline void lens_sample_triangular_aperture(double &x, double &y, double 
   x = radius * (b * p1[1] + c * p2[1]);
   y = radius * (b * p1[0] + c * p2[0]);
 }
+
+
+float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
+  // additional luminance with soft transition
+  if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
+    float perc = (sample_luminance - minimum_luminance) / transition_width;
+    return additional_luminance * perc;          
+  } else if (sample_luminance > minimum_luminance+transition_width) {
+    return additional_luminance;
+  } 
+}

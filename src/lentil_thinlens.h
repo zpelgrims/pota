@@ -43,10 +43,6 @@ struct CameraThinLens
 
     int vignetting_retries;
     bool proper_ray_derivatives;
-
-    unsigned xres;
-    unsigned yres;
-    std::vector<std::vector<float>> zbuffer_transmitted;
 };
 
 extern struct CameraThinLens tl;
@@ -252,3 +248,4 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
 
     if (!ray_succes) weight = AI_RGB_BLACK;
 }
+
