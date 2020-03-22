@@ -32,8 +32,6 @@ struct ThinLensBokehDriver {
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::vector<float> zbuffer;
 
-  std::map<AtString, std::vector<float> > filter_weight_buffer;
-  std::vector<unsigned int> sample_per_pixel_counter;
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
 
@@ -159,8 +157,6 @@ driver_open {
     bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
     bokeh->image_unredist[AtString(name)].clear();
     bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
-    bokeh->filter_weight_buffer[AtString(name)].clear();
-    bokeh->filter_weight_buffer[AtString(name)].resize(bokeh->xres * bokeh->yres);
   }
   AiOutputIteratorReset(iterator);
 }
@@ -207,7 +203,7 @@ driver_process_bucket
         float depth = AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("Z")); // what to do when values are INF?
         const float inv_density = AiAOVSampleIteratorGetInvDensity(sample_iterator);
         if (inv_density <= 0.f) continue; // does this every happen? test
-
+        const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
         
         const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
         bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
@@ -222,6 +218,7 @@ driver_process_bucket
         if (!std::isfinite(depth)) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
         if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
         if (AiAOVSampleIteratorHasAOVValue(sample_iterator, AtString("lentil_bidir_ignore"), AI_TYPE_RGBA)) redistribute = false;
+        
 
 
       // ENERGY REDISTRIBUTION
@@ -381,10 +378,8 @@ driver_process_bucket
 
             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            // AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
-            // float filter_weight = filter_gaussian(subpixel_position - 0.5, bokeh->filter_width);
-            // if (filter_weight == 0) continue;
-            // filter_weight *= inv_density;
+
+            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
@@ -465,10 +460,6 @@ driver_process_bucket
 
 
 
-
-          float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
-          const float inv_filtersize = 1.0 / std::pow(bokeh->filter_width, 2);
-          
           // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
           for (int y = py - filter_width_half; y <= py + filter_width_half; y++) {
             for (int x = px - filter_width_half; x <= px + filter_width_half; x++) {
@@ -476,12 +467,10 @@ driver_process_bucket
               const int pixelnumber = static_cast<int>(bokeh->xres * y + x);
               
               const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator); // offset within original pixel
-              AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y); // this needs to be in domain [-filter_width_half, filter_width_half]
+              AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
               float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
               if (filter_weight == 0) continue;
 
-
-        
 
               for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
                 switch(bokeh->aov_list_type[i]){
@@ -497,9 +486,9 @@ driver_process_bucket
                     
                     bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                     if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                      bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight * inv_density;
                       bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
                     }
+
                     break;
                   }
 
@@ -572,8 +561,6 @@ driver_close
         // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
         AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->redist_weight_per_pixel[pixelnumber]);
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
-        float filter_weight_accum = (bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] == 0.0) ? 1.0 : bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber];
-        // unredist /= filter_weight_accum;
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
         image[++offset] = combined_redist_unredist.r;
