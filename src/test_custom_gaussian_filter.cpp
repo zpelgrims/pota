@@ -35,36 +35,36 @@ filter_output_type
    }
 }
  
+inline float filter_gaussian(AtVector2 p, float width) {
+    const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+    if (r > 1.0f) return 0.0;
+    return AiFastExp(2 * -r);
+}
+
 filter_pixel
 {
    const float width = AiNodeGetFlt(node, WIDTH);
  
-   float aweight = 0.0f;
+   float acc_f_weight = 0.0;
    AtRGBA avalue = AI_RGBA_ZERO;
  
    while (AiAOVSampleIteratorGetNext(iterator))
    {
       // take into account adaptive sampling
       float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-      if (inv_density <= 0.f)
-         continue;
+      if (inv_density <= 0.f) continue;
  
       // determine distance to filter center
       const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
-      const float r = AiSqr(2 / width) * (AiSqr(offset.x) + AiSqr(offset.y));
-      if (r > 1.0f)
-         continue;
-      // gaussian filter weight
-      const float weight = AiFastExp(2 * -r) * inv_density;
+      const float filter_weight = filter_gaussian(offset, width);
  
       // accumulate weights and colors
-      avalue += weight * AiAOVSampleIteratorGetRGBA(iterator);
-      aweight += weight;
+      avalue += AiAOVSampleIteratorGetRGBA(iterator) * inv_density * filter_weight;
+      acc_f_weight += filter_weight * inv_density;
    }
  
    // compute final filtered color
-   if (aweight != 0.0f)
-      avalue /= aweight;
+   if (acc_f_weight != 0.0f) avalue /= acc_f_weight;
  
    *((AtRGBA*)data_out) = avalue;
 }

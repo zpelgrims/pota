@@ -202,6 +202,7 @@ driver_process_bucket
       while (AiAOVSampleIteratorGetNext(sample_iterator)) {
 
         bool redistribute = true;
+        bool partly_redistributed = false;
 
         AtRGBA sample = AiAOVSampleIteratorGetRGBA(sample_iterator);
         const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(sample_iterator, AtString("P"));
@@ -445,16 +446,23 @@ driver_process_bucket
             }
           }
 
-          if (transmitted_energy_in_sample) goto no_redist;
+          if (transmitted_energy_in_sample) {
+            partly_redistributed = true;
+            goto no_redist;
+          }
         }
 
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         no_redist:
         
-          if (transmitted_energy_in_sample) {
+          if (transmitted_energy_in_sample && partly_redistributed) { // this doesn't allow the non-redistributed energy on transmissive surfaces through
             sample.r = sample_transmission.r;
             sample.g = sample_transmission.g;
             sample.b = sample_transmission.b;
+          } else if (transmitted_energy_in_sample && !partly_redistributed) {
+            sample.r += sample_transmission.r;
+            sample.g += sample_transmission.g;
+            sample.b += sample_transmission.b;
           }
 
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
