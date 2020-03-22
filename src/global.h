@@ -7,7 +7,7 @@ std::string replace_first_occurence(std::string& s, const std::string& toReplace
 }
 
 inline float filter_gaussian(AtVector2 p, float width) {
-  const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
+  const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
 }
@@ -87,4 +87,15 @@ static inline void lens_sample_triangular_aperture(double &x, double &y, double 
 
   x = radius * (b * p1[1] + c * p2[1]);
   y = radius * (b * p1[0] + c * p2[0]);
+}
+
+
+float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
+  // additional luminance with soft transition
+  if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
+    float perc = (sample_luminance - minimum_luminance) / transition_width;
+    return additional_luminance * perc;          
+  } else if (sample_luminance > minimum_luminance+transition_width) {
+    return additional_luminance;
+  } 
 }
