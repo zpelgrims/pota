@@ -455,7 +455,7 @@ driver_process_bucket
         else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
         no_redist:
         
-          if (transmitted_energy_in_sample && partly_redistributed) { // this doesn't allow the non-redistributed energy on transmissive surfaces through
+          if (transmitted_energy_in_sample && partly_redistributed) {
             sample.r = sample_transmission.r;
             sample.g = sample_transmission.g;
             sample.b = sample_transmission.b;
