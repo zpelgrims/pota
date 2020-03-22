@@ -248,3 +248,4 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
 
     if (!ray_succes) weight = AI_RGB_BLACK;
 }
+

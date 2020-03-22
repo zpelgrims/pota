@@ -83,7 +83,6 @@ node_update
     // this pointer could be buggy (untested)
     AtNode* cameranode = node;
     #include "node_update_thinlens.h"
-
 }
 
 node_finish
