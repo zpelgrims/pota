@@ -175,8 +175,6 @@ driver_needs_bucket
 driver_prepare_bucket {} // called before a bucket is rendered
 
 
-
-
  
 driver_process_bucket
 {
@@ -223,7 +221,8 @@ driver_process_bucket
 
       // ENERGY REDISTRIBUTION
         if (redistribute) {
-
+          
+          // additional luminance with soft transition
           float fitted_bidir_add_luminance = 0.0;
           if (tl->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, tl->bidir_add_luminance, tl->bidir_add_luminance_transition, tl->bidir_min_luminance);
           
