@@ -7,7 +7,7 @@ static AtString WIDTH("width");
  
 node_parameters
 {
-   AiParameterFlt("width", 6.0f);
+   AiParameterFlt("width", 2.0f);
 }
  
 node_initialize
@@ -17,7 +17,7 @@ node_initialize
  
 node_update
 {
-   AiFilterUpdate(node, AiNodeGetFlt(node, WIDTH));
+   AiFilterUpdate(node, 2.0);
 }
  
 node_finish

@@ -33,6 +33,8 @@ struct ThinLensBokehDriver {
   std::vector<float> zbuffer;
 
   std::map<AtString, std::vector<float> > filter_weight_buffer;
+  // std::vector<float> filter_weight_buffer;
+  std::vector<unsigned int> sample_per_pixel_counter;
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
 
@@ -59,6 +61,8 @@ float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, Camer
   const float image_dist_focusdist = thinlens_get_image_dist_focusdist(tl);
   return std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
 }
+
+
 
 
 node_parameters {}
@@ -148,7 +152,6 @@ driver_open {
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
   while(AiOutputIteratorGetNext(iterator, &name, &pixelType, 0)){
-    AiMsgInfo("name: %s", name);
     bokeh->aov_list_name.push_back(AtString(name));
     bokeh->aov_list_type.push_back(pixelType); 
     bokeh->image[AtString(name)].clear();
@@ -157,6 +160,7 @@ driver_open {
     bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
     bokeh->image_unredist[AtString(name)].clear();
     bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
+
     bokeh->filter_weight_buffer[AtString(name)].clear();
     bokeh->filter_weight_buffer[AtString(name)].resize(bokeh->xres * bokeh->yres);
   }
@@ -378,10 +382,10 @@ driver_process_bucket
 
             // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
-            float filter_weight = filter_gaussian(subpixel_position - 0.5, bokeh->filter_width);
-            if (filter_weight == 0) return;
-            filter_weight *= inv_density;
+            // AtVector2 subpixel_position(pixel_x-std::floor(pixel_x), pixel_y-std::floor(pixel_y));
+            // float filter_weight = filter_gaussian(subpixel_position - 0.5, bokeh->filter_width);
+            // if (filter_weight == 0) continue;
+            // filter_weight *= inv_density;
 
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
@@ -399,9 +403,8 @@ driver_process_bucket
                   }
 
                   rgba_energy = rgba_energy * weight;
-                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                   if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                    bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight / double(samples);
                     bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
                   }
                   break;
@@ -410,9 +413,8 @@ driver_process_bucket
                 case AI_TYPE_RGB: {
                   AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]))+fitted_bidir_add_luminance) / (double)(samples);
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight;
-                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                   if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                    bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight  / double(samples);
                     bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
                   }
                   break;
@@ -456,10 +458,10 @@ driver_process_bucket
           }
 
           int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-          float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
-          if (filter_weight == 0) return;
-          filter_weight *= inv_density;
+          // const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
+          // float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
+          // if (filter_weight == 0) continue;
+          // filter_weight *= inv_density;
 
           for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
             switch(bokeh->aov_list_type[i]){
@@ -473,9 +475,8 @@ driver_process_bucket
                   rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]);
                 }
                 
-                bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                 if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                  bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight;
                   bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
                 }
                 break;
@@ -484,9 +485,8 @@ driver_process_bucket
               case AI_TYPE_RGB: {
                   AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]);
                   AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * filter_weight;
+                  bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                   if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                    bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight;
                     bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
                   }
 
@@ -533,9 +533,9 @@ driver_close
 
   // dump framebuffers to exrs
   for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-
-    if (bokeh->aov_list_name[i] == AtString("transmission")) continue;
     
+    if (bokeh->aov_list_name[i] == AtString("transmission")) continue;
+
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
     int offset = -1;
 
@@ -544,8 +544,6 @@ driver_close
       // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
       if (bokeh->aov_list_type[i] == AI_TYPE_RGBA || bokeh->aov_list_type[i] == AI_TYPE_RGB){
 
-        float filter_weight_accum = (bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] != 0.0) ? bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] : 1.0;
-
         // combine the redistributed and non-redistributed samples
         // e.g if 1/4 samples is original, it should only add up to 1/4th of the final pixel value
         // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
@@ -553,10 +551,10 @@ driver_close
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
-        image[++offset] = combined_redist_unredist.r / filter_weight_accum;
-        image[++offset] = combined_redist_unredist.g / filter_weight_accum;
-        image[++offset] = combined_redist_unredist.b / filter_weight_accum;
-        image[++offset] = combined_redist_unredist.a / filter_weight_accum;
+        image[++offset] = combined_redist_unredist.r;
+        image[++offset] = combined_redist_unredist.g;
+        image[++offset] = combined_redist_unredist.b;
+        image[++offset] = combined_redist_unredist.a;
       } else {
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].r;
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].g;

@@ -7,7 +7,7 @@ std::string replace_first_occurence(std::string& s, const std::string& toReplace
 }
 
 inline float filter_gaussian(AtVector2 p, float width) {
-  const float r = AiSqr(2.0 / width) * (AiSqr(p.x) + AiSqr(p.y));
+  const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
 }
