@@ -259,12 +259,8 @@ driver_process_bucket
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
 
             //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel_x > xres) || 
-                (pixel_x < 0)    || 
-                (pixel_y > yres) || 
-                (pixel_y < 0)    || 
-                (pixel_x != pixel_x) ||  //nan checking
-                (pixel_y != pixel_y)) // nan checking
+            if ((pixel_x > xres) || (pixel_x < 0) || (pixel_y > yres) || (pixel_y < 0) || 
+                (pixel_x != pixel_x) || (pixel_y != pixel_y)) // nan checking
             {
               --count;
               continue;
@@ -300,8 +296,7 @@ driver_process_bucket
             const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
             
-            // camera_space_sample_position_mb_eigen = {0.0,285.0,-999.0};
-            // camera_space_sample_position_mb_eigen = {0.0,230.0,-999.9};  
+            
             if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
               --count;
               continue;

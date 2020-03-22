@@ -63,8 +63,8 @@ all: lentil_debug_filter_5.2.0.0\
 	 lentil_bokeh_driver_6.0.0.0\
 	 lentil_6.0.0.0\
 	 lentil_thinlens_6.0.0.0
-	# lentil_transmitted_z_5.2.0.0\
-	# lentil_transmitted_z_6.0.0.0\
+     #lentil_transmitted_z_5.2.0.0
+	 #lentil_transmitted_z_6.0.0.0
 	
 
 
