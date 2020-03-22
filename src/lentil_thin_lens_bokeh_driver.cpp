@@ -33,7 +33,6 @@ struct ThinLensBokehDriver {
   std::vector<float> zbuffer;
 
   std::map<AtString, std::vector<float> > filter_weight_buffer;
-  // std::vector<float> filter_weight_buffer;
   std::vector<unsigned int> sample_per_pixel_counter;
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
@@ -113,7 +112,7 @@ node_update
 
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->filter_width = 6.0;
+  bokeh->filter_width = 2.0;
   bokeh->rgba_string = AtString("RGBA");
   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
@@ -160,7 +159,6 @@ driver_open {
     bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
     bokeh->image_unredist[AtString(name)].clear();
     bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
-
     bokeh->filter_weight_buffer[AtString(name)].clear();
     bokeh->filter_weight_buffer[AtString(name)].resize(bokeh->xres * bokeh->yres);
   }
@@ -465,62 +463,79 @@ driver_process_bucket
             sample.b += sample_transmission.b;
           }
 
-          int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          // const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator);
-          // float filter_weight = filter_gaussian(subpixel_position, bokeh->filter_width);
-          // if (filter_weight == 0) continue;
-          // filter_weight *= inv_density;
 
-          for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-            switch(bokeh->aov_list_type[i]){
-              case AI_TYPE_RGBA: {
-                // RGBA is the only aov with transmission component in
-                AtRGBA rgba_energy;
-                
-                if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                  rgba_energy = sample;
-                } else {
-                  rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]);
-                }
-                
-                bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
-                if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                  bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
-                }
-                break;
-              }
 
-              case AI_TYPE_RGB: {
-                  AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]);
-                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-                  bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
-                  if (bokeh->aov_list_name[i] == bokeh->rgba_string){
-                    bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
+
+          float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
+          const float inv_filtersize = 1.0 / std::pow(bokeh->filter_width, 2);
+          
+          // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
+          for (int y = py - filter_width_half; y <= py + filter_width_half; y++) {
+            for (int x = px - filter_width_half; x <= px + filter_width_half; x++) {
+
+              const int pixelnumber = static_cast<int>(bokeh->xres * y + x);
+              
+              const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator); // offset within original pixel
+              AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y); // this needs to be in domain [-filter_width_half, filter_width_half]
+              float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
+              if (filter_weight == 0) continue;
+
+
+        
+
+              for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
+                switch(bokeh->aov_list_type[i]){
+                  case AI_TYPE_RGBA: {
+                    // RGBA is the only aov with transmission component in
+                    AtRGBA rgba_energy;
+                    
+                    if (bokeh->aov_list_name[i] == bokeh->rgba_string){
+                      rgba_energy = sample;
+                    } else {
+                      rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]);
+                    }
+                    
+                    bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
+                    if (bokeh->aov_list_name[i] == bokeh->rgba_string){
+                      bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] += filter_weight * inv_density;
+                      bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
+                    }
+                    break;
                   }
 
-                  break;
+                  case AI_TYPE_RGB: {
+                      AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]);
+                      AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+                      bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
+                      if (bokeh->aov_list_name[i] == bokeh->rgba_string){
+                        bokeh->unredist_weight_per_pixel[pixelnumber] += inv_density;
+                      }
+
+                      break;
+                    }
+
+                  case AI_TYPE_VECTOR: {
+                    if ((std::abs(depth) <= bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+                      AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
+                      AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+                      bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+                      bokeh->zbuffer[pixelnumber] = std::abs(depth);
+                    }
+
+                    break;
+                  }
+
+                  case AI_TYPE_FLOAT: {
+                    if ((std::abs(depth) <= bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
+                      float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
+                      AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+                      bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
+                      bokeh->zbuffer[pixelnumber] = std::abs(depth);
+                    }
+
+                    break;
+                  }
                 }
-
-              case AI_TYPE_VECTOR: {
-                if ((std::abs(depth) <= bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                  AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, bokeh->aov_list_name[i]);
-                  AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
-                }
-
-                break;
-              }
-
-              case AI_TYPE_FLOAT: {
-                if ((std::abs(depth) <= bokeh->zbuffer[pixelnumber]) || bokeh->zbuffer[pixelnumber] == 0.0){
-                  float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, bokeh->aov_list_name[i]);
-                  AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
-                  bokeh->image[bokeh->aov_list_name[i]][pixelnumber] = rgba_energy;
-                  bokeh->zbuffer[pixelnumber] = std::abs(depth);
-                }
-
-                break;
               }
             }
           }
@@ -557,6 +572,8 @@ driver_close
         // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
         AtRGBA redist = bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->redist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->redist_weight_per_pixel[pixelnumber]);
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
+        float filter_weight_accum = (bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber] == 0.0) ? 1.0 : bokeh->filter_weight_buffer[bokeh->aov_list_name[i]][pixelnumber];
+        // unredist /= filter_weight_accum;
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
         image[++offset] = combined_redist_unredist.r;
