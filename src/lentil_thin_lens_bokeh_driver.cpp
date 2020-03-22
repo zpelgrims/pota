@@ -461,10 +461,13 @@ driver_process_bucket
 
 
           // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-          for (int y = py - filter_width_half; y <= py + filter_width_half; y++) {
-            for (int x = px - filter_width_half; x <= px + filter_width_half; x++) {
+          for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
+            for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
+              
+              if (y < 0 || y >= bokeh->yres) continue; // edge fix
+              if (x < 0 || x >= bokeh->xres) continue; // edge fix
 
-              const int pixelnumber = static_cast<int>(bokeh->xres * y + x);
+              const unsigned pixelnumber = static_cast<int>(bokeh->xres * y + x);
               
               const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator); // offset within original pixel
               AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
