@@ -231,7 +231,7 @@ driver_process_bucket
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
           if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(15, 2)) goto no_redist; // 15^2 px minimum coc
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
-          samples = std::clamp(samples, 6, 1000000); // not sure if a million is actually ever hit..
+          samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
 
           // float abb_field_curvature = 0.0;
           // float abb_astigmatism_tangential = 0.5;
@@ -565,6 +565,8 @@ driver_close
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
+        if (combined_redist_unredist.a > 0.95) combined_redist_unredist /= combined_redist_unredist.a;
+
         image[++offset] = combined_redist_unredist.r;
         image[++offset] = combined_redist_unredist.g;
         image[++offset] = combined_redist_unredist.b;

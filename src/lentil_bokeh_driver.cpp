@@ -25,7 +25,6 @@ struct LentilBokehDriver {
   std::map<AtString, std::vector<AtRGBA> > image_redist;
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::vector<float> zbuffer;
-  
   std::vector<float> redist_weight_per_pixel;
   std::vector<float> unredist_weight_per_pixel;
 
@@ -280,11 +279,12 @@ driver_process_bucket
           if (bbox_area < 20.0) goto no_redist; //might have to increase this?
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
-          samples = std::clamp(samples, 10, 1000000); // not sure if a million is actually ever hit..
+          samples = std::clamp(samples, 75, 1000000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
 
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
+          
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
@@ -302,7 +302,6 @@ driver_process_bucket
               continue;
             }
 
-            AtRGB weight = AI_RGB_WHITE;
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position(0) / (po->sensor_width * 0.5), 
@@ -322,7 +321,7 @@ driver_process_bucket
             
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-             // write sample to image
+            // write sample to image
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
@@ -338,7 +337,6 @@ driver_process_bucket
                     rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, bokeh->aov_list_name[i]))+fitted_bidir_add_luminance) / (double)(samples);
                   }
 
-                  rgba_energy = rgba_energy * weight;
                   bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                   if (bokeh->aov_list_name[i] == bokeh->rgba_string){
                     bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
@@ -348,7 +346,7 @@ driver_process_bucket
 
                 case AI_TYPE_RGB: {
                   AtRGB rgb_energy = ((AiAOVSampleIteratorGetAOVRGB(sample_iterator, bokeh->aov_list_name[i]))+fitted_bidir_add_luminance) / (double)(samples);
-                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) * weight;
+                  AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
                   bokeh->image_redist[bokeh->aov_list_name[i]][pixelnumber] += rgba_energy * inv_density;
                   if (bokeh->aov_list_name[i] == bokeh->rgba_string){
                     bokeh->redist_weight_per_pixel[pixelnumber] += inv_density / double(samples);
@@ -508,6 +506,8 @@ driver_close
         AtRGBA unredist = bokeh->image_unredist[bokeh->aov_list_name[i]][pixelnumber] / ((bokeh->unredist_weight_per_pixel[pixelnumber] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[pixelnumber]);
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[pixelnumber])) + (redist * (bokeh->redist_weight_per_pixel[pixelnumber]));
         
+        if (combined_redist_unredist.a > 0.95) combined_redist_unredist /= combined_redist_unredist.a;
+
         image[++offset] = combined_redist_unredist.r;
         image[++offset] = combined_redist_unredist.g;
         image[++offset] = combined_redist_unredist.b;
