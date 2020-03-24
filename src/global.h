@@ -82,8 +82,8 @@ static inline void lens_sample_triangular_aperture(double &x, double &y, double 
 
   double p1[2], p2[2];
 
-  common_sincosf(2.0f*M_PI/blades * (tri+1), p1, p1+1);
-  common_sincosf(2.0f*M_PI/blades * tri, p2, p2+1);
+  common_sincosf(2.0f*AI_PI/blades * (tri+1), p1, p1+1);
+  common_sincosf(2.0f*AI_PI/blades * tri, p2, p2+1);
 
   x = radius * (b * p1[1] + c * p2[1]);
   y = radius * (b * p1[0] + c * p2[0]);
