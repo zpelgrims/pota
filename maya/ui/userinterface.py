@@ -170,7 +170,7 @@ class LentilDialog(QtWidgets.QScrollArea):
         self.bokehImagePathLE.setText(filename[0])
 
     def get_bidir_output_path(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:\\',"Image files (*.jpg *.png *.exr *.tif)")
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', 'c:\\',"Image files (*.jpg *.png *.exr *.tif)")
         self.bidirOutputPathLE.setText(filename[0])
 
     def signals(self):
@@ -191,7 +191,7 @@ class LentilDialog(QtWidgets.QScrollArea):
                 self.currentLensId = lens
         
         dir = os.path.dirname(__file__)
-        svg_location = os.path.join(dir, '/svg/{}'.format(self.lens_database[self.currentLensId]["www-svg-location"]))
+        svg_location = os.path.join(dir, 'svg{}'.format(self.lens_database[self.currentLensId]["www-svg-location"]))
         self.image.load(svg_location)
 
         self.yearL2.setText(str(self.lens_database[self.currentLensId]["year"]))
@@ -214,7 +214,7 @@ class LentilDialog(QtWidgets.QScrollArea):
 
     def _read_public_lens_database(self):
         dir = os.path.dirname(__file__)
-        public_json_path = os.path.join(dir, '/lenses_public.json')
+        public_json_path = os.path.join(dir, 'lenses_public.json')
         with open(public_json_path) as data_file:    
             self.lens_database = json.load(data_file)
 
@@ -371,17 +371,21 @@ class ArnoldMayaTranslator(LentilDialog):
 
         
     def discover_available_camera_models(self):
-        for n in range(len(self.lens_database)):
-            try:
-                cmds.setAttr("{}.aiLensModelPO".format(self.currentCamera), n)
-            except: #add proper exception
-                continue
-            
-            enum_value_str = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera), asString=True)
-            company, product_name = self.get_company_lens_model_from_string(enum_value_str)
-            for lensid in self.lens_database:
-                if company.replace("_", "-") == self.lens_database[lensid]["company"] and product_name.replace("_", "-") == self.lens_database[lensid]["product-name"]:
-                    self.available_lenses.append(str(lensid))
+        cnt = 0
+        for lensid in self.lens_database:
+            for fl in self.lens_database[lensid]:
+                try:
+                    cmds.setAttr("{}.aiLensModelPO".format(self.currentCamera), cnt)
+                except: #add proper exception
+                    continue
+                
+                enum_value_str = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera), asString=True)
+                company, product_name = self.get_company_lens_model_from_string(enum_value_str)
+                for lensid in self.lens_database:
+                    if company.replace("_", "-") == self.lens_database[lensid]["company"] and product_name.replace("_", "-") == self.lens_database[lensid]["product-name"]:
+                        self.available_lenses.append(str(lensid))
+                
+                cnt += 1
 
         # remove doubles from list
         self.available_lenses = list(set(self.available_lenses))
@@ -417,15 +421,17 @@ class ArnoldMayaTranslator(LentilDialog):
 
     
     def build_camera_enum_map(self):
-        for n in range(len(self.lens_database)):
-            try:
-                cmds.setAttr("{}.aiLensModelPO".format(self.currentCamera), n)
-            except:
-                continue
-            
-            enum_value_str = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera), asString=True)
-            self.enum_lens_map[enum_value_str] = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera))
-
+        cnt = 0
+        for lensid in self.lens_database:
+            for fl in self.lens_database[lensid]:
+                try:
+                    cmds.setAttr("{}.aiLensModelPO".format(self.currentCamera), cnt)
+                except:
+                    continue
+                
+                enum_value_str = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera), asString=True)
+                self.enum_lens_map[enum_value_str] = cmds.getAttr("{}.aiLensModelPO".format(self.currentCamera))
+                cnt += 1
         
 
 
