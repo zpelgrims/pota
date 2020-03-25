@@ -81,7 +81,7 @@
         houdini.label       STRING  "Abberation (spherical)"
 
 
-    attr abb_distortionTL]
+    [attr abb_distortionTL]
         min                 FLOAT   -20.0
         max                 FLOAT   20.0
         default             FLOAT   0.0
