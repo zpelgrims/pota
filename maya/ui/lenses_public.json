@@ -33,7 +33,7 @@
     "prime": true,
     "product-name": "double-gauss",
     "production-ready": true,
-    "www-svg-location": "/0001/1953-angenieux-double-gauss.svg",
+    "www-svg-location": "/1953-angenieux-double-gauss.svg",
     "year": 1953
   },
   "0002": {
@@ -63,7 +63,7 @@
     "prime": true,
     "product-name": "primoplan",
     "production-ready": true,
-    "www-svg-location": "/0002/1936-meyer-optik-goerlitz-primoplan.svg",
+    "www-svg-location": "/1936-meyer-optik-goerlitz-primoplan.svg",
     "year": 1936
   },
   "0003": {
@@ -101,7 +101,7 @@
     "prime": true,
     "product-name": "petzval",
     "production-ready": true,
-    "www-svg-location": "/0003/1900-unknown-petzval.svg",
+    "www-svg-location": "/1900-unknown-petzval.svg",
     "year": 1900
   },
   "0004": {
@@ -130,7 +130,7 @@
     "prime": true,
     "product-name": "retrofocus-wideangle",
     "production-ready": true,
-    "www-svg-location": "/0004/1971-nikon-retrofocus-wideangle.svg",
+    "www-svg-location": "/1971-nikon-retrofocus-wideangle.svg",
     "year": 1971
   },
   "0005": {
@@ -156,7 +156,7 @@
     "prime": true,
     "product-name": "retrofocus-wideangle",
     "production-ready": true,
-    "www-svg-location": "/0005/1982-canon-retrofocus-wideangle.svg",
+    "www-svg-location": "/1982-canon-retrofocus-wideangle.svg",
     "year": 1982
   },
   "0006": {
@@ -202,7 +202,7 @@
     "prime": true,
     "product-name": "petzval",
     "production-ready": true,
-    "www-svg-location": "/0006/1948-kodak-petzval.svg",
+    "www-svg-location": "/1948-kodak-petzval.svg",
     "year": 1948
   },
   "0007": {
@@ -242,7 +242,7 @@
     "prime": true,
     "product-name": "speed-panchro",
     "production-ready": true,
-    "www-svg-location": "/0007/1920-cooke-speed-panchro.svg",
+    "www-svg-location": "/1920-cooke-speed-panchro.svg",
     "year": 1920
   },
   "0008": {
@@ -275,7 +275,7 @@
     "prime": true,
     "product-name": "unknown",
     "production-ready": true,
-    "www-svg-location": "/0008/2014-nikon-unknown.svg",
+    "www-svg-location": "/2014-nikon-unknown.svg",
     "year": 2014
   },
   "0009": {
@@ -313,7 +313,7 @@
     "prime": true,
     "product-name": "biotar",
     "production-ready": true,
-    "www-svg-location": "/0009/1927-zeiss-biotar.svg",
+    "www-svg-location": "/1927-zeiss-biotar.svg",
     "year": 1927
   },
   "0010": {
@@ -359,7 +359,7 @@
     "prime": true,
     "product-name": "takumar",
     "production-ready": true,
-    "www-svg-location": "/0010/1969-asahi-takumar.svg",
+    "www-svg-location": "/1969-asahi-takumar.svg",
     "year": 1969
   },
   "0011": {
@@ -392,7 +392,7 @@
     "prime": true,
     "product-name": "takumar",
     "production-ready": true,
-    "www-svg-location": "/0011/1970-asahi-takumar.svg",
+    "www-svg-location": "/1970-asahi-takumar.svg",
     "year": 1970
   },
   "0014": {
@@ -414,7 +414,7 @@
     "prime": true,
     "product-name": "fisheye",
     "production-ready": true,
-    "www-svg-location": "/0014/1954-unsure-fisheye.svg",
+    "www-svg-location": "/1954-unsure-fisheye.svg",
     "year": 1954
   },
   "0015": {
@@ -448,7 +448,7 @@
     "prime": true,
     "product-name": "fisheye",
     "production-ready": true,
-    "www-svg-location": "/0015/1978-minolta-fisheye.svg",
+    "www-svg-location": "/1978-minolta-fisheye.svg",
     "year": 1978
   },
   "0016": {
@@ -478,7 +478,7 @@
     "prime": true,
     "product-name": "unknown",
     "production-ready": true,
-    "www-svg-location": "/0016/1956-canon-unknown.svg",
+    "www-svg-location": "/1956-canon-unknown.svg",
     "year": 1956
   }
 }
