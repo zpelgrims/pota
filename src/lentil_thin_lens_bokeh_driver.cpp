@@ -9,9 +9,6 @@
 #include <map>
 #include "lentil_thinlens.h"
 
-#define TINYEXR_IMPLEMENTATION
-#include "tinyexr.h"
-
  
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
@@ -545,9 +542,8 @@ driver_close
 
   if (!bokeh->enabled) return;
 
-  // dump framebuffers to exrs
   for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-    
+
     if (bokeh->aov_list_name[i] == AtString("transmission")) continue;
 
     std::vector<float> image(bokeh->yres * bokeh->xres * 4);
@@ -577,7 +573,6 @@ driver_close
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].b;
         image[++offset] = bokeh->image[bokeh->aov_list_name[i]][pixelnumber].a;
       }
-      
     }
 
     // replace <aov> and <frame>
@@ -588,8 +583,9 @@ driver_close
     std::string frame_padded = std::string(4 - frame_str.length(), '0') + frame_str;
     std::string path_replaced_framenumber = replace_first_occurence(path, "<frame>", frame_padded);
 
-    SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, path_replaced_framenumber.c_str());
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Bokeh AOV written to %s", path_replaced_framenumber.c_str());
+    // dump framebuffers to exrs
+    save_to_exr_rgba(image, path_replaced_framenumber, bokeh->xres, bokeh->yres);
+    AiMsgInfo("[LENTIL BIDIRECTIONAL TL] %s AOV written to %s", bokeh->aov_list_name[i], path_replaced_framenumber.c_str());
   }
 }
  

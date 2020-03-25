@@ -1,5 +1,8 @@
 #pragma once
 
+#define TINYEXR_IMPLEMENTATION
+#include "tinyexr.h"
+
 std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
     std::size_t pos = s.find(toReplace);
     if (pos == std::string::npos) return s;
@@ -98,4 +101,58 @@ float additional_luminance_soft_trans(float sample_luminance, float additional_l
   } else if (sample_luminance > minimum_luminance+transition_width) {
     return additional_luminance;
   } 
+}
+
+
+void save_to_exr_rgba(std::vector<float> img, std::string filename, unsigned xres, unsigned yres) {
+  EXRHeader header;
+  InitEXRHeader(&header);
+
+  EXRImage image;
+  InitEXRImage(&image);
+  image.num_channels = 4;
+  image.width = xres;
+  image.height = yres;
+
+  std::vector<float> images[4];
+  images[0].resize(xres * yres);
+  images[1].resize(xres * yres);
+  images[2].resize(xres * yres);
+  images[3].resize(xres * yres);
+
+  for (int i = 0; i < xres * yres; i++) {
+    images[0][i] = img[4*i+0];
+    images[1][i] = img[4*i+1];
+    images[2][i] = img[4*i+2];
+    images[3][i] = img[4*i+3];
+  }
+
+  float* image_ptr[4];
+  image_ptr[0] = &(images[3].at(0)); // A
+  image_ptr[1] = &(images[2].at(0)); // B
+  image_ptr[2] = &(images[1].at(0)); // G
+  image_ptr[3] = &(images[0].at(0)); // R
+
+  image.images = (unsigned char**)image_ptr;
+  header.num_channels = 4;
+  header.channels = (EXRChannelInfo *)malloc(sizeof(EXRChannelInfo) * header.num_channels);
+  strncpy(header.channels[0].name, "A", 255); header.channels[0].name[strlen("A")] = '\0';
+  strncpy(header.channels[1].name, "B", 255); header.channels[1].name[strlen("B")] = '\0';
+  strncpy(header.channels[2].name, "G", 255); header.channels[2].name[strlen("G")] = '\0';
+  strncpy(header.channels[3].name, "R", 255); header.channels[3].name[strlen("R")] = '\0';
+
+  header.pixel_types = (int *)malloc(sizeof(int) * header.num_channels); 
+  header.requested_pixel_types = (int *)malloc(sizeof(int) * header.num_channels);
+  for (int i = 0; i < header.num_channels; i++) {
+    header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT; // pixel type of input image
+    header.requested_pixel_types[i] = TINYEXR_PIXELTYPE_HALF; // pixel type of output image to be stored in .EXR
+  }
+  
+  header.compression_type = TINYEXR_COMPRESSIONTYPE_ZIP;
+
+  const char* err;
+  int ret = SaveEXRImageToFile(&image, &header, filename.c_str(), &err);
+  if (ret != TINYEXR_SUCCESS) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Error when saving exr: %s", err);
+  }
 }

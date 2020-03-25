@@ -77,7 +77,7 @@ lentil_thinlens
  105.483185 10.6349897 84.2061157 1
  focus_distanceTL 165
  fstopTL 1.4
- bidir_min_luminanceTL 0.35
+ bidir_min_luminanceTL 1.0
  bidir_output_pathTL "/home/cactus/lentil/pota/tests/po_bidir_debug/tl_test_spheres.<aov>.<frame>.exr"
  bidir_sample_multTL 20
  declare maya_full_name constant STRING
@@ -288,5 +288,6 @@ standard_surface
  name aiStandardSurface1
  specular_roughness 0.1
  base 0.5
+ base_color 0.1 0.5 1.0
 }
 

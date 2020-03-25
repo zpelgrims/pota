@@ -4,9 +4,6 @@
 #include "lens.h"
 #include "global.h"
 
-#define TINYEXR_IMPLEMENTATION
-#include "tinyexr.h"
-
  
 AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
  
@@ -530,7 +527,7 @@ driver_close
     std::string frame_padded = std::string(4 - frame_str.length(), '0') + frame_str;
     std::string path_replaced_framenumber = replace_first_occurence(path, "<frame>", frame_padded);
 
-    SaveEXR(image.data(), bokeh->xres, bokeh->yres, 4, 0, path_replaced_framenumber.c_str());
+    save_to_exr_rgba(image, path_replaced_framenumber, bokeh->xres, bokeh->yres);
     AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Bokeh AOV written to %s", path_replaced_framenumber.c_str());
   }
 }
