@@ -57,9 +57,9 @@ node_parameters {
   AiParameterStr("bokeh_image_pathPO", "");
 
 
-  AiParameterFlt("bidir_min_luminancePO", 0.2);
+  AiParameterFlt("bidir_min_luminancePO", 1.0);
   AiParameterStr("bidir_output_pathPO", "");
-  AiParameterInt("bidir_sample_multPO", 10);
+  AiParameterInt("bidir_sample_multPO", 20);
   AiParameterFlt("bidir_add_luminancePO", 0.0);
   AiParameterFlt("bidir_add_luminance_transitionPO", 1.0);
 

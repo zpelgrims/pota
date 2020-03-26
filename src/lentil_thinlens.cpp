@@ -56,9 +56,9 @@ node_parameters
     AiParameterBool("bokeh_enable_imageTL", false);
     AiParameterStr("bokeh_image_pathTL", "");
 
-    AiParameterFlt("bidir_min_luminanceTL", 0.2);
+    AiParameterFlt("bidir_min_luminanceTL", 1.0);
     AiParameterStr("bidir_output_pathTL", "");
-    AiParameterInt("bidir_sample_multTL", 10);
+    AiParameterInt("bidir_sample_multTL", 20);
     AiParameterFlt("bidir_add_luminanceTL", 0.0);
     AiParameterFlt("bidir_add_luminance_transitionTL", 1.0);
 
