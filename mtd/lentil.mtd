@@ -101,7 +101,8 @@
 
     [attr bidir_min_luminancePO]
         min                 FLOAT    0.0
-        max                 INT    10000
+        max                 FLOAT    10000
+        default             FLOAT   1.0
         desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
 
         houdini.label       STRING  "Trigger treshold"
