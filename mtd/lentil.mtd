@@ -149,4 +149,4 @@
         default             BOOL  true
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
-        houdini.label       STRING  "Proper ray derivatives"
+        houdini.label       STRING  "HQ ray derivatives"

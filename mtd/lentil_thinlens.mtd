@@ -13,7 +13,7 @@
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;4;Bokeh;7;Bidirectional;5;Additional;2"
+    houdini.parm.folder.first STRING  "General;4;Bokeh;9;Bidirectional;5;Additional;2"
     
 
     [attr sensor_widthTL]
@@ -66,7 +66,7 @@
     [attr optical_vignetting_radiusTL]
         min                 FLOAT   1.0
         max                 FLOAT   5.0
-        default             FLOAT   2.0
+        default             FLOAT   1.0
         desc                STRING  ""
 
         houdini.label       STRING  "Optical Vignetting Radius"
@@ -111,7 +111,7 @@
     [attr bokeh_anamorphicTL]
         min                 FLOAT   0.0
         max                 FLOAT   1.0
-        default             FLOAT   0.0
+        default             FLOAT   1.0
         desc                STRING  "Squeeze the aperture in the y-axis."
 
         houdini.label       STRING  "Anamorphic"
@@ -133,8 +133,9 @@
 
 
     [attr bidir_min_luminanceTL]
-        min                 FLOAT    0.0
-        max                 INT    10000
+        min                 FLOAT   0.0
+        max                 FLOAT   10000
+        default             FLOAT   1.0
         desc                STRING  "Minimum threshold luminance for the bidirectional comTLnent to kick in."
 
         houdini.label       STRING  "Trigger treshold"
@@ -182,4 +183,4 @@
         default             BOOL  true
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
-        houdini.label       STRING  "Proper ray derivatives"
+        houdini.label       STRING  "HQ ray derivatives"
