@@ -53,6 +53,7 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
         self.addControl("aiFocalLengthTL", label="Focal Length (mm)")
         self.addControl("aiFstopTL", label="F-stop", dynamic=True)
         self.addControl("aiFocusDistanceTL", label="Focus distance (cm)")
+        self.addControl("aiEnableDofTL", label="Enable DOF")
 
         self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
         self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")

@@ -9,6 +9,7 @@ enum
     p_focal_lengthTL,
     p_fstopTL,
     p_focus_distanceTL,
+    p_enable_dof,
     // p_emperical_ca_distTL,
     p_optical_vignetting_distanceTL,
     p_optical_vignetting_radiusTL,
@@ -16,6 +17,7 @@ enum
     p_abb_sphericalTL,
     p_abb_distortionTL,
     // p_abb_comaTL,
+    
 
     p_bokeh_aperture_bladesTL,
     p_bokeh_circle_to_squareTL,
@@ -41,6 +43,7 @@ node_parameters
     AiParameterFlt("focal_lengthTL", 35.0); // in mm
     AiParameterFlt("fstopTL", 1.4);
     AiParameterFlt("focus_distanceTL", 100.0); // in cm
+    AiParameterBool("enable_dofTL", true);
 
     // AiParameterFlt("emperical_ca_distTL", 0.0);
     AiParameterFlt("optical_vignetting_distanceTL", 0.0);

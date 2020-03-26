@@ -86,6 +86,11 @@ node_update
   AtNode *cameranode = AiUniverseGetCamera();
   #include "node_update_thinlens.h"
 
+  if (tl->enable_dof == false) {
+    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Depth of field is disabled, therefore disabling Bidirectional sampling.")
+    bokeh->enabled = false;
+    return;
+  }
 
   bokeh->enabled = true;
 

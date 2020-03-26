@@ -18,6 +18,7 @@ struct CameraThinLens
     float focus_distance;
     float aperture_radius;
 
+    bool enable_dof;
 
     // float emperical_ca_dist;
     float optical_vignetting_distance;
@@ -166,9 +167,11 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         // calculate direction vector from origin to point on lens
         AtVector dir_from_center = AiV3Normalize(p); // or norm(p-origin)
 
+        if (tl->enable_dof)
+
         // either get uniformly distributed points on the unit disk or bokeh image
         Eigen::Vector2d unit_disk(0, 0);
-        if (tries == 0) { // make use of blue noise sampler in arnold
+        if (tries == 0 && tl->enable_dof) { // make use of blue noise sampler in arnold
             if (tl->bokeh_enable_image) {
                 tl->image.bokehSample(lensx, lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
             } else if (tl->bokeh_aperture_blades < 2) {
@@ -176,7 +179,7 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
             } else {
                 lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), lensx, lensy, 1.0, tl->bokeh_aperture_blades);
             }
-        } else {
+        } else if (tries != 0 && tl->enable_dof){
             r1 = xor128() / 4294967296.0;
             r2 = xor128() / 4294967296.0;
 

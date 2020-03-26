@@ -7,6 +7,8 @@ tl->fstop = clamp_min(tl->fstop, 0.01);
 
 tl->focus_distance = AiNodeGetFlt(cameranode, "focus_distanceTL");
 
+tl->enable_dof = AiNodeGetBool(cameranode, "enable_dofTL");
+
 tl->fov = 2.0 * std::atan(tl->sensor_width / (2.0*tl->focal_length));
 tl->tan_fov = std::tan(tl->fov/2.0);
 tl->aperture_radius = (tl->focal_length / (2.0 * tl->fstop)) / 10.0;

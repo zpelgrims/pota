@@ -52,8 +52,7 @@ node_update
   const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
   if (AiNodeEntryGetCount(nentry) > 1){
     AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_bokeh_driver exist. "
-               "All of bidirectional AOVs should be connected to a single lentil_bokeh_driver node. "
-               "This is to avoid doing the bidirectional sampling multiple times.");
+               "Use the lentil_operator to avoid this.");
   }
 
 

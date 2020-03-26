@@ -13,7 +13,7 @@
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;4;Bokeh;9;Bidirectional;5;Additional;2"
+    houdini.parm.folder.first STRING  "General;5;Bokeh;9;Bidirectional;5;Additional;2"
     
 
     [attr sensor_widthTL]
@@ -52,6 +52,13 @@
         desc                STRING  "Focus distance in (cm)"
 
         houdini.label       STRING  "Focus Distance (cm)"
+
+
+    [attr enable_dofTL]
+        default             BOOL   true
+        desc                STRING  "Enable DOF"
+
+        houdini.label       STRING  "Enable DOF"
 
 
     [attr optical_vignetting_distanceTL]
