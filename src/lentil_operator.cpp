@@ -6,10 +6,6 @@
 #include <stdio.h>
 
 
-#define operator_post_cook \
-static bool OperatorPostCook(AtNode* op, void* user_data)
-
-
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
 
 
@@ -45,7 +41,7 @@ struct OpData
     AtString camera_node_type;
     AtString lentil_thinlens_string;
     AtString lentil_po_string;
-    bool shouldcook;
+    bool cook;
 };
 
 node_parameters {}
@@ -61,17 +57,17 @@ operator_init
     data->lentil_thinlens_string = AtString("lentil_thinlens");
     data->lentil_po_string = AtString("lentil");
 
-    data->shouldcook = false;
+    data->cook = false;
 
     if (data->camera_node_type == data->lentil_thinlens_string){
         data->driver = AiNode("lentil_thin_lens_bokeh_driver", AtString("lentil_driver"));
-        data->shouldcook = true;
+        data->cook = true;
     } else if (data->camera_node_type == data->lentil_po_string){
         data->driver = AiNode("lentil_bokeh_driver", AtString("lentil_driver"));
-        data->shouldcook = true;
+        data->cook = true;
     }
 
-    AiNodeSetLocalData(op, data);    
+    AiNodeSetLocalData(op, data);  
     return true;
 }
 
@@ -79,7 +75,7 @@ operator_cook
 {
     OpData* data = (OpData*)AiNodeGetLocalData(op);
 
-    if (data->shouldcook == false) return false;
+    if (data->cook == false) return false;
 
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -97,7 +93,6 @@ operator_cook
 
         AiArraySetStr(outputs, i + offset, AtString(output_string.c_str()));
     }
-
     return true;
 }
 

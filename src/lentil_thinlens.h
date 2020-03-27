@@ -167,8 +167,6 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         // calculate direction vector from origin to point on lens
         AtVector dir_from_center = AiV3Normalize(p); // or norm(p-origin)
 
-        if (tl->enable_dof)
-
         // either get uniformly distributed points on the unit disk or bokeh image
         Eigen::Vector2d unit_disk(0, 0);
         if (tries == 0 && tl->enable_dof) { // make use of blue noise sampler in arnold
