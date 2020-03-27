@@ -1,9 +1,7 @@
 [node lentil]
     desc STRING "Polynomial optics camera shader"
-    maya.name               STRING  "lentil"
+    maya.name               STRING  "camera"
     maya.id                 INT     0x00070507
-    maya.classification     STRING  "shader/surface"
-    maya.type               STRING  "camera"
     maya.translator         STRING  "lentil"
 
     c4d.classification      STRING  "generic"

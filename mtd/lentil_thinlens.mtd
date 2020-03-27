@@ -1,9 +1,7 @@
 [node lentil_thinlens]
     desc STRING "Advanced thinlens camera shader, part of the lentil toolkit."
-    maya.name               STRING  "lentil_thinlens"
+    maya.name               STRING  "camera"
     maya.id                 INT     0x00070508
-    maya.classification     STRING  "shader/surface"
-    maya.type               STRING  "camera"
     maya.translator         STRING  "lentil_thinlens"
 
     c4d.classification      STRING  "generic"
