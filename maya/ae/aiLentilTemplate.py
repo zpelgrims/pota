@@ -48,7 +48,7 @@ class aiLentilTemplate(templates.AttributeTemplate):
         # userinterface.py needs to be in the PYTHONPATH envvar!
         cmds.button(label="Launch Lentil UI", align="center", command="import userinterface as lentil_ui;reload(lentil_ui);lentil_ui.launch_maya()")
 
-    def launchgui_button_update(self):
+    def launchgui_button_update(self, *args):
         pass
 
 
