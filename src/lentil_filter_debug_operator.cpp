@@ -5,10 +5,10 @@
 #include <ai.h>
 #include <stdio.h>
 
-// Duplicates all AOVs and changing the driver to the appropriate lentil driver at rendertime
+// Swaps the filter of the RGBA aov to a lentil_debug_filter for visualizing the to-be-redistributed samples
 
 
-AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
+AI_OPERATOR_NODE_EXPORT_METHODS(LentilFilterDebugOperatorMtd);
 
 
 std::vector<std::string> split_str(std::string str, std::string token)
@@ -36,12 +36,15 @@ std::vector<std::string> split_str(std::string str, std::string token)
 }
 
 
+enum {
+    p_debug_luminance_filter
+};
 
 
 struct OpData
 {
-    AtNode *driver;
     AtNode *camera_node;
+    AtNode *lentil_debug_filter;
     AtString camera_node_type;
     bool cook;
 };
@@ -58,11 +61,8 @@ operator_init
 
     data->cook = false;
 
-    if (data->camera_node_type == AtString("lentil_thinlens")){
-        data->driver = AiNode("lentil_thin_lens_bokeh_driver", AtString("lentil_driver"));
-        data->cook = true;
-    } else if (data->camera_node_type == AtString("lentil")){
-        data->driver = AiNode("lentil_bokeh_driver", AtString("lentil_driver"));
+    if (data->camera_node_type == AtString("lentil_thinlens") || data->camera_node_type == AtString("lentil")){
+        data->lentil_debug_filter = AiNode("lentil_debug_filter", AtString("lentil_debug_filter"));
         data->cook = true;
     }
 
@@ -75,9 +75,6 @@ operator_cook
     OpData* data = (OpData*)AiNodeGetLocalData(op);
 
     if (data->cook == false) return false;
-
-    const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_filter_debug_operator");
-    if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
     
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -85,17 +82,16 @@ operator_cook
     int offset = 0;
     int elements = AiArrayGetNumElements(outputs);
 
-    AiArrayResize(outputs, 2 * elements, 0);
-    offset = elements;
-
     for (int i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
-        std::string driver = split_str(output_string, std::string(" ")).back();
-        output_string.replace(output_string.find(driver), driver.length(), AiNodeGetStr(data->driver, "name"));
-
-        AiArraySetStr(outputs, i + offset, AtString(output_string.c_str()));
+        std::string aov_name = split_str(output_string, std::string(" ")).at(0);
+        if (aov_name == "RGBA"){
+            std::string filter = split_str(output_string, std::string(" ")).at(elements); // get one before last element
+            output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(data->lentil_debug_filter, "name"));
+            AiArraySetStr(outputs, i, AtString(output_string.c_str()));
+        }
     }
-    
+  
     return true;
 }
 
@@ -114,8 +110,8 @@ operator_cleanup
 node_loader
 {
     if (i>0) return 0;
-    node->methods = (AtNodeMethods*)LentilOperatorMtd;
-    node->name = "lentil_operator";
+    node->methods = (AtNodeMethods*)LentilFilterDebugOperatorMtd;
+    node->name = "lentil_filter_debug_operator";
     node->node_type = AI_NODE_OPERATOR;
     strcpy(node->version, AI_VERSION);
     return true;
