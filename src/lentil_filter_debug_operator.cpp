@@ -79,7 +79,6 @@ operator_cook
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
 
-    int offset = 0;
     int elements = AiArrayGetNumElements(outputs);
 
     for (int i=0; i<elements; ++i) {
