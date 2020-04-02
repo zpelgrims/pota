@@ -110,9 +110,8 @@ void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString ao
 }
 
 
-void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
-                        float inv_density, float depth, struct AtAOVSampleIterator* sample_iterator,
-                        ThinLensBokehDriver *bokeh) {
+void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, float inv_density, float depth, 
+                        struct AtAOVSampleIterator* sample_iterator, ThinLensBokehDriver *bokeh) {
   switch(aov_type){
     case AI_TYPE_RGBA: {
       // RGBA is the only aov with transmission component in
