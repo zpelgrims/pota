@@ -120,7 +120,7 @@ void save_to_exr_rgba(std::vector<float> img, std::string filename, unsigned xre
   images[2].resize(xres * yres);
   images[3].resize(xres * yres);
 
-  for (int i = 0; i < xres * yres; i++) {
+  for (unsigned int i = 0; i < xres * yres; i++) {
     images[0][i] = img[4*i+0];
     images[1][i] = img[4*i+1];
     images[2][i] = img[4*i+2];
@@ -155,4 +155,29 @@ void save_to_exr_rgba(std::vector<float> img, std::string filename, unsigned xre
   if (ret != TINYEXR_SUCCESS) {
     AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Error when saving exr: %s", err);
   }
+}
+
+
+std::vector<std::string> split_str(std::string str, std::string token)
+{
+    std::vector<std::string>result;
+    while(str.size())
+    {
+        size_t index = static_cast<size_t>(str.find(token));
+        
+        if(index != std::string::npos)
+        {
+            result.push_back(str.substr(0, index));
+            str = str.substr(index+token.size());
+            
+            if(str.size() == 0)
+                result.push_back(str);
+        }
+        else
+        {
+            result.push_back(str);
+            str = "";
+        }
+    }
+    return result;
 }

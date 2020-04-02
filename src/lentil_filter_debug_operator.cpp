@@ -5,36 +5,12 @@
 #include <ai.h>
 #include <stdio.h>
 
+#include "global.h"
+
 // Swaps the filter of the RGBA aov to a lentil_debug_filter for visualizing the to-be-redistributed samples
 
 
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilFilterDebugOperatorMtd);
-
-
-std::vector<std::string> split_str(std::string str, std::string token)
-{
-    std::vector<std::string>result;
-    while(str.size())
-    {
-        int index = static_cast<int>(str.find(token));
-        
-        if(index != std::string::npos)
-        {
-            result.push_back(str.substr(0, index));
-            str = str.substr(index+token.size());
-            
-            if(str.size() == 0)
-                result.push_back(str);
-        }
-        else
-        {
-            result.push_back(str);
-            str = "";
-        }
-    }
-    return result;
-}
-
 
 enum {
     p_debug_luminance_filter

@@ -5,38 +5,12 @@
 #include <ai.h>
 #include <stdio.h>
 
+#include "global.h"
+
 // Duplicates all AOVs and changing the driver to the appropriate lentil driver at rendertime
 
 
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
-
-
-std::vector<std::string> split_str(std::string str, std::string token)
-{
-    std::vector<std::string>result;
-    while(str.size())
-    {
-        int index = static_cast<int>(str.find(token));
-        
-        if(index != std::string::npos)
-        {
-            result.push_back(str.substr(0, index));
-            str = str.substr(index+token.size());
-            
-            if(str.size() == 0)
-                result.push_back(str);
-        }
-        else
-        {
-            result.push_back(str);
-            str = "";
-        }
-    }
-    return result;
-}
-
-
-
 
 struct OpData
 {
