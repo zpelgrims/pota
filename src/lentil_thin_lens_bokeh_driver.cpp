@@ -55,57 +55,56 @@ float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, Camer
 }
 
 void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
-                                 int samples, float inv_density, float fitted_bidir_add_luminance, 
-                                 float depth, struct AtAOVSampleIterator* sample_iterator,
-                                 ThinLensBokehDriver *bokeh) {
+                                int samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
+                                struct AtAOVSampleIterator* sample_iterator, ThinLensBokehDriver *bokeh) {
     switch(aov_type){
 
         case AI_TYPE_RGBA: {
             
-            // RGBA is the only aov with transmission component in
-            AtRGBA rgba_energy;
-            if (aov_name == bokeh->rgba_string){
+          // RGBA is the only aov with transmission component in
+          AtRGBA rgba_energy;
+          if (aov_name == bokeh->rgba_string){
             rgba_energy = ((sample)+fitted_bidir_add_luminance) / (double)(samples);
-            } else {
+          } else {
             rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name))+fitted_bidir_add_luminance) / (double)(samples);
-            }
+          }
 
-            bokeh->image_redist[aov_name][px] += rgba_energy * inv_density;
-            bokeh->redist_weight_per_pixel[aov_name][px] += inv_density / double(samples);
-          
-            break;
+          bokeh->image_redist[aov_name][px] += rgba_energy * inv_density;
+          bokeh->redist_weight_per_pixel[aov_name][px] += inv_density / double(samples);
+        
+          break;
         }
 
         case AI_TYPE_RGB: {
-            AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name) + fitted_bidir_add_luminance;
-            AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) / (double)(samples);
-            
-            bokeh->image_redist[aov_name][px] += rgba_energy * inv_density;
-            bokeh->redist_weight_per_pixel[aov_name][px] += inv_density / double(samples);
-            
-            break;
+          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name) + fitted_bidir_add_luminance;
+          AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) / (double)(samples);
+
+          bokeh->image_redist[aov_name][px] += rgba_energy * inv_density;
+          bokeh->redist_weight_per_pixel[aov_name][px] += inv_density / double(samples);
+          
+          break;
         }
 
         case AI_TYPE_VECTOR: {
-            if ((std::abs(depth) <= bokeh->zbuffer[px]) || bokeh->zbuffer[px] == 0.0){
+          if ((std::abs(depth) <= bokeh->zbuffer[px]) || bokeh->zbuffer[px] == 0.0){
             AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
             AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
             bokeh->image[aov_name][px] = rgba_energy;
             bokeh->zbuffer[px] = std::abs(depth);
-            }
+          }
 
-            break;
+          break;
         }
 
         case AI_TYPE_FLOAT: {
-            if ((std::abs(depth) <= bokeh->zbuffer[px]) || bokeh->zbuffer[px] == 0.0){
+          if ((std::abs(depth) <= bokeh->zbuffer[px]) || bokeh->zbuffer[px] == 0.0){
             float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
             AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
             bokeh->image[aov_name][px] = rgba_energy;
             bokeh->zbuffer[px] = std::abs(depth);
-            }
+          }
 
-            break;
+          break;
         }
     }
 }
@@ -255,7 +254,9 @@ driver_open {
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
   while(AiOutputIteratorGetNext(iterator, &name, &pixelType, 0)){
-    AiMsgInfo("LENTIL initializing AOV: %s", name);
+    // if aov already considered (can happen due to multiple drivers considering the same aov, such as kick_display and driver_exr)
+    if (std::find(bokeh->aov_list_name.begin(), bokeh->aov_list_name.end(), AtString(name)) != bokeh->aov_list_name.end()) continue;
+    
     bokeh->aov_list_name.push_back(AtString(name));
     bokeh->aov_list_type.push_back(pixelType); 
     bokeh->image[AtString(name)].clear();
