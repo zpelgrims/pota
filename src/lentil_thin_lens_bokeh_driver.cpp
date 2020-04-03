@@ -569,11 +569,6 @@ driver_close
       // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
       if (bokeh->aov_list_type[i] == AI_TYPE_RGBA || bokeh->aov_list_type[i] == AI_TYPE_RGB){
 
-        // combine the redistributed and non-redistributed samples
-        // e.g if 1/4 samples is original, it should only add up to 1/4th of the final pixel value
-        // this also means e.g 1000 redistributed samples will only add up to 3/4th of the final pixel value
-
-
         AtRGBA redist = bokeh->image_redist[aov][px] / ((bokeh->redist_weight_per_pixel[aov][px] == 0.0) ? 1.0 : bokeh->redist_weight_per_pixel[aov][px]);
         AtRGBA unredist = bokeh->image_unredist[aov][px] / ((bokeh->unredist_weight_per_pixel[aov][px] == 0.0) ? 1.0 : bokeh->unredist_weight_per_pixel[aov][px]);
         AtRGBA combined_redist_unredist = (unredist * (1.0-bokeh->redist_weight_per_pixel[aov][px])) + (redist * (bokeh->redist_weight_per_pixel[aov][px]));
