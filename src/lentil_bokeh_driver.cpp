@@ -140,6 +140,24 @@ inline void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov
   }
 }
 
+// world to camera space transform, motion blurred
+inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
+  AtMatrix world_to_camera_matrix_motionblurred;
+  float currenttime = linear_interpolate(xor128() / 4294967296.0, time_start, time_end); // should I create new random sample, or can I re-use another one?
+  AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+  const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+  Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
+  return camera_space_sample_position_mb_eigen;
+}
+
+inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float sensor_width, const float frame_aspect_ratio, const double xres, const double yres){
+  // convert sensor position to pixel position
+  const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
+  const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
+                              ((-s(1) + 1.0) / 2.0) * yres);
+  return pixel;
+}
+
 
 node_parameters {}
  
@@ -340,8 +358,7 @@ driver_process_bucket
           if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
 
           Eigen::Vector2d sensor_position(0, 0);
-          Eigen::Vector3d camera_space_sample_position(camera_space_sample_position_static.x, camera_space_sample_position_static.y, camera_space_sample_position_static.z);
-          
+  
 
         // PROBE RAYS samples to determine size of bokeh & subsequent sample count
           AtVector2 bbox_min (0, 0);
@@ -349,24 +366,24 @@ driver_process_bucket
           int proberays_total_samples = 0;
           int proberays_base_rays = 32;
           int proberays_max_rays = proberays_base_rays * 2;
+          std::vector<AtVector2> pixelcache;
+
           for(int count=0; count<proberays_base_rays; count++) {
             ++proberays_total_samples;
             if (proberays_total_samples >= proberays_max_rays) continue;
 
-            if(!trace_backwards(-camera_space_sample_position * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
+            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
+
+            if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
               --count;
               continue;
             }
 
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position(0) / (po->sensor_width * 0.5), sensor_position(1) / (po->sensor_width * 0.5) * frame_aspect_ratio);
-
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+            const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
 
             //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel_x > xres) || (pixel_x < 0) || (pixel_y > yres) || (pixel_y < 0) || 
-                (pixel_x != pixel_x) || (pixel_y != pixel_y)) // nan checking
+            if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
+                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
             {
               --count;
               continue;
@@ -374,61 +391,57 @@ driver_process_bucket
 
             // expand bbox
             if (count == 0) {
-              bbox_min = {pixel_x, pixel_y};
-              bbox_max = {pixel_x, pixel_y};
+              bbox_min = {pixel(0), pixel(1)};
+              bbox_max = {pixel(0), pixel(1)};
             } else {
-              bbox_min = {std::min(bbox_min.x, pixel_x), std::min(bbox_min.y, pixel_y)};
-              bbox_max = {std::max(bbox_max.x, pixel_x), std::max(bbox_max.y, pixel_y)};
+              bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
+              bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
             }
+
+            pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
           }
+
 
           double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
           if (bbox_area < 20.0) goto no_redist; //might have to increase this?
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 75, 1000000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
-
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
           
 
-          for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
-            ++total_samples_taken;
+          // redist samples
+          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+            
+            Eigen::Vector2d pixel;
+            
+            if (count < pixelcache.size()){ // redist already taken samples from probe rays
+              pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
+            } else {
 
-            // world to camera space transform, motion blurred
-            AtMatrix world_to_camera_matrix_motionblurred;
-            float currenttime = linear_interpolate(xor128() / 4294967296.0, bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
-            AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
-            const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
-            Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
-            
-            
-            if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
-              --count;
-              continue;
+              Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
+              
+              if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po)) {
+                --count;
+                continue;
+              }
+
+              pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+
+              // if outside of image
+              if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+                  (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+              {
+                --count; // much room for improvement here, potentially many samples are wasted outside of frame
+                continue;
+              }
             }
 
-
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position(0) / (po->sensor_width * 0.5), 
-                              sensor_position(1) / (po->sensor_width * 0.5) * frame_aspect_ratio);
-
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
-
-
-            // if outside of image
-            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0) ||
-                (pixel_x != pixel_x) || (pixel_y != pixel_y)) // nan checking
-            {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame
-              continue;
-            }
-            
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             // write sample to image
-            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
+            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               redistribute_add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
