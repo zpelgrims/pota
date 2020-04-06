@@ -10,15 +10,11 @@
 options
 {
  AA_samples 3
- outputs 6 1 STRING
+ outputs 1 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver2@lentil_bokeh_driver"
-  "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
-  "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
-  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver2@lentil_bokeh_driver"
-  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver2@lentil_bokeh_driver"
  xres 1920
  yres 817
+ operator "/out/lentil_operator1"
  texture_per_file_stats on
  texture_automip off
  # camera "renderCamShape"
@@ -49,47 +45,15 @@ driver_exr
  color_space ""
 }
 
-lentil_bokeh_driver
+lentil_operator
 {
- name aiAOVDriver2@lentil_bokeh_driver
-}
-
-closest_filter
-{
- name aiAOVFilter1@closest_filter
-}
-
-closest_filter
-{
- name aiAOVFilter2@closest_filter
+ name /out/lentil_operator1
+ enable on
+ declare is_target constant BOOL
+ is_target on
 }
 
 
-driver_exr
-{
- name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
- compression "zip"
- half_precision off
- tiled on
- color_space ""
- preserve_layer_name off
- autocrop off
- append off
-}
-
-driver_exr
-{
- name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
- compression "zip"
- half_precision off
- tiled on
- color_space ""
- preserve_layer_name off
- autocrop off
- append off
-}
 
 
 persp_camera
@@ -117,7 +81,7 @@ lentil
  17.601759 1.98807669 -19.9616642 1
  focus_distancePO 40
  fstopPO 1.4
- bidir_sample_multPO 500
+ bidir_sample_multPO 20
  bidir_min_luminancePO 0.5
 
  bidir_output_pathPO "/home/cactus/lentil/pota/unit_render/test_driver.<aov>.<frame>.exr"

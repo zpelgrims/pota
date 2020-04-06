@@ -31,7 +31,7 @@ struct LentilBokehDriver {
   AtString rgba_string;
 };
 
-void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
+inline void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
                                 int samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
                                 struct AtAOVSampleIterator* sample_iterator, LentilBokehDriver *bokeh) {
     switch(aov_type){
@@ -87,7 +87,7 @@ void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString ao
 }
 
 
-void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, float inv_density, float depth, 
+inline void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, float inv_density, float depth, 
                         struct AtAOVSampleIterator* sample_iterator, LentilBokehDriver *bokeh) {
   switch(aov_type){
     case AI_TYPE_RGBA: {
@@ -387,7 +387,6 @@ driver_process_bucket
           int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
           samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
           samples = std::clamp(samples, 75, 1000000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
-
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;

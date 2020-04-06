@@ -12,7 +12,6 @@
  
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
-
 struct ThinLensBokehDriver {
   unsigned xres;
   unsigned yres;
@@ -38,11 +37,11 @@ struct ThinLensBokehDriver {
 };
 
 
-float thinlens_get_image_dist_focusdist(CameraThinLens *tl){
+inline float thinlens_get_image_dist_focusdist(CameraThinLens *tl){
     return (-tl->focal_length * -tl->focus_distance) / (-tl->focal_length + -tl->focus_distance);
 }
 
-float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, CameraThinLens *tl){
+inline float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, CameraThinLens *tl){
   // world to camera space transform, static just for CoC
   AtMatrix world_to_camera_matrix_static;
   float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
@@ -54,7 +53,7 @@ float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, Camer
   return std::abs((tl->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
 }
 
-void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
+inline void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
                                 int samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
                                 struct AtAOVSampleIterator* sample_iterator, ThinLensBokehDriver *bokeh) {
     switch(aov_type){
@@ -110,7 +109,7 @@ void redistribute_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString ao
 }
 
 
-void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, float inv_density, float depth, 
+inline void copy_add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, float inv_density, float depth, 
                         struct AtAOVSampleIterator* sample_iterator, ThinLensBokehDriver *bokeh) {
   switch(aov_type){
     case AI_TYPE_RGBA: {
