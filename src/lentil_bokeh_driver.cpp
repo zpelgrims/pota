@@ -391,8 +391,8 @@ driver_process_bucket
 
             // expand bbox
             if (count == 0) {
-              bbox_min = {pixel(0), pixel(1)};
-              bbox_max = {pixel(0), pixel(1)};
+              bbox_min = {(float)pixel(0), (float)pixel(1)};
+              bbox_max = {(float)pixel(0), (float)pixel(1)};
             } else {
               bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
               bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
