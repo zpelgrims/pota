@@ -464,7 +464,7 @@ int main() {
           sample_pos_cs_device, focal_length_device, aperture_radius_device, 
           focus_distance_device, sensor_width_device, frame_aspect_ratio_device,
           xres_device, yres_device,
-          sample_device, samples_device, inv_density_device,
+          sample_device, inv_density_device,
           iter_device
     );
 
