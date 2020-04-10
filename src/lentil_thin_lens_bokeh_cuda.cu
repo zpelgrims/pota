@@ -12,6 +12,21 @@
 
 #include <chrono>
 
+#include <curand_kernel.h>
+
+
+
+#define checkCudaErrors(val) check_cuda( (val), #val, __FILE__, __LINE__ )
+void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
+    if (result) {
+        std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " <<
+        file << ":" << line << " '" << func << "' \n";
+        // Make sure we call CUDA Device Reset before exiting
+        cudaDeviceReset();
+        exit(99);
+    }
+}
+
 
 std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
     std::size_t pos = s.find(toReplace);
@@ -140,6 +155,7 @@ __device__ void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens) 
 }
 
 
+
 inline float clamp_min(float in, const float min) {
     if (in < min) in = min;
     return in;
@@ -156,11 +172,57 @@ __device__ float thinlens_get_image_dist_focusdist(const float focal_length, con
 }
 
 
- __device__ float rand(Eigen::Vector2f vec){
-    Eigen::Vector2f constant(12.9898,78.233);
-    float dotproduct = vec.dot(constant);
-    float tmp = sinf(dotproduct) * 43758.5453;
-    return tmp - floor(tmp);
+__device__ Eigen::Vector2d hash21(float p)
+{
+  Eigen::Vector3d tmp(p*0.1031, p*.1030, p*.0973);
+	Eigen::Vector3d p3 = tmp - Eigen::Vector3d(floor(p3(0)), floor(p3(1)), floor(p3(2)));
+  Eigen::Vector3d p3_shuffle(p3(1), p3(2), p3(0));
+  p3_shuffle += Eigen::Vector3d(33.33, 33.33, 33.33);
+  float dotproduct = p3.dot(p3_shuffle);
+	p3 += Eigen::Vector3d(dotproduct, dotproduct, dotproduct);
+  Eigen::Vector2d r1(p3(0), p3(0));
+  Eigen::Vector2d r2(p3(1), p3(2));
+  Eigen::Vector2d r3(p3(2), p3(1));
+  Eigen::Vector2d r_end = (r1+r2);
+  r_end(0) *= r3(0);
+  r_end(1) *= r3(1);
+  Eigen::Vector2d result = r_end - Eigen::Vector2d(floor(r_end(0)), floor(r_end(1)));
+  return result;
+}
+
+// https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
+// Tiny Encryption Algorithm (TEA) to calculate a the seed per launch index and iteration.
+template<unsigned int N>
+__device__ unsigned int tea(const unsigned int val0, const unsigned int val1)
+{
+  unsigned int v0 = val0;
+  unsigned int v1 = val1;
+  unsigned int s0 = 0;
+
+  for (unsigned int n = 0; n < N; ++n)
+  {
+    s0 += 0x9e3779b9;
+    v0 += ((v1 << 4) + 0xA341316C) ^ (v1 + s0) ^ ((v1 >> 5) + 0xC8013EA4);
+    v1 += ((v0 << 4) + 0xAD90777D) ^ (v0 + s0) ^ ((v0 >> 5) + 0x7E95761E);
+  }
+  return v0;
+}
+
+
+// https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
+// Return a random sample in the range [0, 1) with a simple Linear Congruential Generator.
+__device__ float rng(unsigned int& previous)
+{
+  previous = previous * 1664525u + 1013904223u;
+  
+  return float(previous & 0X00FFFFFF) / float(0x01000000u); // Use the lower 24 bits.
+  // return float(previous >> 8) / float(0x01000000u);      // Use the upper 24 bits
+}
+
+
+inline int ceil_to_power_2(int x) {
+    if (x < 2) return 1;
+    return (int) std::pow(2, (int) std::log2(x-1) + 1);
 }
 
 
@@ -169,75 +231,68 @@ __global__ void trace_backwards(Eigen::Vector4d *image, Eigen::Vector4d *image_u
                                       const Eigen::Vector3d *sample_pos_cs, const float *focal_length, const float *aperture_radius, 
                                       const float *focus_distance, const float *sensor_width, const float *frame_aspect_ratio,
                                       const int *xres, const int *yres,
-                                      const Eigen::Vector4d *sample, const int *samples, const float *inv_density) {
+                                      const Eigen::Vector4d *sample, const float *inv_density,
+                                      int *iter) {
 
-  
-  const Eigen::Vector3d camera_space_sample_position_mb = *sample_pos_cs;
-  const float image_dist_samplepos_mb = (-*focal_length * camera_space_sample_position_mb(2)) / (-*focal_length + camera_space_sample_position_mb(2));
-
-
-
-  int i = threadIdx.x + blockIdx.x * blockDim.x;
-  Eigen::Vector2f randseed1(float(i), float(i+123));
-  int i2 = threadIdx.x + blockIdx.x * blockDim.x + 12345;
-  Eigen::Vector2f randseed2(float(i2), float(i2+123));
-  float r1 = rand(randseed1);
-  float r2 = rand(randseed2);
-  
+  int trycount = 0;
+  bool success = false;
+  while(!success && ++trycount < 5){
+    
+    const Eigen::Vector3d camera_space_sample_position_mb = *sample_pos_cs;
+    const float image_dist_samplepos_mb = (-*focal_length * camera_space_sample_position_mb(2)) / (-*focal_length + camera_space_sample_position_mb(2));
 
 
 
-  // either get uniformly distributed points on the unit disk or bokeh image
-  Eigen::Vector2d unit_disk(0, 0);
-  // float r1 = xor128() / 4294967296.0;
-  // float r2 = xor128() / 4294967296.0;
-  // printf("r1: %f, r2: %f", r1, r2);
-  concentricDiskSample(r1, r2, unit_disk);
-  
-  // ray through center of lens
-  Eigen::Vector3d dir_tobase = camera_space_sample_position_mb.normalized();
-  float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_tobase(2));
-  Eigen::Vector3d samplepos_image_point = dir_tobase * samplepos_image_intersection;
+    // either get uniformly distributed points on the unit disk or bokeh image
+    Eigen::Vector2d unit_disk(0, 0);
+    unsigned int seed = tea<8>(threadIdx.x + blockIdx.x * blockDim.x, *iter + trycount);
+    float r1 = rng(seed);
+    float r2 = rng(seed);
+    concentricDiskSample(r1, r2, unit_disk);
+    
+    // ray through center of lens
+    Eigen::Vector3d dir_tobase = camera_space_sample_position_mb.normalized();
+    float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_tobase(2));
+    Eigen::Vector3d samplepos_image_point = dir_tobase * samplepos_image_intersection;
 
-  // depth of field
-  Eigen::Vector3d lens(unit_disk(0) * *aperture_radius, unit_disk(1) * *aperture_radius, 0.0);
-  Eigen::Vector3d dir_from_lens_to_image_sample = samplepos_image_point - lens;
-  dir_from_lens_to_image_sample.normalize();
-  float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(*focal_length, *focus_distance)/dir_from_lens_to_image_sample(2));
-  
+    // depth of field
+    Eigen::Vector3d lens(unit_disk(0) * *aperture_radius, unit_disk(1) * *aperture_radius, 0.0);
+    Eigen::Vector3d dir_from_lens_to_image_sample = samplepos_image_point - lens;
+    dir_from_lens_to_image_sample.normalize();
+    float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(*focal_length, *focus_distance)/dir_from_lens_to_image_sample(2));
+    
 
-  Eigen::Vector3d focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
-  
-  // takes care of correct screenspace coordinate mapping
-  Eigen::Vector2d sensor_position(focusdist_image_point(0) / focusdist_image_point(2),
-                                  focusdist_image_point(1) / focusdist_image_point(2));
-  sensor_position /= (*sensor_width*0.5)/-*focal_length;
-
-
-  // optical vignetting
-  Eigen::Vector3d dir_lens_to_P = camera_space_sample_position_mb - lens;
-  dir_lens_to_P.normalize();
+    Eigen::Vector3d focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+    
+    // takes care of correct screenspace coordinate mapping
+    Eigen::Vector2d sensor_position(focusdist_image_point(0) / focusdist_image_point(2),
+                                    focusdist_image_point(1) / focusdist_image_point(2));
+    sensor_position /= (*sensor_width*0.5)/-*focal_length;
 
 
-  // convert sensor position to pixel position
-  float frame_aspect_ratio_tmp = *frame_aspect_ratio;
-  // printf("frame aspect: %f", *frame_aspect_ratio);
-  const float pixel_x = (( sensor_position(0) + 1.0) / 2.0) * *xres;
-  const float pixel_y = ((-sensor_position(1) * frame_aspect_ratio_tmp + 1.0) / 2.0) * *yres;
-  // printf("%f %f \n", pixel_x, pixel_y);
+    // optical vignetting
+    Eigen::Vector3d dir_lens_to_P = camera_space_sample_position_mb - lens;
+    dir_lens_to_P.normalize();
 
-  // if outside of image
-  if ((pixel_x >= *xres) || (pixel_x < 0) || (pixel_y >= *yres) || (pixel_y < 0)) return;
 
-  // write sample to image
-  unsigned pixelnumber = static_cast<int>(*xres * floor(pixel_y) + floor(pixel_x));
+    // convert sensor position to pixel position
+    float frame_aspect_ratio_tmp = *frame_aspect_ratio;
+    const float pixel_x = (( sensor_position(0) + 1.0) / 2.0) * *xres;
+    const float pixel_y = ((-sensor_position(1) * frame_aspect_ratio_tmp + 1.0) / 2.0) * *yres;
 
-  
-  Eigen::Vector4d rgba_energy = *sample / (double)(*samples);
-  image_redist[pixelnumber] += rgba_energy * *inv_density;
-  redist_weight_per_pixel[pixelnumber] += *inv_density / double(*samples);
-  
+    // if outside of image
+    if ((pixel_x >= *xres) || (pixel_x < 0) || (pixel_y >= *yres) || (pixel_y < 0)) continue;
 
+    // write sample to image
+    unsigned pixelnumber = static_cast<int>(*xres * floor(pixel_y) + floor(pixel_x));
+
+    
+    Eigen::Vector4d rgba_energy = *sample / (double)(blockDim.x * gridDim.x);
+    image_redist[pixelnumber] += rgba_energy * *inv_density;
+    redist_weight_per_pixel[pixelnumber] += *inv_density / double(blockDim.x * gridDim.x);
+    
+    success = true; 
+  }  
   return;
 }
 
@@ -258,7 +313,6 @@ int main() {
   }
 
 
-
   int xres = 1920;
   int yres = 1080;
   int framenumber = 1;
@@ -266,14 +320,14 @@ int main() {
   
   
   Eigen::Vector4d *image_device, *image_unredist_device, *image_redist_device;
-  cudaMalloc((void **)&image_device, xres*yres*sizeof(Eigen::Vector4d));
-  cudaMalloc((void **)&image_unredist_device, xres*yres*sizeof(Eigen::Vector4d));
-  cudaMalloc((void **)&image_redist_device, xres*yres*sizeof(Eigen::Vector4d));
+  checkCudaErrors(cudaMalloc((void **)&image_device, xres*yres*sizeof(Eigen::Vector4d)));
+  checkCudaErrors(cudaMalloc((void **)&image_unredist_device, xres*yres*sizeof(Eigen::Vector4d)));
+  checkCudaErrors(cudaMalloc((void **)&image_redist_device, xres*yres*sizeof(Eigen::Vector4d)));
 
   float *redist_weight_per_pixel_device, *unredist_weight_per_pixel_device, *zbuffer_device;
-  cudaMalloc((void **)&redist_weight_per_pixel_device, xres*yres*sizeof(float));
-  cudaMalloc((void **)&unredist_weight_per_pixel_device, xres*yres*sizeof(float));
-  cudaMalloc((void **)&zbuffer_device, xres*yres*sizeof(float));
+  checkCudaErrors(cudaMalloc((void **)&redist_weight_per_pixel_device, xres*yres*sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&unredist_weight_per_pixel_device, xres*yres*sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&zbuffer_device, xres*yres*sizeof(float)));
 
 
 
@@ -316,37 +370,33 @@ int main() {
   const float d_xres = (float)xres;
   const float d_yres = (float)yres;
   const float frame_aspect_ratio = d_xres/d_yres;
-  std::cout << "frame aspect ratio: " << frame_aspect_ratio << std::endl;
 
 
 
 
-  int *xres_device, *yres_device, *samples_device;
+  int *xres_device, *yres_device;
   float *focal_length_device, *aperture_radius_device, *focus_distance_device, *sensor_width_device, *frame_aspect_ratio_device;
 
-  cudaMalloc((void **)&xres_device, sizeof(int));
-  cudaMalloc((void **)&yres_device, sizeof(int));
-  cudaMalloc((void **)&samples_device, sizeof(int));
+  checkCudaErrors(cudaMalloc((void **)&xres_device, sizeof(int)));
+  checkCudaErrors(cudaMalloc((void **)&yres_device, sizeof(int)));
 
-  cudaMalloc((void **)&focal_length_device, sizeof(float));
-  cudaMalloc((void **)&aperture_radius_device, sizeof(float));
-  cudaMalloc((void **)&focus_distance_device, sizeof(float));
-  cudaMalloc((void **)&sensor_width_device, sizeof(float));
-  cudaMalloc((void **)&frame_aspect_ratio_device, sizeof(float));
+  checkCudaErrors(cudaMalloc((void **)&focal_length_device, sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&aperture_radius_device, sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&focus_distance_device, sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&sensor_width_device, sizeof(float)));
+  checkCudaErrors(cudaMalloc((void **)&frame_aspect_ratio_device, sizeof(float)));
 
-  cudaMemcpy(focal_length_device, &focal_length, sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(aperture_radius_device, &aperture_radius, sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(focus_distance_device, &focus_distance, sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(sensor_width_device, &sensor_width, sizeof(float), cudaMemcpyHostToDevice);	
-  cudaMemcpy(frame_aspect_ratio_device, &frame_aspect_ratio, sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(xres_device, &xres, sizeof(int), cudaMemcpyHostToDevice);	
-  cudaMemcpy(yres_device, &yres, sizeof(int), cudaMemcpyHostToDevice);
+  checkCudaErrors(cudaMemcpy(focal_length_device, &focal_length, sizeof(float), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(aperture_radius_device, &aperture_radius, sizeof(float), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(focus_distance_device, &focus_distance, sizeof(float), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(sensor_width_device, &sensor_width, sizeof(float), cudaMemcpyHostToDevice));	
+  checkCudaErrors(cudaMemcpy(frame_aspect_ratio_device, &frame_aspect_ratio, sizeof(float), cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(xres_device, &xres, sizeof(int), cudaMemcpyHostToDevice));	
+  checkCudaErrors(cudaMemcpy(yres_device, &yres, sizeof(int), cudaMemcpyHostToDevice));
+
 
 
   for (int i=0; i<sample_list.size(); ++i) {
-
-    // std::cout << "count: " << i << std::endl;
-
 
     Eigen::Vector4d sample = sample_list[i];
     
@@ -379,15 +429,14 @@ int main() {
       
 
 
-      const float coc_squared_pixels = std::pow(circle_of_confusion * yres, 2) * bidir_sample_mult * 0.01; // pixel area as baseline for sample count
+      const float coc_squared_pixels = std::pow(circle_of_confusion * yres, 2) * bidir_sample_mult * 0.003; // pixel area as baseline for sample count
       // if (std::pow(circle_of_confusion * yres, 2) < std::pow(15, 2)) goto no_redist; // 15^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels / (double)std::pow(aa_samples, 2)); // aa_sample independence
       samples = clamp(samples, 100, 1000000);
-
-
-      
-      
-
+      //samples = 1000*64;
+      int blocks = ceil_to_power_2(samples); // number of blocks
+      // std::cout << samples << std::endl;
+      int cudathreads = 64;
 // TO-PARALLELIZE
       // unsigned total_samples_taken = 0;
       // unsigned count = 0;
@@ -397,44 +446,44 @@ int main() {
     float *inv_density_device;
     Eigen::Vector4d *sample_device;
     Eigen::Vector3d *sample_pos_cs_device;
-    cudaMalloc((void **)&inv_density_device, sizeof(float));
-    cudaMalloc((void **)&sample_device, sizeof(Eigen::Vector4d));
-    cudaMalloc((void **)&sample_pos_cs_device, sizeof(Eigen::Vector3d));
+    int *iter_device;
+    checkCudaErrors(cudaMalloc((void **)&inv_density_device, sizeof(float)));
+    checkCudaErrors(cudaMalloc((void **)&sample_device, sizeof(Eigen::Vector4d)));
+    checkCudaErrors(cudaMalloc((void **)&sample_pos_cs_device, sizeof(Eigen::Vector3d)));
+    checkCudaErrors(cudaMalloc((void **)&iter_device, sizeof(int)));
 
-    cudaMemcpy(inv_density_device, &inv_density, sizeof(float), cudaMemcpyHostToDevice);	
-    cudaMemcpy(sample_device, &sample, sizeof(Eigen::Vector4d), cudaMemcpyHostToDevice);	
-    cudaMemcpy(sample_pos_cs_device, &sample_pos_cs, sizeof(Eigen::Vector3d), cudaMemcpyHostToDevice);
-      
-      
-    trace_backwards<<<4, 512>>>(image_device, image_unredist_device, image_redist_device,
-                    redist_weight_per_pixel_device, unredist_weight_per_pixel_device, zbuffer_device,
-                    sample_pos_cs_device, focal_length_device, aperture_radius_device, 
-                    focus_distance_device, sensor_width_device, frame_aspect_ratio_device,
-                    xres_device, yres_device,
-                    sample_device, samples_device, inv_density_device);
-        
-        // if (!success) continue;
-        // ++count;
-      // }
-      
+    checkCudaErrors(cudaMemcpy(inv_density_device, &inv_density, sizeof(float), cudaMemcpyHostToDevice));	
+    checkCudaErrors(cudaMemcpy(sample_device, &sample, sizeof(Eigen::Vector4d), cudaMemcpyHostToDevice));	
+    checkCudaErrors(cudaMemcpy(sample_pos_cs_device, &sample_pos_cs, sizeof(Eigen::Vector3d), cudaMemcpyHostToDevice));
+    checkCudaErrors(cudaMemcpy(iter_device, &i, sizeof(int), cudaMemcpyHostToDevice));
     
+    
+    trace_backwards<<<blocks, cudathreads>>>(
+          image_device, image_unredist_device, image_redist_device,
+          redist_weight_per_pixel_device, unredist_weight_per_pixel_device, zbuffer_device,
+          sample_pos_cs_device, focal_length_device, aperture_radius_device, 
+          focus_distance_device, sensor_width_device, frame_aspect_ratio_device,
+          xres_device, yres_device,
+          sample_device, samples_device, inv_density_device,
+          iter_device
+    );
 
-      
-    cudaFree(inv_density_device);
-    cudaFree(samples_device);
-    cudaFree(sample_device);
-    cudaFree(sample_pos_cs_device);
+    
+    checkCudaErrors(cudaFree(inv_density_device));
+    checkCudaErrors(cudaFree(sample_device));
+    checkCudaErrors(cudaFree(sample_pos_cs_device));
+    checkCudaErrors(cudaFree(iter_device));
   }
 
-  cudaDeviceSynchronize();
+  checkCudaErrors(cudaDeviceSynchronize());
 
-  cudaFree(xres_device);
-  cudaFree(yres_device);
-  cudaFree(focal_length_device);
-  cudaFree(aperture_radius_device);
-  cudaFree(focus_distance_device);
-  cudaFree(sensor_width_device);
-  cudaFree(frame_aspect_ratio_device);
+  checkCudaErrors(cudaFree(xres_device));
+  checkCudaErrors(cudaFree(yres_device));
+  checkCudaErrors(cudaFree(focal_length_device));
+  checkCudaErrors(cudaFree(aperture_radius_device));
+  checkCudaErrors(cudaFree(focus_distance_device));
+  checkCudaErrors(cudaFree(sensor_width_device));
+  checkCudaErrors(cudaFree(frame_aspect_ratio_device));
   
     
   Eigen::Vector4d *image = new Eigen::Vector4d[xres*yres];
@@ -445,19 +494,12 @@ int main() {
   float *zbuffer = new float[xres*yres];
 
 
-
-  // cudaMemcpy(&image, image_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(&image_unredist, image_unredist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(&image_redist, image_redist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(&redist_weight_per_pixel, redist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(&unredist_weight_per_pixel, unredist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
-  // cudaMemcpy(&zbuffer, zbuffer_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
-  cudaMemcpy(image, image_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  cudaMemcpy(image_unredist, image_unredist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  cudaMemcpy(image_redist, image_redist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost);
-  cudaMemcpy(redist_weight_per_pixel, redist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
-  cudaMemcpy(unredist_weight_per_pixel, unredist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
-  cudaMemcpy(zbuffer, zbuffer_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost);
+  checkCudaErrors(cudaMemcpy(image, image_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(image_unredist, image_unredist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(image_redist, image_redist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(redist_weight_per_pixel, redist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(unredist_weight_per_pixel, unredist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(zbuffer, zbuffer_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
 
   
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
