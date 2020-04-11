@@ -4,15 +4,15 @@
 #include "../../Eigen/Eigen/Core"
 #include "../../Eigen/Eigen/LU"
 #include <fstream>
+#include <curand_kernel.h>
 
 
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
 
-#include <chrono>
 
-#include <curand_kernel.h>
+// note: declan send me this, should be important: https://devblogs.nvidia.com/gpu-pro-tip-cuda-7-streams-simplify-concurrency/
 
 
 
@@ -172,23 +172,6 @@ __device__ float thinlens_get_image_dist_focusdist(const float focal_length, con
 }
 
 
-__device__ Eigen::Vector2d hash21(float p)
-{
-  Eigen::Vector3d tmp(p*0.1031, p*.1030, p*.0973);
-	Eigen::Vector3d p3 = tmp - Eigen::Vector3d(floor(p3(0)), floor(p3(1)), floor(p3(2)));
-  Eigen::Vector3d p3_shuffle(p3(1), p3(2), p3(0));
-  p3_shuffle += Eigen::Vector3d(33.33, 33.33, 33.33);
-  float dotproduct = p3.dot(p3_shuffle);
-	p3 += Eigen::Vector3d(dotproduct, dotproduct, dotproduct);
-  Eigen::Vector2d r1(p3(0), p3(0));
-  Eigen::Vector2d r2(p3(1), p3(2));
-  Eigen::Vector2d r3(p3(2), p3(1));
-  Eigen::Vector2d r_end = (r1+r2);
-  r_end(0) *= r3(0);
-  r_end(1) *= r3(1);
-  Eigen::Vector2d result = r_end - Eigen::Vector2d(floor(r_end(0)), floor(r_end(1)));
-  return result;
-}
 
 // https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
 // Tiny Encryption Algorithm (TEA) to calculate a the seed per launch index and iteration.
@@ -236,7 +219,7 @@ __global__ void trace_backwards(Eigen::Vector4d *image, Eigen::Vector4d *image_u
 
   int trycount = 0;
   bool success = false;
-  while(!success && ++trycount < 5){
+  while(!success && ++trycount < 10){
     
     const Eigen::Vector3d camera_space_sample_position_mb = sample_pos_cs;
     const float image_dist_samplepos_mb = (-focal_length * camera_space_sample_position_mb(2)) / (-focal_length + camera_space_sample_position_mb(2));
@@ -296,6 +279,8 @@ __global__ void trace_backwards(Eigen::Vector4d *image, Eigen::Vector4d *image_u
 
 
 int main() {
+
+  
   
   // read the sampledata into vectors
   std::ifstream infile("/home/cactus/lentil/pota/tests/cuda/sampledata.txt");
@@ -311,21 +296,24 @@ int main() {
   }
 
 
+
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+
   int xres = 1920;
   int yres = 1080;
   int framenumber = 1;
   int aa_samples = 4;
   
-  
-  Eigen::Vector4d *image_device, *image_unredist_device, *image_redist_device;
-  checkCudaErrors(cudaMalloc((void **)&image_device, xres*yres*sizeof(Eigen::Vector4d)));
-  checkCudaErrors(cudaMalloc((void **)&image_unredist_device, xres*yres*sizeof(Eigen::Vector4d)));
-  checkCudaErrors(cudaMalloc((void **)&image_redist_device, xres*yres*sizeof(Eigen::Vector4d)));
 
-  float *redist_weight_per_pixel_device, *unredist_weight_per_pixel_device, *zbuffer_device;
-  checkCudaErrors(cudaMalloc((void **)&redist_weight_per_pixel_device, xres*yres*sizeof(float)));
-  checkCudaErrors(cudaMalloc((void **)&unredist_weight_per_pixel_device, xres*yres*sizeof(float)));
-  checkCudaErrors(cudaMalloc((void **)&zbuffer_device, xres*yres*sizeof(float)));
+  Eigen::Vector4d *image, *image_unredist, *image_redist;
+  float *redist_weight_per_pixel, *unredist_weight_per_pixel, *zbuffer;
+  checkCudaErrors(cudaMallocManaged(&image, xres*yres*sizeof(Eigen::Vector4d)));
+  checkCudaErrors(cudaMallocManaged(&image_unredist, xres*yres*sizeof(Eigen::Vector4d)));
+  checkCudaErrors(cudaMallocManaged(&image_redist, xres*yres*sizeof(Eigen::Vector4d)));
+  checkCudaErrors(cudaMallocManaged(&redist_weight_per_pixel, xres*yres*sizeof(float)));
+  checkCudaErrors(cudaMallocManaged(&unredist_weight_per_pixel, xres*yres*sizeof(float)));
+  checkCudaErrors(cudaMallocManaged(&zbuffer, xres*yres*sizeof(float)));
 
 
 
@@ -360,8 +348,6 @@ int main() {
 
   
 
-  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
 
 
 
@@ -374,23 +360,21 @@ int main() {
 
   int *xres_device, *yres_device;
   float *focal_length_device, *aperture_radius_device, *focus_distance_device, *sensor_width_device, *frame_aspect_ratio_device;
-
   checkCudaErrors(cudaMalloc((void **)&xres_device, sizeof(int)));
   checkCudaErrors(cudaMalloc((void **)&yres_device, sizeof(int)));
-
   checkCudaErrors(cudaMalloc((void **)&focal_length_device, sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&aperture_radius_device, sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&focus_distance_device, sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&sensor_width_device, sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&frame_aspect_ratio_device, sizeof(float)));
-
+  checkCudaErrors(cudaMemcpy(xres_device, &xres, sizeof(int), cudaMemcpyHostToDevice));	
+  checkCudaErrors(cudaMemcpy(yres_device, &yres, sizeof(int), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(focal_length_device, &focal_length, sizeof(float), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(aperture_radius_device, &aperture_radius, sizeof(float), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(focus_distance_device, &focus_distance, sizeof(float), cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(sensor_width_device, &sensor_width, sizeof(float), cudaMemcpyHostToDevice));	
   checkCudaErrors(cudaMemcpy(frame_aspect_ratio_device, &frame_aspect_ratio, sizeof(float), cudaMemcpyHostToDevice));
-  checkCudaErrors(cudaMemcpy(xres_device, &xres, sizeof(int), cudaMemcpyHostToDevice));	
-  checkCudaErrors(cudaMemcpy(yres_device, &yres, sizeof(int), cudaMemcpyHostToDevice));
+
 
 
 
@@ -437,7 +421,7 @@ int main() {
 
 
 
-    // allocate device variables
+    // allocate & copy device variables
     float *inv_density_device;
     Eigen::Vector4d *sample_device;
     Eigen::Vector3d *sample_pos_cs_device;
@@ -446,9 +430,6 @@ int main() {
     checkCudaErrors(cudaMalloc((void **)&sample_device, sizeof(Eigen::Vector4d)));
     checkCudaErrors(cudaMalloc((void **)&sample_pos_cs_device, sizeof(Eigen::Vector3d)));
     checkCudaErrors(cudaMalloc((void **)&iter_device, sizeof(int)));
-
-
-    // copy host -> device
     checkCudaErrors(cudaMemcpy(inv_density_device, &inv_density, sizeof(float), cudaMemcpyHostToDevice));	
     checkCudaErrors(cudaMemcpy(sample_device, &sample, sizeof(Eigen::Vector4d), cudaMemcpyHostToDevice));	
     checkCudaErrors(cudaMemcpy(sample_pos_cs_device, &sample_pos_cs, sizeof(Eigen::Vector3d), cudaMemcpyHostToDevice));
@@ -456,8 +437,8 @@ int main() {
     
     
     trace_backwards<<<blocks, cudathreads>>>(
-          image_device, image_unredist_device, image_redist_device,
-          redist_weight_per_pixel_device, unredist_weight_per_pixel_device, zbuffer_device,
+          image, image_unredist, image_redist,
+          redist_weight_per_pixel, unredist_weight_per_pixel, zbuffer,
           *sample_pos_cs_device, *focal_length_device, *aperture_radius_device, 
           *focus_distance_device, *sensor_width_device, *frame_aspect_ratio_device,
           *xres_device, *yres_device,
@@ -484,24 +465,7 @@ int main() {
   checkCudaErrors(cudaFree(frame_aspect_ratio_device));
   
   
-  // allocate buffers on host
-  Eigen::Vector4d *image = new Eigen::Vector4d[xres*yres];
-  Eigen::Vector4d *image_unredist = new Eigen::Vector4d[xres*yres];
-  Eigen::Vector4d *image_redist = new Eigen::Vector4d[xres*yres];
-  float *redist_weight_per_pixel = new float[xres*yres];
-  float *unredist_weight_per_pixel = new float[xres*yres];
-  float *zbuffer = new float[xres*yres];
 
-
-  // copy buffers device -> host
-  checkCudaErrors(cudaMemcpy(image, image_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(image_unredist, image_unredist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(image_redist, image_redist_device, xres*yres*sizeof(Eigen::Vector4d), cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(redist_weight_per_pixel, redist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(unredist_weight_per_pixel, unredist_weight_per_pixel_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
-  checkCudaErrors(cudaMemcpy(zbuffer, zbuffer_device, xres*yres*sizeof(float), cudaMemcpyDeviceToHost));
-
-  
   std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
   std::cout << "Time difference (sec) = " << (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) /1000000.0 <<std::endl;
   
@@ -515,7 +479,7 @@ int main() {
   std::vector<float> imageexr(yres * xres * 4);
   int offset = -1;
 
-  for(unsigned px = 0; px < xres * yres; px++){
+  for(unsigned px = 0; px < xres * yres; px++){ 
 
     Eigen::Vector4d redist = image_redist[px] / ((redist_weight_per_pixel[px] == 0.0) ? 1.0 : redist_weight_per_pixel[px]);
     Eigen::Vector4d unredist = image_unredist[px] / ((unredist_weight_per_pixel[px] == 0.0) ? 1.0 : unredist_weight_per_pixel[px]);
@@ -545,12 +509,12 @@ int main() {
 
 
   // cleanup
-  cudaFree(image_device);
-  cudaFree(image_unredist_device);
-  cudaFree(image_redist_device);
-  cudaFree(redist_weight_per_pixel_device);
-  cudaFree(unredist_weight_per_pixel_device);
-  cudaFree(zbuffer_device);
+  cudaFree(image);
+  cudaFree(image_unredist);
+  cudaFree(image_redist);
+  cudaFree(redist_weight_per_pixel);
+  cudaFree(unredist_weight_per_pixel);
+  cudaFree(zbuffer);
 
 
   return 0;
