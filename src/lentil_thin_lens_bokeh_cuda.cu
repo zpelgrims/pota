@@ -297,8 +297,6 @@ int main() {
 
 
 
-  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
 
   int xres = 1920;
   int yres = 1080;
@@ -463,11 +461,6 @@ int main() {
   checkCudaErrors(cudaFree(focus_distance_device));
   checkCudaErrors(cudaFree(sensor_width_device));
   checkCudaErrors(cudaFree(frame_aspect_ratio_device));
-  
-  
-
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-  std::cout << "Time difference (sec) = " << (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) /1000000.0 <<std::endl;
   
 
 
