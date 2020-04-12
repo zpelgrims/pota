@@ -1,19 +1,13 @@
-#include <vector>
-#include <iostream>
-#include <map>
-#include "../../Eigen/Eigen/Core"
-#include "../../Eigen/Eigen/LU"
-#include <fstream>
-
-
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
+#include "../../Eigen/Eigen/Core"
+#include "../../Eigen/Eigen/LU"
+#include <fstream>
+#include <iostream>
+#include <vector>
 
-
-// note: declan send me this, should be important: https://devblogs.nvidia.com/gpu-pro-tip-cuda-7-streams-simplify-concurrency/
-
-
+#include "cuda_dummy_driver.h"
 
 #define checkCudaErrors(val) check_cuda( (val), #val, __FILE__, __LINE__ )
 void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
@@ -25,6 +19,7 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
         exit(99);
     }
 }
+
 
 
 std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
@@ -87,39 +82,6 @@ void save_to_exr_rgba(std::vector<float> img, std::string filename, unsigned xre
 }
 
 
-// xorshift fast random number generator
-__device__ uint32_t xor128(void){
-  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-  uint32_t t = x ^ (x << 11);
-  x = y; y = z; z = w;
-  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
-
-
-// sin approximation, not completely accurate but faster than std::sin
-__device__ float fast_sin(float x){
-    x = fmod(x + M_PI, M_PI * 2) - M_PI; // restrict x so that -M_PI < x < M_PI
-    const float B = 4.0f / M_PI;
-    const float C = -4.0f / (M_PI*M_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
-
-
-__device__ float fast_cos(float x){
-    // conversion from sin to cos
-    x += M_PI * 0.5;
-
-    x = fmod(x + M_PI, M_PI * 2) - M_PI; // restrict x so that -M_PI < x < M_PI
-    const float B = 4.0f / M_PI;
-    const float C = -4.0f / (M_PI*M_PI);
-    float y = B * x + C * x * std::abs(x);
-    const float P = 0.225f;
-    return P * (y * std::abs(y) - y) + y;
-}
-
-
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
 __device__ void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens) {
@@ -153,18 +115,6 @@ __device__ void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens) 
     lens(1) = r * sin_phi;
 }
 
-
-
-inline float clamp_min(float in, const float min) {
-    if (in < min) in = min;
-    return in;
-}
-
-inline float clamp(float in, const float min, const float max) {
-    if (in < min) in = min;
-    if (in > max) in = max;
-    return in;
-}
 
 __device__ float thinlens_get_image_dist_focusdist(const float focal_length, const float focus_distance){
     return (-focal_length * -focus_distance) / (-focal_length + -focus_distance);
@@ -205,6 +155,20 @@ __device__ float rng(unsigned int& previous)
 inline int ceil_to_power_2(int x) {
     if (x < 2) return 1;
     return (int) std::pow(2, (int) std::log2(x-1) + 1);
+}
+
+
+
+
+inline float clamp_min(float in, const float min) {
+    if (in < min) in = min;
+    return in;
+}
+
+inline float clamp(float in, const float min, const float max) {
+    if (in < min) in = min;
+    if (in > max) in = max;
+    return in;
 }
 
 
@@ -277,11 +241,12 @@ __global__ void trace_backwards(Eigen::Vector4d *image, Eigen::Vector4d *image_u
 }
 
 
-int main() {
 
-  
-  
-  // read the sampledata into vectors
+
+
+
+
+void allthestuff() {
   std::ifstream infile("/home/cactus/lentil/pota/tests/cuda/sampledata.txt");
   float sample_r, sample_g, sample_b, sample_a, depth, sample_pos_ws_x, sample_pos_ws_y, sample_pos_ws_z;
   std::vector<Eigen::Vector4d> sample_list;
@@ -507,7 +472,4 @@ int main() {
   cudaFree(redist_weight_per_pixel);
   cudaFree(unredist_weight_per_pixel);
   cudaFree(zbuffer);
-
-
-  return 0;
 }
