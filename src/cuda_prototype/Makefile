@@ -54,4 +54,4 @@ arnoldplugin : cuda_dummy_driver.cpp cuda_dummy_driver.o
 
 
 cuda_dummy_driver.o : cuda_dummy_driver.cu cuda_dummy_driver.h
-	nvcc -Xcompiler '-fPIC' -dc  cuda_dummy_driver.cu -o cuda_dummy_driver.o
+	nvcc -Xcompiler '-fPIC' -dc  -O3 cuda_dummy_driver.cu -o cuda_dummy_driver.o

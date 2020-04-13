@@ -1,13 +1,13 @@
 #define TINYEXR_IMPLEMENTATION
-#include "tinyexr.h"
+#include "../tinyexr.h"
 
-#include "../../Eigen/Eigen/Core"
-#include "../../Eigen/Eigen/LU"
+#include "../../../Eigen/Eigen/Core"
+#include "../../../Eigen/Eigen/LU"
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include "cuda_dummy_driver.h"
+
 
 #define checkCudaErrors(val) check_cuda( (val), #val, __FILE__, __LINE__ )
 void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
@@ -150,6 +150,7 @@ __device__ float rng(unsigned int& previous)
   return float(previous & 0X00FFFFFF) / float(0x01000000u); // Use the lower 24 bits.
   // return float(previous >> 8) / float(0x01000000u);      // Use the upper 24 bits
 }
+
 
 
 inline int ceil_to_power_2(int x) {

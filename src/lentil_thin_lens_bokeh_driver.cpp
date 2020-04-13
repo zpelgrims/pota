@@ -1,8 +1,3 @@
-// chromatic aberrations, split up in Longitudinal/lateral
-// strange behaviour when rendering multiple images after each other.. buffer doesn't seem to be cleared?
-// samples outside of frame are wasted, i can probably abuse the bounding box to guide these samples
-// do i need to account for possible REALLY large COCs? E.g for highlights closer than focal length?
-
 #include <ai.h>
 #include <vector>
 #include <iostream>
