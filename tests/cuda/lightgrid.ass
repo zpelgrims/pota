@@ -1,0 +1,5660 @@
+### exported: Mon Nov 18 19:58:08 2019
+### from:     Arnold 5.4.0.1 [197d4d5e] darwin clang-5.0.2 oiio-2.1.0 osl-1.11.0 vdb-4.0.0 clm-1.0.3.513 rlm-12.4.2 2019/09/12 15:07:32
+### host app: MtoA 3.3.0.1 919d09a9 (master) Maya 2018
+### user: cactus
+### bounds: 0 0 0 0 0 0
+### render_layer: defaultRenderLayer
+### scene: /home/cactus/lentil/pota/tests/aberrations/aberrations.ma
+
+
+
+options
+{
+ AA_samples 4
+ outputs 1 1 STRING
+  "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
+ xres 1920
+ yres 1080
+ texture_per_file_stats on
+ texture_automip off
+ operator "/out/lentil_operator1"
+ camera "rendercamShape"
+ bucket_size 16
+ frame 1
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter@gaussian_filter
+}
+
+driver_exr
+{
+ name defaultArnoldDriver@driver_exr.RGBA
+ filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_RGBA.exr"
+ color_space ""
+}
+
+lentil_operator
+{
+ name /out/lentil_operator1
+ enable on
+ declare is_target constant BOOL
+ is_target on
+}
+
+
+#lentil
+{
+ name rendercamShape
+ matrix 1 2 MATRIX
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 75 1
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 125 1
+ focus_distancePO 35
+ bidir_sample_multPO 10
+ bidir_output_pathPO "/home/cactus/lentil/pota/tests/232_reuse_probe_samples/reuse_probe_samples.po.<aov>.<frame>.exr"
+ declare maya_full_name constant STRING
+ maya_full_name "|rendercam|rendercamShape"
+}
+
+lentil_thinlens
+{
+ name rendercamShape
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 0 0 75 1
+ rolling_shutter_duration 0.00092592591
+ motion_end 0
+ filtermap NULL
+ focal_lengthTL 50
+ focus_distanceTL 35
+ bidir_sample_multTL 20
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/cuda/bidir.tl.<aov>.<frame>.exr"
+}
+
+
+point_light
+{
+ name pointLightShape137
+ matrix 1 2 MATRIX
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 5.40458965 0 1
+  1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 10.40458965 0 1
+ motion_start -0.25
+ motion_end 0.25
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight137|pointLightShape137"
+}
+
+
+point_light
+{
+ name pointLightShape6
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight6|pointLightShape6"
+}
+
+point_light
+{
+ name pointLightShape5
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight5|pointLightShape5"
+}
+
+point_light
+{
+ name pointLightShape4
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight4|pointLightShape4"
+}
+
+point_light
+{
+ name pointLightShape3
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight3|pointLightShape3"
+}
+
+point_light
+{
+ name pointLightShape2
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight2|pointLightShape2"
+}
+
+point_light
+{
+ name pointLightShape1
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight1|pointLightShape1"
+}
+
+point_light
+{
+ name pointLightShape7
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight7|pointLightShape7"
+}
+
+point_light
+{
+ name pointLightShape8
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight8|pointLightShape8"
+}
+
+point_light
+{
+ name pointLightShape9
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight9|pointLightShape9"
+}
+
+point_light
+{
+ name pointLightShape10
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight10|pointLightShape10"
+}
+
+point_light
+{
+ name pointLightShape11
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight11|pointLightShape11"
+}
+
+point_light
+{
+ name pointLightShape12
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 0 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight12|pointLightShape12"
+}
+
+point_light
+{
+ name pointLightShape13
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight13|pointLightShape13"
+}
+
+point_light
+{
+ name pointLightShape14
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight14|pointLightShape14"
+}
+
+point_light
+{
+ name pointLightShape15
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight15|pointLightShape15"
+}
+
+point_light
+{
+ name pointLightShape16
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight16|pointLightShape16"
+}
+
+point_light
+{
+ name pointLightShape17
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight17|pointLightShape17"
+}
+
+point_light
+{
+ name pointLightShape18
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight18|pointLightShape18"
+}
+
+point_light
+{
+ name pointLightShape19
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight19|pointLightShape19"
+}
+
+point_light
+{
+ name pointLightShape20
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight20|pointLightShape20"
+}
+
+point_light
+{
+ name pointLightShape21
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight21|pointLightShape21"
+}
+
+point_light
+{
+ name pointLightShape22
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight22|pointLightShape22"
+}
+
+point_light
+{
+ name pointLightShape23
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight23|pointLightShape23"
+}
+
+point_light
+{
+ name pointLightShape24
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 5.40458965 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight24|pointLightShape24"
+}
+
+point_light
+{
+ name pointLightShape25
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight25|pointLightShape25"
+}
+
+point_light
+{
+ name pointLightShape26
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight26|pointLightShape26"
+}
+
+point_light
+{
+ name pointLightShape27
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight27|pointLightShape27"
+}
+
+point_light
+{
+ name pointLightShape28
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight28|pointLightShape28"
+}
+
+point_light
+{
+ name pointLightShape29
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight29|pointLightShape29"
+}
+
+point_light
+{
+ name pointLightShape30
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight30|pointLightShape30"
+}
+
+point_light
+{
+ name pointLightShape31
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight31|pointLightShape31"
+}
+
+point_light
+{
+ name pointLightShape32
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight32|pointLightShape32"
+}
+
+point_light
+{
+ name pointLightShape33
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight33|pointLightShape33"
+}
+
+point_light
+{
+ name pointLightShape34
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight34|pointLightShape34"
+}
+
+point_light
+{
+ name pointLightShape35
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight35|pointLightShape35"
+}
+
+point_light
+{
+ name pointLightShape36
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 10.8091793 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight36|pointLightShape36"
+}
+
+point_light
+{
+ name pointLightShape37
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight37|pointLightShape37"
+}
+
+point_light
+{
+ name pointLightShape38
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight38|pointLightShape38"
+}
+
+point_light
+{
+ name pointLightShape39
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight39|pointLightShape39"
+}
+
+point_light
+{
+ name pointLightShape40
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight40|pointLightShape40"
+}
+
+point_light
+{
+ name pointLightShape41
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight41|pointLightShape41"
+}
+
+point_light
+{
+ name pointLightShape42
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight42|pointLightShape42"
+}
+
+point_light
+{
+ name pointLightShape43
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight43|pointLightShape43"
+}
+
+point_light
+{
+ name pointLightShape44
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight44|pointLightShape44"
+}
+
+point_light
+{
+ name pointLightShape45
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight45|pointLightShape45"
+}
+
+point_light
+{
+ name pointLightShape46
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight46|pointLightShape46"
+}
+
+point_light
+{
+ name pointLightShape47
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight47|pointLightShape47"
+}
+
+point_light
+{
+ name pointLightShape48
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 16.213768 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight48|pointLightShape48"
+}
+
+point_light
+{
+ name pointLightShape49
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight49|pointLightShape49"
+}
+
+point_light
+{
+ name pointLightShape50
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight50|pointLightShape50"
+}
+
+point_light
+{
+ name pointLightShape51
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight51|pointLightShape51"
+}
+
+point_light
+{
+ name pointLightShape52
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight52|pointLightShape52"
+}
+
+point_light
+{
+ name pointLightShape53
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight53|pointLightShape53"
+}
+
+point_light
+{
+ name pointLightShape54
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight54|pointLightShape54"
+}
+
+point_light
+{
+ name pointLightShape55
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight55|pointLightShape55"
+}
+
+point_light
+{
+ name pointLightShape56
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight56|pointLightShape56"
+}
+
+point_light
+{
+ name pointLightShape57
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight57|pointLightShape57"
+}
+
+point_light
+{
+ name pointLightShape58
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight58|pointLightShape58"
+}
+
+point_light
+{
+ name pointLightShape59
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight59|pointLightShape59"
+}
+
+point_light
+{
+ name pointLightShape60
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 21.6183586 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight60|pointLightShape60"
+}
+
+point_light
+{
+ name pointLightShape61
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight61|pointLightShape61"
+}
+
+point_light
+{
+ name pointLightShape62
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight62|pointLightShape62"
+}
+
+point_light
+{
+ name pointLightShape63
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight63|pointLightShape63"
+}
+
+point_light
+{
+ name pointLightShape64
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight64|pointLightShape64"
+}
+
+point_light
+{
+ name pointLightShape65
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight65|pointLightShape65"
+}
+
+point_light
+{
+ name pointLightShape66
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight66|pointLightShape66"
+}
+
+point_light
+{
+ name pointLightShape67
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight67|pointLightShape67"
+}
+
+point_light
+{
+ name pointLightShape68
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight68|pointLightShape68"
+}
+
+point_light
+{
+ name pointLightShape69
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight69|pointLightShape69"
+}
+
+point_light
+{
+ name pointLightShape70
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight70|pointLightShape70"
+}
+
+point_light
+{
+ name pointLightShape71
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight71|pointLightShape71"
+}
+
+point_light
+{
+ name pointLightShape72
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 27.0229473 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight72|pointLightShape72"
+}
+
+point_light
+{
+ name pointLightShape73
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight73|pointLightShape73"
+}
+
+point_light
+{
+ name pointLightShape74
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight74|pointLightShape74"
+}
+
+point_light
+{
+ name pointLightShape75
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight75|pointLightShape75"
+}
+
+point_light
+{
+ name pointLightShape76
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight76|pointLightShape76"
+}
+
+point_light
+{
+ name pointLightShape77
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight77|pointLightShape77"
+}
+
+point_light
+{
+ name pointLightShape78
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight78|pointLightShape78"
+}
+
+point_light
+{
+ name pointLightShape79
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight79|pointLightShape79"
+}
+
+point_light
+{
+ name pointLightShape80
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight80|pointLightShape80"
+}
+
+point_light
+{
+ name pointLightShape81
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight81|pointLightShape81"
+}
+
+point_light
+{
+ name pointLightShape82
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight82|pointLightShape82"
+}
+
+point_light
+{
+ name pointLightShape83
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight83|pointLightShape83"
+}
+
+point_light
+{
+ name pointLightShape84
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 32.427536 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight84|pointLightShape84"
+}
+
+point_light
+{
+ name pointLightShape85
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight85|pointLightShape85"
+}
+
+point_light
+{
+ name pointLightShape86
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight86|pointLightShape86"
+}
+
+point_light
+{
+ name pointLightShape87
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight87|pointLightShape87"
+}
+
+point_light
+{
+ name pointLightShape88
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight88|pointLightShape88"
+}
+
+point_light
+{
+ name pointLightShape89
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight89|pointLightShape89"
+}
+
+point_light
+{
+ name pointLightShape90
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight90|pointLightShape90"
+}
+
+point_light
+{
+ name pointLightShape91
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight91|pointLightShape91"
+}
+
+point_light
+{
+ name pointLightShape92
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight92|pointLightShape92"
+}
+
+point_light
+{
+ name pointLightShape93
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight93|pointLightShape93"
+}
+
+point_light
+{
+ name pointLightShape94
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight94|pointLightShape94"
+}
+
+point_light
+{
+ name pointLightShape95
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight95|pointLightShape95"
+}
+
+point_light
+{
+ name pointLightShape96
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ 37.8321266 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight96|pointLightShape96"
+}
+
+point_light
+{
+ name pointLightShape97
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight97|pointLightShape97"
+}
+
+point_light
+{
+ name pointLightShape98
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight98|pointLightShape98"
+}
+
+point_light
+{
+ name pointLightShape99
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight99|pointLightShape99"
+}
+
+point_light
+{
+ name pointLightShape100
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight100|pointLightShape100"
+}
+
+point_light
+{
+ name pointLightShape101
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight101|pointLightShape101"
+}
+
+point_light
+{
+ name pointLightShape102
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight102|pointLightShape102"
+}
+
+point_light
+{
+ name pointLightShape103
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight103|pointLightShape103"
+}
+
+point_light
+{
+ name pointLightShape104
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight104|pointLightShape104"
+}
+
+point_light
+{
+ name pointLightShape105
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight105|pointLightShape105"
+}
+
+point_light
+{
+ name pointLightShape106
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight106|pointLightShape106"
+}
+
+point_light
+{
+ name pointLightShape107
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight107|pointLightShape107"
+}
+
+point_light
+{
+ name pointLightShape108
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -43.2367172 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight108|pointLightShape108"
+}
+
+point_light
+{
+ name pointLightShape109
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight109|pointLightShape109"
+}
+
+point_light
+{
+ name pointLightShape110
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight110|pointLightShape110"
+}
+
+point_light
+{
+ name pointLightShape111
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight111|pointLightShape111"
+}
+
+point_light
+{
+ name pointLightShape112
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight112|pointLightShape112"
+}
+
+point_light
+{
+ name pointLightShape113
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight113|pointLightShape113"
+}
+
+point_light
+{
+ name pointLightShape114
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight114|pointLightShape114"
+}
+
+point_light
+{
+ name pointLightShape115
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight115|pointLightShape115"
+}
+
+point_light
+{
+ name pointLightShape116
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight116|pointLightShape116"
+}
+
+point_light
+{
+ name pointLightShape117
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight117|pointLightShape117"
+}
+
+point_light
+{
+ name pointLightShape118
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight118|pointLightShape118"
+}
+
+point_light
+{
+ name pointLightShape119
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight119|pointLightShape119"
+}
+
+point_light
+{
+ name pointLightShape120
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -37.8321266 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight120|pointLightShape120"
+}
+
+point_light
+{
+ name pointLightShape121
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight121|pointLightShape121"
+}
+
+point_light
+{
+ name pointLightShape122
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight122|pointLightShape122"
+}
+
+point_light
+{
+ name pointLightShape123
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight123|pointLightShape123"
+}
+
+point_light
+{
+ name pointLightShape124
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight124|pointLightShape124"
+}
+
+point_light
+{
+ name pointLightShape125
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight125|pointLightShape125"
+}
+
+point_light
+{
+ name pointLightShape126
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight126|pointLightShape126"
+}
+
+point_light
+{
+ name pointLightShape127
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight127|pointLightShape127"
+}
+
+point_light
+{
+ name pointLightShape128
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight128|pointLightShape128"
+}
+
+point_light
+{
+ name pointLightShape129
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight129|pointLightShape129"
+}
+
+point_light
+{
+ name pointLightShape130
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight130|pointLightShape130"
+}
+
+point_light
+{
+ name pointLightShape131
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight131|pointLightShape131"
+}
+
+point_light
+{
+ name pointLightShape132
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -32.427536 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight132|pointLightShape132"
+}
+
+point_light
+{
+ name pointLightShape133
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight133|pointLightShape133"
+}
+
+point_light
+{
+ name pointLightShape134
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight134|pointLightShape134"
+}
+
+point_light
+{
+ name pointLightShape135
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight135|pointLightShape135"
+}
+
+point_light
+{
+ name pointLightShape136
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight136|pointLightShape136"
+}
+
+
+point_light
+{
+ name pointLightShape138
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight138|pointLightShape138"
+}
+
+point_light
+{
+ name pointLightShape139
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight139|pointLightShape139"
+}
+
+point_light
+{
+ name pointLightShape140
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight140|pointLightShape140"
+}
+
+point_light
+{
+ name pointLightShape141
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight141|pointLightShape141"
+}
+
+point_light
+{
+ name pointLightShape142
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight142|pointLightShape142"
+}
+
+point_light
+{
+ name pointLightShape143
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight143|pointLightShape143"
+}
+
+point_light
+{
+ name pointLightShape144
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -27.0229473 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight144|pointLightShape144"
+}
+
+point_light
+{
+ name pointLightShape145
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight145|pointLightShape145"
+}
+
+point_light
+{
+ name pointLightShape146
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight146|pointLightShape146"
+}
+
+point_light
+{
+ name pointLightShape147
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight147|pointLightShape147"
+}
+
+point_light
+{
+ name pointLightShape148
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight148|pointLightShape148"
+}
+
+point_light
+{
+ name pointLightShape149
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight149|pointLightShape149"
+}
+
+point_light
+{
+ name pointLightShape150
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight150|pointLightShape150"
+}
+
+point_light
+{
+ name pointLightShape151
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight151|pointLightShape151"
+}
+
+point_light
+{
+ name pointLightShape152
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight152|pointLightShape152"
+}
+
+point_light
+{
+ name pointLightShape153
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight153|pointLightShape153"
+}
+
+point_light
+{
+ name pointLightShape154
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight154|pointLightShape154"
+}
+
+point_light
+{
+ name pointLightShape155
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight155|pointLightShape155"
+}
+
+point_light
+{
+ name pointLightShape156
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -21.6183586 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight156|pointLightShape156"
+}
+
+point_light
+{
+ name pointLightShape157
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight157|pointLightShape157"
+}
+
+point_light
+{
+ name pointLightShape158
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight158|pointLightShape158"
+}
+
+point_light
+{
+ name pointLightShape159
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight159|pointLightShape159"
+}
+
+point_light
+{
+ name pointLightShape160
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight160|pointLightShape160"
+}
+
+point_light
+{
+ name pointLightShape161
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight161|pointLightShape161"
+}
+
+point_light
+{
+ name pointLightShape162
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight162|pointLightShape162"
+}
+
+point_light
+{
+ name pointLightShape163
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight163|pointLightShape163"
+}
+
+point_light
+{
+ name pointLightShape164
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight164|pointLightShape164"
+}
+
+point_light
+{
+ name pointLightShape165
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight165|pointLightShape165"
+}
+
+point_light
+{
+ name pointLightShape166
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight166|pointLightShape166"
+}
+
+point_light
+{
+ name pointLightShape167
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight167|pointLightShape167"
+}
+
+point_light
+{
+ name pointLightShape168
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -16.213768 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight168|pointLightShape168"
+}
+
+point_light
+{
+ name pointLightShape169
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight169|pointLightShape169"
+}
+
+point_light
+{
+ name pointLightShape170
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight170|pointLightShape170"
+}
+
+point_light
+{
+ name pointLightShape171
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight171|pointLightShape171"
+}
+
+point_light
+{
+ name pointLightShape172
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight172|pointLightShape172"
+}
+
+point_light
+{
+ name pointLightShape173
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight173|pointLightShape173"
+}
+
+point_light
+{
+ name pointLightShape174
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight174|pointLightShape174"
+}
+
+point_light
+{
+ name pointLightShape175
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight175|pointLightShape175"
+}
+
+point_light
+{
+ name pointLightShape176
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight176|pointLightShape176"
+}
+
+point_light
+{
+ name pointLightShape177
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight177|pointLightShape177"
+}
+
+point_light
+{
+ name pointLightShape178
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight178|pointLightShape178"
+}
+
+point_light
+{
+ name pointLightShape179
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight179|pointLightShape179"
+}
+
+point_light
+{
+ name pointLightShape180
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -10.8091793 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight180|pointLightShape180"
+}
+
+point_light
+{
+ name pointLightShape181
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight181|pointLightShape181"
+}
+
+point_light
+{
+ name pointLightShape182
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight182|pointLightShape182"
+}
+
+point_light
+{
+ name pointLightShape183
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight183|pointLightShape183"
+}
+
+point_light
+{
+ name pointLightShape184
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight184|pointLightShape184"
+}
+
+point_light
+{
+ name pointLightShape185
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight185|pointLightShape185"
+}
+
+point_light
+{
+ name pointLightShape186
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 0 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight186|pointLightShape186"
+}
+
+point_light
+{
+ name pointLightShape187
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -5.40458965 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight187|pointLightShape187"
+}
+
+point_light
+{
+ name pointLightShape188
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -10.8091793 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight188|pointLightShape188"
+}
+
+point_light
+{
+ name pointLightShape189
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -16.213768 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight189|pointLightShape189"
+}
+
+point_light
+{
+ name pointLightShape190
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -21.6183586 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight190|pointLightShape190"
+}
+
+point_light
+{
+ name pointLightShape191
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -27.0229473 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight191|pointLightShape191"
+}
+
+point_light
+{
+ name pointLightShape192
+ matrix
+ 1.08091795 0 0 0
+ 0 1.08091795 0 0
+ 0 0 1.08091795 0
+ -5.40458965 -32.427536 0 1
+ exposure 2
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.123
+ declare maya_full_name constant STRING
+ maya_full_name "|pointLight192|pointLightShape192"
+}
