@@ -56,7 +56,7 @@ cuda_bokeh_driver
  0 0 125 1
  focus_distancePO 35
  bidir_sample_multPO 10
- bidir_output_pathPO "/home/cactus/lentil/pota/tests/232_reuse_probe_samples/reuse_probe_samples.po.<aov>.<frame>.exr"
+ bidir_output_pathPO "/home/cactus/lentil/pota/tests/cuda/bidir.po.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
@@ -180,4 +182,65 @@ std::vector<std::string> split_str(std::string str, std::string token)
         }
     }
     return result;
+}
+
+
+inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
+                          int samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
+                          struct AtAOVSampleIterator* sample_iterator, 
+                          std::map<AtString, std::vector<AtRGBA> > &image_color_types,
+                          std::map<AtString, std::vector<float> > &weight_per_pixel,
+                          std::map<AtString, std::vector<AtRGBA> > &image_data_types,
+                          std::vector<float> &zbuffer,
+                          AtString rgba_string) {
+    switch(aov_type){
+
+        case AI_TYPE_RGBA: {
+            
+          // RGBA is the only aov with transmission component in
+          AtRGBA rgba_energy;
+          if (aov_name == rgba_string){
+            rgba_energy = ((sample)+fitted_bidir_add_luminance) / (double)(samples);
+          } else {
+            rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name))+fitted_bidir_add_luminance) / (double)(samples);
+          }
+
+          image_color_types[aov_name][px] += rgba_energy * inv_density;
+          weight_per_pixel[aov_name][px] += inv_density / double(samples);
+        
+          break;
+        }
+
+        case AI_TYPE_RGB: {
+          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name) + fitted_bidir_add_luminance;
+          AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) / (double)(samples);
+
+          image_color_types[aov_name][px] += rgba_energy * inv_density;
+          weight_per_pixel[aov_name][px] += inv_density / double(samples);
+          
+          break;
+        }
+
+        case AI_TYPE_VECTOR: {
+          if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+            AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
+            AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+            image_data_types[aov_name][px] = rgba_energy;
+            zbuffer[px] = std::abs(depth);
+          }
+
+          break;
+        }
+
+        case AI_TYPE_FLOAT: {
+          if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+            float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
+            AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+            image_data_types[aov_name][px] = rgba_energy;
+            zbuffer[px] = std::abs(depth);
+          }
+
+          break;
+        }
+    }
 }

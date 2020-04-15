@@ -46,26 +46,22 @@ lentil_operator
 }
 
 
-#lentil
+lentil
 {
  name rendercamShape
- matrix 1 2 MATRIX
+ matrix 1 1 MATRIX
  1 0 0 0
  0 1 0 0
  0 0 1 0
  0 0 75 1
- 1 0 0 0
- 0 1 0 0
- 0 0 1 0
- 0 0 125 1
  focus_distancePO 35
- bidir_sample_multPO 10
- bidir_output_pathPO "/home/cactus/lentil/pota/tests/232_reuse_probe_samples/reuse_probe_samples.po.<aov>.<frame>.exr"
+ bidir_sample_multPO 20
+ bidir_output_pathPO "/home/cactus/lentil/pota/tests/cuda/bidir.po.<aov>.<frame>.exr"
  declare maya_full_name constant STRING
  maya_full_name "|rendercam|rendercamShape"
 }
 
-lentil_thinlens
+#lentil_thinlens
 {
  name rendercamShape
  matrix
