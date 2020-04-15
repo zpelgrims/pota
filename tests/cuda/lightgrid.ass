@@ -46,7 +46,7 @@ lentil_operator
 }
 
 
-lentil
+#lentil
 {
  name rendercamShape
  matrix 1 1 MATRIX
@@ -61,7 +61,7 @@ lentil
  maya_full_name "|rendercam|rendercamShape"
 }
 
-#lentil_thinlens
+lentil_thinlens
 {
  name rendercamShape
  matrix

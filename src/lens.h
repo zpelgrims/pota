@@ -670,7 +670,10 @@ inline bool trace_backwards(Eigen::Vector3d target,
                             const double lambda,
                             Eigen::Vector2d &sensor_position, 
                             const double sensor_shift, 
-                            Camera *camera)
+                            Camera *camera, 
+                            const int px, 
+                            const int py,
+                            const int total_samples_taken)
 {
   int tries = 0;
   bool ray_succes = false;
@@ -686,24 +689,17 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
     if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
 	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
-		  
-      const double r1 = xor128() / 4294967296.0;
-      const double r2 = xor128() / 4294967296.0;
+      unsigned int seed = tea<8>(px+py, total_samples_taken+tries);
 
-      if (camera->bokeh_enable_image) {
-        camera->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-      } else {
-        concentric_disk_sample(r1, r2, unit_disk, true);
-      }
+      if (camera->bokeh_enable_image) camera->image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
+      else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true);
 
       aperture(0) = unit_disk(0) * camera->aperture_radius;
       aperture(1) = unit_disk(1) * camera->aperture_radius;
 	  } 
 	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
-      const double r1 = xor128() / 4294967296.0;
-      const double r2 = xor128() / 4294967296.0;
-
-      lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
+      unsigned int seed = tea<8>(px+py, total_samples_taken+tries);
+      lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), camera->aperture_radius, camera->bokeh_aperture_blades);
     }
 
     aperture(0) = unit_disk(0) * aperture_radius;

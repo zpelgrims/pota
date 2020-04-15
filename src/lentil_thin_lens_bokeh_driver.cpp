@@ -18,7 +18,7 @@ struct ThinLensBokehDriver {
   float filter_width;
   float time_start;
   float time_end;
-  std::map<AtString, std::vector<AtRGBA> > image;
+  std::map<AtString, std::vector<AtRGBA> > image; // think i should be able to remove this.. just use _redist, _unredist instead
   std::map<AtString, std::vector<AtRGBA> > image_redist;
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::map<AtString, std::vector<float> > redist_weight_per_pixel;
@@ -30,6 +30,7 @@ struct ThinLensBokehDriver {
 
   AtString rgba_string;
 };
+
 
 
 inline float thinlens_get_image_dist_focusdist(CameraThinLens *tl){
@@ -238,22 +239,20 @@ driver_process_bucket
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
+            unsigned int seed = tea<8>(px+py, total_samples_taken);
 
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
-            float currenttime = linear_interpolate(xor128() / 4294967296.0, bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
+            float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             const float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
-            float r1 = xor128() / 4294967296.0;
-            float r2 = xor128() / 4294967296.0;
-
-            if (tl->bokeh_enable_image) tl->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-            else if (tl->bokeh_aperture_blades < 2) concentricDiskSample(r1, r2, unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
-            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, tl->bokeh_aperture_blades);
+            if (tl->bokeh_enable_image) tl->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
+            else if (tl->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
+            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, tl->bokeh_aperture_blades);
 
             unit_disk(0) *= tl->bokeh_anamorphic;
 

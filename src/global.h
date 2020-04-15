@@ -40,6 +40,36 @@ inline uint32_t xor128(void){
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
 }
 
+// https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
+// Tiny Encryption Algorithm (TEA) to calculate a the seed per launch index and iteration.
+template<unsigned int N>
+inline unsigned int tea(const unsigned int val0, const unsigned int val1)
+{
+  unsigned int v0 = val0;
+  unsigned int v1 = val1;
+  unsigned int s0 = 0;
+
+  for (unsigned int n = 0; n < N; ++n)
+  {
+    s0 += 0x9e3779b9;
+    v0 += ((v1 << 4) + 0xA341316C) ^ (v1 + s0) ^ ((v1 >> 5) + 0xC8013EA4);
+    v1 += ((v0 << 4) + 0xAD90777D) ^ (v0 + s0) ^ ((v0 >> 5) + 0x7E95761E);
+  }
+  return v0;
+}
+
+
+// https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
+// Return a random sample in the range [0, 1) with a simple Linear Congruential Generator.
+inline float rng(unsigned int& previous)
+{
+  previous = previous * 1664525u + 1013904223u;
+  
+  return float(previous & 0X00FFFFFF) / float(0x01000000u); // Use the lower 24 bits.
+  // return float(previous >> 8) / float(0x01000000u);      // Use the upper 24 bits
+}
+
+
 
 // sin approximation, not completely accurate but faster than std::sin
 inline float fast_sin(float x){
