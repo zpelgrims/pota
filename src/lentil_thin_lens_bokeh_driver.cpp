@@ -229,10 +229,7 @@ driver_process_bucket
           if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(15, 2)) goto no_redist; // 15^2 px minimum coc
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
-
-          // float abb_field_curvature = 0.0;
-          // float abb_astigmatism_tangential = 0.5;
-          // float abb_astigmatism_sagittal = 0.0;
+          
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -266,38 +263,6 @@ driver_process_bucket
             AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
             float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(tl)/dir_from_lens_to_image_sample.z);
-            
-
-            // coma
-            // float unit_disk_dist = std::sqrt(unit_disk(0)*unit_disk(0) + unit_disk(1)*unit_disk(1));
-            // AtVector dir_from_lens_to_image_sample_coma = {dir_from_lens_to_image_sample.x,
-            //                                                dir_from_lens_to_image_sample.y,
-            //                                                dir_from_lens_to_image_sample.z - (dir_from_lens_to_image_sample.z*unit_disk_dist*tl->abb_coma)};
-          
-            // float image_dist_focusdist_coma = std::abs(image_dist_focusdist/dir_from_lens_to_image_sample_coma.z);
-            
-            
-
-            // astimatism
-            // field curvature is supposed to come from average of sagittal and tangential astigmatism... implement tangential
-            // AtVector axis_tangential = AiV3Cross({0, 0, 1}, dir_from_lens_to_image_sample);
-            // AtVector axis_sagittal = AiV3Cross({0, 0, 1}, axis_tangential);
-
-            // AtVector unit_disk_3d(unit_disk(0), unit_disk(1), 0.0);
-            // float dist_to_tangential = AiV3Dot(unit_disk_3d, axis_sagittal); //project onto axis
-            // float dist_to_sagittal = AiV3Dot(unit_disk_3d, axis_tangential); //project onto axis
-            
-            // // float astigmatism_blend_tangential = std::abs(dist_to_tangential) * (1.0 - dir_tobase.z);
-            // float astigmatism_blend_sagittal = std::abs(dist_to_sagittal) * (1.0 - dir_tobase.z);
-
-            // float focusdist_image_intersection_astigmatism = linear_interpolate(astigmatism_blend_sagittal, 
-            //                                                                     std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z), 
-            //                                                                     std::abs(image_dist_focusdist/dir_from_lens_to_image_sample.z)-abb_astigmatism_sagittal);
-            
-            
-            // float focusdist_image_intersection_spherical_abb = focusdist_image_intersection+(unit_disk_dist*abb_spherical);
-            // AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_image_intersection_astigmatism;
-            // AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample_coma*image_dist_focusdist_coma;
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
             
             // takes care of correct screenspace coordinate mapping
@@ -315,44 +280,6 @@ driver_process_bucket
                   continue;
               }
             }
-
-                
-            AtRGB weight = AI_RGB_WHITE;
-            // float coc = bbox_area;
-            // if (tl->emperical_ca_dist > 0.0){
-            //     AtVector2 lens2d(lens.x, lens.y);
-            //     const AtVector2 p2(- focusdist_image_point.x / focusdist_image_point.z, - focusdist_image_point.x / focusdist_image_point.z);
-            //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), p2);
-            //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-            //     AtVector2 aperture_0_center(0.0, 0.0);
-            //     AtVector2 aperture_1_center(- p2 * coc * distance_to_center * tl->emperical_ca_dist);
-            //     AtVector2 aperture_2_center(p2 * coc * distance_to_center * tl->emperical_ca_dist);
-                
-
-            //     if (random_aperture == 1)      lens2d += aperture_1_center;
-            //     else if (random_aperture == 2) lens2d += aperture_2_center;
-
-            //     if (std::pow(lens2d.x-aperture_1_center.x, 2) + std::pow(lens2d.y - aperture_1_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-            //         weight.r = 0.0;
-            //     }
-            //     if (std::pow(lens2d.x-aperture_0_center.x, 2) + std::pow(lens2d.y - aperture_0_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-            //         weight.b = 0.0;
-            //     }
-            //     if (std::pow(lens2d.x-aperture_2_center.x, 2) + std::pow(lens2d.y - aperture_2_center.y, 2) > std::pow(tl->aperture_radius/tl->focus_distance, 2)) {
-            //         weight.g = 0.0;
-            //     }
-
-            //     if (weight == AI_RGB_ZERO){
-            //         --count;
-            //         continue;
-            //     }
-            
-            // //     //ca, not sure if this should be done, evens out the intensity?
-            // //     // float sum = (output.weight.r + output.weight.g + output.weight.b) / 3.0;
-            // //     // output.weight.r /= sum;
-            // //     // output.weight.g /= sum;
-            // //     // output.weight.b /= sum;
-            // }
 
 
             // barrel distortion (inverse)
@@ -374,7 +301,6 @@ driver_process_bucket
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
-
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
