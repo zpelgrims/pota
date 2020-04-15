@@ -239,7 +239,7 @@ driver_process_bucket
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
             ++total_samples_taken;
-            unsigned int seed = tea<8>(px+py, total_samples_taken);
+            unsigned int seed = tea<8>(px*py+px, total_samples_taken);
 
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;

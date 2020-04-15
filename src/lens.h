@@ -689,7 +689,7 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
     if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
 	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
-      unsigned int seed = tea<8>(px+py, total_samples_taken+tries);
+      unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
       if (camera->bokeh_enable_image) camera->image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
       else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true);
@@ -698,7 +698,7 @@ inline bool trace_backwards(Eigen::Vector3d target,
       aperture(1) = unit_disk(1) * camera->aperture_radius;
 	  } 
 	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
-      unsigned int seed = tea<8>(px+py, total_samples_taken+tries);
+      unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
       lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), camera->aperture_radius, camera->bokeh_aperture_blades);
     }
 
