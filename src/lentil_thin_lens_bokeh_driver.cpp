@@ -229,7 +229,7 @@ driver_process_bucket
           if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(15, 2)) goto no_redist; // 15^2 px minimum coc
           int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
           samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
-          
+
 
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;

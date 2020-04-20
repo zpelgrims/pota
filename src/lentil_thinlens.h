@@ -190,12 +190,21 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
             }
         }
 
+        // aberration inputs
+        float abb_field_curvature = 1.0;
+        float abb_coma = 1.0;
+        
+        // coma
+        float dist_from_sensor_center = std::sqrt(sx*sx + sy*sy);
+        float dist_from_aperture = unit_disk.norm();
+        abb_coma *= dist_from_sensor_center * dist_from_aperture;
+
         unit_disk(0) *= tl->bokeh_anamorphic;
 
 
         AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
-        const float intersection = std::abs(tl->focus_distance / dir_from_center.z); // or tl->focus_distance; (spherical/plane, test!)
-        const AtVector focusPoint = dir_from_center * intersection;
+        const float intersection = std::abs((tl->focus_distance*(1.0+abb_coma*0.5678)) / linear_interpolate(abb_field_curvature, dir_from_center.z, 1.0));
+        const AtVector focusPoint = AiV3Lerp(abb_coma*0.06789, dir_from_center, AtVector(0.0, 0.0, dir_from_center.z)) * intersection;
         AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
 
         if (tl->optical_vignetting_distance > 0.0){

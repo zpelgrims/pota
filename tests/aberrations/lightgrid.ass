@@ -10,19 +10,15 @@
 
 options
 {
- AA_samples 4
- outputs 6 1 STRING
+ AA_samples 8
+ outputs 1 1 STRING
   "RGBA RGBA defaultArnoldFilter@gaussian_filter defaultArnoldDriver@driver_exr.RGBA"
-  "RGBA RGBA defaultArnoldFilter@gaussian_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
-  "P VECTOR aiAOVFilter1@closest_filter defaultArnoldDriver@driver_exr.P"
-  "Z FLOAT aiAOVFilter2@closest_filter defaultArnoldDriver@driver_exr.Z"
-  "P VECTOR aiAOVFilter1@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
-  "Z FLOAT aiAOVFilter2@closest_filter aiAOVDriver3@lentil_thin_lens_bokeh_driver"
  xres 1280
  yres 720
  texture_per_file_stats on
  texture_automip off
  camera "rendercamTLShape"
+ operator "/out/lentil_operator1"
  frame 1
  declare render_layer constant STRING
  render_layer "defaultRenderLayer"
@@ -40,11 +36,6 @@ driver_exr
  color_space ""
 }
 
-lentil_thin_lens_bokeh_driver
-{
- name aiAOVDriver3@lentil_thin_lens_bokeh_driver
-}
-
 closest_filter
 {
  name aiAOVFilter1@closest_filter
@@ -56,69 +47,30 @@ closest_filter
 }
 
 
+lentil_operator
+{
+ name /out/lentil_operator1
+ enable on
+ declare is_target constant BOOL
+ is_target on
+}
+
+
 lentil_thinlens
 {
  name rendercamTLShape
- matrix 1 2 MATRIX
+ matrix 1 1 MATRIX
  1 0 0 0
  0 1 0 0
  0 0 1 0
  0 0 75 1
- 1 0 0 0
- 0 1 0 0
- 0 0 1 0
- 0 0 125 1
- near_clip 0.100000001
- far_clip 10000
- shutter_start 0
- shutter_end 0
- shutter_type "box"
- rolling_shutter "off"
- rolling_shutter_duration 0
- motion_start 0
- motion_end 0
- exposure 0
  fstopTL 1.0
- focus_distanceTL 35
- bidir_sample_multTL 100
- bidir_min_luminanceTL 0.2
- abb_distortionTL 0.1
- optical_vignetting_distanceTL 0.0
- optical_vignetting_radiusTL 1.0
+ focus_distanceTL 75
  focal_lengthTL 40
- bokeh_enable_imageTL true
- bokeh_image_pathTL "/home/cactus/lentil/pota/bokeh_imgs/002_remapped.jpg"
- bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/tl.<aov>.<frame>.exr"
- declare maya_full_name constant STRING
- maya_full_name "|rendercam|rendercamShape"
+ bidir_sample_multTL 20
+ bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/bidir.tl.<aov>.<frame>.exr"
 }
 
-
-driver_exr
-{
- name defaultArnoldDriver@driver_exr.P
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_P.exr"
- compression "zip"
- half_precision off
- tiled on
- color_space ""
- preserve_layer_name off
- autocrop off
- append off
-}
-
-driver_exr
-{
- name defaultArnoldDriver@driver_exr.Z
- filename "/home/cactus/lentil/pota/tests/aberrations/aberrations_Z.exr"
- compression "zip"
- half_precision off
- tiled on
- color_space ""
- preserve_layer_name off
- autocrop off
- append off
-}
 
 
 point_light
