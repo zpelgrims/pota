@@ -191,20 +191,25 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         }
 
         // aberration inputs
-        float abb_field_curvature = 1.0;
+        float abb_field_curvature = 0.0;
         float abb_coma = 1.0;
         
         // coma
-        float dist_from_sensor_center = std::sqrt(sx*sx + sy*sy);
+        const AtVector maximal_perturbed_ray(1.0 * (tl->sensor_width*0.5), 1.0 * (tl->sensor_width*0.5), -tl->focal_length);
+        float maximal_projection = AiV3Dot(AiV3Normalize(maximal_perturbed_ray), AtVector(0.0, 0.0, -1.0));
+        float current_projection = AiV3Dot(dir_from_center, AtVector(0.0, 0.0, -1.0));
+        float projection_perc = ((current_projection - maximal_projection)/(1.0-maximal_projection) - 0.5) * 2.0;
+        float dist_from_sensor_center = 1.0 - projection_perc;
         float dist_from_aperture = unit_disk.norm();
         abb_coma *= dist_from_sensor_center * dist_from_aperture;
+
 
         unit_disk(0) *= tl->bokeh_anamorphic;
 
 
         AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
-        const float intersection = std::abs((tl->focus_distance*(1.0+abb_coma*0.5678)) / linear_interpolate(abb_field_curvature, dir_from_center.z, 1.0));
-        const AtVector focusPoint = AiV3Lerp(abb_coma*0.06789, dir_from_center, AtVector(0.0, 0.0, dir_from_center.z)) * intersection;
+        const float intersection = std::abs((tl->focus_distance*(1.0+abb_coma*0.5)) / linear_interpolate(abb_field_curvature, dir_from_center.z, 1.0));
+        const AtVector focusPoint = AiV3Lerp(abb_coma*0.1, dir_from_center, AtVector(0.0, 0.0, dir_from_center.z)) * intersection;
         AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
 
         if (tl->optical_vignetting_distance > 0.0){
