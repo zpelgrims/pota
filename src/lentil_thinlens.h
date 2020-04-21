@@ -25,7 +25,7 @@ struct CameraThinLens
     float optical_vignetting_radius;
 
     float abb_spherical;
-    // float abb_coma;
+    float abb_coma;
     float abb_distortion;
 
     int bokeh_aperture_blades;
@@ -47,8 +47,6 @@ struct CameraThinLens
 };
 
 extern struct CameraThinLens tl;
-
-
 
 
 
@@ -121,12 +119,12 @@ inline float lerp_squircle_mapping(float amount) {
     return 1.0 + std::log(1.0+amount)*std::exp(amount*3.0);
 }
 
-AtVector2 barrelDistortion(AtVector2 uv, float distortion) {    
+inline AtVector2 barrelDistortion(AtVector2 uv, float distortion) {    
     uv *= 1. + AiV2Dot(uv, uv) * distortion;
     return uv;
 }
 
-AtVector2 inverseBarrelDistortion(AtVector2 uv, float distortion) {    
+inline AtVector2 inverseBarrelDistortion(AtVector2 uv, float distortion) {    
     
     float b = distortion;
     float l = AiV2Length(uv);
@@ -137,6 +135,28 @@ AtVector2 inverseBarrelDistortion(AtVector2 uv, float distortion) {
     return uv * (x / l);
 }
 
+
+// idea is to use the middle ray (does not get perturbed) as a measurement of how much coma there needs to be
+inline float abb_coma_multipliers(const float sensor_width, const float focal_length, const AtVector dir_from_center, const Eigen::Vector2d unit_disk){
+    const AtVector maximal_perturbed_ray(1.0 * (sensor_width*0.5), 1.0 * (sensor_width*0.5), -focal_length);
+    float maximal_projection = AiV3Dot(AiV3Normalize(maximal_perturbed_ray), AtVector(0.0, 0.0, -1.0));
+    float current_projection = AiV3Dot(dir_from_center, AtVector(0.0, 0.0, -1.0));
+    float projection_perc = ((current_projection - maximal_projection)/(1.0-maximal_projection) - 0.5) * 2.0;
+    float dist_from_sensor_center = 1.0 - projection_perc;
+    float dist_from_aperture = unit_disk.norm();
+    return dist_from_sensor_center * dist_from_aperture;
+}
+
+
+// rotate vector on axis orthogonal to ray dir
+inline AtVector abb_coma_perturb(AtVector dir_from_lens, AtVector ray_to_perturb, float abb_coma, bool reverse){
+    AtVector axis_tmp = AiV3Normalize(AiV3Cross(dir_from_lens, AtVector(0.0, 0.0, -1.0)));
+    Eigen::Vector3d axis(axis_tmp.x, axis_tmp.y, axis_tmp.z);
+    Eigen::Matrix3d rot(Eigen::AngleAxisd((abb_coma*2.3456*M_PI)/180.0, axis)); // first arg is angle in degrees
+    Eigen::Vector3d raydir(ray_to_perturb.x, ray_to_perturb.y, ray_to_perturb.z);
+    Eigen::Vector3d rotated_vector = (reverse ? rot.inverse() : rot) * raydir;
+    return AtVector(rotated_vector(0), rotated_vector(1), rotated_vector(2));
+}
 
 
 
@@ -190,27 +210,25 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
             }
         }
 
-        // aberration inputs
-        float abb_field_curvature = 0.0;
-        float abb_coma = 1.0;
-        
-        // coma
-        const AtVector maximal_perturbed_ray(1.0 * (tl->sensor_width*0.5), 1.0 * (tl->sensor_width*0.5), -tl->focal_length);
-        float maximal_projection = AiV3Dot(AiV3Normalize(maximal_perturbed_ray), AtVector(0.0, 0.0, -1.0));
-        float current_projection = AiV3Dot(dir_from_center, AtVector(0.0, 0.0, -1.0));
-        float projection_perc = ((current_projection - maximal_projection)/(1.0-maximal_projection) - 0.5) * 2.0;
-        float dist_from_sensor_center = 1.0 - projection_perc;
-        float dist_from_aperture = unit_disk.norm();
-        abb_coma *= dist_from_sensor_center * dist_from_aperture;
-
-
         unit_disk(0) *= tl->bokeh_anamorphic;
 
 
+
+        // aberration inputs
+        float abb_field_curvature = 0.0;
+
+
+
         AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
-        const float intersection = std::abs((tl->focus_distance*(1.0+abb_coma*0.5)) / linear_interpolate(abb_field_curvature, dir_from_center.z, 1.0));
-        const AtVector focusPoint = AiV3Lerp(abb_coma*0.1, dir_from_center, AtVector(0.0, 0.0, dir_from_center.z)) * intersection;
+        const float intersection = std::abs(tl->focus_distance / linear_interpolate(abb_field_curvature, dir_from_center.z, 1.0));
+        const AtVector focusPoint = dir_from_center * intersection;
         AtVector dir_from_lens = AiV3Normalize(focusPoint - lens);
+        
+
+        // perturb ray direction to simulate coma aberration
+        float abb_coma = tl->abb_coma * abb_coma_multipliers(tl->sensor_width, tl->focal_length, dir_from_center, unit_disk);
+        dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
+
 
         if (tl->optical_vignetting_distance > 0.0){
             if (!empericalOpticalVignettingSquare(lens, dir_from_lens, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){

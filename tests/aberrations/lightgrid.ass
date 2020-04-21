@@ -66,8 +66,9 @@ lentil_thinlens
  0 0 75 1
  fstopTL 1.0
  focus_distanceTL 75
- focal_lengthTL 40
- bidir_sample_multTL 0
+ focal_lengthTL 80
+ bidir_sample_multTL 20
+ abb_comaTL 0.5
  bidir_output_pathTL "/home/cactus/lentil/pota/tests/aberrations/bidir.tl.<aov>.<frame>.exr"
 }
 

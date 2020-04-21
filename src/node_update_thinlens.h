@@ -22,7 +22,7 @@ tl->optical_vignetting_radius = AiNodeGetFlt(cameranode, "optical_vignetting_rad
 tl->abb_spherical = AiNodeGetFlt(cameranode, "abb_sphericalTL");
 tl->abb_spherical = clamp(tl->abb_spherical, 0.001, 0.999);
 tl->abb_distortion = AiNodeGetFlt(cameranode, "abb_distortionTL");
-// tl->abb_coma = AiNodeGetFlt(cameranode, "abb_comaTL");
+tl->abb_coma = AiNodeGetFlt(cameranode, "abb_comaTL");
 
 tl->bokeh_aperture_blades = AiNodeGetInt(cameranode, "bokeh_aperture_bladesTL");
 tl->circle_to_square = AiNodeGetFlt(cameranode, "bokeh_circle_to_squareTL");
