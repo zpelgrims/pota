@@ -16,7 +16,6 @@ enum
 
     p_abb_sphericalTL,
     p_abb_distortionTL,
-    p_abb_comaTL,
     
 
     p_bokeh_aperture_bladesTL,
@@ -34,7 +33,9 @@ enum
     p_bidir_add_luminance_transitionTL,
 
     p_vignetting_retriesTL,
-    p_proper_ray_derivativesTL
+    p_proper_ray_derivativesTL,
+
+    p_abb_comaTL
 };
 
 node_parameters
@@ -51,7 +52,6 @@ node_parameters
 
     AiParameterFlt("abb_sphericalTL", 0.5);
     AiParameterFlt("abb_distortionTL", 0.0);
-    AiParameterFlt("abb_comaTL", 0.0);
 
     AiParameterInt("bokeh_aperture_bladesTL", 0);
     AiParameterFlt("bokeh_circle_to_squareTL", 0.0);
@@ -67,6 +67,9 @@ node_parameters
 
     AiParameterInt("vignetting_retriesTL", 30);
     AiParameterBool("proper_ray_derivativesTL", true);
+
+    // experimental
+    AiParameterFlt("abb_comaTL", 0.0);
     
 }
 

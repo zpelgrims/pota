@@ -57,8 +57,8 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
 
         self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
         self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")
-        self.addControl("aiAbbSphericalTL", label="Abberation (spherical)")
-        self.addControl("aiAbbDistortionTL", label="Abberation (distortion)")
+        self.addControl("aiAbbSphericalTL", label="Aberration (spherical)")
+        self.addControl("aiAbbDistortionTL", label="Aberration (distortion)")
         self.addControl("aiBokehApertureBladesTL", label="Aperture Blades")
         self.addControl("aiBokehCircleToSquareTL", label="Circle to Square mapping")
         self.addControl("aiBokehAnamorphicTL", label="Anamorphic stretch")
@@ -82,10 +82,12 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
         self.beginLayout("Advanced", collapse=False)
         self.addControl("aiVignettingRetriesTL", label="Vignetting Retries")
         self.addControl("aiProperRayDerivativesTL", label="HQ ray derivatives")
-        
         self.endLayout()
         
-
+        self.beginLayout("Experimental", collapse=False)
+        self.addControl("aiAbbComaTL", label="Aberration (coma)")
+        self.endLayout()
+        
 
 
 templates.registerTranslatorUI(aiLentilThinlensTemplate, "camera", "lentil_thinlens")

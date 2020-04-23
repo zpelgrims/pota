@@ -273,9 +273,10 @@ driver_process_bucket
 
             // perturb ray direction to simulate coma aberration
             // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
+            // problem is that i actually need to perturb the dir_lens_to_P vector (this is the same as the forward case) but i'm not using it in the calculations :/
             float abb_coma = tl->abb_coma * abb_coma_multipliers(tl->sensor_width, tl->focal_length, dir_tobase, unit_disk);
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
-            dir_from_lens_to_image_sample = abb_coma_perturb(dir_lens_to_P, dir_from_lens_to_image_sample, abb_coma, true);
+            dir_from_lens_to_image_sample = abb_coma_perturb(dir_lens_to_P, dir_from_lens_to_image_sample, abb_coma*1.25, true);
 
 
             float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(tl)/dir_from_lens_to_image_sample.z);

@@ -83,7 +83,7 @@
         default             FLOAT   0.5
         desc                STRING  ""
 
-        houdini.label       STRING  "Abberation (spherical)"
+        houdini.label       STRING  "Aberration (spherical)"
 
 
     [attr abb_distortionTL]
@@ -92,7 +92,7 @@
         default             FLOAT   0.0
         desc                STRING  "Barrel/pincushion distortion"
 
-        houdini.label       STRING  "Abberation (distortion)"
+        houdini.label       STRING  "Aberration (distortion)"
     
 
     [attr bokeh_aperture_bladesTL]
@@ -189,3 +189,12 @@
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
         houdini.label       STRING  "HQ ray derivatives"
+
+
+    [attr abb_comaTL]
+        min                 FLOAT   -1.0
+        max                 FLOAT   1.0
+        default             FLOAT   0.0
+        desc                STRING  ""
+
+        houdini.label       STRING  "Aberration (coma) [experimental]"

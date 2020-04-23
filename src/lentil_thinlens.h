@@ -152,7 +152,7 @@ inline float abb_coma_multipliers(const float sensor_width, const float focal_le
 inline AtVector abb_coma_perturb(AtVector dir_from_lens, AtVector ray_to_perturb, float abb_coma, bool reverse){
     AtVector axis_tmp = AiV3Normalize(AiV3Cross(dir_from_lens, AtVector(0.0, 0.0, -1.0)));
     Eigen::Vector3d axis(axis_tmp.x, axis_tmp.y, axis_tmp.z);
-    Eigen::Matrix3d rot(Eigen::AngleAxisd((abb_coma*2.3456*M_PI)/180.0, axis)); // first arg is angle in degrees
+    Eigen::Matrix3d rot(Eigen::AngleAxisd((abb_coma*2.3456*M_PI)/180.0, axis)); // first arg is angle in degrees, constant is arbitrary
     Eigen::Vector3d raydir(ray_to_perturb.x, ray_to_perturb.y, ray_to_perturb.z);
     Eigen::Vector3d rotated_vector = (reverse ? rot.inverse() : rot) * raydir;
     return AtVector(rotated_vector(0), rotated_vector(1), rotated_vector(2));
