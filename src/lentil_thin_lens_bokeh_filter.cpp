@@ -13,7 +13,7 @@ inline float thinlens_get_image_dist_focusdist(CameraThinLens *tl){
     return (-tl->focal_length * -tl->focus_distance) / (-tl->focal_length + -tl->focus_distance);
 }
 
-inline float thinlens_get_coc(AtVector sample_pos_ws, ThinLensBokehDriver *bokeh, CameraThinLens *tl){
+inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, CameraThinLens *tl){
   // world to camera space transform, static just for CoC
   AtMatrix world_to_camera_matrix_static;
   float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
@@ -33,12 +33,12 @@ node_initialize
 {
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
-  AiNodeSetLocalData(node, new ThinLensBokehDriver());
+  AiNodeSetLocalData(node, new LentilFilterData());
 }
  
 node_update 
 {
-  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
@@ -97,39 +97,12 @@ node_update
 
 
 
-// ====> this is shitty, don't have the iterator here yet (used to be in the driver..)
-// ====> how should i loop over the aovs?
 
-  // get name/type of connected aovs
-  // const char *name = 0;
-  // int pixelType = 0;
-  // bokeh->aov_list_name.clear();
-  // bokeh->aov_list_type.clear();
-  // while(AiOutputIteratorGetNext(iterator, &name, &pixelType, 0)){
-  //   // if aov already considered (can happen due to multiple drivers considering the same aov, such as kick_display and driver_exr)
-  //   if (std::find(bokeh->aov_list_name.begin(), bokeh->aov_list_name.end(), AtString(name)) != bokeh->aov_list_name.end()) continue;
-    
-  //   bokeh->aov_list_name.push_back(AtString(name));
-  //   bokeh->aov_list_type.push_back(pixelType); 
-  //   bokeh->image[AtString(name)].clear();
-  //   bokeh->image[AtString(name)].resize(bokeh->xres * bokeh->yres);
-  //   bokeh->image_redist[AtString(name)].clear();
-  //   bokeh->image_redist[AtString(name)].resize(bokeh->xres * bokeh->yres);
-  //   bokeh->image_unredist[AtString(name)].clear();
-  //   bokeh->image_unredist[AtString(name)].resize(bokeh->xres * bokeh->yres);
-  //   bokeh->redist_weight_per_pixel[AtString(name)].clear();
-  //   bokeh->redist_weight_per_pixel[AtString(name)].resize(bokeh->xres * bokeh->yres);
-  //   bokeh->unredist_weight_per_pixel[AtString(name)].clear();
-  //   bokeh->unredist_weight_per_pixel[AtString(name)].resize(bokeh->xres * bokeh->yres);
-  // }
-  // AiOutputIteratorReset(iterator);
-
-
-  // just filled with test data, change to something like above.
+  
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
   bokeh->aov_list_name.push_back(AtString("RGBA"));
-  bokeh->aov_list_type.push_back(AI_TYPE_RGBA); 
+  bokeh->aov_list_type.push_back(AI_TYPE_RGBA);
   bokeh->image[AtString("RGBA")].clear();
   bokeh->image[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
   bokeh->image_redist[AtString("RGBA")].clear();
@@ -141,9 +114,35 @@ node_update
   bokeh->unredist_weight_per_pixel[AtString("RGBA")].clear();
   bokeh->unredist_weight_per_pixel[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
 
+  // have to do something here to split the string if there's multiple args
+  std::vector<std::string> aov_list;
+  aov_list.push_back(tl->bidir_aovs.c_str());
 
+  
+  for (int i=0; i<aov_list.size(); ++i){
+    std::vector<std::string> aov_name_type = split_str(aov_list[i], std::string(" "));
+    std::string aov_name = aov_name_type[1];
+    std::string aov_type_str = aov_name_type[0];
+    unsigned int aov_type = string_to_arnold_type(aov_type_str);
 
+    bokeh->aov_list_name.push_back(AtString(aov_name.c_str()));
+    bokeh->aov_list_type.push_back(aov_type);
+    bokeh->image[AtString(aov_name.c_str())].clear();
+    bokeh->image[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_redist[AtString(aov_name.c_str())].clear();
+    bokeh->image_redist[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
+    bokeh->image_unredist[AtString(aov_name.c_str())].clear();
+    bokeh->image_unredist[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
+    bokeh->redist_weight_per_pixel[AtString(aov_name.c_str())].clear();
+    bokeh->redist_weight_per_pixel[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
+    bokeh->unredist_weight_per_pixel[AtString(aov_name.c_str())].clear();
+    bokeh->unredist_weight_per_pixel[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
+  }  
 
+  for (int i=0; i<bokeh->aov_list_name.size(); i++){
+    AiMsgInfo("DDDDEEEEEEEEEBBUG: aov_name: %s", bokeh->aov_list_name[i].c_str());
+     AiMsgInfo("DDDDEEEEEEEEEBBUG: aov_type: %i", bokeh->aov_list_type[i]);
+  }
 
   AiFilterUpdate(node, 1.65);
 }
@@ -155,6 +154,8 @@ filter_output_type
    {
       case AI_TYPE_RGBA:
          return AI_TYPE_RGBA;
+      case AI_TYPE_RGB:
+         return AI_TYPE_RGB;
       default:
          return AI_TYPE_NONE;
    }
@@ -163,7 +164,7 @@ filter_output_type
  
 filter_pixel
 {
-  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (bokeh->enabled) {
@@ -370,7 +371,7 @@ filter_pixel
     }
   }
 
-
+  
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
   const float width = 1.65;
@@ -410,7 +411,7 @@ filter_pixel
  
 node_finish
 {
-  ThinLensBokehDriver *bokeh = (ThinLensBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   delete bokeh;
 }
 

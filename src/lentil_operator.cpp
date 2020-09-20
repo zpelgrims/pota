@@ -14,7 +14,7 @@
 // needs to be updated for filter usage, now it replaces the driver
 // might not need to have duplicate aovs, just swap filter.
 
-// should also set the imager
+// I need two different imagers, one for each output (kick_driver, exr_driver, otherwise it doesn't work)
 
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
 

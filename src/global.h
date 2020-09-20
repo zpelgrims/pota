@@ -5,6 +5,34 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr.h"
 
+
+struct LentilFilterData {
+  unsigned xres;
+  unsigned yres;
+  int framenumber;
+  int samples;
+  int aa_samples;
+  int min_aa_samples;
+  bool enabled;
+  float filter_width;
+  float time_start;
+  float time_end;
+  std::map<AtString, std::vector<AtRGBA> > image; // think i should be able to remove this.. just use _redist, _unredist instead
+  std::map<AtString, std::vector<AtRGBA> > image_redist;
+  std::map<AtString, std::vector<AtRGBA> > image_unredist;
+  std::map<AtString, std::vector<float> > redist_weight_per_pixel;
+  std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
+  std::vector<float> zbuffer;
+  std::vector<AtString> aov_list_name;
+  std::vector<unsigned int> aov_list_type;
+  std::vector<int> aov_types;
+
+  AtString rgba_string;
+};
+
+extern struct LentilFilterData bokeh;
+
+
 std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
     std::size_t pos = s.find(toReplace);
     if (pos == std::string::npos) return s;
@@ -274,3 +302,11 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
         }
     }
 }
+
+
+  unsigned int string_to_arnold_type(std::string str){
+    if (str == "float") return AI_TYPE_FLOAT;
+    else if (str == "rgba") return AI_TYPE_RGBA;
+    else if (str == "rgb") return AI_TYPE_RGB;
+    else if (str == "vector" || str == "vec") return AI_TYPE_VECTOR;
+  }

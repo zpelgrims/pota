@@ -5,33 +5,8 @@
 #include "global.h"
 
  
-AI_DRIVER_NODE_EXPORT_METHODS(LentilBokehDriverMtd);
+AI_DRIVER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
-struct LentilBokehDriver {
-  unsigned xres;
-  unsigned yres;
-  int framenumber;
-  int samples;
-  int aa_samples;
-  int min_aa_samples;
-  bool enabled;
-  float filter_width;
-  float time_start;
-  float time_end;
-  std::map<AtString, std::vector<AtRGBA> > image;
-  std::map<AtString, std::vector<AtRGBA> > image_redist;
-  std::map<AtString, std::vector<AtRGBA> > image_unredist;
-  std::map<AtString, std::vector<float> > redist_weight_per_pixel;
-  std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
-  std::vector<float> zbuffer;
-  std::vector<AtString> aov_list_name;
-  std::vector<unsigned int> aov_list_type;
-  std::vector<int> aov_types;
-
-  AtString rgba_string;
-};
-
-
 
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
@@ -56,7 +31,7 @@ node_parameters {}
  
 node_initialize
 {
-  AiNodeSetLocalData(node, new LentilBokehDriver());
+  AiNodeSetLocalData(node, new LentilFilterData());
 
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
   AiRawDriverInitialize(node, required_aovs, false);
@@ -64,7 +39,7 @@ node_initialize
  
 node_update 
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
@@ -150,7 +125,7 @@ node_update
 driver_supports_pixel_type { return true; } // not needed for raw drivers
  
 driver_open {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
 
   // get name/type of connected aovs
   const char *name = 0;
@@ -194,7 +169,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
 
 driver_process_bucket
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (!bokeh->enabled) return;
@@ -398,7 +373,7 @@ driver_write_bucket {}
  
 driver_close
 {
-  LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (!bokeh->enabled) return;
@@ -452,14 +427,14 @@ driver_close
  
 node_finish
 {
-   LentilBokehDriver *bokeh = (LentilBokehDriver*)AiNodeGetLocalData(node);
+   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
    delete bokeh;
 }
 
 node_loader
 {
    if (i>0) return false;
-   node->methods = (AtNodeMethods*) LentilBokehDriverMtd;
+   node->methods = (AtNodeMethods*) LentilFilterDataMtd;
    node->output_type = AI_TYPE_NONE;
    node->name = "lentil_bokeh_driver";
    node->node_type = AI_NODE_DRIVER;

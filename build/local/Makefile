@@ -37,7 +37,7 @@ CXXFLAGS=\
 	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
-	-O3	
+	-O3
 	
 
 HEADERS=\

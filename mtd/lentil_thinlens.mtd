@@ -145,13 +145,6 @@
 
         houdini.label       STRING  "Trigger treshold"
 
-
-    [attr bidir_output_pathTL]
-        desc                STRING  "Bidirectional output path. Should include <frame> and <aov> tokens."
-
-        houdini.label       STRING  "Output path"
-        c4d.gui_type        INT     2
-
     
     [attr bidir_sample_multTL]
         min                 INT    0
