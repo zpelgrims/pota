@@ -7,30 +7,6 @@
  
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehDriverMtd);
  
-struct ThinLensBokehDriver {
-  unsigned xres;
-  unsigned yres;
-  int framenumber;
-  int samples;
-  int aa_samples;
-  int min_aa_samples;
-  bool enabled;
-  float filter_width;
-  float time_start;
-  float time_end;
-  std::map<AtString, std::vector<AtRGBA> > image; // think i should be able to remove this.. just use _redist, _unredist instead
-  std::map<AtString, std::vector<AtRGBA> > image_redist;
-  std::map<AtString, std::vector<AtRGBA> > image_unredist;
-  std::map<AtString, std::vector<float> > redist_weight_per_pixel;
-  std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
-  std::vector<float> zbuffer;
-  std::vector<AtString> aov_list_name;
-  std::vector<unsigned int> aov_list_type;
-  std::vector<int> aov_types;
-
-  AtString rgba_string;
-};
-
 
 
 inline float thinlens_get_image_dist_focusdist(CameraThinLens *tl){

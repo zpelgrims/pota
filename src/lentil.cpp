@@ -22,7 +22,6 @@ enum {
   p_bokeh_image_pathPO,
 
   p_bidir_min_luminancePO,
-  p_bidir_output_pathPO,
   p_bidir_sample_multPO,
   p_bidir_add_luminancePO,
   p_bidir_add_luminance_transitionPO,
@@ -58,7 +57,6 @@ node_parameters {
 
 
   AiParameterFlt("bidir_min_luminancePO", 1.0);
-  AiParameterStr("bidir_output_pathPO", "");
   AiParameterInt("bidir_sample_multPO", 20);
   AiParameterFlt("bidir_add_luminancePO", 0.0);
   AiParameterFlt("bidir_add_luminance_transitionPO", 1.0);
@@ -88,7 +86,6 @@ node_update {
   po->dof = AiNodeGetBool(node, "dofPO");
   po->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
   po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
-  po->bidir_output_path = AiNodeGetStr(node, "bidir_output_pathPO");
   po->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
   po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
   po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
