@@ -59,7 +59,8 @@ operator_cook
     const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_filter_debug_operator");
     if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
 
-    AtNode* lentil_imager = AiNode("lentil_thin_lens_bokeh_imager", AtString("lentil_imager"));
+    AtNode* lentil_imager_exr = AiNode("lentil_thin_lens_bokeh_imager", AtString("lentil_imager_exr"));
+    AtNode* lentil_imager_kick = AiNode("lentil_thin_lens_bokeh_imager", AtString("lentil_imager_kick"));
     
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -69,16 +70,27 @@ operator_cook
         std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(data->filter, "name"));
         AiArraySetStr(outputs, i, AtString(output_string.c_str()));
-        AiMsgInfo("[LENTIL] Automatically inserted AOV with correct filter type: %s", output_string.c_str());
+        AiMsgInfo("[LENTIL] Swapped filter type: %s", output_string.c_str());
 
         // link imager to driver (could be kick, or exr_driver, etc)
+        // think there's currently a bug with the AI_TYPE_NONE/AI_TYPE_NODE in lentil_thin_lens_bokeh_imager.cpp
+        // NODE is necessary to link the input param from this operator
+        // but when it's set to NODE it's not picked up autoatically (need to set it from kick)
         std::string driver_str = split_str(output_string, std::string(" ")).back();
         AtNode* driver = AiNodeLookUpByName(driver_str.c_str());
         if (!AiNodeIsLinked(driver, "input")){
-            AiNodeLink(lentil_imager, "input", driver);
-            AiMsgInfo("[LENTIL] Linked lentil_imager to driver: %s", AiNodeGetName(driver));
+            // differentiate between kick & exr drivers
+            if (AtString(AiNodeEntryGetName(AiNodeGetNodeEntry(driver))) == AtString("driver_kick")){
+                AiNodeLink(lentil_imager_kick, "input", driver);
+                AiMsgInfo("[LENTIL] Linked lentil_imager_kick to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
+            } else {
+                AiNodeLink(lentil_imager_exr, "input", driver);
+                AiMsgInfo("[LENTIL] Linked lentil_imager_exr to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
+            } 
         }
     }
+
+    // AiASSWrite("/home/cactus/lentil/pota/tests/imagers/test_imagers_02_operated.ass", AI_NODE_ALL, false); 
     
     return true;
 }

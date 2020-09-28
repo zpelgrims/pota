@@ -110,13 +110,8 @@ node_update
 
     if (output_string.find(lentil_str) != std::string::npos){
      
-      AiMsgInfo("output string: %s", output_string.c_str());
-      // output_string = erase_string(output_string, lentil_str);
-      // AiMsgInfo("output string post-erase: %s", output_string.c_str());
-      
       std::string name = split_str(output_string, std::string(" ")).end()[-4];
       std::string type = split_str(output_string, std::string(" ")).end()[-3];
-      AiMsgInfo("type = %s", type.c_str());
 
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));

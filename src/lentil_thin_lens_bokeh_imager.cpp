@@ -7,7 +7,6 @@
 
 // currently this works by searching for a node with specific name "lentil_filter", not ideal.
 
-
 #define AI_DRIVER_SCHEDULE_FULL 0x02
 
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehImagerMtd);
@@ -35,9 +34,6 @@ node_update
 
   
   const AtNodeEntry *bokeh_filter = AiNodeEntryLookUp("lentil_thin_lens_bokeh_filter");
-  
-  
-
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
@@ -84,8 +80,7 @@ driver_process_bucket {
     std::string aov_name_str = aov_name_cstr;
     AtString aov_name_current = AtString(aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
-      // aov_name_str = erase_string(aov_name_str, lentil_str);
-      // if (aov_name == AtString("transmission")) continue;
+      if (aov_name == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL] imager looping over: %s", aov_name_str.c_str());
       AtString aov_name = AtString(aov_name_str.c_str());
 
@@ -104,7 +99,7 @@ driver_process_bucket {
             AtRGBA combined_redist_unredist = (unredist * (1.0-filter_data->redist_weight_per_pixel[aov_name][linear_pixel])) + (redist * (filter_data->redist_weight_per_pixel[aov_name][linear_pixel]));
             
             // this currently doesn't work for the rgb layers because alpha is wrong for rgb layers
-            // if (combined_redist_unredist.a > 0.95) combined_redist_unredist /= combined_redist_unredist.a;
+            if (combined_redist_unredist.a > 0.95) combined_redist_unredist /= combined_redist_unredist.a;
 
 
             ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
