@@ -38,6 +38,11 @@ node_update
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
+
+  int aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  if (aa_samples < 3) {
+    return;
+  }
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -80,7 +85,7 @@ driver_process_bucket {
     std::string aov_name_str = aov_name_cstr;
     AtString aov_name_current = AtString(aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
-      if (aov_name == AtString("transmission")) continue;
+      if (aov_name_current == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL] imager looping over: %s", aov_name_str.c_str());
       AtString aov_name = AtString(aov_name_str.c_str());
 

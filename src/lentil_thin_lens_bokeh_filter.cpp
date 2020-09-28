@@ -372,7 +372,7 @@ filter_pixel
   
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
-  const float width = 1.65;
+  const float width = 2.0;
   float aweight = 0.0f;
   AtRGBA avalue = AI_RGBA_ZERO;
 
@@ -393,9 +393,6 @@ filter_pixel
 
       // accumulate weights and colors
       AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-      const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
-
-      
       avalue += weight * sample_energy;
       aweight += weight;
   }
