@@ -250,7 +250,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
                           std::map<AtString, std::vector<float> > &weight_per_pixel,
                           std::map<AtString, std::vector<AtRGBA> > &image_data_types,
                           std::vector<float> &zbuffer,
-                          AtString rgba_string) {
+                          AtString rgba_string) {    
     switch(aov_type){
 
         case AI_TYPE_RGBA: {
@@ -262,7 +262,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           } else {
             rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name))+fitted_bidir_add_luminance) / (double)(samples);
           }
-
+          
           image_color_types[aov_name][px] += rgba_energy * inv_density;
           weight_per_pixel[aov_name][px] += inv_density / double(samples);
         
@@ -304,9 +304,22 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
 }
 
 
-  unsigned int string_to_arnold_type(std::string str){
-    if (str == "float") return AI_TYPE_FLOAT;
-    else if (str == "rgba") return AI_TYPE_RGBA;
-    else if (str == "rgb") return AI_TYPE_RGB;
-    else if (str == "vector" || str == "vec") return AI_TYPE_VECTOR;
+unsigned int string_to_arnold_type(std::string str){
+  if (str == "float") return AI_TYPE_FLOAT;
+  else if (str == "rgba" || str == "RGBA") return AI_TYPE_RGBA;
+  else if (str == "rgb") return AI_TYPE_RGB;
+  else if (str == "vector" || str == "vec") return AI_TYPE_VECTOR;
+
+  return 0;
+}
+
+
+std::string erase_string(std::string str, std::string pattern) {
+  std::string::size_type i = str.find(pattern);
+  while (i != std::string::npos) {
+    str.erase(i, pattern.length());
+    i = str.find(pattern, i);
   }
+
+  return str;
+}

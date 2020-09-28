@@ -81,12 +81,13 @@ driver_process_bucket {
   
   // Iterate over all the AOVs hooked up to this driver
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
-    AiMsgInfo("imager looping over1: %s", aov_name_cstr);
+    std::string aov_name_str = aov_name_cstr;
     AtString aov_name_current = AtString(aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
-      AtString aov_name = AtString(aov_name_cstr);
+      // aov_name_str = erase_string(aov_name_str, lentil_str);
       // if (aov_name == AtString("transmission")) continue;
-      AiMsgInfo("imager looping over2: %s", aov_name.c_str());
+      AiMsgInfo("[LENTIL] imager looping over: %s", aov_name_str.c_str());
+      AtString aov_name = AtString(aov_name_str.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {

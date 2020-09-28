@@ -14,7 +14,6 @@ tl->tan_fov = std::tan(tl->fov/2.0);
 tl->aperture_radius = (tl->focal_length / (2.0 * tl->fstop)) / 10.0;
 
 tl->bidir_min_luminance = AiNodeGetFlt(cameranode, "bidir_min_luminanceTL");
-tl->bidir_aovs = AiNodeGetStr(cameranode, "bidir_aovsTL");
 
 tl->optical_vignetting_distance = AiNodeGetFlt(cameranode, "optical_vignetting_distanceTL");
 tl->optical_vignetting_radius = AiNodeGetFlt(cameranode, "optical_vignetting_radiusTL");

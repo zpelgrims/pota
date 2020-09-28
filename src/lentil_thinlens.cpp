@@ -26,7 +26,6 @@ enum
     p_bokeh_image_pathTL,
 
     p_bidir_min_luminanceTL,
-    p_bidir_aovsTL,
     p_bidir_sample_multTL,
 
     p_bidir_add_luminanceTL,
@@ -60,7 +59,6 @@ node_parameters
     AiParameterStr("bokeh_image_pathTL", "");
 
     AiParameterFlt("bidir_min_luminanceTL", 1.0);
-    AiParameterStr("bidir_aovsTL", "");
     AiParameterInt("bidir_sample_multTL", 20);
     AiParameterFlt("bidir_add_luminanceTL", 0.0);
     AiParameterFlt("bidir_add_luminance_transitionTL", 1.0);

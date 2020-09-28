@@ -37,7 +37,6 @@ struct CameraThinLens
 
 
     float bidir_min_luminance;
-    AtString bidir_aovs;
     unsigned int bidir_sample_mult;
     float bidir_add_luminance;
     float bidir_add_luminance_transition;

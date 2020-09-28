@@ -101,50 +101,44 @@ node_update
   
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
-  bokeh->aov_list_name.push_back(AtString("RGBA"));
-  bokeh->aov_list_type.push_back(AI_TYPE_RGBA);
-  bokeh->image[AtString("RGBA")].clear();
-  bokeh->image[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
-  bokeh->image_redist[AtString("RGBA")].clear();
-  bokeh->image_redist[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
-  bokeh->image_unredist[AtString("RGBA")].clear();
-  bokeh->image_unredist[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
-  bokeh->redist_weight_per_pixel[AtString("RGBA")].clear();
-  bokeh->redist_weight_per_pixel[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
-  bokeh->unredist_weight_per_pixel[AtString("RGBA")].clear();
-  bokeh->unredist_weight_per_pixel[AtString("RGBA")].resize(bokeh->xres * bokeh->yres);
 
-  // have to do something here to split the string if there's multiple args
-  std::vector<std::string> aov_list;
-  aov_list.push_back(tl->bidir_aovs.c_str());
+  AtNode* options = AiUniverseGetOptions();
+  AtArray* outputs = AiNodeGetArray(options, "outputs");
+  for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
+    std::string output_string = AiArrayGetStr(outputs, i).c_str();
+    std::string lentil_str = "lentil_filter";
 
-  
-  for (int i=0; i<aov_list.size(); ++i){
-    std::vector<std::string> aov_name_type = split_str(aov_list[i], std::string(" "));
-    std::string aov_name = aov_name_type[1];
-    std::string aov_type_str = aov_name_type[0];
-    unsigned int aov_type = string_to_arnold_type(aov_type_str);
+    if (output_string.find(lentil_str) != std::string::npos){
+     
+      AiMsgInfo("output string: %s", output_string.c_str());
+      // output_string = erase_string(output_string, lentil_str);
+      // AiMsgInfo("output string post-erase: %s", output_string.c_str());
+      
+      std::string name = split_str(output_string, std::string(" ")).end()[-4];
+      std::string type = split_str(output_string, std::string(" ")).end()[-3];
+      AiMsgInfo("type = %s", type.c_str());
 
-    bokeh->aov_list_name.push_back(AtString(aov_name.c_str()));
-    bokeh->aov_list_type.push_back(aov_type);
-    bokeh->image[AtString(aov_name.c_str())].clear();
-    bokeh->image[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
-    bokeh->image_redist[AtString(aov_name.c_str())].clear();
-    bokeh->image_redist[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
-    bokeh->image_unredist[AtString(aov_name.c_str())].clear();
-    bokeh->image_unredist[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
-    bokeh->redist_weight_per_pixel[AtString(aov_name.c_str())].clear();
-    bokeh->redist_weight_per_pixel[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
-    bokeh->unredist_weight_per_pixel[AtString(aov_name.c_str())].clear();
-    bokeh->unredist_weight_per_pixel[AtString(aov_name.c_str())].resize(bokeh->xres * bokeh->yres);
-  }  
-
-  for (int i=0; i<bokeh->aov_list_name.size(); i++){
-    AiMsgInfo("DDDDEEEEEEEEEBBUG: aov_name: %s", bokeh->aov_list_name[i].c_str());
-     AiMsgInfo("DDDDEEEEEEEEEBBUG: aov_type: %i", bokeh->aov_list_type[i]);
+      bokeh->aov_list_name.push_back(AtString(name.c_str()));
+      bokeh->aov_list_type.push_back(string_to_arnold_type(type));
+      bokeh->image[AtString(name.c_str())].clear();
+      bokeh->image[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_redist[AtString(name.c_str())].clear();
+      bokeh->image_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_unredist[AtString(name.c_str())].clear();
+      bokeh->image_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->redist_weight_per_pixel[AtString(name.c_str())].clear();
+      bokeh->redist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->unredist_weight_per_pixel[AtString(name.c_str())].clear();
+      bokeh->unredist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+    }
   }
 
-  AiFilterUpdate(node, 1.65);
+  for (int i=0; i<bokeh->aov_list_name.size(); i++){
+    AiMsgInfo("[LENTIL]: filter initialize aov_name: %s", bokeh->aov_list_name[i].c_str());
+    AiMsgInfo("[LENTIL]: filter initialize aov_type: %i", bokeh->aov_list_type[i]);
+  }
+
+  AiFilterUpdate(node, 2.0);
 }
  
 
@@ -164,8 +158,17 @@ filter_output_type
  
 filter_pixel
 {
+
+  
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  // apparently creating arnold strings is expensive, avoid as much as possible on the fly
+  const AtString atstring_rgba = AtString("RGBA");
+  const AtString atstring_p = AtString("P");
+  const AtString atstring_z = AtString("Z");
+  const AtString atstring_transmission = AtString("transmission");
+  const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
 
   if (bokeh->enabled) {
     const double xres = (double)bokeh->xres;
@@ -181,13 +184,15 @@ filter_pixel
       bool partly_redistributed = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-      const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, AtString("P"));
-      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, AtString("Z")); // what to do when values are INF?
+      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
+
+      const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
+      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       if (inv_density <= 0.f) continue; // does this every happen? test
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
       
-      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, AtString("transmission"));
+      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
@@ -199,7 +204,7 @@ filter_pixel
       if (sample_luminance < tl->bidir_min_luminance) redistribute = false;
       if (!std::isfinite(depth)) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
-      if (AiAOVSampleIteratorHasAOVValue(iterator, AtString("lentil_bidir_ignore"), AI_TYPE_RGBA)) redistribute = false;
+      if (AiAOVSampleIteratorHasAOVValue(iterator, atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
 
 
@@ -363,8 +368,6 @@ filter_pixel
                             bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
                             bokeh->rgba_string);
             }
-
-
           }
         }
       }
