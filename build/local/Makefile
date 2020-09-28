@@ -41,8 +41,7 @@ CXXFLAGS=\
 HEADERS=\
 	../../src/lens.h\
 	../../src/lentil.h\
-	../../src/imagebokeh.h\
-	../../src/tinyexr.h
+	../../src/imagebokeh.h
 
 
 
