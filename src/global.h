@@ -45,6 +45,37 @@ inline float filter_gaussian(AtVector2 p, float width) {
   return AiFastExp(2 * -r);
 }
 
+inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const float width){
+  float aweight = 0.0f;
+  AtRGBA avalue = AI_RGBA_ZERO;
+
+  while (AiAOVSampleIteratorGetNext(iterator))
+  {
+      // take into account adaptive sampling
+      float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+      if (inv_density <= 0.f) continue;
+
+      // determine distance to filter center
+      const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
+      const float r = AiSqr(2 / width) * (AiSqr(offset.x) + AiSqr(offset.y));
+      if (r > 1.0f)
+          continue;
+
+      // gaussian filter weight
+      const float weight = AiFastExp(2 * -r) * inv_density;
+
+      // accumulate weights and colors
+      AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+      avalue += weight * sample_energy;
+      aweight += weight;
+  }
+ 
+   // compute final filtered color
+   if (aweight != 0.0f) avalue /= aweight;
+
+   return avalue;
+}
+
 inline float linear_interpolate(float perc, float a, float b){
     return a + perc * (b - a);
 }
