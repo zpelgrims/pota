@@ -160,7 +160,9 @@ float additional_luminance_soft_trans(float sample_luminance, float additional_l
     return additional_luminance * perc;          
   } else if (sample_luminance > minimum_luminance+transition_width) {
     return additional_luminance;
-  } 
+  }
+
+  return 0.0;
 }
 
 

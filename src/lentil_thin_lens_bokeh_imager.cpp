@@ -11,12 +11,12 @@
 
 AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehImagerMtd);
 
-struct LentilImagerData {
-    AtString camera_node_type;
-    AtString lentil_thinlens_string;
-    AtString lentil_po_string;
-    AtNode *camera_node;
-};
+// struct LentilImagerData {
+//     AtString camera_node_type;
+//     AtString lentil_thinlens_string;
+//     AtString lentil_po_string;
+//     AtNode *camera_node;
+// };
 
 node_parameters 
 {
@@ -33,16 +33,10 @@ node_update
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
 
   
-  const AtNodeEntry *bokeh_filter = AiNodeEntryLookUp("lentil_thin_lens_bokeh_filter");
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
-
-  int aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  if (aa_samples < 3) {
-    return;
-  }
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -65,7 +59,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
 
  
 driver_process_bucket {
-  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
@@ -74,7 +68,6 @@ driver_process_bucket {
   if (!filter_data->enabled) return;
   
   const double xres = (double)filter_data->xres;
-  const double yres = (double)filter_data->yres;
 
   const char *aov_name_cstr = 0;
   int aov_type = 0;
@@ -126,8 +119,8 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
-  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  delete imager_data;
+  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  // delete imager_data;
 }
 
 node_loader

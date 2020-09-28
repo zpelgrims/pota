@@ -46,11 +46,12 @@ node_update
   if (AiNodeEntryGetCount(nentry) > 1){
     AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_thin_lens_bokeh_filter exist. "
                "All of bidirectional AOVs should be connected to a single lentil_thin_lens_bokeh_filter node. "
-               "This is to avoid doing the bidirectional sampling multiple times.");
+               "This is to avoid doing the bidirectional sampling multiple times."
+               "You can use the lentil_operator node to take care of the setup automatically.");
   }
 
   // THIS IS DOUBLE CODE, also in camera!
-  // get camera params & recompute the node_update section to avoid race condition when sharing datastruct
+  // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
   AtNode *cameranode = AiUniverseGetCamera();
   #include "node_update_thinlens.h"
 
@@ -128,7 +129,7 @@ node_update
     }
   }
 
-  for (int i=0; i<bokeh->aov_list_name.size(); i++){
+  for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
     AiMsgInfo("[LENTIL]: filter initialize aov_name: %s", bokeh->aov_list_name[i].c_str());
     AiMsgInfo("[LENTIL]: filter initialize aov_type: %i", bokeh->aov_list_type[i]);
   }
