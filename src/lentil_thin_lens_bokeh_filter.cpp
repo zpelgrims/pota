@@ -98,8 +98,7 @@ node_update
 
 
 
-
-  
+  // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
 
@@ -129,10 +128,10 @@ node_update
     }
   }
 
-  for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-    AiMsgInfo("[LENTIL]: filter initialize aov_name: %s", bokeh->aov_list_name[i].c_str());
-    AiMsgInfo("[LENTIL]: filter initialize aov_type: %i", bokeh->aov_list_type[i]);
-  }
+  // for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
+  //   AiMsgInfo("[LENTIL]: filter initialize aov_name: %s", bokeh->aov_list_name[i].c_str());
+  //   AiMsgInfo("[LENTIL]: filter initialize aov_type: %i", bokeh->aov_list_type[i]);
+  // }
 
   AiFilterUpdate(node, 2.0);
 }
