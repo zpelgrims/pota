@@ -193,6 +193,7 @@ float additional_luminance_soft_trans(float sample_luminance, float additional_l
 }
 
 
+
 std::vector<std::string> split_str(std::string str, std::string token)
 {
     std::vector<std::string>result;

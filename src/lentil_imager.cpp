@@ -92,13 +92,24 @@ driver_process_bucket {
           // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
           if (aov_type == AI_TYPE_RGBA || aov_type == AI_TYPE_RGB){
 
-            AtRGBA redist = filter_data->image_redist[aov_name][linear_pixel] / ((filter_data->redist_weight_per_pixel[aov_name][linear_pixel] == 0.0) ? 1.0 : filter_data->redist_weight_per_pixel[aov_name][linear_pixel]);
-            AtRGBA unredist = filter_data->image_unredist[aov_name][linear_pixel] / ((filter_data->unredist_weight_per_pixel[aov_name][linear_pixel] == 0.0) ? 1.0 : filter_data->unredist_weight_per_pixel[aov_name][linear_pixel]);
-            AtRGBA combined_redist_unredist = (unredist * (1.0-filter_data->redist_weight_per_pixel[aov_name][linear_pixel])) + (redist * (filter_data->redist_weight_per_pixel[aov_name][linear_pixel]));
+            AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+            AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
+            float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
+            float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
+            
+
+            AtRGBA redist = image_redist / ((redist_weight == 0.0) ? 1.0 : redist_weight);
+            // this is likely wrong, adaptive sampling will break.
+            float inv_density_uniform = 1.0 / (filter_data->aa_samples*filter_data->aa_samples);
+            redist.r *= inv_density_uniform;
+            redist.g *= inv_density_uniform;
+            redist.b *= inv_density_uniform;
+            
+            AtRGBA unredist = image_unredist / ((unredist_weight == 0.0) ? 1.0 : unredist_weight);
+            AtRGBA combined_redist_unredist = (unredist * (1.0-redist_weight)) + (redist * (redist_weight));
             
             // this currently doesn't work for the rgb layers because alpha is wrong for rgb layers
-            if (combined_redist_unredist.a > 0.95) combined_redist_unredist /= combined_redist_unredist.a;
-
+            if (combined_redist_unredist.a > 0.97) combined_redist_unredist /= combined_redist_unredist.a;
 
             ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
             
@@ -128,7 +139,7 @@ node_loader
   if (i>0) return false;
   node->methods = (AtNodeMethods*) ThinLensBokehImagerMtd;
   node->output_type = AI_TYPE_NONE;
-  node->name = "lentil_thin_lens_bokeh_imager";
+  node->name = "lentil_imager";
   node->node_type = AI_NODE_DRIVER;
   strcpy(node->version, AI_VERSION);
   return true;

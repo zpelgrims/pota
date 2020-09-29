@@ -45,14 +45,14 @@ HEADERS=\
 
 
 
-all: lentil_bokeh_filter\
-	 lentil_operator\
+all: lentil_operator\
 	 lentil_filter_debug_operator\
 	 lentil_debug_filter\
 	 lentil_thin_lens_bokeh_filter\
 	 lentil\
 	 lentil_thinlens\
-	 lentil_imager
+	 lentil_imager\
+	 lentil_bokeh_filter
 	
 
 
