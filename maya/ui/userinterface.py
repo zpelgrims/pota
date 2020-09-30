@@ -105,14 +105,14 @@ class LentilDialog(QtWidgets.QScrollArea):
         
         self.bokehApertureBlades = SliderLayout('Aperture blades', 0, 12)
 
-        self.bidirOutputPathHbox = QtWidgets.QHBoxLayout()
-        self.bidirOutputPathLabel = QtWidgets.QLabel("Bidir output:")
-        self.bidirOutputPathLE = QtWidgets.QLineEdit()
-        self.bidirOutputPathLE.setPlaceholderText("/some/path/img_<aov>_<frame>.exr") 
-        self.browsebidirOutputPath = QtWidgets.QPushButton("Browse")
-        self.bidirOutputPathHbox.addWidget(self.bidirOutputPathLabel)
-        self.bidirOutputPathHbox.addWidget(self.bidirOutputPathLE)
-        self.bidirOutputPathHbox.addWidget(self.browsebidirOutputPath)
+        # self.bidirOutputPathHbox = QtWidgets.QHBoxLayout()
+        # self.bidirOutputPathLabel = QtWidgets.QLabel("Bidir output:")
+        # self.bidirOutputPathLE = QtWidgets.QLineEdit()
+        # self.bidirOutputPathLE.setPlaceholderText("/some/path/img_<aov>_<frame>.exr") 
+        # self.browsebidirOutputPath = QtWidgets.QPushButton("Browse")
+        # self.bidirOutputPathHbox.addWidget(self.bidirOutputPathLabel)
+        # self.bidirOutputPathHbox.addWidget(self.bidirOutputPathLE)
+        # self.bidirOutputPathHbox.addWidget(self.browsebidirOutputPath)
 
         self.bidirSamplingMultiplierS = SliderLayout('Bidir sampling multiplier', 1, 200)
         self.bidirMinimumLuminanceS = SliderLayout('Bidir minimum luminance', 0.0, 4.0)
@@ -153,7 +153,7 @@ class LentilDialog(QtWidgets.QScrollArea):
 
         self.vboxLayout.addWidget(self.separator4)
 
-        self.vboxLayout.addLayout(self.bidirOutputPathHbox)
+        # self.vboxLayout.addLayout(self.bidirOutputPathHbox)
         self.vboxLayout.addWidget(self.bidirSamplingMultiplierS)
         self.vboxLayout.addWidget(self.bidirMinimumLuminanceS)
         self.vboxLayout.addWidget(self.bidirAddLuminanceS)
@@ -169,9 +169,9 @@ class LentilDialog(QtWidgets.QScrollArea):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:\\',"Image files (*.jpg *.png *.exr *.tif)")
         self.bokehImagePathLE.setText(filename[0])
 
-    def get_bidir_output_path(self):
-        filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', 'c:\\',"Image files (*.jpg *.png *.exr *.tif)")
-        self.bidirOutputPathLE.setText(filename[0])
+    # def get_bidir_output_path(self):
+    #     filename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', 'c:\\',"Image files (*.jpg *.png *.exr *.tif)")
+    #     self.bidirOutputPathLE.setText(filename[0])
 
     def signals(self):
         self.lensCB.currentTextChanged.connect(self.lensid_changed)
@@ -260,8 +260,8 @@ class LentilDialog(QtWidgets.QScrollArea):
         self.bokehImageCB.activated.connect(self.value_changed)
         self.bokehImagePathLE.textChanged.connect(self.value_changed)
         self.browseBokehImagePath.clicked.connect(self.get_bokeh_path)
-        self.bidirOutputPathLE.textChanged.connect(self.value_changed)  
-        self.browsebidirOutputPath.clicked.connect(self.get_bidir_output_path)
+        # self.bidirOutputPathLE.textChanged.connect(self.value_changed)  
+        # self.browsebidirOutputPath.clicked.connect(self.get_bidir_output_path)
         self.bidirSamplingMultiplierS.slider.valueChanged.connect(self.value_changed)
         self.bidirMinimumLuminanceS.slider.valueChanged.connect(self.value_changed)
         self.bidirAddLuminanceS.slider.valueChanged.connect(self.value_changed)
@@ -458,7 +458,7 @@ class ArnoldMayaTranslator(LentilDialog):
         
         self.bokehApertureBlades.slider.setValue(cmds.getAttr("{}.aiBokehApertureBladesPO".format(self.currentCamera)))
         
-        self.bidirOutputPathLE.setText(str(cmds.getAttr("{}.aiBidirOutputPathPO".format(self.currentCamera)))) 
+        # self.bidirOutputPathLE.setText(str(cmds.getAttr("{}.aiBidirOutputPathPO".format(self.currentCamera)))) 
         self.bidirSamplingMultiplierS.slider.setValue(cmds.getAttr("{}.aiBidirSampleMultPO".format(self.currentCamera)))
         self.bidirMinimumLuminanceS.slider.setValue(cmds.getAttr("{}.aiBidirMinLuminancePO".format(self.currentCamera)))
         self.bidirAddLuminanceS.slider.setValue(cmds.getAttr("{}.aiBidirAddLuminancePO".format(self.currentCamera)))
@@ -531,8 +531,8 @@ class ArnoldMayaTranslator(LentilDialog):
 
         cmds.setAttr("{}.aiBokehImagePathPO".format(self.currentCamera), self.bokehImagePathLE.text(), type="string")
 
-        cmds.textFieldButtonGrp("filenameBokehGrpOutput", edit=True, text=self.bidirOutputPathLE.text())
-        cmds.setAttr("{}.aiBidirOutputPathPO".format(self.currentCamera), self.bidirOutputPathLE.text(), type="string")
+        # cmds.textFieldButtonGrp("filenameBokehGrpOutput", edit=True, text=self.bidirOutputPathLE.text())
+        # cmds.setAttr("{}.aiBidirOutputPathPO".format(self.currentCamera), self.bidirOutputPathLE.text(), type="string")
 
         cmds.setAttr("{}.aiBidirSampleMultPO".format(self.currentCamera), self.bidirSamplingMultiplierS.labelValue.value())
         cmds.setAttr("{}.aiBidirMinLuminancePO".format(self.currentCamera), self.bidirMinimumLuminanceS.labelValue.value())

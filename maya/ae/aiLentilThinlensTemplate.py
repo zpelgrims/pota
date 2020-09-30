@@ -4,26 +4,6 @@ import maya.cmds as cmds
 import mtoa.ui.ae.utils as aeUtils
 
 class aiLentilThinlensTemplate(templates.AttributeTemplate):
-
-    def filenameEditBokehOutput(self, mData) :
-        attr = self.nodeAttr('aiBidirOutputPathTL')
-        cmds.setAttr(attr, mData,type="string")
-
-    def LoadFilenameButtonPushBokehOutput(self, *args):
-        basicFilter = 'All Files (*.*)'
-        ret = cmds.fileDialog2(fileFilter=basicFilter, dialogStyle=2, cap='Select file location',fm=0)
-        if ret is not None and len(ret):
-            self.filenameEditBokehOutput(ret[0])
-            cmds.textFieldButtonGrp("filenameBokehGrpOutputTL", edit=True, text=ret[0])
-
-    def filenameNewBokehOutput(self, nodeName):
-        path = cmds.textFieldButtonGrp("filenameBokehGrpOutputTL", label="Bidirectional output", changeCommand=self.filenameEditBokehOutput, width=300)
-        cmds.textFieldButtonGrp(path, edit=True, text=cmds.getAttr(nodeName))
-        cmds.textFieldButtonGrp(path, edit=True, buttonLabel="...", buttonCommand=self.LoadFilenameButtonPushBokehOutput)
-
-    def filenameReplaceBokehOutput(self, nodeName):
-        cmds.textFieldButtonGrp("filenameBokehGrpOutputTL", edit=True, text=cmds.getAttr(nodeName) )
-
     
     def filenameEditBokehInput(self, mData) :
         attr = self.nodeAttr('aiBokehImagePathTL')
@@ -74,7 +54,6 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
         self.beginLayout("Bidirectional", collapse=False)
         self.addControl("aiBidirMinLuminanceTL", label="Bidirectional Trigger")
         self.addControl("aiBidirSampleMultTL", label="Samples")
-        self.addCustom("aiBidirOutputPathTL", self.filenameNewBokehOutput, self.filenameReplaceBokehOutput)
         self.addControl("aiBidirAddLuminanceTL", label="Add bokeh luminance")
         self.addControl("aiBidirAddLuminanceTransitionTL", label="Add Lum transition")
         self.endLayout()
