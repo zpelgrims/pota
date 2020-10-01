@@ -117,7 +117,7 @@ node_update
 
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
-  for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
+  for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
     std::string lentil_str = "lentil_replaced_filter";
 
@@ -154,6 +154,8 @@ filter_output_type
          return AI_TYPE_RGBA;
       case AI_TYPE_RGB:
          return AI_TYPE_RGB;
+      case AI_TYPE_VECTOR:
+        return AI_TYPE_VECTOR;
       default:
          return AI_TYPE_NONE;
    }

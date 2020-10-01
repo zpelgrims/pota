@@ -281,10 +281,10 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
 
 
 unsigned int string_to_arnold_type(std::string str){
-  if (str == "float") return AI_TYPE_FLOAT;
+  if (str == "float" || str == "FLOAT" || str == "flt" || str == "FLT") return AI_TYPE_FLOAT;
   else if (str == "rgba" || str == "RGBA") return AI_TYPE_RGBA;
-  else if (str == "rgb") return AI_TYPE_RGB;
-  else if (str == "vector" || str == "vec") return AI_TYPE_VECTOR;
+  else if (str == "rgb" || str == "RGB") return AI_TYPE_RGB;
+  else if (str == "vector" || str == "vec" || str == "VECTOR" || str == "VEC") return AI_TYPE_VECTOR;
 
   return 0;
 }

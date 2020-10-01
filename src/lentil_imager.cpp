@@ -32,9 +32,8 @@ node_update
 {
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
 
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-
+  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
+  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
 }
  

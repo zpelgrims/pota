@@ -59,7 +59,7 @@ operator_cook
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
 
-    for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
+    for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
         std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
         
