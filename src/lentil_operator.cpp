@@ -68,7 +68,7 @@ operator_cook
         AtString filter_ne_name = AiNodeEntryGetNameAtString(filter_ne);
         if (filter_ne_name == AtString("lentil_thin_lens_bokeh_filter") || filter_ne_name == AtString("lentil_bokeh_filter")){
             output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
-            AiMsgInfo("[LENTIL] Replaced lentil_filter automatically: %s", output_string.c_str());
+            AiMsgInfo("[LENTIL OPERATOR] Replaced lentil_filter automatically: %s", output_string.c_str());
         }
         
         AiArraySetStr(outputs, i, AtString(output_string.c_str()));
@@ -84,10 +84,10 @@ operator_cook
             // differentiate between kick & exr drivers
             if (AtString(AiNodeEntryGetName(AiNodeGetNodeEntry(driver))) == AtString("driver_kick")){
                 // AiNodeLink(lentil_imager_kick, "input", driver);
-                AiMsgInfo("[LENTIL] Linked lentil_imager_kick to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
+                AiMsgInfo("[LENTIL OPERATOR] Linked lentil_imager_kick to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
             } else {
                 // AiNodeLink(lentil_imager_exr, "input", driver);
-                AiMsgInfo("[LENTIL] Linked lentil_imager_exr to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
+                AiMsgInfo("[LENTIL OPERATOR] Linked lentil_imager_exr to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
             } 
         }
     }

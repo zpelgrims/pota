@@ -35,7 +35,7 @@ node_update
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
-  if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
+  // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
 }
  
 driver_supports_pixel_type { return true; } // not needed for raw drivers
@@ -64,7 +64,10 @@ driver_process_bucket {
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   
-  if (!filter_data->enabled) return;
+  if (!filter_data->enabled) {
+    AiMsgInfo("[LENTIL IMAGER] Skipping imager");
+    return;
+  }
   
   const double xres = (double)filter_data->xres;
 
@@ -77,7 +80,7 @@ driver_process_bucket {
     AtString aov_name_current = AtString(aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
       if (aov_name_current == AtString("transmission")) continue;
-      AiMsgInfo("[LENTIL] Imager writing to: %s", aov_name_cstr);
+      AiMsgInfo("[LENTIL IMAGER] Imager writing to: %s", aov_name_cstr);
       AtString aov_name = AtString(aov_name_cstr);
 
       for (int j = 0; j < bucket_size_y; ++j) {
@@ -95,19 +98,11 @@ driver_process_bucket {
             float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
             float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
             
-
-            AtRGBA redist = image_redist / ((redist_weight == 0.0) ? 1.0 : redist_weight);
-            // this is likely wrong, adaptive sampling will break.
-            float inv_density_uniform = 1.0 / (filter_data->aa_samples*filter_data->aa_samples);
-            redist.r *= inv_density_uniform;
-            redist.g *= inv_density_uniform;
-            redist.b *= inv_density_uniform;
             
-            AtRGBA unredist = image_unredist / ((unredist_weight == 0.0) ? 1.0 : unredist_weight);
-            AtRGBA combined_redist_unredist = (unredist * (1.0-redist_weight)) + (redist * (redist_weight));
-            
-            // this currently doesn't work for the rgb layers because alpha is wrong for rgb layers
-            if (combined_redist_unredist.a > 0.97) combined_redist_unredist /= combined_redist_unredist.a;
+            AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
+            if ((redist_weight + unredist_weight) != 0.0) {
+              combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+            }
 
             ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
             

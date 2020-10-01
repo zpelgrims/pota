@@ -44,7 +44,7 @@ tl->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesTL
 // if (parms.bokehChanged(camera->params)) {
     tl->image.invalidate();
     if (tl->bokeh_enable_image && !tl->image.read(tl->bokeh_image_path.c_str())){
-    AiMsgError("[LENTIL] Couldn't open bokeh image!");
+    AiMsgError("[LENTIL CAMERA TL] Couldn't open bokeh image!");
     AiRenderAbort();
     }
 // }

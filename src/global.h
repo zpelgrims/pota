@@ -220,7 +220,7 @@ std::vector<std::string> split_str(std::string str, std::string token)
 
 
 inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
-                          int samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
+                          float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
                           struct AtAOVSampleIterator* sample_iterator, 
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
                           std::map<AtString, std::vector<float> > &weight_per_pixel,
@@ -234,23 +234,23 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           // RGBA is the only aov with transmission component in
           AtRGBA rgba_energy;
           if (aov_name == rgba_string){
-            rgba_energy = ((sample)+fitted_bidir_add_luminance) / (double)(samples);
+            rgba_energy = sample;
           } else {
-            rgba_energy = ((AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name))+fitted_bidir_add_luminance) / (double)(samples);
+            rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
           }
           
-          image_color_types[aov_name][px] += rgba_energy * inv_density;
-          weight_per_pixel[aov_name][px] += inv_density / double(samples);
+          image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+          weight_per_pixel[aov_name][px] += inv_density * inv_samples;
         
           break;
         }
 
         case AI_TYPE_RGB: {
-          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name) + fitted_bidir_add_luminance;
-          AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0) / (double)(samples);
+          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
+          AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
 
-          image_color_types[aov_name][px] += rgba_energy * inv_density;
-          weight_per_pixel[aov_name][px] += inv_density / double(samples);
+          image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+          weight_per_pixel[aov_name][px] += inv_density * inv_samples;
           
           break;
         }

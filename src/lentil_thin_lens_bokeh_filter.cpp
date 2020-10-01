@@ -66,7 +66,7 @@ node_update
 
 
   if (tl->enable_dof == false) {
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Depth of field is disabled, therefore disabling Bidirectional sampling.");
+    AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling Bidirectional sampling.");
     bokeh->enabled = false;
     return;
   }
@@ -83,7 +83,7 @@ node_update
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
-    AiMsgWarning("[LENTIL BIDIRECTIONAL TL] Camera is not of type lentil_thinlens");
+    AiMsgWarning("[LENTIL FILTER TL] Camera is not of type lentil_thinlens");
     bokeh->enabled = false;
     return;
   }
@@ -138,7 +138,7 @@ node_update
   }
 
   
-  if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting bidirectional sampling.");
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
   AiFilterUpdate(node, 2.0);
 }
@@ -223,7 +223,7 @@ filter_pixel
         if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
         int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
         samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
-
+        float inv_samples = 1.0/static_cast<double>(samples);
 
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;
@@ -320,7 +320,7 @@ filter_pixel
 
           for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
             add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                          samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
+                          inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
                           bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
                           bokeh->rgba_string);
           
@@ -366,7 +366,7 @@ filter_pixel
 
             for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            1, inv_density, 0.0, depth, iterator,
+                            1.0, inv_density, 0.0, depth, iterator,
                             bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
                             bokeh->rgba_string);
             }

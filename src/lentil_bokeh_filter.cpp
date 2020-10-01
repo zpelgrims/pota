@@ -89,7 +89,7 @@ node_update
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {
-    AiMsgWarning("[LENTIL BIDIRECTIONAL PO] Camera is not of type lentil");
+    AiMsgWarning("[LENTIL FILTER PO] Camera is not of type lentil");
     bokeh->enabled = false;
     return;
   }
@@ -109,7 +109,6 @@ node_update
 
 
   if (po->bidir_sample_mult == 0) bokeh->enabled = false;
-  if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL PO] Starting bidirectional sampling.");
 
 
   // prepare framebuffers for all AOVS
@@ -120,7 +119,7 @@ node_update
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
-    std::string lentil_str = "lentil_filter";
+    std::string lentil_str = "lentil_replaced_filter";
 
     if (output_string.find(lentil_str) != std::string::npos){
      
@@ -141,6 +140,8 @@ node_update
       bokeh->unredist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
+
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
 
   AiFilterUpdate(node, 2.0);
 }
@@ -193,7 +194,7 @@ filter_pixel
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
 
-      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, AtString("transmission"));
+      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
@@ -273,6 +274,7 @@ filter_pixel
         int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
         samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
         samples = std::clamp(samples, 75, 1000000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+        float inv_samples = 1.0 / static_cast<double>(samples);
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;
         
@@ -311,7 +313,7 @@ filter_pixel
 
           for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
             add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                          samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
+                          inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
                           bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
                           bokeh->rgba_string);
           }
@@ -355,7 +357,7 @@ filter_pixel
 
             for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            1, inv_density, 0.0, depth, iterator,
+                            1.0, inv_density, 0.0, depth, iterator,
                             bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
                             bokeh->rgba_string);
             }
