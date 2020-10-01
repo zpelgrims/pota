@@ -95,7 +95,6 @@ struct Camera
     int bokeh_aperture_blades;
 	bool dof;
     double bidir_min_luminance;
-    AtString bidir_output_path;
 
     bool run_intersection_tests;
     int count;
@@ -116,10 +115,10 @@ struct Camera
     float empirical_ca_dist;
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
-
     int bidir_sample_mult;
-
     float extra_sensor_shift;
+
+    AtNode *filter_node;
 };
 
 extern struct Camera camera;

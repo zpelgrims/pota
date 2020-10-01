@@ -24,9 +24,9 @@ struct LentilFilterData {
   std::vector<int> aov_types;
 
   AtString rgba_string;
-};
+}; extern struct LentilFilterData bokeh;
 
-extern struct LentilFilterData bokeh;
+
 
 
 std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {

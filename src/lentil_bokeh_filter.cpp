@@ -63,7 +63,6 @@ node_update
   po->dof = AiNodeGetBool(cameranode, "dofPO");
   po->vignetting_retries = AiNodeGetInt(cameranode, "vignetting_retriesPO");
   po->bidir_min_luminance = AiNodeGetFlt(cameranode, "bidir_min_luminancePO");
-  po->bidir_output_path = AiNodeGetStr(cameranode, "bidir_output_pathPO");
   po->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesPO");
   po->bokeh_enable_image = AiNodeGetBool(cameranode, "bokeh_enable_imagePO");
   po->bokeh_image_path = AiNodeGetStr(cameranode, "bokeh_image_pathPO");

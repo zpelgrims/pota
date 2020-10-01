@@ -7,18 +7,12 @@
 
 #include "global.h"
 
-// Duplicates all AOVs and changing the filter to the appropriate lentil filter at rendertime
-// Doing it this way allows me to specify that all AOVs need to be connected to a singular filter node to avoid re-computation
-
-
-// needs to be updated for filter usage, now it replaces the driver
-// might not need to have duplicate aovs, just swap filter.
-
-// I need two different imagers, one for each output (kick_driver, exr_driver, otherwise it doesn't work)
+// reads all aovs, looks for lentil_*_filter node entries. To avoid doing the same computation over and over,
+// it replaces all of these filters with 1 of them.
 
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
 
-struct OpData
+struct LentilOperatorData
 {
     AtNode *filter;
     AtNode *camera_node;
@@ -30,37 +24,37 @@ node_parameters {}
 
 operator_init
 {
-    OpData* data = (OpData*)AiMalloc(sizeof(OpData));
+    LentilOperatorData* operator_data = (LentilOperatorData*)AiMalloc(sizeof(LentilOperatorData));
 
-    data->camera_node = AiUniverseGetCamera();
-    const AtNodeEntry *nentry = AiNodeGetNodeEntry(data->camera_node);
-    data->camera_node_type = AtString(AiNodeEntryGetName(nentry));
+    operator_data->camera_node = AiUniverseGetCamera();
+    const AtNodeEntry *nentry = AiNodeGetNodeEntry(operator_data->camera_node);
+    operator_data->camera_node_type = AtString(AiNodeEntryGetName(nentry));
 
-    data->cook = false;
+    operator_data->cook = false;
 
-    if (data->camera_node_type == AtString("lentil_thinlens")){
-        data->filter = AiNode("lentil_thin_lens_bokeh_filter", AtString("lentil_filter"));
-        data->cook = true;
-    } else if (data->camera_node_type == AtString("lentil")){
-        data->filter = AiNode("lentil_bokeh_filter", AtString("lentil_filter"));
-        data->cook = true;
+    if (operator_data->camera_node_type == AtString("lentil_thinlens")){
+        operator_data->filter = AiNode("lentil_thin_lens_bokeh_filter", AtString("lentil_replaced_filter"));
+        operator_data->cook = true;
+    } else if (operator_data->camera_node_type == AtString("lentil")){
+        operator_data->filter = AiNode("lentil_bokeh_filter", AtString("lentil_replaced_filter"));
+        operator_data->cook = true;
     }
 
-    AiNodeSetLocalData(op, data);  
+    AiNodeSetLocalData(op, operator_data);  
     return true;
 }
 
 operator_cook
 {
-    OpData* data = (OpData*)AiNodeGetLocalData(op);
+    LentilOperatorData* operator_data = (LentilOperatorData*)AiNodeGetLocalData(op);
 
-    if (data->cook == false) return false;
+    if (operator_data->cook == false) return false;
 
     const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_filter_debug_operator");
     if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
 
-    AtNode* lentil_imager_exr = AiNode("lentil_thin_lens_bokeh_imager", AtString("lentil_imager_exr"));
-    AtNode* lentil_imager_kick = AiNode("lentil_thin_lens_bokeh_imager", AtString("lentil_imager_kick"));
+    AtNode* lentil_imager_exr = AiNode("lentil_imager", AtString("lentil_imager_exr"));
+    AtNode* lentil_imager_kick = AiNode("lentil_imager", AtString("lentil_imager_kick"));
     
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -68,9 +62,17 @@ operator_cook
     for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
         std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
-        output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(data->filter, "name"));
+        
+        AtNode *filter_node = AiNodeLookUpByName(AtString(filter.c_str()));
+        const AtNodeEntry *filter_ne = AiNodeGetNodeEntry(filter_node);
+        AtString filter_ne_name = AiNodeEntryGetNameAtString(filter_ne);
+        if (filter_ne_name == AtString("lentil_thin_lens_bokeh_filter") || filter_ne_name == AtString("lentil_bokeh_filter")){
+            output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
+            AiMsgInfo("[LENTIL] Replaced lentil_filter automatically: %s", output_string.c_str());
+        }
+        
         AiArraySetStr(outputs, i, AtString(output_string.c_str()));
-        AiMsgInfo("[LENTIL] Swapped filter type: %s", output_string.c_str());
+        
 
         // link imager to driver (could be kick, or exr_driver, etc)
         // think there's currently a bug with the AI_TYPE_NONE/AI_TYPE_NODE in lentil_thin_lens_bokeh_imager.cpp
@@ -81,10 +83,10 @@ operator_cook
         if (!AiNodeIsLinked(driver, "input")){
             // differentiate between kick & exr drivers
             if (AtString(AiNodeEntryGetName(AiNodeGetNodeEntry(driver))) == AtString("driver_kick")){
-                AiNodeLink(lentil_imager_kick, "input", driver);
+                // AiNodeLink(lentil_imager_kick, "input", driver);
                 AiMsgInfo("[LENTIL] Linked lentil_imager_kick to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
             } else {
-                AiNodeLink(lentil_imager_exr, "input", driver);
+                // AiNodeLink(lentil_imager_exr, "input", driver);
                 AiMsgInfo("[LENTIL] Linked lentil_imager_exr to driver: %s", AiNodeEntryGetName(AiNodeGetNodeEntry(driver)));
             } 
         }
@@ -102,8 +104,8 @@ operator_post_cook
 
 operator_cleanup
 {
-    OpData* data = (OpData*)AiNodeGetLocalData(op);
-    AiFree(data);
+    LentilOperatorData* operator_data = (LentilOperatorData*)AiNodeGetLocalData(op);
+    AiFree(operator_data);
     return true;
 }
 

@@ -41,21 +41,28 @@ node_update
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
+  bokeh->enabled = true;
 
-  const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
-  if (AiNodeEntryGetCount(nentry) > 1){
-    AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_thin_lens_bokeh_filter exist. "
-               "All of bidirectional AOVs should be connected to a single lentil_thin_lens_bokeh_filter node. "
-               "This is to avoid doing the bidirectional sampling multiple times."
-               "You can use the lentil_operator node to take care of the setup automatically.");
+  // will only work for the node called lentil_replaced_filter
+  if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
+    bokeh->enabled = false;
+    return;
   }
+
+  // const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
+  // if (AiNodeEntryGetCount(nentry) > 1){
+  //   AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_thin_lens_bokeh_filter exist. "
+  //              "All of bidirectional AOVs should be connected to a single lentil_thin_lens_bokeh_filter node. "
+  //              "This is to avoid doing the bidirectional sampling multiple times."
+  //              "You can use the lentil_operator node to take care of the setup automatically.");
+  // }
 
   // THIS IS DOUBLE CODE, also in camera!
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
   AtNode *cameranode = AiUniverseGetCamera();
   #include "node_update_thinlens.h"
 
-  bokeh->enabled = true;
+
 
 
   if (tl->enable_dof == false) {
@@ -70,6 +77,7 @@ node_update
   bokeh->min_aa_samples = 3;
   if (bokeh->aa_samples < bokeh->min_aa_samples) {
     bokeh->enabled = false;
+    return;
   }
 
 
@@ -93,11 +101,12 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (tl->bidir_sample_mult == 0) bokeh->enabled = false;
-  if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting bidirectional sampling.");
+  if (tl->bidir_sample_mult == 0) {
+    bokeh->enabled = false;
+    return;
+  }
 
-
-
+  
   // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
@@ -106,7 +115,7 @@ node_update
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (int i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
-    std::string lentil_str = "lentil_filter";
+    std::string lentil_str = "lentil_replaced_filter";
 
     if (output_string.find(lentil_str) != std::string::npos){
      
@@ -128,11 +137,9 @@ node_update
     }
   }
 
-  // for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-  //   AiMsgInfo("[LENTIL]: filter initialize aov_name: %s", bokeh->aov_list_name[i].c_str());
-  //   AiMsgInfo("[LENTIL]: filter initialize aov_type: %i", bokeh->aov_list_type[i]);
-  // }
-
+  
+  if (bokeh->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting bidirectional sampling.");
+  
   AiFilterUpdate(node, 2.0);
 }
  

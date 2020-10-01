@@ -5,7 +5,7 @@
 #include "lentil_thinlens.h"
 #include "lentil.h"
 
-// currently this works by searching for a node with specific name "lentil_filter", not ideal.
+// currently this works by searching for a node with specific name "lentil_replaced_filter", not ideal.
 
 #define AI_DRIVER_SCHEDULE_FULL 0x02
 
@@ -32,8 +32,7 @@ node_update
 {
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
 
-  
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_filter");
+  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
@@ -61,7 +60,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
 driver_process_bucket {
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_filter");
+  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   
@@ -75,12 +74,11 @@ driver_process_bucket {
   
   // Iterate over all the AOVs hooked up to this driver
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
-    std::string aov_name_str = aov_name_cstr;
     AtString aov_name_current = AtString(aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
       if (aov_name_current == AtString("transmission")) continue;
-      AiMsgInfo("[LENTIL] imager looping over: %s", aov_name_str.c_str());
-      AtString aov_name = AtString(aov_name_str.c_str());
+      AiMsgInfo("[LENTIL] Imager writing to: %s", aov_name_cstr);
+      AtString aov_name = AtString(aov_name_cstr);
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {

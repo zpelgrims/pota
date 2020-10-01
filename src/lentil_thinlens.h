@@ -43,6 +43,8 @@ struct CameraThinLens
 
     int vignetting_retries;
     bool proper_ray_derivatives;
+
+    AtNode *filter_node;
 };
 
 extern struct CameraThinLens tl;
