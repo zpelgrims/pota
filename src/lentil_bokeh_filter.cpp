@@ -156,6 +156,8 @@ filter_output_type
          return AI_TYPE_RGB;
       case AI_TYPE_VECTOR:
         return AI_TYPE_VECTOR;
+      case AI_TYPE_FLOAT:
+        return AI_TYPE_FLOAT;
       default:
          return AI_TYPE_NONE;
    }

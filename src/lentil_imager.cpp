@@ -68,17 +68,13 @@ driver_process_bucket {
     return;
   }
   
-  const double xres = (double)filter_data->xres;
 
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
-  
-  // Iterate over all the AOVs hooked up to this driver
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
-    AtString aov_name_current = AtString(aov_name_cstr);
-    if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(),AtString(aov_name_cstr))!=filter_data->aov_list_name.end()){
-      if (aov_name_current == AtString("transmission")) continue;
+    if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
+      if (AtString(aov_name_cstr) == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL IMAGER] Imager writing to: %s", aov_name_cstr);
       AtString aov_name = AtString(aov_name_cstr);
 
@@ -87,32 +83,63 @@ driver_process_bucket {
           int y = j + bucket_yo;
           int x = i + bucket_xo;
           int in_idx = j * bucket_size_x + i;
-          int linear_pixel = x + (y * xres);
+          int linear_pixel = x + (y * (double)filter_data->xres);
+          
+          switch (aov_type){
+            case AI_TYPE_RGBA: {
+              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+              AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
+              float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
+              float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
+              
+              
+              AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
+              if ((redist_weight + unredist_weight) != 0.0) {
+                combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+              }
 
-          // only rgba/rgb aovs have been guassian filtered, so need to normalize only them
-          if (aov_type == AI_TYPE_RGBA || aov_type == AI_TYPE_RGB){
-
-            AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
-            AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
-            float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
-            float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
-            
-            
-            AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
-            if ((redist_weight + unredist_weight) != 0.0) {
-              combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+              ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
+              break;
             }
 
-            ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
-            
-          } 
-          else {
-            ((AtRGBA*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel];
+            case AI_TYPE_RGB: {
+              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+              AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
+              float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
+              float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
+              
+              
+              AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
+              if ((redist_weight + unredist_weight) != 0.0) {
+                combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+              }
+
+              AtRGB final_value = AI_RGB_ZERO;
+              final_value.r = combined_redist_unredist.r;
+              final_value.g = combined_redist_unredist.g;
+              final_value.b = combined_redist_unredist.b;
+              ((AtRGB*)bucket_data)[in_idx] = final_value;
+              break;
+            }
+
+            case AI_TYPE_FLOAT: {
+              ((float*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel].r;
+              break;
+            }
+
+            case AI_TYPE_VECTOR: {
+              AtVector final_value (0, 0, 0);
+              final_value[0] = filter_data->image[aov_name][linear_pixel].r;
+              final_value[1] = filter_data->image[aov_name][linear_pixel].g;
+              final_value[2] = filter_data->image[aov_name][linear_pixel].b;
+              ((AtVector*)bucket_data)[in_idx] = final_value;
+              break;
+            }
+
           }
         }
       }
     }
-    
   }
 }
 

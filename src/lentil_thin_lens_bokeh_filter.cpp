@@ -124,15 +124,17 @@ node_update
 
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
+      
       bokeh->image[AtString(name.c_str())].clear();
-      bokeh->image[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->image_redist[AtString(name.c_str())].clear();
-      bokeh->image_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->image_unredist[AtString(name.c_str())].clear();
-      bokeh->image_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->redist_weight_per_pixel[AtString(name.c_str())].clear();
-      bokeh->redist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->unredist_weight_per_pixel[AtString(name.c_str())].clear();
+
+      bokeh->image[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->redist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->unredist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
@@ -154,6 +156,8 @@ filter_output_type
          return AI_TYPE_RGB;
       case AI_TYPE_VECTOR:
         return AI_TYPE_VECTOR;
+      case AI_TYPE_FLOAT:
+        return AI_TYPE_FLOAT;
       default:
          return AI_TYPE_NONE;
    }
@@ -188,7 +192,7 @@ filter_pixel
       bool partly_redistributed = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
+      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // only run for RGBA, while still allowing connection to all aovs (required for access)
 
       const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
@@ -206,7 +210,7 @@ filter_pixel
 
       const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
       if (sample_luminance < tl->bidir_min_luminance) redistribute = false;
-      if (!std::isfinite(depth)) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
+      if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
