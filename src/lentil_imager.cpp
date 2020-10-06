@@ -72,6 +72,7 @@ driver_process_bucket {
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
+  AiMsgInfo("Starting Imager ADFHJSKLJFA:SDL");
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
@@ -124,6 +125,11 @@ driver_process_bucket {
 
             case AI_TYPE_FLOAT: {
               ((float*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel].r;
+              break;
+            }
+
+            case AI_TYPE_INT: {
+              ((int*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel].r;
               break;
             }
 

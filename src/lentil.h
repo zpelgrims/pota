@@ -12,6 +12,13 @@
 
 #include "imagebokeh.h"
 
+// enum to switch between units in interface dropdown
+enum UnitModel{
+    mm,
+    cm,
+    dm,
+    m
+};
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
@@ -55,6 +62,7 @@ struct Timing
 struct Camera
 {
 	LensModel lensModel;
+    UnitModel unitModel;
     CameraRaytraced camera_rt;
     imageData image;
 

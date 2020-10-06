@@ -158,6 +158,8 @@ filter_output_type
         return AI_TYPE_VECTOR;
       case AI_TYPE_FLOAT:
         return AI_TYPE_FLOAT;
+      case AI_TYPE_INT:
+        return AI_TYPE_INT;
       default:
          return AI_TYPE_NONE;
    }

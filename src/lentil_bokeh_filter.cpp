@@ -55,6 +55,7 @@ node_update
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct
   // note this currently is DOUBLE code!! find a fix!!
   AtNode *cameranode = AiUniverseGetCamera();
+  po->unitModel = (UnitModel) AiNodeGetInt(cameranode, "unitsPO");
   po->sensor_width = AiNodeGetFlt(cameranode, "sensor_widthPO");
   po->input_fstop = AiNodeGetFlt(cameranode, "fstopPO");
   po->focus_distance = AiNodeGetFlt(cameranode, "focus_distancePO") * 10.0; //converting to mm
@@ -158,6 +159,8 @@ filter_output_type
         return AI_TYPE_VECTOR;
       case AI_TYPE_FLOAT:
         return AI_TYPE_FLOAT;
+      case AI_TYPE_INT:
+        return AI_TYPE_INT;
       default:
          return AI_TYPE_NONE;
    }

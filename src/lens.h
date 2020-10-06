@@ -650,8 +650,35 @@ inline void trace_ray(bool original_ray, int &tries,
 	else if (camera->lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, cs_origin, cs_direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius, false);
   else sphereToCs(outpos, outdir, cs_origin, cs_direction, -camera->lens_outer_pupil_curvature_radius, camera->lens_outer_pupil_curvature_radius);
   
-  origin = cs_origin / -10.0;
-  direction = cs_direction / -10.0;
+  origin = cs_origin;
+  direction = cs_direction;
+
+  //printf("[%f,%f,%f],", origin[0], origin[1], origin[2]);
+
+
+  switch (camera->unitModel){
+    case mm:
+    {
+      origin *= -1.0; // reverse rays and convert to cm (from mm)
+      direction *= -1.0; //reverse rays and convert to cm (from mm)
+    } break;
+    case cm:
+    { 
+      origin *= -0.1; // reverse rays and convert to cm (from mm)
+      direction *= -0.1; //reverse rays and convert to cm (from mm)
+    } break;
+    case dm:
+    {
+      origin *= -0.01; // reverse rays and convert to cm (from mm)
+      direction *= -0.01; //reverse rays and convert to cm (from mm)
+    } break;
+    case m:
+    {
+      origin *= -0.001; // reverse rays and convert to cm (from mm)
+      direction *= -0.001; //reverse rays and convert to cm (from mm)
+    }
+  }
+
   direction.normalize();
 
   // Nan bailout

@@ -276,6 +276,17 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
 
           break;
         }
+
+        case AI_TYPE_INT: {
+          if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+            int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
+            AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+            image_data_types[aov_name][px] = rgba_energy;
+            zbuffer[px] = std::abs(depth);
+          }
+
+          break;
+        }
     }
 }
 

@@ -8,6 +8,7 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
 enum {
+  p_unitsPO,
   p_lens_modelPO,
 
   p_sensor_widthPO,
@@ -33,6 +34,8 @@ enum {
 };
 
 
+static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
+
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] = {
   #include "../include/auto_generated_lens_includes/pota_cpp_lenses.h"
@@ -41,6 +44,8 @@ static const char* LensModelNames[] = {
 
 
 node_parameters {
+  AiParameterEnum("unitsPO", cm, Units);
+
   AiParameterEnum("lens_modelPO", angenieux__double_gauss__1953__49mm, LensModelNames);
 
   AiParameterFlt("sensor_widthPO", 36.0); // 35mm film
@@ -78,6 +83,7 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
+  po->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
   po->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
   po->input_fstop = AiNodeGetFlt(node, "fstopPO");
   po->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
