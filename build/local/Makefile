@@ -12,11 +12,11 @@ endif
 
 ifeq ($(OS), Darwin)
 	ARNOLD_PATH_6.0.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.0.0-darwin
-	ARNOLD_PATH_6.0.5.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.5.0-beta
+	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0-beta
 endif
 ifeq ($(OS), Linux)
 	ARNOLD_PATH_6.0.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.0.0-linux
-	ARNOLD_PATH_6.0.5.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.5.0-linux_ZenoImagerWorkaround
+	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0.beta21_20201001094128_a534f3af_linux_2891
 endif
 
 
@@ -58,31 +58,31 @@ all: lentil_operator\
 
 
 lentil_bokeh_filter: ../../src/lentil_bokeh_filter.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ${LENSES} ../../src/lentil_bokeh_filter.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_bokeh_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_thin_lens_bokeh_filter: ../../src/lentil_thin_lens_bokeh_filter.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ${LENSES} ../../src/lentil_thin_lens_bokeh_filter.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_thin_lens_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_thin_lens_bokeh_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_thin_lens_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil: ../../src/lentil.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ${LENSES} ../../src/lentil.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_thinlens: ../../src/lentil_thinlens.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ../../src/lentil_thinlens.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_thinlens.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_thinlens.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_thinlens.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_debug_filter: ../../src/lentil_debug_filter.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ../../src/lentil_debug_filter.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_debug_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_debug_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_debug_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_operator: ../../src/lentil_operator.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ../../src/lentil_operator.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_operator.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_filter_debug_operator: ../../src/lentil_filter_debug_operator.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ../../src/lentil_filter_debug_operator.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_filter_debug_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_filter_debug_operator.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_filter_debug_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_imager: ../../src/lentil_imager.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ${LENSES} ../../src/lentil_imager.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_thin_lens_bokeh_imager.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_imager.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_thin_lens_bokeh_imager.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 # lentil_transmitted_z: ../../src/transmitted_z.cpp ${HEADERS}
-# 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.5.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/6.0.5.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.5.0}/bin -lai 
+# 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 # 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.0.0.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/6.0.0.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.0.0.0}/bin -lai 
 
 
