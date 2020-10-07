@@ -91,13 +91,13 @@ node_update
   }
 
 
-  // don't compute for interactive previews
-  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  bokeh->min_aa_samples = 3;
-  if (bokeh->aa_samples < bokeh->min_aa_samples) {
-    bokeh->enabled = false;
-    return;
-  }
+  // // don't compute for interactive previews
+  // bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  // bokeh->min_aa_samples = 3;
+  // if (bokeh->aa_samples < bokeh->min_aa_samples) {
+  //   bokeh->enabled = false;
+  //   return;
+  // }
 
 
   // disable for non-lentil cameras
@@ -203,9 +203,8 @@ filter_pixel
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
-
+    
     while (AiAOVSampleIteratorGetNext(iterator)) {
-
       int px, py;
       AiAOVSampleIteratorGetPixel(iterator, px, py);
 
@@ -214,7 +213,7 @@ filter_pixel
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // only run for RGBA, while still allowing connection to all aovs (required for access)
-
+      
       const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
@@ -248,14 +247,14 @@ filter_pixel
         float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
         const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
         if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
-        int samples = std::ceil(coc_squared_pixels / (double)std::pow(bokeh->aa_samples, 2)); // aa_sample independence
-        samples = std::clamp(samples, 100, 1000000); // not sure if a million is actually ever hit..
+        int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+        samples = std::clamp(samples, 6, 10000); // not sure if a million is actually ever hit..
         float inv_samples = 1.0/static_cast<double>(samples);
 
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;
 
-        for(int count=0; count<samples && total_samples_taken < max_total_samples; count++) {
+        for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
           ++total_samples_taken;
           unsigned int seed = tea<8>(px*py+px, total_samples_taken);
 

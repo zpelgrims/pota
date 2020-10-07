@@ -72,7 +72,6 @@ driver_process_bucket {
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
-  AiMsgInfo("Starting Imager ADFHJSKLJFA:SDL");
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
@@ -92,14 +91,18 @@ driver_process_bucket {
               AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
               float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
               float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
-              
-              
-              AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
-              if ((redist_weight + unredist_weight) != 0.0) {
-                combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+
+              AtRGBA redist = AI_RGBA_ZERO;
+              if ((redist_weight) != 0.0) {
+                redist = image_redist * 0.25; //why this magic number? can I break this?
               }
 
-              ((AtRGBA*)bucket_data)[in_idx] = combined_redist_unredist;
+              AtRGBA unredist = AI_RGBA_ZERO;
+              if ((unredist_weight) != 0.0) {
+                unredist = image_unredist / unredist_weight;
+              }
+
+              ((AtRGBA*)bucket_data)[in_idx] = redist+unredist;
               break;
             }
 
@@ -110,15 +113,20 @@ driver_process_bucket {
               float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
               
               
-              AtRGBA combined_redist_unredist = AI_RGBA_ZERO;
-              if ((redist_weight + unredist_weight) != 0.0) {
-                combined_redist_unredist = (image_redist + image_unredist) / (redist_weight + unredist_weight);
+              AtRGBA redist = AI_RGBA_ZERO;
+              if ((redist_weight) != 0.0) {
+                redist = image_redist * 0.25; //why this magic number? can I break this?
+              }
+
+              AtRGBA unredist = AI_RGBA_ZERO;
+              if ((unredist_weight) != 0.0) {
+                unredist = image_unredist / unredist_weight;
               }
 
               AtRGB final_value = AI_RGB_ZERO;
-              final_value.r = combined_redist_unredist.r;
-              final_value.g = combined_redist_unredist.g;
-              final_value.b = combined_redist_unredist.b;
+              final_value.r = redist.r + unredist.r;
+              final_value.g = redist.g + unredist.g;
+              final_value.b = redist.b + unredist.b;
               ((AtRGB*)bucket_data)[in_idx] = final_value;
               break;
             }

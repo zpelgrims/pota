@@ -81,12 +81,12 @@ node_update
 
   bokeh->enabled = true;
 
-  // don't compute for interactive previews
-  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  bokeh->min_aa_samples = 3;
-  if (bokeh->aa_samples < bokeh->min_aa_samples) {
-    bokeh->enabled = false;
-  }
+  // // don't compute for interactive previews
+  // bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  // bokeh->min_aa_samples = 3;
+  // if (bokeh->aa_samples < bokeh->min_aa_samples) {
+  //   bokeh->enabled = false;
+  // }
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {
@@ -319,8 +319,8 @@ filter_pixel
         double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
         if (bbox_area < 20.0) goto no_redist; //might have to increase this?
         int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.01);
-        samples = std::ceil((double)(samples) / (double)(bokeh->aa_samples*bokeh->aa_samples));
-        samples = std::clamp(samples, 75, 1000000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+        samples = std::ceil((double)(samples) / inv_density);
+        samples = std::clamp(samples, 6, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
         float inv_samples = 1.0 / static_cast<double>(samples);
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;

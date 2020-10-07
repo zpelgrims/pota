@@ -67,12 +67,14 @@ operator_cook
     for (size_t i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
         std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
-        
+        // std::string name = split_str(output_string, std::string(" ")).front();
+
         // AtNode *filter_node = AiNodeLookUpByName(AtString(filter.c_str()));
         // const AtNodeEntry *filter_ne = AiNodeGetNodeEntry(filter_node);
         // AtString filter_ne_name = AiNodeEntryGetNameAtString(filter_ne);
         // if (filter_ne_name == AtString("lentil_thin_lens_bokeh_filter") || filter_ne_name == AtString("lentil_bokeh_filter")){
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
+        // output_string.replace(output_string.find(name), name.length(), name+std::string("_lentil"));
         AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
         // }
         
