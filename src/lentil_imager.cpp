@@ -67,7 +67,6 @@ driver_process_bucket {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
     return;
   }
-  
 
   const char *aov_name_cstr = 0;
   int aov_type = 0;
@@ -75,7 +74,7 @@ driver_process_bucket {
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
-      AiMsgInfo("[LENTIL IMAGER] Imager writing to: %s", aov_name_cstr);
+      AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
       AtString aov_name = AtString(aov_name_cstr);
 
       for (int j = 0; j < bucket_size_y; ++j) {
@@ -94,7 +93,7 @@ driver_process_bucket {
 
               AtRGBA redist = AI_RGBA_ZERO;
               if ((redist_weight) != 0.0) {
-                redist = image_redist * 0.25; //why this magic number? can I break this?
+                redist = image_redist / 4.0; //why this magic number? can I break this?
               }
 
               AtRGBA unredist = AI_RGBA_ZERO;
@@ -115,7 +114,7 @@ driver_process_bucket {
               
               AtRGBA redist = AI_RGBA_ZERO;
               if ((redist_weight) != 0.0) {
-                redist = image_redist * 0.25; //why this magic number? can I break this?
+                redist = image_redist / 4.0; //why this magic number? can I break this?
               }
 
               AtRGBA unredist = AI_RGBA_ZERO;

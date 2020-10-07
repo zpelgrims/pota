@@ -158,6 +158,9 @@ node_update
     }
   }
 
+  // bokeh->samples_already_gathered_per_pixel.clear();
+  // bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
+
   
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
@@ -203,17 +206,17 @@ filter_pixel
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
-    
+
     while (AiAOVSampleIteratorGetNext(iterator)) {
       int px, py;
       AiAOVSampleIteratorGetPixel(iterator, px, py);
-
+      // int linear_pixel = px + (py * (double)bokeh->xres);
+      // if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= 35) return; // how do i get to 36 here.. it's aa*aa*aovs
       bool redistribute = true;
       bool partly_redistributed = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // only run for RGBA, while still allowing connection to all aovs (required for access)
-      
+      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return;
       const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
@@ -245,7 +248,7 @@ filter_pixel
         
 
         float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
-        const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.01; // pixel area as baseline for sample count
+        const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
         if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
         int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
         samples = std::clamp(samples, 6, 10000); // not sure if a million is actually ever hit..

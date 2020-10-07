@@ -67,7 +67,7 @@ operator_cook
     for (size_t i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
         std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
-        // std::string name = split_str(output_string, std::string(" ")).front();
+        std::string name = split_str(output_string, std::string(" ")).front();
 
         // AtNode *filter_node = AiNodeLookUpByName(AtString(filter.c_str()));
         // const AtNodeEntry *filter_ne = AiNodeGetNodeEntry(filter_node);

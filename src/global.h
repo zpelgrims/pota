@@ -30,7 +30,8 @@ struct LentilFilterData {
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
   std::vector<int> aov_types;
-
+  int global_cnt;
+  std::vector<int> samples_already_gathered_per_pixel;
   AtString rgba_string;
 }; extern struct LentilFilterData bokeh;
 
