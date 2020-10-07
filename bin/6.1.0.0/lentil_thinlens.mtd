@@ -11,8 +11,13 @@
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;5;Bokeh;9;Bidirectional;5;Additional;2"
+    houdini.parm.folder.first STRING  "General;6;Bokeh;9;Bidirectional;5;Additional;2"
     
+
+    [attr unitsTL]
+        desc                STRING  "Units"
+        
+        houdini.label       STRING  "Working unit"
 
     [attr sensor_widthTL]
         min                 FLOAT   0.1

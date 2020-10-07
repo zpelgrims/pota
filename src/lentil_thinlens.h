@@ -6,9 +6,11 @@
 #include "imagebokeh.h"
 #include "global.h"
 
+
 struct CameraThinLens
 {
     imageData image;
+    UnitModel unitModel;
 
     float sensor_width;
     float focal_length;
@@ -276,6 +278,30 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
 
         origin = lens;
         dir = dir_from_lens;
+
+        switch (tl->unitModel){
+            case mm:
+            {
+            origin *= 10.0; // reverse rays and convert to cm (from mm)
+            dir *= 10.0; //reverse rays and convert to cm (from mm)
+            } break;
+            case cm:
+            { 
+            origin *= 1.0; // reverse rays and convert to cm (from mm)
+            dir *= 1.0; //reverse rays and convert to cm (from mm)
+            } break;
+            case dm:
+            {
+            origin *= 0.1; // reverse rays and convert to cm (from mm)
+            dir *= 0.1; //reverse rays and convert to cm (from mm)
+            } break;
+            case m:
+            {
+            origin *= 0.01; // reverse rays and convert to cm (from mm)
+            dir *= 0.01; //reverse rays and convert to cm (from mm)
+            }
+        }
+
         weight = AI_RGB_WHITE;
         ray_succes = true;
     }

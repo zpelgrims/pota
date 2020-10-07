@@ -18,7 +18,26 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
   AtMatrix world_to_camera_matrix_static;
   float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
   AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
-  const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+  AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+  
+  switch (tl->unitModel){
+    case mm:
+    {
+      camera_space_sample_position_static *= 0.1;
+    } break;
+    case cm:
+    { 
+      camera_space_sample_position_static *= 1.0;
+    } break;
+    case dm:
+    {
+      camera_space_sample_position_static *= 10.0;
+    } break;
+    case m:
+    {
+      camera_space_sample_position_static *= 100.0;
+    }
+  }
   
   const float image_dist_samplepos = (-tl->focal_length * camera_space_sample_position_static.z) / (-tl->focal_length + camera_space_sample_position_static.z);
   const float image_dist_focusdist = thinlens_get_image_dist_focusdist(tl);
@@ -245,6 +264,24 @@ filter_pixel
           float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
           AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
           AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+          switch (tl->unitModel){
+            case mm:
+            {
+              camera_space_sample_position_mb *= 0.1;
+            } break;
+            case cm:
+            { 
+              camera_space_sample_position_mb *= 1.0;
+            } break;
+            case dm:
+            {
+              camera_space_sample_position_mb *= 10.0;
+            } break;
+            case m:
+            {
+              camera_space_sample_position_mb *= 100.0;
+            }
+          }
           float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
 
           // either get uniformly distributed points on the unit disk or bokeh image

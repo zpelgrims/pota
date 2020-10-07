@@ -8,7 +8,10 @@
 *.obj
 *.pdf
 
-/bin/*
+*.so
+*.dll
+*.dylib
+
 /tests/*
 !/tests/driver_dof
 !/tests/driver_sampling_equalisation
@@ -16,5 +19,7 @@
 !/tests/po_bidir_debug
 !/tests/aperture_sampling_debug
 !/tests/cuda
+
+/htoa/backup/*
 
 !bokeh_imgs/*.png

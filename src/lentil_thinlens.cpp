@@ -37,8 +37,14 @@ enum
     p_abb_comaTL
 };
 
+
+static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
+
+
 node_parameters
 {
+    AiParameterEnum("unitsTL", cm, Units);
+
     AiParameterFlt("sensor_widthTL", 36.0); // 35mm film
     AiParameterFlt("focal_lengthTL", 35.0); // in mm
     AiParameterFlt("fstopTL", 1.4);

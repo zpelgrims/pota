@@ -1,3 +1,4 @@
+tl->unitModel = (UnitModel) AiNodeGetInt(cameranode, "unitsTL");
 tl->sensor_width = AiNodeGetFlt(cameranode, "sensor_widthTL");
 tl->focal_length = AiNodeGetFlt(cameranode, "focal_lengthTL");
 tl->focal_length = clamp_min(tl->focal_length, 0.01);

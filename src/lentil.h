@@ -11,14 +11,7 @@
 #include "../../Eigen/Eigen/Dense"
 
 #include "imagebokeh.h"
-
-// enum to switch between units in interface dropdown
-enum UnitModel{
-    mm,
-    cm,
-    dm,
-    m
-};
+#include "global.h"
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
