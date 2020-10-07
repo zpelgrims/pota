@@ -61,6 +61,7 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
         self.beginLayout("Advanced", collapse=False)
         self.addControl("aiVignettingRetriesTL", label="Vignetting Retries")
         self.addControl("aiProperRayDerivativesTL", label="HQ ray derivatives")
+        self.addControl("aiUnitsTL", label="Units")
         self.endLayout()
         
         self.beginLayout("Experimental", collapse=False)
