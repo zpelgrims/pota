@@ -194,8 +194,11 @@ filter_pixel
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
 
-      const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
-      const float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
+      AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
+      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
+
+
+    
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       if (inv_density <= 0.f) continue; // does this every happen? test
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
@@ -219,7 +222,26 @@ filter_pixel
       AtMatrix world_to_camera_matrix_static;
       float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
       AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
-      const AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+      AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+      switch (po->unitModel){
+        case mm:
+        {
+          camera_space_sample_position_static *= 0.1;
+        } break;
+        case cm:
+        { 
+          camera_space_sample_position_static *= 1.0;
+        } break;
+        case dm:
+        {
+          camera_space_sample_position_static *= 10.0;
+        } break;
+        case m:
+        {
+          camera_space_sample_position_static *= 100.0;
+        }
+      }
+
       if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
       
@@ -247,7 +269,25 @@ filter_pixel
           if (proberays_total_samples >= proberays_max_rays) continue;
 
           Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
-
+          switch (po->unitModel){
+            case mm:
+            {
+              camera_space_sample_position_mb_eigen *= 0.1;
+            } break;
+            case cm:
+            { 
+              camera_space_sample_position_mb_eigen *= 1.0;
+            } break;
+            case dm:
+            {
+              camera_space_sample_position_mb_eigen *= 10.0;
+            } break;
+            case m:
+            {
+              camera_space_sample_position_mb_eigen *= 100.0;
+            }
+          }
+        
           if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
             --count;
             continue;
@@ -296,7 +336,25 @@ filter_pixel
           } else {
 
             Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
-            
+            switch (po->unitModel){
+              case mm:
+              {
+                camera_space_sample_position_mb_eigen *= 0.1;
+              } break;
+              case cm:
+              { 
+                camera_space_sample_position_mb_eigen *= 1.0;
+              } break;
+              case dm:
+              {
+                camera_space_sample_position_mb_eigen *= 10.0;
+              } break;
+              case m:
+              {
+                camera_space_sample_position_mb_eigen *= 100.0;
+              }
+            }
+
             if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
               --count;
               continue;
