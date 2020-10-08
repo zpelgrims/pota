@@ -114,7 +114,7 @@ driver_process_bucket {
               
               AtRGBA redist = AI_RGBA_ZERO;
               if ((redist_weight) != 0.0) {
-                redist = image_redist / 4.0; //why this magic number? can I break this?
+                redist = image_redist / 4.0; //why this magic number? can I break this? --> ues by using more/less rgba outputs
               }
 
               AtRGBA unredist = AI_RGBA_ZERO;

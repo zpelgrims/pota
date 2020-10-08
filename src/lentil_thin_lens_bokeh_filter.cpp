@@ -92,7 +92,7 @@ node_update
 
 
   // // don't compute for interactive previews
-  // bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
   // bokeh->min_aa_samples = 3;
   // if (bokeh->aa_samples < bokeh->min_aa_samples) {
   //   bokeh->enabled = false;
@@ -158,12 +158,15 @@ node_update
     }
   }
 
-  // bokeh->samples_already_gathered_per_pixel.clear();
-  // bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
+  bokeh->samples_already_gathered_per_pixel.clear();
+  bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
+  for (int i=0;i<bokeh->samples_already_gathered_per_pixel.size(); ++i) bokeh->samples_already_gathered_per_pixel[i] = 0; // not sure if i have to
 
   
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
+  bokeh->global_run = 0;
+
   AiFilterUpdate(node, 2.0);
 }
  
@@ -201,6 +204,7 @@ filter_pixel
   const AtString atstring_z = AtString("Z");
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
+  int cnt = 0;
 
   if (bokeh->enabled) {
     const double xres = (double)bokeh->xres;
@@ -210,16 +214,27 @@ filter_pixel
     while (AiAOVSampleIteratorGetNext(iterator)) {
       int px, py;
       AiAOVSampleIteratorGetPixel(iterator, px, py);
-      // int linear_pixel = px + (py * (double)bokeh->xres);
-      // if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= 35) return; // how do i get to 36 here.. it's aa*aa*aovs
+
       bool redistribute = true;
       bool partly_redistributed = false;
 
+      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
+
       if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return;
+      
+      // hack to only run over the first RGBA output, avoiding computing multiple times, just not sure if this is correct
+      int linear_pixel = px + (py * (double)bokeh->xres);
+      if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= std::pow((2 * std::sqrt(1.0/inv_density)),2)) {
+        // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
+        return;
+      }
+      // AiMsgWarning("cnt: %d, %f %f %f", cnt++, sample.r, sample.g, sample.b);
+      ++bokeh->global_run;
+      
       const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
-      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+      
       if (inv_density <= 0.f) continue; // does this every happen? test
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
       
@@ -251,7 +266,7 @@ filter_pixel
         const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
         if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
         int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
-        samples = std::clamp(samples, 6, 10000); // not sure if a million is actually ever hit..
+        samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit..
         float inv_samples = 1.0/static_cast<double>(samples);
 
         unsigned int total_samples_taken = 0;
@@ -434,6 +449,7 @@ filter_pixel
 node_finish
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  AiMsgWarning("# of time run: %d", bokeh->global_run);
   delete bokeh;
 }
 

@@ -33,6 +33,8 @@ struct LentilFilterData {
   int global_cnt;
   std::vector<int> samples_already_gathered_per_pixel;
   AtString rgba_string;
+
+  int global_run;
 }; extern struct LentilFilterData bokeh;
 
 
@@ -249,7 +251,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           }
           
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
-          weight_per_pixel[aov_name][px] += inv_density * inv_samples;
+          weight_per_pixel[aov_name][px] += inv_density;
         
           break;
         }
@@ -259,7 +261,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
 
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
-          weight_per_pixel[aov_name][px] += inv_density * inv_samples;
+          weight_per_pixel[aov_name][px] += inv_density;
           
           break;
         }

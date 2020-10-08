@@ -82,7 +82,7 @@ node_update
   bokeh->enabled = true;
 
   // // don't compute for interactive previews
-  // bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
+  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
   // bokeh->min_aa_samples = 3;
   // if (bokeh->aa_samples < bokeh->min_aa_samples) {
   //   bokeh->enabled = false;
@@ -142,6 +142,10 @@ node_update
     }
   }
 
+  bokeh->samples_already_gathered_per_pixel.clear();
+  bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
+
+
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
 
   AiFilterUpdate(node, 2.0);
@@ -178,7 +182,8 @@ filter_pixel
   const AtString atstring_z = AtString("Z");
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
-  
+  int cnt = 0;
+
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -191,15 +196,24 @@ filter_pixel
       bool redistribute = true;
       bool partly_redistributed = false;
 
+      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
+
       if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
+
+      // hack to only run over the first RGBA output, avoiding computing multiple times, not sure if correct
+      int linear_pixel = px + (py * (double)bokeh->xres);
+      if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= (2 * std::sqrt(1.0/inv_density))*(2 * std::sqrt(1.0/inv_density))) {
+        // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
+        return;
+      }
+
 
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
 
 
     
-      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       if (inv_density <= 0.f) continue; // does this every happen? test
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
@@ -320,7 +334,7 @@ filter_pixel
         if (bbox_area < 20.0) goto no_redist; //might have to increase this?
         int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.001);
         samples = std::ceil((double)(samples) / inv_density);
-        samples = std::clamp(samples, 6, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+        samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
         float inv_samples = 1.0 / static_cast<double>(samples);
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;
