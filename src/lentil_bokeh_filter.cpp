@@ -189,9 +189,18 @@ filter_pixel
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
 
+    int px, py;
+    AiAOVSampleIteratorGetPixel(iterator, px, py);
+
+    // hack to only run over the first RGBA output, avoiding computing multiple times, not sure if correct
+    int linear_pixel = px + (py * (double)bokeh->xres);
+    if (bokeh->samples_already_gathered_per_pixel[linear_pixel] >= (2 * std::sqrt(1.0/inv_density))*(2 * std::sqrt(1.0/inv_density))) {
+      // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
+      return;
+    }
+
     while (AiAOVSampleIteratorGetNext(iterator)) {
-      int px, py;
-      AiAOVSampleIteratorGetPixel(iterator, px, py);
+      
       
       bool redistribute = true;
       bool partly_redistributed = false;
@@ -199,14 +208,9 @@ filter_pixel
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
 
-      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
+      // if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return; // try to only run for RGBA, while still allowing connection to all aovs
 
-      // hack to only run over the first RGBA output, avoiding computing multiple times, not sure if correct
-      int linear_pixel = px + (py * (double)bokeh->xres);
-      if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= (2 * std::sqrt(1.0/inv_density))*(2 * std::sqrt(1.0/inv_density))) {
-        // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
-        return;
-      }
+      ++bokeh->samples_already_gathered_per_pixel[linear_pixel];
 
 
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);

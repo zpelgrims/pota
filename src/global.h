@@ -32,6 +32,7 @@ struct LentilFilterData {
   std::vector<int> aov_types;
   int global_cnt;
   std::vector<int> samples_already_gathered_per_pixel;
+  std::vector<int> spp;
   AtString rgba_string;
 
   int global_run;
@@ -241,14 +242,9 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
     switch(aov_type){
 
         case AI_TYPE_RGBA: {
-            
-          // RGBA is the only aov with transmission component in
+          // RGBA is the only aov with transmission component in, account for that (prob skip something)
           AtRGBA rgba_energy;
-          if (aov_name == rgba_string){
-            rgba_energy = sample;
-          } else {
-            rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
-          }
+          rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
           
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           weight_per_pixel[aov_name][px] += inv_density;

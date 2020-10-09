@@ -161,6 +161,9 @@ node_update
   bokeh->samples_already_gathered_per_pixel.clear();
   bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
   for (int i=0;i<bokeh->samples_already_gathered_per_pixel.size(); ++i) bokeh->samples_already_gathered_per_pixel[i] = 0; // not sure if i have to
+  bokeh->spp.clear();
+  bokeh->spp.resize(bokeh->xres*bokeh->yres);
+  for (int i=0;i<bokeh->spp.size(); ++i) bokeh->spp[i] = 0; // not sure if i have to
 
   
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
@@ -211,9 +214,16 @@ filter_pixel
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
 
+    int px, py;
+    AiAOVSampleIteratorGetPixel(iterator, px, py);
+    int linear_pixel = px + (py * (double)bokeh->xres);
+    if (bokeh->samples_already_gathered_per_pixel[linear_pixel] >= std::floor(std::pow((2 * std::sqrt(bokeh->aa_samples)),2))) {
+      // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
+      return;
+    }
+
     while (AiAOVSampleIteratorGetNext(iterator)) {
-      int px, py;
-      AiAOVSampleIteratorGetPixel(iterator, px, py);
+      
 
       bool redistribute = true;
       bool partly_redistributed = false;
@@ -221,16 +231,9 @@ filter_pixel
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
 
-      if (sample !=  AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_rgba)) return;
-      
-      // hack to only run over the first RGBA output, avoiding computing multiple times, just not sure if this is correct
-      int linear_pixel = px + (py * (double)bokeh->xres);
-      if (++bokeh->samples_already_gathered_per_pixel[linear_pixel] >= std::pow((2 * std::sqrt(1.0/inv_density)),2)) {
-        // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
-        return;
-      }
-      // AiMsgWarning("cnt: %d, %f %f %f", cnt++, sample.r, sample.g, sample.b);
+      ++bokeh->samples_already_gathered_per_pixel[linear_pixel];
       ++bokeh->global_run;
+      ++bokeh->spp[linear_pixel];
       
       const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
