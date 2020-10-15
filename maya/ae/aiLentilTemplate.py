@@ -34,7 +34,7 @@ class aiLentilTemplate(templates.AttributeTemplate):
 
     def setup(self):
 
-        self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
+        #self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
 
         self.beginLayout("Polynomial Optics", collapse=False)
         self.addControl("aiLensModelPO", label="Lens Model")
