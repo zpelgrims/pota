@@ -93,7 +93,8 @@ driver_process_bucket {
 
               AtRGBA redist = AI_RGBA_ZERO;
               if ((redist_weight) != 0.0) {
-                redist = image_redist / 4.0; //why this magic number? can I break this?
+                // BUG!!! *2.0 is because it's ran two times i think..
+                redist = image_redist / (4.0); //magic number related to pixel filter width of 2. (4 times as many pixels considered)
               }
 
               AtRGBA unredist = AI_RGBA_ZERO;
@@ -114,7 +115,8 @@ driver_process_bucket {
               
               AtRGBA redist = AI_RGBA_ZERO;
               if ((redist_weight) != 0.0) {
-                redist = image_redist / 4.0; //why this magic number? can I break this? --> ues by using more/less rgba outputs
+                // BUG!!! *2.0 is because it's ran two times i think..
+                redist = image_redist / (4.0); //magic number related to pixel filter width of 2. (4 times as many pixels considered)
               }
 
               AtRGBA unredist = AI_RGBA_ZERO;

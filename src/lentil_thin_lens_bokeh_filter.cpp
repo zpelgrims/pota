@@ -158,18 +158,12 @@ node_update
     }
   }
 
-  bokeh->samples_already_gathered_per_pixel.clear();
-  bokeh->samples_already_gathered_per_pixel.resize(bokeh->xres*bokeh->yres);
-  for (int i=0;i<bokeh->samples_already_gathered_per_pixel.size(); ++i) bokeh->samples_already_gathered_per_pixel[i] = 0; // not sure if i have to
-  bokeh->spp.clear();
-  bokeh->spp.resize(bokeh->xres*bokeh->yres);
-  for (int i=0;i<bokeh->spp.size(); ++i) bokeh->spp[i] = 0; // not sure if i have to
-
+  bokeh->pixel_already_visited.clear();
+  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
+  for (int i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
   
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
-  bokeh->global_run = 0;
-
   AiFilterUpdate(node, 2.0);
 }
  
@@ -201,12 +195,6 @@ filter_pixel
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  // apparently creating arnold strings is expensive, avoid as much as possible on the fly
-  const AtString atstring_rgba = AtString("RGBA");
-  const AtString atstring_p = AtString("P");
-  const AtString atstring_z = AtString("Z");
-  const AtString atstring_transmission = AtString("transmission");
-  const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
   int cnt = 0;
 
   if (bokeh->enabled) {
@@ -216,32 +204,28 @@ filter_pixel
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
+
+    // hack to try avoid running over same pixel twice
     int linear_pixel = px + (py * (double)bokeh->xres);
-    if (bokeh->samples_already_gathered_per_pixel[linear_pixel] >= std::floor(std::pow((2 * std::sqrt(bokeh->aa_samples)),2))) {
-      // AiMsgWarning("skipping rest of samples, samples count: %d", bokeh->samples_already_gathered_per_pixel[linear_pixel]);
-      return;
-    }
+    if (bokeh->pixel_already_visited[linear_pixel]) {
+        return;
+    } else bokeh->pixel_already_visited[linear_pixel] = true;
+
 
     while (AiAOVSampleIteratorGetNext(iterator)) {
-      
 
       bool redistribute = true;
       bool partly_redistributed = false;
 
-      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-
-      ++bokeh->samples_already_gathered_per_pixel[linear_pixel];
-      ++bokeh->global_run;
-      ++bokeh->spp[linear_pixel];
-      
-      const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, atstring_p);
-      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z); // what to do when values are INF?
+      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+      const AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
+      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
       
       if (inv_density <= 0.f) continue; // does this every happen? test
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
       
-      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, atstring_transmission);
+      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
@@ -253,7 +237,7 @@ filter_pixel
       if (sample_luminance < tl->bidir_min_luminance) redistribute = false;
       if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
-      if (AiAOVSampleIteratorHasAOVValue(iterator, atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
+      if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
 
 
