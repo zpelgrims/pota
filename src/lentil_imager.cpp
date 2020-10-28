@@ -62,7 +62,8 @@ driver_process_bucket {
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
-  
+  if (bokeh_filter_node == nullptr) return; // don't run if lentil_replaced_filter node is not present, not tested yet.
+
   if (!filter_data->enabled) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
     return;

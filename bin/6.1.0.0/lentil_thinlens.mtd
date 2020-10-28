@@ -18,6 +18,7 @@
         desc                STRING  "Units"
         
         houdini.label       STRING  "Working unit"
+        houdini.help        STRING ""
 
     [attr sensor_widthTL]
         min                 FLOAT   0.1
@@ -26,6 +27,7 @@
         desc                STRING  "Width of the sensor in mm. Default value is the width of a full frame sensor."
 
         houdini.label       STRING  "Sensor Width (mm)"
+        houdini.help        STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
 
 
     [attr focal_lengthTL]
@@ -37,6 +39,7 @@
         desc                STRING  "Focal length in mm"
 
         houdini.label       STRING  "Focal Length (mm)"
+        houdini.help        STRING "Distance between the lens and the point at which the light converges in millimeters."
 
 
     [attr fstopTL]
@@ -46,6 +49,7 @@
         desc                STRING  "F-Stop"
 
         houdini.label       STRING  "F-stop"
+        houdini.help        STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
 
 
     [attr focus_distanceTL]
@@ -55,6 +59,7 @@
         desc                STRING  "Focus distance in (cm)"
 
         houdini.label       STRING  "Focus Distance (cm)"
+        houdini.help        STRING "Distance between the lens and the focal plane in centimeter."
 
 
     [attr enable_dofTL]
@@ -62,6 +67,7 @@
         desc                STRING  "Enable DOF"
 
         houdini.label       STRING  "Enable DOF"
+        houdini.help        STRING "Enable Depth of Field"
 
 
     [attr optical_vignetting_distanceTL]
@@ -71,6 +77,7 @@
         desc                STRING  ""
 
         houdini.label       STRING  "Optical Vignetting Distance"
+        houdini.help        STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor."
 
 
     [attr optical_vignetting_radiusTL]
@@ -80,6 +87,7 @@
         desc                STRING  ""
 
         houdini.label       STRING  "Optical Vignetting Radius"
+        houdini.help        STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The radius represents the radius of the housing."
 
 
     [attr abb_sphericalTL]
@@ -89,6 +97,7 @@
         desc                STRING  ""
 
         houdini.label       STRING  "Aberration (spherical)"
+        houdini.help        STRING "Due to the spherical nature of lenses, light cannot be focused onto exactly a singular point."
 
 
     [attr abb_distortionTL]
@@ -98,6 +107,7 @@
         desc                STRING  "Barrel/pincushion distortion"
 
         houdini.label       STRING  "Aberration (distortion)"
+        houdini.help        STRING "Emperical distortion aberration. Note that lenses with a short focal length will generally exhibit greater amounts of distortion. We chose to not automatically model this, but rather keep it up to the user for greater artistic control."
     
 
     [attr bokeh_aperture_bladesTL]
@@ -107,6 +117,7 @@
         desc                STRING  "Number of aperture blades. Less than 3 is perfectly circular."
 
         houdini.label       STRING  "Aperture Blades"
+        houdini.help        STRING "Amount of aperture blades. Lower than 3 means perfectly circular."
 
 
     [attr bokeh_circle_to_squareTL]
@@ -116,6 +127,7 @@
         desc                STRING  "0 is a perfectly circular highlight, 1 is perfectly square. Squarish ones look nice when using anamorphic type highlights."
 
         houdini.label       STRING  "Circle <-> Square"
+        houdini.help        STRING "Sometimes for artistic purposes you might want to make the bokeh a little more square. This can sometimes happen with anamorphic lenses."
 
 
     [attr bokeh_anamorphicTL]
@@ -125,6 +137,7 @@
         desc                STRING  "Squeeze the aperture in the y-axis."
 
         houdini.label       STRING  "Anamorphic"
+        houdini.help        STRING "This scales the bokeh along the x-axis."
 
 
     [attr bokeh_enable_imageTL]
@@ -132,12 +145,14 @@
         desc                STRING  "Enable image based bokeh"
 
         houdini.label       STRING  "Use Bokeh Image"
+        houdini.help        STRING "This option replaces the circular/polygonal aperture with a texture-based one."
 
 
     [attr bokeh_image_pathTL]
         desc                STRING  "Path to image based bokeh"
 
         houdini.label       STRING  "Image bokeh path"
+        houdini.help        STRING "Supply small-ish images. The visual quality won't increase much above 250x250, but the pre-computation time will."
         houdini.type        STRING  "file:image"
         c4d.gui_type        INT     3
 
@@ -149,6 +164,7 @@
         desc                STRING  "Minimum threshold luminance for the bidirectional comTLnent to kick in."
 
         houdini.label       STRING  "Trigger treshold"
+        houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
 
     
     [attr bidir_sample_multTL]
@@ -158,18 +174,21 @@
         desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
 
         houdini.label       STRING  "Samples Multiplier"
+        houdini.help        STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)."
 
 
     [attr bidir_add_luminanceTL]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
 
         houdini.label       STRING  "Additional Luminance"
+        houdini.help        STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_min_luminance will be affected."
 
 
     [attr bidir_add_luminance_transitionTL]
         desc                STRING  "Additional luminance transition"
 
         houdini.label       STRING  "Additional luminance transition"
+        houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
 
 
     [attr vignetting_retriesTL]
@@ -179,6 +198,7 @@
         desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
 
         houdini.label       STRING  "Vignetting Retries"
+        houdini.help        STRING ""
 
 
 
@@ -187,6 +207,7 @@
         desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
 
         houdini.label       STRING  "HQ ray derivatives"
+        houdini.help        STRING "Enabling this triples the camera computations, but provides the shaders with high quality derivatives for use in texture filtering, etc. This should be enabled unless you specifically know what you're doing."
 
 
     [attr abb_comaTL]
@@ -196,3 +217,4 @@
         desc                STRING  ""
 
         houdini.label       STRING  "Aberration (coma) [experimental]"
+        houdini.help        STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
