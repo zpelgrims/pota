@@ -45,7 +45,7 @@ HEADERS=\
 
 
 all: lentil_operator\
-	 lentil_filter_debug_operator\
+	 lentil_debug_operator\
 	 lentil_debug_filter\
 	 lentil_thin_lens_bokeh_filter\
 	 lentil\
@@ -73,8 +73,8 @@ lentil_debug_filter: ../../src/lentil_debug_filter.cpp ${HEADERS}
 lentil_operator: ../../src/lentil_operator.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_operator.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
-lentil_filter_debug_operator: ../../src/lentil_filter_debug_operator.cpp ${HEADERS}
-	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_filter_debug_operator.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_filter_debug_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
+lentil_debug_operator: ../../src/lentil_debug_operator.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/lentil_debug_operator.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_debug_operator.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_imager: ../../src/lentil_imager.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_imager.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_thin_lens_bokeh_imager.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 

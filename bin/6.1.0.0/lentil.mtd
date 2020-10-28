@@ -6,7 +6,7 @@
 
     c4d.classification      STRING  "generic"
 
-    houdini.icon            STRING  "SHOP_surface"
+    houdini.icon            STRING  "SHOP_lens"
     houdini.label           STRING  "lentil"
     houdini.help_url        STRING  "http://www.lentil.xyz"
 

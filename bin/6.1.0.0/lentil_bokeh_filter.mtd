@@ -1,0 +1,11 @@
+[node lentil_bokeh_filter]
+    desc                    STRING  "Lentil (Polynomial optics) filter that is required for bidirectional sampling."
+    maya.name               STRING  "filter"
+    maya.id                 INT     0x00070612
+    maya.translator         STRING  "lentil_bokeh_filter"
+
+    c4d.classification      STRING  "generic"
+
+    houdini.icon            STRING  "SHOP_surface"
+    houdini.label           STRING  "lentil_bokeh_filter"
+    houdini.help_url        STRING  "http://www.lentil.xyz"

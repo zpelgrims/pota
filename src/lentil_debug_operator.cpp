@@ -86,7 +86,7 @@ node_loader
 {
     if (i>0) return 0;
     node->methods = (AtNodeMethods*)LentilFilterDebugOperatorMtd;
-    node->name = "lentil_filter_debug_operator";
+    node->name = "lentil_debug_operator";
     node->node_type = AI_NODE_OPERATOR;
     strcpy(node->version, AI_VERSION);
     return true;

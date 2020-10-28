@@ -49,7 +49,7 @@ operator_cook
 
     if (operator_data->cook == false) return false;
 
-    const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_filter_debug_operator");
+    const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_debug_operator");
     if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
 
     // AtNode* lentil_imager_exr = AiNode("lentil_imager", AtString("lentil_imager_exr"));
