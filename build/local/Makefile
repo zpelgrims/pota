@@ -11,12 +11,10 @@ endif
 
 
 ifeq ($(OS), Darwin)
-	ARNOLD_PATH_6.0.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.0.0-darwin
-	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0-beta
+	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0
 endif
 ifeq ($(OS), Linux)
-	ARNOLD_PATH_6.0.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.0.0.0-linux
-	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0_20201012112517_03181d10_linux_2922
+	ARNOLD_PATH_6.1.0.0=${LENTIL_ARNOLD_SDKS}/Arnold-6.1.0.0-linux
 endif
 
 
