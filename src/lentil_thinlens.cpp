@@ -75,6 +75,7 @@ node_parameters
     // experimental
     AiParameterFlt("abb_comaTL", 0.0);
     
+    AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
 

@@ -70,6 +70,8 @@ node_parameters {
 
   AiParameterInt("vignetting_retriesPO", 15);
   AiParameterBool("proper_ray_derivativesPO", true);
+
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
 

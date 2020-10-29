@@ -61,7 +61,7 @@ operator_cook
     int offset = 0;
     int elements = AiArrayGetNumElements(outputs);
 
-    AiArrayResize(outputs, 2 * elements, 0);
+    // AiArrayResize(outputs, 2 * elements, 0);
     offset = elements;
 
     for (size_t i=0; i<elements; ++i) {
@@ -78,7 +78,7 @@ operator_cook
         AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
         // }
         
-        AiArraySetStr(outputs, i+offset, AtString(output_string.c_str()));
+        AiArraySetStr(outputs, i, AtString(output_string.c_str()));
         
 
         // link imager to driver (could be kick, or exr_driver, etc)

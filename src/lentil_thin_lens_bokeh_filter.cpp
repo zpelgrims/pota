@@ -46,7 +46,10 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
 
 
 
-node_parameters {}
+node_parameters 
+{
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+}
  
 node_initialize
 {
