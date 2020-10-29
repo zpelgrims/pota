@@ -12,7 +12,10 @@ struct LentilDebugFilterData {
     AtNode *camera_node;
 };
  
-node_parameters {}
+node_parameters 
+{
+    AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+}
  
 node_initialize
 {

@@ -27,7 +27,10 @@ inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_pos
 }
 
 
-node_parameters {}
+node_parameters 
+{
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+}
  
 node_initialize
 {

@@ -25,7 +25,10 @@ struct OpData
     bool cook;
 };
 
-node_parameters {}
+node_parameters 
+{
+    AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+}
 
 operator_init
 {

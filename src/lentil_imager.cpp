@@ -9,7 +9,7 @@
 
 #define AI_DRIVER_SCHEDULE_FULL 0x02
 
-AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehImagerMtd);
+AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
 // struct LentilImagerData {
 //     AtString camera_node_type;
@@ -21,6 +21,8 @@ AI_DRIVER_NODE_EXPORT_METHODS(ThinLensBokehImagerMtd);
 node_parameters 
 {
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
+  AiParameterStr(AtString("layer_selection"), AtString("*"));
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
 node_initialize
@@ -152,6 +154,8 @@ driver_process_bucket {
               break;
             }
 
+            // need to add POINTER type
+
           }
         }
       }
@@ -172,7 +176,7 @@ node_finish {
 node_loader
 {
   if (i>0) return false;
-  node->methods = (AtNodeMethods*) ThinLensBokehImagerMtd;
+  node->methods = (AtNodeMethods*) LentilImagerMtd;
   node->output_type = AI_TYPE_NONE;
   node->name = "lentil_imager";
   node->node_type = AI_NODE_DRIVER;
