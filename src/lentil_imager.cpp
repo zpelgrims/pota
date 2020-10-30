@@ -39,13 +39,16 @@ node_update
   // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
 }
  
-driver_supports_pixel_type { return true; } // not needed for raw drivers
+driver_supports_pixel_type 
+{
+  return pixel_type == AI_TYPE_RGBA || pixel_type == AI_TYPE_RGBA || pixel_type == AI_TYPE_FLOAT || pixel_type == AI_TYPE_INT || pixel_type == AI_TYPE_VECTOR;
+}
  
 driver_open {}
  
 driver_extension
 {
-   static const char *extensions[] = {"exr", NULL};
+   static const char *extensions[] = {NULL};
    return extensions;
 }
  
