@@ -120,6 +120,15 @@ struct Camera
     float extra_sensor_shift;
 
     AtNode *filter_node;
+
+    ~Camera(){
+        image.invalidate();
+    }
+
+    // bool bokehChanged(const Camera &rhs){
+    //     return (useImage != rhs.useImage ||
+    //             (useImage && bokehPath != rhs.bokehPath));
+    // }
 };
 
 extern struct Camera camera;

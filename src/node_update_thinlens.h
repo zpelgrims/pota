@@ -41,11 +41,3 @@ tl->bidir_add_luminance_transition = AiNodeGetFlt(cameranode, "bidir_add_luminan
 tl->vignetting_retries = AiNodeGetInt(cameranode, "vignetting_retriesTL");
 tl->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesTL");
 
-// make probability functions of the bokeh image
-// if (parms.bokehChanged(camera->params)) {
-    tl->image.invalidate();
-    if (tl->bokeh_enable_image && !tl->image.read(tl->bokeh_image_path.c_str())){
-    AiMsgError("[LENTIL CAMERA TL] Couldn't open bokeh image!");
-    AiRenderAbort();
-    }
-// }

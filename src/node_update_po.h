@@ -84,13 +84,4 @@
 
   AiMsgInfo("[LENTIL CAMERA PO] --------------------------------------");
   
-
-  // make probability functions of the bokeh image
-  // if (parms.bokehChanged(po->params)) {
-    po->image.invalidate();
-    if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
-      AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
-      AiRenderAbort();
-    }
-  // }
   AiMsgInfo("");

@@ -94,6 +94,15 @@ node_update
     // this pointer could be buggy (untested)
     AtNode* cameranode = node;
     #include "node_update_thinlens.h"
+
+    // make probability functions of the bokeh image
+    // if (parms.bokehChanged(camera->params)) {
+    tl->image.invalidate();
+    if (tl->bokeh_enable_image && !tl->image.read(tl->bokeh_image_path.c_str())){
+    AiMsgError("[LENTIL CAMERA TL] Couldn't open bokeh image!");
+    AiRenderAbort();
+    }
+    // }
 }
 
 node_finish

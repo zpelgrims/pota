@@ -404,10 +404,10 @@ public:
         lens[0] = static_cast<float>(flippedRow) / static_cast<float>(x)* 2.0;
         lens[1] = static_cast<float>(flippedColumn) / static_cast<float>(y)* 2.0;
 
-        stratification_r1 = (stratification_r1 - 0.5) * 2.0;
-        stratification_r2 = (stratification_r2 - 0.5) * 2.0;
+        // stratification_r1 = (stratification_r1 - 0.5) * 2.0;
+        // stratification_r2 = (stratification_r2 - 0.5) * 2.0;
 
-        lens[0] = lens(0) + stratification_r1/(double)x;
-        lens[1] = lens(1) + stratification_r2/(double)y;
+        // lens[0] = lens(0) + stratification_r1/(double)x;
+        // lens[1] = lens(1) + stratification_r2/(double)y;
     }
 };

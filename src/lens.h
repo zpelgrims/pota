@@ -729,9 +729,6 @@ inline bool trace_backwards(Eigen::Vector3d target,
       lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), camera->aperture_radius, camera->bokeh_aperture_blades);
     }
 
-    aperture(0) = unit_disk(0) * aperture_radius;
-    aperture(1) = unit_disk(1) * aperture_radius;
-
     sensor(0) = sensor(1) = 0.0;
 
     float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda, camera);

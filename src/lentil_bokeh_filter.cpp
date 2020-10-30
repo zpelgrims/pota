@@ -45,6 +45,8 @@ node_update
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   
+  bokeh->enabled = true;
+
   AtNode *cameranode = AiUniverseGetCamera();
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {
@@ -56,11 +58,11 @@ node_update
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
-  const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
-  if (AiNodeEntryGetCount(nentry) > 1){
-    AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_bokeh_driver exist. "
-               "Use the lentil_operator to avoid this.");
-  }
+  // const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
+  // if (AiNodeEntryGetCount(nentry) > 1){
+  //   AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_bokeh_driver exist. "
+  //              "Use the lentil_operator to avoid this.");
+  // }
 
 
 
@@ -89,10 +91,6 @@ node_update
 
   #include "node_update_po.h"
 
-
-
-  bokeh->enabled = true;
-  
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
@@ -107,7 +105,10 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (po->bidir_sample_mult == 0) bokeh->enabled = false;
+  if (po->bidir_sample_mult == 0){
+    bokeh->enabled = false;
+    return;
+  }
 
 
   // prepare framebuffers for all AOVS

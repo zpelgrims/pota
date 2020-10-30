@@ -107,6 +107,14 @@ node_update {
   po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shiftPO");
 
   #include "node_update_po.h"
+
+    // make probability functions of the bokeh image
+  // if (!(po->stored_useImage == AiNodeGetBool(node, "bokeh_enable_imagePO") && po->stored_path == AiNodeGetStr(node, "bokeh_image_pathPO")) {
+      po->image.invalidate();
+      if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
+        AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
+        AiRenderAbort();
+    }
 }
 
 
