@@ -70,6 +70,7 @@ driver_process_bucket {
   if (bokeh_filter_node == nullptr) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
     return; // don't run if lentil_replaced_filter node is not present
+  }
 
   if (!filter_data->enabled) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
