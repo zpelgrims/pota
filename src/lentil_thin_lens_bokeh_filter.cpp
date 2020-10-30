@@ -94,15 +94,6 @@ node_update
   }
 
 
-  // // don't compute for interactive previews
-  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  // bokeh->min_aa_samples = 3;
-  // if (bokeh->aa_samples < bokeh->min_aa_samples) {
-  //   bokeh->enabled = false;
-  //   return;
-  // }
-
-
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
     AiMsgWarning("[LENTIL FILTER TL] Camera is not of type lentil_thinlens");

@@ -84,12 +84,6 @@ node_update
 
   bokeh->enabled = true;
 
-  // // don't compute for interactive previews
-  bokeh->aa_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  // bokeh->min_aa_samples = 3;
-  // if (bokeh->aa_samples < bokeh->min_aa_samples) {
-  //   bokeh->enabled = false;
-  // }
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {

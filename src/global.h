@@ -16,8 +16,6 @@ struct LentilFilterData {
   unsigned yres;
   int framenumber;
   int samples;
-  int aa_samples;
-  int min_aa_samples;
   bool enabled;
   float current_inv_density;
   float filter_width;
