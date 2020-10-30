@@ -9,6 +9,7 @@ STRINGTABLE aitag_lentil_thinlens
    C4DAI_LENTIL_THINLENS_ADVANCED_GRP                     "Advanced";
    C4DAI_LENTIL_THINLENS_ARNOLDNATIVE_GRP                     "Arnold Native";
 
+   C4DAIP_LENTIL_THINLENS_UNITSTL "Units (export scale)";
    C4DAIP_LENTIL_THINLENS_SENSOR_WIDTHTL "Sensor Width (mm)";
    C4DAIP_LENTIL_THINLENS_FOCAL_LENGTHTL "Focal Length (mm)";
    C4DAIP_LENTIL_THINLENS_FSTOPTL "F-stop";

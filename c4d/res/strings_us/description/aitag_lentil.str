@@ -9,6 +9,7 @@ STRINGTABLE aitag_lentil
    C4DAI_LENTIL_ADVANCED_GRP "Advanced";
    C4DAI_LENTIL_ARNOLDNATIVE_GRP "Arnold Native";
 
+   C4DAIP_LENTIL_UNITSPO "Units (export scale)";
    C4DAIP_LENTIL_LENS_MODELPO "Lens Model";
    C4DAIP_LENTIL_SENSOR_WIDTHPO "Sensor Width (mm)";
    C4DAIP_LENTIL_WAVELENGTHPO "Wavelength (nm)";
