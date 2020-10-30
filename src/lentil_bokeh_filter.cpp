@@ -149,6 +149,8 @@ node_update
   bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
   for (int i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
   
+  bokeh->current_inv_density = 0.0;
+
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
 
   AiFilterUpdate(node, 2.0);
@@ -203,10 +205,15 @@ filter_pixel
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+      bokeh->current_inv_density = inv_density;
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
     
       if (inv_density <= 0.f) continue; // does this every happen? test
+      if (inv_density > 0.2){
+        continue; // skip when aa samples are below 3
+      }
+      
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
 

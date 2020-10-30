@@ -74,6 +74,11 @@ driver_process_bucket {
     return;
   }
 
+  if (filter_data->current_inv_density > 0.2) {
+    AiMsgInfo("[LENTIL IMAGER] Skipping imager");
+    return;
+  }
+
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
