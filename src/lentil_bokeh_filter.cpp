@@ -44,6 +44,15 @@ node_initialize
 node_update 
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  
+  AtNode *cameranode = AiUniverseGetCamera();
+  // disable for non-lentil cameras
+  if (!AiNodeIs(cameranode, AtString("lentil"))) {
+    AiMsgError("[LENTIL FILTER PO] Camera is not of type lentil. A full scene update is required.");
+    bokeh->enabled = false;
+    return;
+  }
+
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
@@ -57,7 +66,7 @@ node_update
 
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct
   // note this currently is DOUBLE code!! find a fix!!
-  AtNode *cameranode = AiUniverseGetCamera();
+ 
   po->unitModel = (UnitModel) AiNodeGetInt(cameranode, "unitsPO");
   po->sensor_width = AiNodeGetFlt(cameranode, "sensor_widthPO");
   po->input_fstop = AiNodeGetFlt(cameranode, "fstopPO");
@@ -83,14 +92,6 @@ node_update
 
 
   bokeh->enabled = true;
-
-
-  // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil"))) {
-    AiMsgWarning("[LENTIL FILTER PO] Camera is not of type lentil");
-    bokeh->enabled = false;
-    return;
-  }
   
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");

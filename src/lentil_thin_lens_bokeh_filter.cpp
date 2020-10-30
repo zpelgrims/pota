@@ -61,12 +61,22 @@ node_initialize
 node_update 
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+
+  AtNode *cameranode = AiUniverseGetCamera();
+  // disable for non-lentil cameras
+  if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
+    AiMsgError("[LENTIL FILTER TL] Camera is not of type lentil_thinlens. A full scene update is required.");
+    bokeh->enabled = false;
+    return;
+  }
+
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   bokeh->enabled = true;
 
   // will only work for the node called lentil_replaced_filter
   if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
+    AiMsgWarning("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
     bokeh->enabled = false;
     return;
   }
@@ -81,7 +91,6 @@ node_update
 
   // THIS IS DOUBLE CODE, also in camera!
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
-  AtNode *cameranode = AiUniverseGetCamera();
   #include "node_update_thinlens.h"
 
 
@@ -93,13 +102,6 @@ node_update
     return;
   }
 
-
-  // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
-    AiMsgWarning("[LENTIL FILTER TL] Camera is not of type lentil_thinlens");
-    bokeh->enabled = false;
-    return;
-  }
 
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
