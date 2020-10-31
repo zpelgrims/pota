@@ -22,6 +22,7 @@ node_parameters
 {
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   AiParameterStr(AtString("layer_selection"), AtString("*"));
+  AiParameterBool(AtString("enable"), true);
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
