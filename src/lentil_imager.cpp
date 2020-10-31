@@ -11,15 +11,18 @@
 
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
-// struct LentilImagerData {
-//     AtString camera_node_type;
-//     AtString lentil_thinlens_string;
-//     AtString lentil_po_string;
-//     AtNode *camera_node;
-// };
+struct LentilImagerData {
+    AtString camera_node_type;
+    AtString lentil_thinlens_string;
+    AtString lentil_po_string;
+    AtNode *camera_node;
+
+    float exposure;
+};
 
 node_parameters 
 {
+  AiParameterFlt("exposure", 1.0f);
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   AiParameterStr(AtString("layer_selection"), AtString("*"));
   AiParameterBool(AtString("enable"), true);
@@ -28,6 +31,8 @@ node_parameters
  
 node_initialize
 {
+  LentilImagerData* imager_data = (LentilImagerData*)AiMalloc(sizeof(LentilImagerData));
+  AiNodeSetLocalData(node, imager_data);  
   AiDriverInitialize(node, false);
 }
  
@@ -35,6 +40,8 @@ node_update
 {
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
 
+  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  imager_data->exposure = AiNodeGetFlt(node, "exposure");
   // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
@@ -63,7 +70,9 @@ driver_prepare_bucket {} // called before a bucket is rendered
 
  
 driver_process_bucket {
-  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  
+  AiOutputIteratorReset(iterator);
+  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
@@ -86,7 +95,9 @@ driver_process_bucket {
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
+  
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
+    AiMsgInfo("[LENTIL IMAGER] %s TRYING to run");
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
@@ -101,7 +112,7 @@ driver_process_bucket {
           
           switch (aov_type){
             case AI_TYPE_RGBA: {
-              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel] * AiNodeGetFlt(node, "exposure");
               AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
               float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
               float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
@@ -173,6 +184,7 @@ driver_process_bucket {
       }
     }
   }
+
 }
 
 
