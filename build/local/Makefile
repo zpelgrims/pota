@@ -35,6 +35,7 @@ CXXFLAGS=\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
 	-static-libstdc++\
+	-static-libgcc\
 	-O3
 	
 
