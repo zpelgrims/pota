@@ -16,8 +16,6 @@ struct LentilImagerData {
     AtString lentil_thinlens_string;
     AtString lentil_po_string;
     AtNode *camera_node;
-
-    float exposure;
 };
 
 node_parameters 
@@ -42,7 +40,6 @@ node_update
   AiRenderSetHintInt(AtString("imager_padding"), 0);
 
   LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  imager_data->exposure = AiNodeGetFlt(node, "exposure");
   // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
@@ -71,7 +68,6 @@ driver_prepare_bucket {} // called before a bucket is rendered
 
  
 driver_process_bucket {
-  
   AiOutputIteratorReset(iterator);
   LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
@@ -113,7 +109,7 @@ driver_process_bucket {
           
           switch (aov_type){
             case AI_TYPE_RGBA: {
-              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel] * AiNodeGetFlt(node, "exposure");
+              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
               AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
               float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
               float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
