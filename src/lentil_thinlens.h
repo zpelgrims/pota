@@ -1,6 +1,5 @@
 #pragma once
-#include <string.h>
-#include <cmath>
+#include <string>
 #include "../../Eigen/Eigen/Dense"
 
 #include "imagebokeh.h"
