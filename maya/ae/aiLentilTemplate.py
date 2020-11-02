@@ -62,7 +62,6 @@ class aiLentilTemplate(templates.AttributeTemplate):
         
 
         self.beginLayout("Advanced options")
-        self.addControl("aiProperRayDerivativesPO", label="Proper Ray Derivatives")
         self.addControl("aiVignettingRetriesPO", label="Vignetting retries")
         self.addControl("aiUnitsPO", label="Units")
 

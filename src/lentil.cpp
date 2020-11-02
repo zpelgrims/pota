@@ -29,8 +29,7 @@ enum {
 
   // p_empirical_ca_dist,
 
-  p_vignetting_retriesPO,
-  p_proper_ray_derivativesPO
+  p_vignetting_retriesPO
 };
 
 
@@ -69,7 +68,6 @@ node_parameters {
   // AiParameterFlt("empirical_ca_dist", 0.0);
 
   AiParameterInt("vignetting_retriesPO", 15);
-  AiParameterBool("proper_ray_derivativesPO", true);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -94,7 +92,6 @@ node_update {
   po->dof = AiNodeGetBool(node, "dofPO");
   po->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
   po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
-  po->proper_ray_derivatives = AiNodeGetBool(node, "proper_ray_derivativesPO");
   po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
   po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
   // po->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
@@ -134,51 +131,6 @@ camera_create_ray {
   Eigen::Vector3d weight(1, 1, 1);
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
-  
-  // calculate new ray derivatives
-  // sucks a bit to have to trace 3 rays.. Bit slow
-  // is there an analytical solution to this?..
-  if (tries > 0){
-    if (!po->proper_ray_derivatives){
-      for(int i=0; i<3; i++){
-        output.dOdx[i] = origin(i); // is this necessary?
-        output.dOdy[i] = origin(i);
-        output.dDdx[i] = direction(i); // is this necessary?
-        output.dDdy[i] = direction(i);
-      }
-    } else {
-      float step = 0.001;
-      AtCameraInput input_dx = input;
-      AtCameraInput input_dy = input;
-      AtCameraOutput output_dx;
-      AtCameraOutput output_dy;
-
-      input_dx.sx += input.dsx * step;
-      input_dy.sy += input.dsy * step;
-
-      Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
-      Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
-      Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-      trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
-
-      Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
-      Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
-      Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-      trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
-
-      Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
-      Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
-      Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
-      Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
-
-      for (int i = 0; i<3; i++){
-        output.dOdx[i] = out_d0dx(i);
-        output.dOdy[i] = out_dOdy(i);
-        output.dDdx[i] = out_dDdx(i);
-        output.dDdy[i] = out_dDdy(i);
-      }
-    }
-  }
 
   for (int i = 0; i<3; i++){
     output.origin[i] = origin(i);

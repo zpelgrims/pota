@@ -39,6 +39,7 @@ node_initialize
 node_update 
 {
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
+  AiRenderSetHintInt(AtString("imager_padding"), 0);
 
   LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
   imager_data->exposure = AiNodeGetFlt(node, "exposure");
@@ -193,8 +194,8 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
-  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  // delete imager_data;
+  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  delete imager_data;
 }
 
 node_loader

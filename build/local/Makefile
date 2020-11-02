@@ -34,6 +34,7 @@ CXXFLAGS=\
 	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
+	-static-libstdc++\
 	-O3
 	
 
@@ -52,6 +53,7 @@ all: lentil_operator\
 	 lentil_thinlens\
 	 lentil_imager\
 	 lentil_bokeh_filter
+	#  lentil_glare_imager
 	
 
 
@@ -78,6 +80,10 @@ lentil_debug_operator: ../../src/lentil_debug_operator.cpp ${HEADERS}
 
 lentil_imager: ../../src/lentil_imager.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_imager.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_imager.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
+
+# lentil_glare_imager: ../../src/lentil_glare_imager.cpp ${HEADERS}
+# 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_glare_imager.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_glare_imager.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
+
 
 # lentil_transmitted_z: ../../src/transmitted_z.cpp ${HEADERS}
 # 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ../../src/transmitted_z.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_transmitted_z.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 

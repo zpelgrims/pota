@@ -154,12 +154,3 @@
 
         houdini.label       STRING  "Vignetting Retries"
         houdini.help        STRING "Since we're modeling real lenses, it can be that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
-
-
-
-    [attr proper_ray_derivativesPO]
-        default             BOOL  true
-        desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
-
-        houdini.label       STRING  "HQ ray derivatives"
-        houdini.help        STRING "Enabling this triples the camera computations, but provides the shaders with high quality derivatives for use in texture filtering, etc. This should be enabled unless you specifically know what you're doing."

@@ -201,15 +201,6 @@
         houdini.help        STRING ""
 
 
-
-    [attr proper_ray_derivativesTL]
-        default             BOOL  true
-        desc                STRING  "Enabling this option will trace 3 camera rays instead of 1 to calculate the proper ray derivatives, which are needed for efficient texture lookups. If left unchecked, texture I/O will suffer, but the camera shader speed will be faster."
-
-        houdini.label       STRING  "HQ ray derivatives"
-        houdini.help        STRING "Enabling this triples the camera computations, but provides the shaders with high quality derivatives for use in texture filtering, etc. This should be enabled unless you specifically know what you're doing."
-
-
     [attr abb_comaTL]
         min                 FLOAT   -1.0
         max                 FLOAT   1.0
