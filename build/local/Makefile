@@ -34,10 +34,11 @@ CXXFLAGS=\
 	-I/../../../polynomial-optics/src\
 	-DDEBUG_LOG\
 	-DFMT_HEADER_ONLY\
-	-static-libstdc++\
-	-static-libgcc\
 	-O3
-	
+
+ifeq ($(OS), Linux)
+	CXXFLAGS += -static-libgcc -static-libstdc++
+endif
 
 HEADERS=\
 	../../src/lens.h\
