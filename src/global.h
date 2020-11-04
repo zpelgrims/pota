@@ -26,6 +26,8 @@ struct LentilFilterData {
   std::map<AtString, std::vector<AtRGBA> > image_unredist;
   std::map<AtString, std::vector<float> > redist_weight_per_pixel;
   std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
+  std::map<AtString, std::vector<int> > spp_redist;
+  std::map<AtString, std::vector<int> > spp_unredist;
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
@@ -241,6 +243,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
                           std::map<AtString, std::vector<float> > &weight_per_pixel,
                           std::map<AtString, std::vector<AtRGBA> > &image_data_types,
+                          std::map<AtString, std::vector<int> > &spp,
                           std::vector<float> &zbuffer,
                           AtString rgba_string) {    
     switch(aov_type){
@@ -252,6 +255,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           weight_per_pixel[aov_name][px] += inv_density;
+          spp[aov_name][px] += 1;
         
           break;
         }

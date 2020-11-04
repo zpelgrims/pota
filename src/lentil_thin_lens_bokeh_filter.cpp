@@ -151,6 +151,12 @@ node_update
       bokeh->image_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->redist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->unredist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+
+
+      bokeh->spp_redist[AtString(name.c_str())].clear();
+      bokeh->spp_unredist[AtString(name.c_str())].clear();
+      bokeh->spp_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->spp_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
 
@@ -372,8 +378,8 @@ filter_pixel
           for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
             add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                           inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
-                          bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
-                          bokeh->rgba_string);
+                          bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
+                          bokeh->zbuffer, bokeh->rgba_string);
           
           }
         }
@@ -385,7 +391,7 @@ filter_pixel
         }
       }
 
-      else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
+      // else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
       no_redist:
       
         if (transmitted_energy_in_sample && partly_redistributed) {
@@ -418,12 +424,12 @@ filter_pixel
             for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             1.0, inv_density, 0.0, depth, iterator,
-                            bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
-                            bokeh->rgba_string);
+                            bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->spp_unredist,
+                            bokeh->zbuffer, bokeh->rgba_string);
             }
           }
         }
-      }
+      // }
     }
   }
 
