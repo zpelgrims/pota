@@ -407,10 +407,7 @@ filter_pixel
 }
  
  
-node_finish
-{
-
-}
+node_finish {}
 
 node_loader
 {

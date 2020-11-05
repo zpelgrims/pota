@@ -418,11 +418,7 @@ filter_pixel
 }
 
  
-node_finish
-{
-   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-   delete bokeh;
-}
+node_finish {}
 
 node_loader
 {

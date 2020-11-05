@@ -167,7 +167,7 @@ node_finish {
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
   // delete imager_data;
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   delete bokeh;
 }
 
