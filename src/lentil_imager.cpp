@@ -11,16 +11,15 @@
 
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
-struct LentilImagerData {
-    AtString camera_node_type;
-    AtString lentil_thinlens_string;
-    AtString lentil_po_string;
-    AtNode *camera_node;
-};
+// struct LentilImagerData {
+//     AtString camera_node_type;
+//     AtString lentil_thinlens_string;
+//     AtString lentil_po_string;
+//     AtNode *camera_node;
+// };
 
 node_parameters 
 {
-  AiParameterFlt("exposure", 1.0f);
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   AiParameterStr(AtString("layer_selection"), AtString("*"));
   AiParameterBool(AtString("enable"), true);
@@ -29,8 +28,8 @@ node_parameters
  
 node_initialize
 {
-  LentilImagerData* imager_data = (LentilImagerData*)AiMalloc(sizeof(LentilImagerData));
-  AiNodeSetLocalData(node, imager_data);  
+  // LentilImagerData* imager_data = (LentilImagerData*)AiMalloc(sizeof(LentilImagerData));
+  // AiNodeSetLocalData(node, imager_data);  
   AiDriverInitialize(node, false);
 }
  
@@ -39,10 +38,10 @@ node_update
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
   AiRenderSetHintInt(AtString("imager_padding"), 0);
 
-  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-  if (filter_data->enabled) AiMsgInfo("[LENTIL IMAGER] Starting Imager.");
+  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
+  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
+  // if (filter_data->enabled) AiMsgInfo("[LENTIL IMAGER] Starting Imager.");
 }
  
 driver_supports_pixel_type 
@@ -69,16 +68,16 @@ driver_prepare_bucket {} // called before a bucket is rendered
  
 driver_process_bucket {
   AiOutputIteratorReset(iterator);
-  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-
   // don't run if lentil_replaced_filter node is not present
   if (bokeh_filter_node == nullptr) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
     return;
   }
+
+  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
   if (!filter_data->enabled) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
@@ -165,8 +164,8 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
-  LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  delete imager_data;
+  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
+  // delete imager_data;
 }
 
 node_loader
