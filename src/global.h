@@ -238,21 +238,20 @@ std::vector<std::string> split_str(std::string str, std::string token)
 
 
 inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
-                          float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
+                          float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                           struct AtAOVSampleIterator* sample_iterator, 
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
                           std::map<AtString, std::vector<float> > &weight_per_pixel,
                           std::map<AtString, std::vector<AtRGBA> > &image_data_types,
                           std::map<AtString, std::vector<int> > &spp,
-                          std::vector<float> &zbuffer,
-                          AtString rgba_string) {    
+                          std::vector<float> &zbuffer) {    
     switch(aov_type){
 
         case AI_TYPE_RGBA: {
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
           AtRGBA rgba_energy;
           rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
-          
+
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           weight_per_pixel[aov_name][px] += inv_density;
 
@@ -304,6 +303,37 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
     }
 }
 
+inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
+                                     float inv_samples, float inv_density, float depth,
+                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
+
+    int pixelnumber = static_cast<int>(filter_data->xres * py + px);
+
+    // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
+    int counter = 0;
+    for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
+      for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
+
+        if (y < 0 || y >= filter_data->yres) continue; // edge fix
+        if (x < 0 || x >= filter_data->xres) continue; // edge fix
+
+        const unsigned pixelnumber = static_cast<int>(filter_data->xres * y + x);
+        
+        const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+        AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
+        float filter_weight = filter_gaussian(subpixel_pos_dist, filter_data->filter_width);
+        if (filter_weight == 0) continue;
+
+        float inv_filter_samples = (1.0 / filter_width_half) / 3.13; // figure this out so it doesn't break when filter width is not 2
+        for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
+          add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
+                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, iterator,
+                        filter_data->image_redist, filter_data->redist_weight_per_pixel, filter_data->image, filter_data->spp_redist,
+                        filter_data->zbuffer);
+        }
+      }
+    }
+  }
 
 unsigned int string_to_arnold_type(std::string str){
   if (str == "float" || str == "FLOAT" || str == "flt" || str == "FLT") return AI_TYPE_FLOAT;

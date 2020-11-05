@@ -93,8 +93,6 @@ driver_process_bucket {
   int aov_type = 0;
   const void *bucket_data;
 
-  int AA_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
-  
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     AiMsgInfo("[LENTIL IMAGER] %s TRYING to run");
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
@@ -112,8 +110,7 @@ driver_process_bucket {
           switch (aov_type){
             case AI_TYPE_RGBA: {
               AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
-              if (image_redist.a == 0.0) image_redist.a = 1.0;
-              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image_redist /= image_redist.a;
+              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image_redist /= (image_redist.a == 0.0) ? 1.0 : image_redist.a;
               
               ((AtRGBA*)bucket_data)[in_idx] = image_redist;
               break;
@@ -121,26 +118,12 @@ driver_process_bucket {
 
             case AI_TYPE_RGB: {
               AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
-              AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
-              float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
-              float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
-              
-              
-              AtRGBA redist = AI_RGBA_ZERO;
-              if ((redist_weight) != 0.0) {
-                // BUG!!! *2.0 is because it's ran two times i think..
-                redist = image_redist / (4.0); //magic number related to pixel filter width of 2. (4 times as many pixels considered)
-              }
-
-              AtRGBA unredist = AI_RGBA_ZERO;
-              if ((unredist_weight) != 0.0) {
-                unredist = image_unredist / unredist_weight;
-              }
+              image_redist /= (image_redist.a == 0.0) ? 1.0 : image_redist.a;
 
               AtRGB final_value = AI_RGB_ZERO;
-              final_value.r = redist.r + unredist.r;
-              final_value.g = redist.g + unredist.g;
-              final_value.b = redist.b + unredist.b;
+              final_value.r = image_redist.r;
+              final_value.g = image_redist.g;
+              final_value.b = image_redist.b;
               ((AtRGB*)bucket_data)[in_idx] = final_value;
               break;
             }

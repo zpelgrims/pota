@@ -250,165 +250,158 @@ filter_pixel
       
 
       
-        
-        // additional luminance with soft transition
-        float fitted_bidir_add_luminance = 0.0;
-        if (tl->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, tl->bidir_add_luminance, tl->bidir_add_luminance_transition, tl->bidir_min_luminance);
-        
-
-        float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
-        const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
-        if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 15^2 px minimum coc
-        int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
-        samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit..
-        samples = 50;
-        float inv_samples = 1.0/static_cast<double>(samples);
-
-
-
+      
+      // additional luminance with soft transition
+      float fitted_bidir_add_luminance = 0.0;
+      if (tl->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, tl->bidir_add_luminance, tl->bidir_add_luminance_transition, tl->bidir_min_luminance);
       
 
-        unsigned int total_samples_taken = 0;
-        unsigned int max_total_samples = samples*5;
-
-        for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
-          ++total_samples_taken;
-
-
-          if (redistribute == false){
-            int pixelnumber = static_cast<int>(bokeh->xres * py + px);
-              for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                              inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
-                              bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
-                              bokeh->zbuffer, bokeh->rgba_string);
-              
-              }
-            continue;
-          }
-
-            
-          unsigned int seed = tea<8>((px*py+px)+iteratorcnt++, total_samples_taken);
-
-          // world to camera space transform, motion blurred
-          AtMatrix world_to_camera_matrix_motionblurred;
-          float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
-          AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
-          switch (tl->unitModel){
-            case mm:
-            {
-              camera_space_sample_position_mb *= 0.1;
-            } break;
-            case cm:
-            { 
-              camera_space_sample_position_mb *= 1.0;
-            } break;
-            case dm:
-            {
-              camera_space_sample_position_mb *= 10.0;
-            } break;
-            case m:
-            {
-              camera_space_sample_position_mb *= 100.0;
-            }
-          }
-          float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
-
-          // either get uniformly distributed points on the unit disk or bokeh image
-          Eigen::Vector2d unit_disk(0, 0);
-          if (tl->bokeh_enable_image) tl->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
-          else if (tl->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
-          else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, tl->bokeh_aperture_blades);
+      float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
+      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
+      if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 15^2 px minimum coc
+      int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+      samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+      float inv_samples = 1.0/static_cast<double>(samples);
 
 
+      // early out
+      if (redistribute == false){
+        filter_and_add_to_buffer(px, py, filter_width_half, 
+                                1.0, inv_density, depth,
+                                iterator, bokeh);
+        
+        continue;
+      }
+    
 
-          unit_disk(0) *= tl->bokeh_anamorphic;
-          AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
+      unsigned int total_samples_taken = 0;
+      unsigned int max_total_samples = samples*5;
 
-
-          // aberration inputs
-          float abb_field_curvature = 0.0;
-
-
-          // ray through center of lens
-          AtVector dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
-          AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
-          // perturb ray direction to simulate coma aberration
-          // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
-          // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-          float abb_coma = tl->abb_coma * abb_coma_multipliers(tl->sensor_width, tl->focal_length, dir_from_center, unit_disk);
-          dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
-          camera_space_sample_position_mb = AiV3Length(camera_space_sample_position_mb) * dir_lens_to_P;
-          dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
-
-          float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
-          AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
-
-
-          // depth of field
-          AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-
-
-
-
-
-          float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(tl)/dir_from_lens_to_image_sample.z);
-          AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+      for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
+        ++total_samples_taken;
           
-          // bring back to (x, y, 1)
-          AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
-                                    focusdist_image_point.y / focusdist_image_point.z);
-          // transform to screenspace coordinate mapping
-          sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
+        unsigned int seed = tea<8>((px*py+px)+iteratorcnt++, total_samples_taken);
 
-
-          // optical vignetting
-          dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
-          if (tl->optical_vignetting_distance > 0.0){
-            // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-            if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){
-                --count;
-                continue;
-            }
+        // world to camera space transform, motion blurred
+        AtMatrix world_to_camera_matrix_motionblurred;
+        float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
+        AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+        AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+        switch (tl->unitModel){
+          case mm:
+          {
+            camera_space_sample_position_mb *= 0.1;
+          } break;
+          case cm:
+          { 
+            camera_space_sample_position_mb *= 1.0;
+          } break;
+          case dm:
+          {
+            camera_space_sample_position_mb *= 10.0;
+          } break;
+          case m:
+          {
+            camera_space_sample_position_mb *= 100.0;
           }
+        }
+        float image_dist_samplepos_mb = (-tl->focal_length * camera_space_sample_position_mb.z) / (-tl->focal_length + camera_space_sample_position_mb.z);
+
+        // either get uniformly distributed points on the unit disk or bokeh image
+        Eigen::Vector2d unit_disk(0, 0);
+        if (tl->bokeh_enable_image) tl->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
+        else if (tl->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, tl->abb_spherical, tl->circle_to_square, tl->bokeh_anamorphic);
+        else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, tl->bokeh_aperture_blades);
 
 
-          // barrel distortion (inverse)
-          if (tl->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), tl->abb_distortion);
-          
 
-          // convert sensor position to pixel position
-          Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-          const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-          const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+        unit_disk(0) *= tl->bokeh_anamorphic;
+        AtVector lens(unit_disk(0) * tl->aperture_radius, unit_disk(1) * tl->aperture_radius, 0.0);
 
-          // if outside of image
-          if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
-            --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
-            continue;
-          }
 
-          // write sample to image
-          unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-          if (!redistribute) pixelnumber = static_cast<int>(bokeh->xres * py + px);
-          // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+        // aberration inputs
+        float abb_field_curvature = 0.0;
 
-          for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-            add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                          inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
-                          bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
-                          bokeh->zbuffer, bokeh->rgba_string);
-          
+
+        // ray through center of lens
+        AtVector dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
+        AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+        // perturb ray direction to simulate coma aberration
+        // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
+        // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
+        float abb_coma = tl->abb_coma * abb_coma_multipliers(tl->sensor_width, tl->focal_length, dir_from_center, unit_disk);
+        dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
+        camera_space_sample_position_mb = AiV3Length(camera_space_sample_position_mb) * dir_lens_to_P;
+        dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
+
+        float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
+        AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
+
+
+        // depth of field
+        AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+
+
+
+
+
+        float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(tl)/dir_from_lens_to_image_sample.z);
+        AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+        
+        // bring back to (x, y, 1)
+        AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                  focusdist_image_point.y / focusdist_image_point.z);
+        // transform to screenspace coordinate mapping
+        sensor_position /= (tl->sensor_width*0.5)/-tl->focal_length;
+
+
+        // optical vignetting
+        dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+        if (tl->optical_vignetting_distance > 0.0){
+          // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
+          if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, tl->aperture_radius, tl->optical_vignetting_radius, tl->optical_vignetting_distance, lerp_squircle_mapping(tl->circle_to_square))){
+              --count;
+              continue;
           }
         }
 
 
-        if (transmitted_energy_in_sample) {
-          partly_redistributed = true;
-          // goto no_redist;
+        // barrel distortion (inverse)
+        if (tl->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), tl->abb_distortion);
+        
+
+        // convert sensor position to pixel position
+        Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
+        const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+        const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+
+        // if outside of image
+        if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
+          --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
+          continue;
+        }
+
+        // write sample to image
+        unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
+        if (!redistribute) pixelnumber = static_cast<int>(bokeh->xres * py + px);
+
+        // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+
+        for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+          add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                        inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
+                        bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
+                        bokeh->zbuffer);
+        
         }
       }
+
+
+      if (transmitted_energy_in_sample) {
+        partly_redistributed = true;
+        // goto no_redist;
+      }
+    }
 
       // else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
     //   no_redist:
