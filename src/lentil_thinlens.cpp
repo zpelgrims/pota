@@ -120,7 +120,7 @@ camera_create_ray
     float r1 = 0.0, r2 = 0.0;
     AtVector origin (0, 0, 0);
     AtVector dir (0, 0, 0);
-    AtRGB weight (0, 0, 0);
+    AtRGB weight (1, 1, 1);
     
     trace_ray_fw_thinlens(true, tries, input.sx, input.sy, input.lensx, input.lensy, origin, dir, weight, r1, r2, tl);
 

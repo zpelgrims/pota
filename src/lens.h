@@ -638,7 +638,7 @@ inline void trace_ray(bool original_ray, int &tries,
 		ray_succes = true;
 	}
 
-	if (ray_succes == false) weight << 0.0, 0.0, 0.0;
+	if (ray_succes == false) weight.setZero();
 
 
 	// convert from sphere/sphere space to camera space

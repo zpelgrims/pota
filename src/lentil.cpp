@@ -138,11 +138,6 @@ camera_create_ray {
     output.weight[i] = weight(i);
   }
 
-  // tmp debug
-  //printf("[%f, %f, %f],", origin(0), origin(1), origin(2));
-  
-
-
   /* 
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
   // initialise an ONB/a frame around the first vertex at the camera position along n=camera lookat direction:
