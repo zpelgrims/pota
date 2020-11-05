@@ -92,6 +92,8 @@ driver_process_bucket {
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
+
+  int AA_samples = AiNodeGetInt(AiUniverseGetOptions(), "AA_samples");
   
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     AiMsgInfo("[LENTIL IMAGER] %s TRYING to run");
@@ -109,61 +111,10 @@ driver_process_bucket {
           
           switch (aov_type){
             case AI_TYPE_RGBA: {
-              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel]/4.0;
-              AtRGBA image_unredist = filter_data->image_unredist[aov_name][linear_pixel];
-              float redist_weight = filter_data->redist_weight_per_pixel[aov_name][linear_pixel];
-              float unredist_weight = filter_data->unredist_weight_per_pixel[aov_name][linear_pixel];
-              if (redist_weight == 0.0) redist_weight = 1.0;
-              if (unredist_weight == 0.0) unredist_weight = 1.0;
-              image_unredist /= unredist_weight;
-
-              int spp_redist = filter_data->spp_redist[aov_name][linear_pixel];
-              int spp_unredist = filter_data->spp_unredist[aov_name][linear_pixel];
-              // if (spp_redist == 0) spp_redist = 1;
-              // if (spp_unredist == 0) spp_unredist = 1;
-
-              // float perc = ((double)spp_redist - (double)spp_unredist)/(double)spp_unredist;
-              // float spp_unredist_weight = (double)spp_unredist/(spp_unredist+(double)spp_redist);
-              // AtRGBA unredist = image_unredist*spp_unredist_weight;
-
-              // image_redist *= 1.0-perc;
-              // image_unredist *= perc;
+              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image_redist /= image_redist.a;
               
-              // ((AtRGBA*)bucket_data)[in_idx] = image_redist;
-              ((AtRGBA*)bucket_data)[in_idx] = image_redist + image_redist;
-              
-              // if (spp_redist == 0) spp_redist = 1;
-              // if (spp_unredist == 0) spp_unredist = 1;
-
-              // image_redist /= double(spp_redist);
-              // image_unredist /= double(spp_unredist);
-              
-
-              // AtRGBA redist = AI_RGBA_ZERO;
-              // if ((redist_weight) != 0.0) {
-              //   // BUG!!! *2.0 is because it's ran two times i think..
-              //   redist = image_redist / 4.0; //magic number related to pixel filter width of 2. (4 times as many pixels considered)
-                
-              // }
-
-              // AtRGBA unredist = AI_RGBA_ZERO;
-              // if ((unredist_weight) != 0.0) {
-              //   unredist = image_unredist;// / unredist_weight;
-              // }
-
-              // float spp_unredist_weight = (double)spp_unredist/(spp_unredist+(double)spp_redist);
-              // unredist *= spp_unredist_weight;
-              
-              // float spp_redist_weight = (double)spp_redist/(spp_redist+(double)spp_unredist);
-              // redist *= spp_redist_weight;
-              // // AtRGBA subtracted = unredist - redist;
-              // // if (subtracted.r < 0.0) subtracted.r = 0.0;
-              // // if (subtracted.g < 0.0) subtracted.g = 0.0;
-              // // if (subtracted.b < 0.0) subtracted.b = 0.0;
-              // // if (subtracted.a < 0.0) subtracted.a = 0.0;
-
-              // // ((AtRGBA*)bucket_data)[in_idx] =  AtRGBA(spp_redist_weight,spp_redist_weight,spp_redist_weight,spp_redist_weight);
-              // ((AtRGBA*)bucket_data)[in_idx] =  redist;
+              ((AtRGBA*)bucket_data)[in_idx] = image_redist;
               break;
             }
 

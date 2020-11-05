@@ -27,7 +27,7 @@ struct LentilFilterData {
   std::map<AtString, std::vector<float> > redist_weight_per_pixel;
   std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
   std::map<AtString, std::vector<int> > spp_redist;
-  std::map<AtString, std::vector<int> > spp_unredist;
+  std::map<AtString, std::vector<float> > original_alpha;
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;

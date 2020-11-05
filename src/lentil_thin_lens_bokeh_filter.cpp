@@ -154,9 +154,9 @@ node_update
 
 
       bokeh->spp_redist[AtString(name.c_str())].clear();
-      bokeh->spp_unredist[AtString(name.c_str())].clear();
+      bokeh->original_alpha[AtString(name.c_str())].clear();
       bokeh->spp_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->spp_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->original_alpha[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
 
@@ -168,7 +168,7 @@ node_update
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
-  AiFilterUpdate(node, 2.0);
+  AiFilterUpdate(node, 1.0);
 }
  
 
@@ -215,6 +215,7 @@ filter_pixel
         return;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
+    int iteratorcnt = 0;
 
     while (AiAOVSampleIteratorGetNext(iterator)) {
 
@@ -249,8 +250,6 @@ filter_pixel
       
 
 
-    // ENERGY REDISTRIBUTION
-      if (redistribute) {
         
         // additional luminance with soft transition
         float fitted_bidir_add_luminance = 0.0;
@@ -259,9 +258,10 @@ filter_pixel
 
         float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
         const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
-        if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
+        // if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
         int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
         samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit..
+        samples = 50;
         float inv_samples = 1.0/static_cast<double>(samples);
 
         unsigned int total_samples_taken = 0;
@@ -269,7 +269,7 @@ filter_pixel
 
         for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
           ++total_samples_taken;
-          unsigned int seed = tea<8>(px*py+px, total_samples_taken);
+          unsigned int seed = tea<8>((px*py+px)+iteratorcnt++, total_samples_taken);
 
           // world to camera space transform, motion blurred
           AtMatrix world_to_camera_matrix_motionblurred;
@@ -372,7 +372,7 @@ filter_pixel
 
           // write sample to image
           unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-
+          if (!redistribute) pixelnumber = static_cast<int>(bokeh->xres * py + px);
           // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
           for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
@@ -387,50 +387,50 @@ filter_pixel
 
         if (transmitted_energy_in_sample) {
           partly_redistributed = true;
-          goto no_redist;
+          // goto no_redist;
         }
       }
 
       // else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-      no_redist:
+    //   no_redist:
       
-        if (transmitted_energy_in_sample && partly_redistributed) {
-          sample.r = sample_transmission.r;
-          sample.g = sample_transmission.g;
-          sample.b = sample_transmission.b;
-        } else if (transmitted_energy_in_sample && !partly_redistributed) {
-          sample.r += sample_transmission.r;
-          sample.g += sample_transmission.g;
-          sample.b += sample_transmission.b;
-        }
+    //     if (transmitted_energy_in_sample && partly_redistributed) {
+    //       sample.r = sample_transmission.r;
+    //       sample.g = sample_transmission.g;
+    //       sample.b = sample_transmission.b;
+    //     } else if (transmitted_energy_in_sample && !partly_redistributed) {
+    //       sample.r += sample_transmission.r;
+    //       sample.g += sample_transmission.g;
+    //       sample.b += sample_transmission.b;
+    //     }
 
 
 
-        // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-        for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
-          for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
+    //     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
+    //     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
+    //       for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
             
-            if (y < 0 || y >= bokeh->yres) continue; // edge fix
-            if (x < 0 || x >= bokeh->xres) continue; // edge fix
+    //         if (y < 0 || y >= bokeh->yres) continue; // edge fix
+    //         if (x < 0 || x >= bokeh->xres) continue; // edge fix
 
-            const unsigned pixelnumber = static_cast<int>(bokeh->xres * y + x);
+    //         const unsigned pixelnumber = static_cast<int>(bokeh->xres * y + x);
             
-            const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-            AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-            float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
-            if (filter_weight == 0) continue;
+    //         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+    //         AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
+    //         float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
+    //         if (filter_weight == 0) continue;
 
 
-            for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            1.0, inv_density, 0.0, depth, iterator,
-                            bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->spp_unredist,
-                            bokeh->zbuffer, bokeh->rgba_string);
-            }
-          }
-        }
-      // }
-    }
+    //         for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
+    //           add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+    //                         1.0, inv_density, 0.0, depth, iterator,
+    //                         bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->spp_unredist,
+    //                         bokeh->zbuffer, bokeh->rgba_string);
+    //         }
+    //       }
+    //     }
+    //   // }
+    // }
   }
 
 
