@@ -40,9 +40,9 @@ node_update
   AiRenderSetHintInt(AtString("imager_padding"), 0);
 
   LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-  // if (filter_data->enabled) AiMsgInfo("[LENTIL BIDIRECTIONAL TL] Starting Imager.");
+  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
+  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
+  if (filter_data->enabled) AiMsgInfo("[LENTIL IMAGER] Starting Imager.");
 }
  
 driver_supports_pixel_type 
@@ -74,9 +74,10 @@ driver_process_bucket {
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
 
+  // don't run if lentil_replaced_filter node is not present
   if (bokeh_filter_node == nullptr) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
-    return; // don't run if lentil_replaced_filter node is not present
+    return;
   }
 
   if (!filter_data->enabled) {
@@ -84,6 +85,7 @@ driver_process_bucket {
     return;
   }
 
+  // BUG: this could potentially fail when using adaptive sampling?
   if (filter_data->current_inv_density > 0.2) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3");
     return;

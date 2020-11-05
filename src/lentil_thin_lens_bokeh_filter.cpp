@@ -62,6 +62,8 @@ node_update
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
 
+  bokeh->enabled = true;
+
   AtNode *cameranode = AiUniverseGetCamera();
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
@@ -72,8 +74,7 @@ node_update
 
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  bokeh->enabled = true;
-
+  
   // will only work for the node called lentil_replaced_filter
   if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
     AiMsgWarning("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
@@ -81,13 +82,6 @@ node_update
     return;
   }
 
-  // const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
-  // if (AiNodeEntryGetCount(nentry) > 1){
-  //   AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_thin_lens_bokeh_filter exist. "
-  //              "All of bidirectional AOVs should be connected to a single lentil_thin_lens_bokeh_filter node. "
-  //              "This is to avoid doing the bidirectional sampling multiple times."
-  //              "You can use the lentil_operator node to take care of the setup automatically.");
-  // }
 
   // THIS IS DOUBLE CODE, also in camera!
   // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
@@ -106,7 +100,6 @@ node_update
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = 2.0;
-  bokeh->rgba_string = AtString("RGBA");
   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   bokeh->zbuffer.clear();
@@ -168,7 +161,7 @@ node_update
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER TL] Starting bidirectional sampling.");
   
-  AiFilterUpdate(node, 1.0);
+  AiFilterUpdate(node, bokeh->filter_width);
 }
  
 
@@ -199,8 +192,6 @@ filter_pixel
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  int cnt = 0;
-
   if (bokeh->enabled) {
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -215,12 +206,10 @@ filter_pixel
         return;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
-    int iteratorcnt = 0;
 
     while (AiAOVSampleIteratorGetNext(iterator)) {
 
       bool redistribute = true;
-      bool partly_redistributed = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
@@ -249,6 +238,15 @@ filter_pixel
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
 
+      // early out, before coc
+      bool transmission_dump_already_happened = false;
+      if (redistribute == false){
+        filter_and_add_to_buffer(px, py, filter_width_half, 
+                                1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                iterator, bokeh);
+        if (!transmitted_energy_in_sample) continue;
+        else transmission_dump_already_happened = true;
+      }
       
       
       // additional luminance with soft transition
@@ -264,23 +262,25 @@ filter_pixel
       float inv_samples = 1.0/static_cast<double>(samples);
 
 
-      // early out
+
+
+      // early out, after coc
       if (redistribute == false){
-        filter_and_add_to_buffer(px, py, filter_width_half, 
-                                1.0, inv_density, depth,
-                                iterator, bokeh);
-        
-        continue;
+        if (!transmission_dump_already_happened){
+          filter_and_add_to_buffer(px, py, filter_width_half, 
+                                  1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                  iterator, bokeh);
+        }
+        if (!transmitted_energy_in_sample) continue;
       }
     
 
       unsigned int total_samples_taken = 0;
       unsigned int max_total_samples = samples*5;
 
-      for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
-        ++total_samples_taken;
-          
-        unsigned int seed = tea<8>((px*py+px)+iteratorcnt++, total_samples_taken);
+      for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
+        
+        unsigned int seed = tea<8>((px*py+px), total_samples_taken);
 
         // world to camera space transform, motion blurred
         AtMatrix world_to_camera_matrix_motionblurred;
@@ -389,66 +389,20 @@ filter_pixel
 
         for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                        inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
-                        bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
+                        inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                        transmitted_energy_in_sample, 1, iterator,
+                        bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image,
                         bokeh->zbuffer);
         
         }
       }
-
-
-      if (transmitted_energy_in_sample) {
-        partly_redistributed = true;
-        // goto no_redist;
-      }
     }
-
-      // else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-    //   no_redist:
-      
-    //     if (transmitted_energy_in_sample && partly_redistributed) {
-    //       sample.r = sample_transmission.r;
-    //       sample.g = sample_transmission.g;
-    //       sample.b = sample_transmission.b;
-    //     } else if (transmitted_energy_in_sample && !partly_redistributed) {
-    //       sample.r += sample_transmission.r;
-    //       sample.g += sample_transmission.g;
-    //       sample.b += sample_transmission.b;
-    //     }
-
-
-
-    //     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-    //     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
-    //       for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
-            
-    //         if (y < 0 || y >= bokeh->yres) continue; // edge fix
-    //         if (x < 0 || x >= bokeh->xres) continue; // edge fix
-
-    //         const unsigned pixelnumber = static_cast<int>(bokeh->xres * y + x);
-            
-    //         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-    //         AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-    //         float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
-    //         if (filter_weight == 0) continue;
-
-
-    //         for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-    //           add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-    //                         1.0, inv_density, 0.0, depth, iterator,
-    //                         bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->spp_unredist,
-    //                         bokeh->zbuffer, bokeh->rgba_string);
-    //         }
-    //       }
-    //     }
-    //   // }
-    // }
   }
 
 
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
-  AtRGBA filtered_value = filter_gaussian_complete(iterator, 2.0);
+  AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width);
   *((AtRGBA*)data_out) = filtered_value;
 }
  

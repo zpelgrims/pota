@@ -58,11 +58,12 @@ node_update
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
-  // const AtNodeEntry *nentry = AiNodeGetNodeEntry(node);
-  // if (AiNodeEntryGetCount(nentry) > 1){
-  //   AiMsgError("[LENTIL BIDIRECTIONAL ERROR]: Multiple nodes of type lentil_bokeh_driver exist. "
-  //              "Use the lentil_operator to avoid this.");
-  // }
+  // will only work for the node called lentil_replaced_filter
+  if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
+    AiMsgWarning("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
+    bokeh->enabled = false;
+    return;
+  }
 
 
 
@@ -95,7 +96,6 @@ node_update
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
   bokeh->filter_width = 2.0;
-  bokeh->rgba_string = AtString("RGBA");
   bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   bokeh->zbuffer.clear();
@@ -149,7 +149,7 @@ node_update
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
 
-  AiFilterUpdate(node, 2.0);
+  AiFilterUpdate(node, bokeh->filter_width);
 }
  
 filter_output_type
@@ -177,8 +177,6 @@ filter_pixel
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  int cnt = 0;
-
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -197,7 +195,6 @@ filter_pixel
     while (AiAOVSampleIteratorGetNext(iterator)) {
       
       bool redistribute = true;
-      bool partly_redistributed = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
@@ -223,10 +220,9 @@ filter_pixel
 
       const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
       if (sample_luminance < po->bidir_min_luminance) redistribute = false;
-      if (!std::isfinite(depth)) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
+      if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
-      
       
       AtMatrix world_to_camera_matrix_static;
       float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
@@ -253,31 +249,117 @@ filter_pixel
 
       if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
+      // early out, before coc
+      bool transmission_dump_already_happened = false;
+      if (redistribute == false){
+        filter_and_add_to_buffer(px, py, filter_width_half, 
+                                1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                iterator, bokeh);
+        if (!transmitted_energy_in_sample) continue;
+        else transmission_dump_already_happened = true;
+      }
       
+      
+      
+      // additional luminance with soft transition
+      float fitted_bidir_add_luminance = 0.0;
+      if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
 
-    // ENERGY REDISTRIBUTION
-      if (redistribute) {
-        
-        // additional luminance with soft transition
-        float fitted_bidir_add_luminance = 0.0;
-        if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-
-        Eigen::Vector2d sensor_position(0, 0);
+      Eigen::Vector2d sensor_position(0, 0);
 
 
       // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-        AtVector2 bbox_min (0, 0);
-        AtVector2 bbox_max (0, 0);
-        int proberays_total_samples = 0;
-        int proberays_base_rays = 32;
-        int proberays_max_rays = proberays_base_rays * 2;
-        std::vector<AtVector2> pixelcache;
+      AtVector2 bbox_min (0, 0);
+      AtVector2 bbox_max (0, 0);
+      int proberays_total_samples = 0;
+      int proberays_base_rays = 32;
+      int proberays_max_rays = proberays_base_rays * 2;
+      std::vector<AtVector2> pixelcache;
 
-        for(int count=0; count<proberays_base_rays; count++) {
-          ++proberays_total_samples;
-          if (proberays_total_samples >= proberays_max_rays) continue;
+      for(int count=0; count<proberays_base_rays; count++) {
+        ++proberays_total_samples;
+        if (proberays_total_samples >= proberays_max_rays) continue;
 
-          Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
+        Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
+        switch (po->unitModel){
+          case mm:
+          {
+            camera_space_sample_position_mb_eigen *= 0.1;
+          } break;
+          case cm:
+          { 
+            camera_space_sample_position_mb_eigen *= 1.0;
+          } break;
+          case dm:
+          {
+            camera_space_sample_position_mb_eigen *= 10.0;
+          } break;
+          case m:
+          {
+            camera_space_sample_position_mb_eigen *= 100.0;
+          }
+        }
+      
+        if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
+          --count;
+          continue;
+        }
+
+        const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+
+        //figure out why sometimes pixel is nan, can't just skip it
+        if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
+            (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+        {
+          --count;
+          continue;
+        }
+
+        // expand bbox
+        if (count == 0) {
+          bbox_min = {(float)pixel(0), (float)pixel(1)};
+          bbox_max = {(float)pixel(0), (float)pixel(1)};
+        } else {
+          bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
+          bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
+        }
+
+        pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
+      }
+
+
+      double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
+      if (bbox_area < 20.0) redistribute = false; //might have to increase this?
+      int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.001);
+      samples = std::ceil((double)(samples) * inv_density);
+      samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+      float inv_samples = 1.0 / static_cast<double>(samples);
+
+
+      // early out, after coc
+      if (redistribute == false){
+        if (!transmission_dump_already_happened){
+          filter_and_add_to_buffer(px, py, filter_width_half, 
+                                  1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                  iterator, bokeh);
+        }
+        if (!transmitted_energy_in_sample) continue;
+      }
+
+
+      unsigned int total_samples_taken = 0;
+      unsigned int max_total_samples = samples*5;
+        
+
+      for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+        
+        Eigen::Vector2d pixel;
+        
+        if (count < pixelcache.size()){ // redist already taken samples from probe rays
+          pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
+        } else {
+
+          Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
           switch (po->unitModel){
             case mm:
             {
@@ -296,146 +378,34 @@ filter_pixel
               camera_space_sample_position_mb_eigen *= 100.0;
             }
           }
-        
-          if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
+
+          if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
             --count;
             continue;
           }
 
-          const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+          pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
 
-          //figure out why sometimes pixel is nan, can't just skip it
-          if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
+          // if outside of image
+          if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
               (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
           {
-            --count;
+            --count; // much room for improvement here, potentially many samples are wasted outside of frame
             continue;
           }
-
-          // expand bbox
-          if (count == 0) {
-            bbox_min = {(float)pixel(0), (float)pixel(1)};
-            bbox_max = {(float)pixel(0), (float)pixel(1)};
-          } else {
-            bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
-            bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
-          }
-
-          pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
         }
 
+        // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-        double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-        if (bbox_area < 20.0) goto no_redist; //might have to increase this?
-        int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.001);
-        samples = std::ceil((double)(samples) / inv_density);
-        samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
-        float inv_samples = 1.0 / static_cast<double>(samples);
-        unsigned int total_samples_taken = 0;
-        unsigned int max_total_samples = samples*5;
-        
+        // write sample to image
+        unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
 
-        // redist samples
-        for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
-          
-          Eigen::Vector2d pixel;
-          
-          if (count < pixelcache.size()){ // redist already taken samples from probe rays
-            pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
-          } else {
-
-            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
-            switch (po->unitModel){
-              case mm:
-              {
-                camera_space_sample_position_mb_eigen *= 0.1;
-              } break;
-              case cm:
-              { 
-                camera_space_sample_position_mb_eigen *= 1.0;
-              } break;
-              case dm:
-              {
-                camera_space_sample_position_mb_eigen *= 10.0;
-              } break;
-              case m:
-              {
-                camera_space_sample_position_mb_eigen *= 100.0;
-              }
-            }
-
-            if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
-              --count;
-              continue;
-            }
-
-            pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
-
-            // if outside of image
-            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
-                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-            {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame
-              continue;
-            }
-          }
-
-          // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
-
-          // write sample to image
-          unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
-
-          for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-            add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                          inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
-                          bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
-                          bokeh->rgba_string);
-          }
-        }
-
-        if (transmitted_energy_in_sample) {
-          partly_redistributed = true;
-          goto no_redist;
-        }
-      }
-
-
-
-      else { // COPY ENERGY IF NO REDISTRIBUTION IS REQUIRED
-      no_redist:
-
-        if (transmitted_energy_in_sample && partly_redistributed) {
-          sample.r = sample_transmission.r;
-          sample.g = sample_transmission.g;
-          sample.b = sample_transmission.b;
-        } else if (transmitted_energy_in_sample && !partly_redistributed) {
-          sample.r += sample_transmission.r;
-          sample.g += sample_transmission.g;
-          sample.b += sample_transmission.b;
-        }
-
-
-        // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-        for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
-          for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
-            
-            if (y < 0 || y >= bokeh->yres) continue; // edge fix
-            if (x < 0 || x >= bokeh->xres) continue; // edge fix
-
-            const unsigned pixelnumber = static_cast<int>(bokeh->xres * y + x);
-            
-            const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-            AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-            float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
-            if (filter_weight == 0) continue;
-
-            for (size_t i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            1.0, inv_density, 0.0, depth, iterator,
-                            bokeh->image_unredist, bokeh->unredist_weight_per_pixel, bokeh->image, bokeh->zbuffer, 
-                            bokeh->rgba_string);
-            }
-          }
+        for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+          add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                        inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                        transmitted_energy_in_sample, 1, iterator,
+                        bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image,
+                        bokeh->zbuffer);
         }
       }
     }
@@ -443,7 +413,7 @@ filter_pixel
 
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
-  AtRGBA filtered_value = filter_gaussian_complete(iterator, 2.0);
+  AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width);
   *((AtRGBA*)data_out) = filtered_value;
 }
 

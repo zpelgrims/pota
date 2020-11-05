@@ -47,20 +47,20 @@ HEADERS=\
 
 
 
-all: lentil_operator\
+all: lentil_bokeh_filter\
+	 lentil_operator\
 	 lentil_debug_operator\
 	 lentil_debug_filter\
 	 lentil_thin_lens_bokeh_filter\
 	 lentil\
 	 lentil_thinlens\
 	 lentil_imager
-	#  lentil_bokeh_filter
 	#  lentil_glare_imager
 	
 
 
-# lentil_bokeh_filter: ../../src/lentil_bokeh_filter.cpp ${HEADERS}
-# 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_bokeh_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
+lentil_bokeh_filter: ../../src/lentil_bokeh_filter.cpp ${HEADERS}
+	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_bokeh_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 
 
 lentil_thin_lens_bokeh_filter: ../../src/lentil_thin_lens_bokeh_filter.cpp ${HEADERS}
 	${CXX} ${CXXFLAGS} -I${ARNOLD_PATH_6.1.0.0}/include ${LENSES} ../../src/lentil_thin_lens_bokeh_filter.cpp -o ${user_build_folder}/bin/6.1.0.0/lentil_thin_lens_bokeh_filter.${SHARED_LIB_FORMAT} -L${ARNOLD_PATH_6.1.0.0}/bin -lai 

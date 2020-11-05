@@ -239,11 +239,12 @@ std::vector<std::string> split_str(std::string str, std::string token)
 
 inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
+                          bool transmitted_energy_in_sample,
+                          int transmission_layer,
                           struct AtAOVSampleIterator* sample_iterator, 
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
                           std::map<AtString, std::vector<float> > &weight_per_pixel,
                           std::map<AtString, std::vector<AtRGBA> > &image_data_types,
-                          std::map<AtString, std::vector<int> > &spp,
                           std::vector<float> &zbuffer) {    
     switch(aov_type){
 
@@ -251,6 +252,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
           AtRGBA rgba_energy;
           rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
+          if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
+          else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
 
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           weight_per_pixel[aov_name][px] += inv_density;
@@ -304,13 +307,11 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 }
 
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
-                                     float inv_samples, float inv_density, float depth,
+                                     float inv_samples, float inv_density, float depth, 
+                                     bool transmitted_energy_in_sample, int transmission_layer,
                                      struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
 
-    int pixelnumber = static_cast<int>(filter_data->xres * py + px);
-
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-    int counter = 0;
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
       for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
 
@@ -324,11 +325,11 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         float filter_weight = filter_gaussian(subpixel_pos_dist, filter_data->filter_width);
         if (filter_weight == 0) continue;
 
-        float inv_filter_samples = (1.0 / filter_width_half) / 3.13; // figure this out so it doesn't break when filter width is not 2
+        float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
-                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, iterator,
-                        filter_data->image_redist, filter_data->redist_weight_per_pixel, filter_data->image, filter_data->spp_redist,
+                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
+                        filter_data->image_redist, filter_data->redist_weight_per_pixel, filter_data->image,
                         filter_data->zbuffer);
         }
       }
