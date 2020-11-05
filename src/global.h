@@ -237,7 +237,7 @@ std::vector<std::string> split_str(std::string str, std::string token)
 }
 
 
-inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name, 
+inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth, 
                           struct AtAOVSampleIterator* sample_iterator, 
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
@@ -255,8 +255,7 @@ inline void add_to_buffer(AtRGBA sample, int px, int aov_type, AtString aov_name
           
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           weight_per_pixel[aov_name][px] += inv_density;
-          spp[aov_name][px] += 1;
-        
+
           break;
         }
 

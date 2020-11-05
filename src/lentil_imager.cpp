@@ -112,6 +112,7 @@ driver_process_bucket {
           switch (aov_type){
             case AI_TYPE_RGBA: {
               AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
+              if (image_redist.a == 0.0) image_redist.a = 1.0;
               if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image_redist /= image_redist.a;
               
               ((AtRGBA*)bucket_data)[in_idx] = image_redist;

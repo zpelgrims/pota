@@ -249,7 +249,7 @@ filter_pixel
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
 
-
+      
         
         // additional luminance with soft transition
         float fitted_bidir_add_luminance = 0.0;
@@ -258,17 +258,36 @@ filter_pixel
 
         float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
         const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
-        // if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) goto no_redist; // 15^2 px minimum coc
+        if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 15^2 px minimum coc
         int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
         samples = std::clamp(samples, 25, 10000); // not sure if a million is actually ever hit..
         samples = 50;
         float inv_samples = 1.0/static_cast<double>(samples);
+
+
+
+      
 
         unsigned int total_samples_taken = 0;
         unsigned int max_total_samples = samples*5;
 
         for(int count=0; count<samples && total_samples_taken<max_total_samples; count++) {
           ++total_samples_taken;
+
+
+          if (redistribute == false){
+            int pixelnumber = static_cast<int>(bokeh->xres * py + px);
+              for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                              inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
+                              bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
+                              bokeh->zbuffer, bokeh->rgba_string);
+              
+              }
+            continue;
+          }
+
+            
           unsigned int seed = tea<8>((px*py+px)+iteratorcnt++, total_samples_taken);
 
           // world to camera space transform, motion blurred
@@ -376,7 +395,7 @@ filter_pixel
           // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
           for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-            add_to_buffer(sample, pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+            add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                           inv_samples, inv_density, fitted_bidir_add_luminance, depth, iterator,
                           bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image, bokeh->spp_redist,
                           bokeh->zbuffer, bokeh->rgba_string);
