@@ -409,9 +409,7 @@ filter_pixel
  
 node_finish
 {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-  AiMsgWarning("# of time run: %d", bokeh->global_run);
-  delete bokeh;
+
 }
 
 node_loader
