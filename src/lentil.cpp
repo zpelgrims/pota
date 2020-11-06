@@ -86,7 +86,7 @@ node_update {
     // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
     AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
     if (operator_node != nullptr){
-        if (AiNodeIs(operator_node, "lentil_operator")){
+        if (AiNodeIs(operator_node, AtString("lentil_operator"))){
             AiNodeSetInt(operator_node, "call_me_dirty", rand());
         }
     }
