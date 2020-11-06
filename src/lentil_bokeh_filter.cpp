@@ -131,12 +131,6 @@ node_update
       bokeh->image[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
       bokeh->image_redist[AtString(name.c_str())].clear();
       bokeh->image_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_unredist[AtString(name.c_str())].clear();
-      bokeh->image_unredist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->redist_weight_per_pixel[AtString(name.c_str())].clear();
-      bokeh->redist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->unredist_weight_per_pixel[AtString(name.c_str())].clear();
-      bokeh->unredist_weight_per_pixel[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
 
@@ -403,8 +397,7 @@ filter_pixel
           add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                         inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                         transmitted_energy_in_sample, 1, iterator,
-                        bokeh->image_redist, bokeh->redist_weight_per_pixel, bokeh->image,
-                        bokeh->zbuffer);
+                        bokeh->image_redist, bokeh->image, bokeh->zbuffer);
         }
       }
     }

@@ -21,13 +21,8 @@ struct LentilFilterData {
   float filter_width;
   float time_start;
   float time_end;
-  std::map<AtString, std::vector<AtRGBA> > image; // think i should be able to remove this.. just use _redist, _unredist instead
+  std::map<AtString, std::vector<AtRGBA> > image;
   std::map<AtString, std::vector<AtRGBA> > image_redist;
-  std::map<AtString, std::vector<AtRGBA> > image_unredist;
-  std::map<AtString, std::vector<float> > redist_weight_per_pixel;
-  std::map<AtString, std::vector<float> > unredist_weight_per_pixel;
-  std::map<AtString, std::vector<int> > spp_redist;
-  std::map<AtString, std::vector<float> > original_alpha;
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
@@ -243,7 +238,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
                           int transmission_layer,
                           struct AtAOVSampleIterator* sample_iterator, 
                           std::map<AtString, std::vector<AtRGBA> > &image_color_types,
-                          std::map<AtString, std::vector<float> > &weight_per_pixel,
                           std::map<AtString, std::vector<AtRGBA> > &image_data_types,
                           std::vector<float> &zbuffer) {    
     switch(aov_type){
@@ -256,7 +250,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
 
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
-          weight_per_pixel[aov_name][px] += inv_density;
 
           break;
         }
@@ -266,7 +259,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
 
           image_color_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
-          weight_per_pixel[aov_name][px] += inv_density;
           
           break;
         }
@@ -329,8 +321,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
                         inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
-                        filter_data->image_redist, filter_data->redist_weight_per_pixel, filter_data->image,
-                        filter_data->zbuffer);
+                        filter_data->image_redist, filter_data->image, filter_data->zbuffer);
         }
       }
     }
