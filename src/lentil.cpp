@@ -83,11 +83,13 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
-  AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
-  if (operator_node != nullptr){
-      AiNodeSetInt(operator_node, "call_me_dirty", rand());
-  }
+    // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
+    AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
+    if (operator_node != nullptr){
+        if (AiNodeIs(operator_node, "lentil_operator")){
+            AiNodeSetInt(operator_node, "call_me_dirty", rand());
+        }
+    }
 
   po->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
   po->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
