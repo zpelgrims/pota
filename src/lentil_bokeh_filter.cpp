@@ -330,7 +330,7 @@ filter_pixel
 
       double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
       if (bbox_area < 20.0) redistribute = false; //might have to increase this?
-      int samples = std::floor(bbox_area * po->bidir_sample_mult * 0.001);
+      int samples = std::floor(bbox_area * std::pow(po->bidir_sample_mult,2) * 0.001);
       samples = std::ceil((double)(samples) * inv_density);
       samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
       float inv_samples = 1.0 / static_cast<double>(samples);

@@ -255,8 +255,8 @@ filter_pixel
       
 
       float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, tl);
-      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * tl->bidir_sample_mult * 0.001; // pixel area as baseline for sample count
-      if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 15^2 px minimum coc
+      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(tl->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
+      if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
       samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
       float inv_samples = 1.0/static_cast<double>(samples);
