@@ -17,13 +17,12 @@ struct LentilOperatorData
     AtNode *camera_node;
     AtString camera_node_type;
     bool cook;
-
-    float random;
 };
 
 node_parameters 
 {
     AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+    AiParameterInt("call_me_dirty", 0);
 }
 
 operator_init
@@ -44,11 +43,7 @@ operator_init
         operator_data->cook = true;
     }
 
-    AiNodeSetLocalData(op, operator_data);  
-
-    // force-dirty the operator so it re-runs on ipr updates.. seems to work (lol)
-    operator_data->random = rand();
-
+    AiNodeSetLocalData(op, operator_data);
     return true;
 }
 
