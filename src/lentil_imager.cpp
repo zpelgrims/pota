@@ -164,6 +164,7 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
+  AiMsgInfo("node finish imager");
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
   // delete imager_data;
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");

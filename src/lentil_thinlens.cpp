@@ -105,6 +105,7 @@ node_update
 
 node_finish
 {
+    AiMsgInfo("node finish thinlens fw");
     CameraThinLens* tl = (CameraThinLens*)AiNodeGetLocalData(node);
     delete tl;
 }

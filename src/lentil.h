@@ -100,7 +100,6 @@ struct Camera
     bool run_intersection_tests;
     int count;
 
-    bool proper_ray_derivatives;
 
     double random1;
     double random2;

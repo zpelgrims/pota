@@ -39,5 +39,4 @@ tl->bidir_add_luminance = AiNodeGetFlt(cameranode, "bidir_add_luminanceTL");
 tl->bidir_add_luminance_transition = AiNodeGetFlt(cameranode, "bidir_add_luminance_transitionTL");
 
 tl->vignetting_retries = AiNodeGetInt(cameranode, "vignetting_retriesTL");
-tl->proper_ray_derivatives = AiNodeGetBool(cameranode, "proper_ray_derivativesTL");
 

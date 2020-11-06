@@ -91,7 +91,7 @@ node_update
 
 
   if (tl->enable_dof == false) {
-    AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling Bidirectional sampling.");
+    AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
     return;
   }
@@ -187,8 +187,6 @@ filter_output_type
  
 filter_pixel
 {
-
-  
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
 
@@ -407,7 +405,7 @@ filter_pixel
 }
  
  
-node_finish {}
+node_finish {AiMsgInfo("node finish filter");}
 
 node_loader
 {
