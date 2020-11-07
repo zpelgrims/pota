@@ -10,7 +10,7 @@
 // Swaps the filter of the RGBA aov to a lentil_debug_filter for visualizing the to-be-redistributed samples
 
 
-AI_OPERATOR_NODE_EXPORT_METHODS(LentilFilterDebugOperatorMtd);
+AI_OPERATOR_NODE_EXPORT_METHODS(LentilDebugOperatorMtd);
 
 enum {
     p_debug_luminance_filter
@@ -88,7 +88,7 @@ operator_cleanup
 node_loader
 {
     if (i>0) return 0;
-    node->methods = (AtNodeMethods*)LentilFilterDebugOperatorMtd;
+    node->methods = (AtNodeMethods*)LentilDebugOperatorMtd;
     node->name = "lentil_debug_operator";
     node->node_type = AI_NODE_OPERATOR;
     strcpy(node->version, AI_VERSION);

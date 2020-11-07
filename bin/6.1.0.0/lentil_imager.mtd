@@ -1,8 +1,7 @@
 [node lentil_imager]
-    maya.name               STRING "aiLentilImager"
+    maya.name               STRING "lentil_imager"
     maya.classification     STRING  "imager"
-    maya.output_name        STRING  "out"
-    maya.output_shortname   STRING  "out"
+    maya.attr_prefix        STRING ""
     maya.id                  INT      0x00070512
     [attr layer_selection]
         maya.hide               BOOL     TRUE

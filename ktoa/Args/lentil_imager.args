@@ -1,0 +1,9 @@
+<!-- args file created by: elrachyd@gmail.com -->
+<!-- date: 14/17/2020 -->
+<!-- removing layer_selection to match all DCC-->
+
+<args format="1.0">
+ <param name="input"/>
+ <param name="layer_selection" widget="null"/>
+ <param widget="checkBox" name="enable"/>
+</args>

@@ -3,6 +3,7 @@
     maya.name               STRING  "camera"
     maya.id                 INT     0x00070508
     maya.translator         STRING  "lentil_thinlens"
+    maya.attr_prefix        STRING ""
 
     c4d.classification      STRING  "generic"
 

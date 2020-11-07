@@ -1,0 +1,101 @@
+<!-- args file created by: elrachyd@gmail.com -->
+<!-- Katana GUI based on Maya -->
+<!-- date: 14/17/2020 -->
+
+<args format="1.0">
+<page name="Commom Attributes" open="False"> 
+ <param name="exposure" label="Exposure" slider="True" slidermin="-100.0" min="0.0 "slidermax="100.0" max="100.0"/>
+ <param name="rolling_shutter_duration" label="Rolling Shutter" slider="True"/>
+ <param name="filtermap" label="Filtermap"/>
+ <param widget="checkBox" name="projective"/>
+ <param int="1" name="aperture_blades" label="Aperture Blades" slider="True" slidermin="0" slidermax="40"/>
+ param name="aperture_rotation" label="Aperture Rotation" slider="True" slidermin="0.0" min="0.0" slidermax="50.0" max="360.0"/>
+ <param name="aperture_blade_curvature" label="Aperture Blade Curvature" slider="True" slidermin="-20.0" min="-20.0" slidermax="20.0" max="20.0"/>
+ param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
+ <param widget="mapper" name="handedness">
+	<hintdict name="options">
+	<string name="right"	value="right"/>
+	<string name="left"		value="left"/>
+	</hintdict>
+	</param>
+ <param name="near_clip"/>
+ <param name="far_clip"/>
+ <param name="shutter_start" label="Shutter Start" slider="True"/>
+ <param name="shutter_end" label="Shutter End" slider="True"/>
+ <param name="motion_start" label="Motion Start" slider="True"/>
+ <param name="motion_end" label="Motion End" slider="True"/>
+	<param widget="mapper" name="shutter_type">
+	<hintdict name="options">
+	<string name="box"		value="box"/>
+	<string name="curve" 	value="curve"/>
+	<string name="triangle"	value="triangle"/>
+	</hintdict>
+	</param>
+<param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
+	<hintdict name="options">
+	<string name="top" 		value="top"/>
+	<string name="left"  	value="left"/>
+	<string name="off"  	value="off"/>
+	<string name="right"  	value="right"/>
+	<string name="bottom"  	value="bottom"/>
+	</hintdict>
+	</param>
+</page>
+
+<page name="Thin Type" open="True"> 
+ <param name="sensor_widthTL" label="Sensor Width(mm)" slider="True" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
+ <param name="focal_lengthTL"label="Focal Lengt(mm)" slider="True" slidermin="0.01" min="5.0" slidercenter = "35" slidermax="500"  max="9999.0"/>
+ <param name="fstopTL" label="F-stop" slider="True" slidermin="0.0" slidercenter="2.8" slidermax="64.0" max="64.0"/>
+ <param name="focus_distanceTL" label="Focus distance(cm)" slider="True" slidermin="0.0" slidercenter ="150.0" slidermax="1000000.0"  max="1000000.0"/>
+ <param widget="checkBox" name="enable_dofTL" label="Enable DOF"/>
+ <param name="optical_vignetting_distanceTL" label="Optical Vignetting Distance" slider="True" slidermin="1" min="1" slidercenter = "15" slidermax="50" max="50"/>
+ <param name="optical_vignetting_radiusTL" label="Optical Vignetting Radius" slider="True" slidermin="1" slidermax="5" max="5"/>
+ <param name="abb_sphericalTL" label="Abberration(spherical)" slider="True" slidermin="0.0" slidercenter="0.5" slidermax="1" max="1"/>
+ <param name="abb_distortionTL" label="Abberration(distorsion)" slider="True" slidermin="-20.0" slidercenter="0.0" slidermax="20" max="20"/>
+ <param int="1" name="bokeh_aperture_bladesTL" label="Aperture Blades" slider="True" slidermin="0" slidercenter="0.0" slidermax="8" max="8"/>
+ <param name="bokeh_circle_to_squareTL" label="Circle to Square mapping" slider="True"/>
+ <param name="bokeh_anamorphicTL" label="Anamorphic strech" slider="True"/>
+</page>
+
+<page name="Bokeh Image" open="True">  
+ <param widget="checkBox" name="bokeh_enable_imageTL"label="Enable Bokeh Image"/>
+ <param name="bokeh_image_pathTL" widget="fileInput" label="Bokeh Image"/>
+</page>
+
+<page name="Biderctional" open="False">   
+ <param name="bidir_min_luminanceTL" label="Biderctional Trigger" slider="True" slidermin="0.0" slidermax="1000.0" max="1000.0"/>
+ <param int="1" name="bidir_sample_multTL" label="Samples" slider="True" slidermin="0.0" min="0" slidercenter = "20" slidermax="1000"  max="1000"/>
+ <param name="bidir_add_luminanceTL" label="Add bokeh luminance" slider="True"/>
+ <param name="bidir_add_luminance_transitionTL" label="Add Lum transition" slider="True"/>
+</page>
+
+<page name="Advanced" open="False">  
+ <param int="1" name="vignetting_retriesTL"label="Vifnetting Retries" slider="True" slidermin="1" min="1" slidercenter="30" slidermax="50" max="50"/>
+ <param widget="mapper" name="unitsTL" label="Units">
+	<hintdict name="options">
+	<string name="mm" 	value="mm"/>
+	<string name="dm" 	value="dm"/>
+	<string name="m" 	value="m"/>
+	<string name="cm" 	value="cm"/>
+	</hintdict>
+	</param>
+</page>
+
+<page name="Experimental" open="False">
+ <param name="abb_comaTL"label="Aberraton(coma)" slider="True" slidermin="-1.0" slidermax="1.0" max="1.0"/> 
+</page>
+<page name="Dynamic Array Attributes" open="False"> 
+	<param widget="sortableArray" isDynamicArray="1" name="horizontal_fov"/>
+	<param widget="sortableArray" isDynamicArray="1" name="vertical_fov"/>
+	<param widget="sortableArray" isDynamicArray="1" name="screen_window_min"/>
+	<param widget="sortableArray" isDynamicArray="1" name="screen_window_max"/>	
+	<param widget="dynamicArray" isDynamicArray="1" name="shutter_curve"/>	
+</page>	
+
+<page name="Extra Attributes" open="False"> 
+	<param widget="dynamicArray" isDynamicArray="1" name="position"/>
+	<param widget="dynamicArray" isDynamicArray="1" name="look_at"/>
+	<param widget="dynamicArray" isDynamicArray="1" name="up"/>
+	<param tupleGroupSize="4" widget="dynamicArray" isDynamicArray="1" name="matrix"/>
+</page> 
+</args>
