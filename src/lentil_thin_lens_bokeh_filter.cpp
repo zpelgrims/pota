@@ -182,7 +182,7 @@ filter_pixel
     // hack to try avoid running over same pixel twice
     int linear_pixel = px + (py * (double)bokeh->xres);
     if (bokeh->pixel_already_visited[linear_pixel]) {
-        return;
+        goto just_filter;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
 
@@ -377,11 +377,35 @@ filter_pixel
     }
   }
 
-
+  just_filter:
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
-  AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width);
-  *((AtRGBA*)data_out) = filtered_value;
+  switch(data_type){
+    case AI_TYPE_RGBA: {
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      *((AtRGBA*)data_out) = filtered_value;
+      break;
+    }
+    case AI_TYPE_RGB: {
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtRGB*)data_out) = rgb_energy;
+      break;
+    }
+    // case AI_TYPE_VECTOR: {
+    //   AtRGBA filtered_value = filter_closest_complete(iterator, bokeh->filter_width);
+    //   *((AtRGBA*)data_out) = filtered_value;
+    //   break;
+    // }
+    // case AI_TYPE_FLOAT: {
+    //   *((AtRGBA*)data_out) = filtered_value;
+    //   break;
+    // }
+    // case AI_TYPE_INT: {
+    //   *((AtRGBA*)data_out) = filtered_value;
+    //   break;
+    // }
+  }
 }
  
  

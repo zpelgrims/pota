@@ -54,7 +54,7 @@ inline float filter_gaussian(AtVector2 p, float width) {
   return AiFastExp(2 * -r);
 }
 
-inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const float width){
+inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const float width, const uint8_t aov_type){
   float aweight = 0.0f;
   AtRGBA avalue = AI_RGBA_ZERO;
 
@@ -74,7 +74,19 @@ inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const floa
       const float weight = AiFastExp(2 * -r) * inv_density;
 
       // accumulate weights and colors
-      AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+      AtRGBA sample_energy = AI_RGBA_ZERO;
+      switch (aov_type){
+        case AI_TYPE_RGBA: {
+          sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+          break;
+        }
+        case AI_TYPE_RGB: {
+          AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
+          sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
+          break;
+        }
+      }
+      
       avalue += weight * sample_energy;
       aweight += weight;
   }
