@@ -8,6 +8,6 @@
 
     
     [attr layer_selection]
-        maya.hide               BOOL     TRUE
+        maya.hide               BOOL     false
     [attr input]
         maya.hide               BOOL     TRUE

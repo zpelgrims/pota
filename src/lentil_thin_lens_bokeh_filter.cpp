@@ -83,14 +83,7 @@ node_update
   }
 
 
-  // THIS IS DOUBLE CODE, also in camera!
-  // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
-  #include "node_update_thinlens.h"
-
-
-
-
-  if (tl->enable_dof == false) {
+  if (!AiNodeGetBool(cameranode, "enable_dofTL")) {
     AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
     return;
@@ -109,7 +102,7 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (tl->bidir_sample_mult == 0) {
+  if (AiNodeGetInt(cameranode, "bidir_sample_multTL") == 0) {
     bokeh->enabled = false;
     return;
   }
@@ -129,6 +122,8 @@ node_update
      
       std::string name = split_str(output_string, std::string(" ")).end()[-4];
       std::string type = split_str(output_string, std::string(" ")).end()[-3];
+
+      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
 
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
@@ -189,7 +184,7 @@ filter_pixel
     // hack to try avoid running over same pixel twice
     int linear_pixel = px + (py * (double)bokeh->xres);
     if (bokeh->pixel_already_visited[linear_pixel]) {
-        return;
+        goto just_filter;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
 
@@ -260,7 +255,7 @@ filter_pixel
         if (!transmitted_energy_in_sample) continue;
       }
     
-
+    
       unsigned int total_samples_taken = 0;
       unsigned int max_total_samples = samples*5;
 
@@ -384,11 +379,39 @@ filter_pixel
     }
   }
 
-
+  just_filter:
   // do regular filtering (passthrough) for display purposes
   AiAOVSampleIteratorReset(iterator);
-  AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width);
-  *((AtRGBA*)data_out) = filtered_value;
+  switch(data_type){
+    case AI_TYPE_RGBA: {
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      *((AtRGBA*)data_out) = filtered_value;
+      break;
+    }
+    case AI_TYPE_RGB: {
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtRGB*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_VECTOR: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtVector*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_FLOAT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      float rgb_energy = filtered_value.r;
+      *((float*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_INT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      int rgb_energy = filtered_value.r;
+      *((int*)data_out) = rgb_energy;
+    }
+  }
 }
  
  

@@ -25,7 +25,8 @@ $(info    LENSES: $(LENSES))
 
 CXXFLAGS=\
 	-Wall\
-	-std=c++0x\
+	-std=c++17\
+	-Wno-narrowing\
 	-shared\
 	-fPIC\
 	-I/../../../Eigen/Eigen\
@@ -35,9 +36,9 @@ CXXFLAGS=\
 	-DFMT_HEADER_ONLY\
 	-O3
 
-# ifeq ($(OS), Linux)
-# 	CXXFLAGS += -static-libgcc -static-libstdc++
-# endif
+ifeq ($(OS), Linux)
+	CXXFLAGS += -static-libgcc -static-libstdc++
+endif
 
 HEADERS=\
 	../../src/lens.h\
