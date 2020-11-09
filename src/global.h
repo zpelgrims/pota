@@ -97,6 +97,42 @@ inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const floa
    return avalue;
 }
 
+
+inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type, LentilFilterData *bokeh){
+  AtRGBA pixel_energy = AI_RGBA_ZERO;
+  float z = 0.0;
+
+  while (AiAOVSampleIteratorGetNext(iterator))
+  {
+      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z);
+      if ((std::abs(depth) <= z) || z == 0.0){
+        
+        z = std::abs(depth);
+        AtRGBA sample_energy = AI_RGBA_ZERO;
+
+        switch (aov_type){
+          case AI_TYPE_VECTOR: {
+            AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
+            pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
+            break;
+          }
+          case AI_TYPE_FLOAT: {
+            float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
+            pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+            break;
+          }
+          case AI_TYPE_INT: {
+            int sample_energy = AiAOVSampleIteratorGetInt(iterator);
+            pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+            break;
+          }
+        }
+      }
+  }
+
+   return pixel_energy;
+}
+
 inline float linear_interpolate(float perc, float a, float b){
     return a + perc * (b - a);
 }

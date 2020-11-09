@@ -392,19 +392,23 @@ filter_pixel
       *((AtRGB*)data_out) = rgb_energy;
       break;
     }
-    // case AI_TYPE_VECTOR: {
-    //   AtRGBA filtered_value = filter_closest_complete(iterator, bokeh->filter_width);
-    //   *((AtRGBA*)data_out) = filtered_value;
-    //   break;
-    // }
-    // case AI_TYPE_FLOAT: {
-    //   *((AtRGBA*)data_out) = filtered_value;
-    //   break;
-    // }
-    // case AI_TYPE_INT: {
-    //   *((AtRGBA*)data_out) = filtered_value;
-    //   break;
-    // }
+    case AI_TYPE_VECTOR: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtVector*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_FLOAT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      float rgb_energy = filtered_value.r;
+      *((float*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_INT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      int rgb_energy = filtered_value.r;
+      *((int*)data_out) = rgb_energy;
+    }
   }
   
 }
