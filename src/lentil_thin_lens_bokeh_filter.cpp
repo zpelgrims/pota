@@ -83,14 +83,7 @@ node_update
   }
 
 
-  // THIS IS DOUBLE CODE, also in camera!
-  // get camera params & recompute the node_update section to avoid race condition when sharing datastruct, is this necessary any more?
-  #include "node_update_thinlens.h"
-
-
-
-
-  if (tl->enable_dof == false) {
+  if (!AiNodeGetBool(cameranode, "enable_dofTL")) {
     AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
     return;
@@ -109,7 +102,7 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (tl->bidir_sample_mult == 0) {
+  if (AiNodeGetInt(cameranode, "bidir_sample_multTL") == 0) {
     bokeh->enabled = false;
     return;
   }
