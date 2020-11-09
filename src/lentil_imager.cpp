@@ -94,6 +94,8 @@ driver_process_bucket {
   int aov_type = 0;
   const void *bucket_data;
 
+
+
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;

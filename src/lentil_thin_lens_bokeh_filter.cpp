@@ -123,6 +123,8 @@ node_update
       std::string name = split_str(output_string, std::string(" ")).end()[-4];
       std::string type = split_str(output_string, std::string(" ")).end()[-3];
 
+      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
+
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
       

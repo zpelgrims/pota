@@ -5,6 +5,6 @@
     maya.output_shortname   STRING  "out"
     maya.id                  INT      0x00070512
     [attr layer_selection]
-        maya.hide               BOOL     TRUE
+        maya.hide               BOOL     false
     [attr input]
         maya.hide               BOOL     TRUE
