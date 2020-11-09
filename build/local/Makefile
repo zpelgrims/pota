@@ -25,10 +25,9 @@ $(info    LENSES: $(LENSES))
 
 CXXFLAGS=\
 	-Wall\
-	-std=c++17\
+	-std=c++0x\
 	-shared\
 	-fPIC\
-	-Wno-narrowing\
 	-I/../../../Eigen/Eigen\
 	-I/../../../fmt/include/fmt\
 	-I/../../../polynomial-optics/src\
@@ -36,9 +35,9 @@ CXXFLAGS=\
 	-DFMT_HEADER_ONLY\
 	-O3
 
-ifeq ($(OS), Linux)
-	CXXFLAGS += -static-libgcc -static-libstdc++
-endif
+# ifeq ($(OS), Linux)
+# 	CXXFLAGS += -static-libgcc -static-libstdc++
+# endif
 
 HEADERS=\
 	../../src/lens.h\
