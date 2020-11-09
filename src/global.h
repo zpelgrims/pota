@@ -48,7 +48,7 @@ std::string replace_first_occurence(std::string& s, const std::string& toReplace
     return s.replace(pos, toReplace.length(), replaceWith);
 }
 
-inline float filter_gaussian(AtVector2 p, float width) {
+inline float filter_weight_gaussian(AtVector2 p, float width) {
   const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
@@ -362,7 +362,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
         AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-        float filter_weight = filter_gaussian(subpixel_pos_dist, filter_data->filter_width);
+        float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_data->filter_width);
         if (filter_weight == 0) continue;
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2

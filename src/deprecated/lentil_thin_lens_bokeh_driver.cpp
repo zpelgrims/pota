@@ -341,7 +341,7 @@ driver_process_bucket
               
               const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(sample_iterator); // offset within original pixel
               AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-              float filter_weight = filter_gaussian(subpixel_pos_dist, bokeh->filter_width);
+              float filter_weight = filter_weight_gaussian(subpixel_pos_dist, bokeh->filter_width);
               if (filter_weight == 0) continue;
 
 
