@@ -68,6 +68,7 @@ node_update
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_thinlens"))) {
     AiMsgError("[LENTIL FILTER TL] Camera is not of type lentil_thinlens. A full scene update is required.");
+    AiRenderAbort();
     bokeh->enabled = false;
     return;
   }
@@ -166,6 +167,8 @@ filter_output_type
         return AI_TYPE_INT;
       case AI_TYPE_UINT:
         return AI_TYPE_UINT;
+      case AI_TYPE_POINTER:
+        return AI_TYPE_POINTER;
       default:
          return AI_TYPE_NONE;
    }

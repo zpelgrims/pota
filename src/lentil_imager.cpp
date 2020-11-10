@@ -21,7 +21,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 node_parameters 
 {
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
-  AiParameterStr(AtString("layer_selection"), AtString("*"));
+  // AiParameterStr(AtString("layer_selection"), AtString("*")); // if enabled, mtoa/c4dtoa will only run over rgba (hardcoded for now)
   AiParameterBool(AtString("enable"), true);
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -46,7 +46,13 @@ node_update
  
 driver_supports_pixel_type 
 {
-  return pixel_type == AI_TYPE_RGBA || pixel_type == AI_TYPE_RGBA || pixel_type == AI_TYPE_FLOAT || pixel_type == AI_TYPE_INT || pixel_type == AI_TYPE_VECTOR;
+  return  pixel_type == AI_TYPE_RGBA || 
+          pixel_type == AI_TYPE_RGBA || 
+          pixel_type == AI_TYPE_FLOAT || 
+          pixel_type == AI_TYPE_VECTOR ||
+          pixel_type == AI_TYPE_INT || 
+          pixel_type == AI_TYPE_UINT || 
+          pixel_type == AI_TYPE_POINTER;
 }
  
 driver_open {}
@@ -138,7 +144,7 @@ driver_process_bucket {
             }
 
             case AI_TYPE_UINT: {
-              ((uint*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+              ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
               break;
             }
 

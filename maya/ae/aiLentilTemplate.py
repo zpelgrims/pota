@@ -6,7 +6,7 @@ import mtoa.ui.ae.utils as aeUtils
 class aiLentilTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('aiBokehImagePathPO')
+        attr = self.nodeAttr('bokehImagePathPO')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -37,33 +37,33 @@ class aiLentilTemplate(templates.AttributeTemplate):
         #self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
 
         self.beginLayout("Polynomial Optics", collapse=False)
-        self.addControl("aiLensModelPO", label="Lens Model")
-        self.addControl("aiSensorWidthPO", label="Sensor Width (mm)")
-        self.addControl("aiWavelengthPO", label="Wavelength (nm)")
-        self.addControl("aiDofPO", label="Enable depth of field")
-        self.addControl("aiFstopPO", label="F-stop", dynamic=True)
-        self.addControl("aiFocusDistancePO", label="Focus distance (cm)")
-        self.addControl("aiExtraSensorShiftPO", label="Extra Sensor shift (mm)")
-        self.addControl("aiBokehApertureBladesPO", label="Aperture blades")
+        self.addControl("lensModelPO", label="Lens Model")
+        self.addControl("sensorWidthPO", label="Sensor Width (mm)")
+        self.addControl("wavelengthPO", label="Wavelength (nm)")
+        self.addControl("dofPO", label="Enable depth of field")
+        self.addControl("fstopPO", label="F-stop", dynamic=True)
+        self.addControl("focusDistancePO", label="Focus distance (cm)")
+        self.addControl("extraSensorShiftPO", label="Extra Sensor shift (mm)")
+        self.addControl("bokehApertureBladesPO", label="Aperture blades")
         self.endLayout()
 
         self.beginLayout("Bidirectional")
-        self.addControl("aiBidirSampleMultPO", label="Samples")
-        self.addControl("aiBidirMinLuminancePO", label="Minimum luminance")
-        self.addControl("aiBidirAddLuminancePO", label="Additional Luminance")
-        self.addControl("aiBidirAddLuminanceTransitionPO", label="Add lum trans width")
+        self.addControl("bidirSampleMultPO", label="Samples")
+        self.addControl("bidirMinLuminancePO", label="Minimum luminance")
+        self.addControl("bidirAddLuminancePO", label="Additional Luminance")
+        self.addControl("bidirAddLuminanceTransitionPO", label="Add lum trans width")
         self.endLayout()
 
         self.beginLayout("Bokeh Image")
-        self.addControl("aiBokehEnableImagePO", label="Use Bokeh Image")
-        self.addCustom("aiBokehImagePathPO", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
+        self.addControl("bokehEnableImagePO", label="Use Bokeh Image")
+        self.addCustom("bokehImagePathPO", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
 
         self.endLayout()
         
 
         self.beginLayout("Advanced options")
-        self.addControl("aiVignettingRetriesPO", label="Vignetting retries")
-        self.addControl("aiUnitsPO", label="Units")
+        self.addControl("vignettingRetriesPO", label="Vignetting retries")
+        self.addControl("unitsPO", label="Units")
 
         self.endLayout()
 

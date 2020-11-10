@@ -6,7 +6,7 @@ import mtoa.ui.ae.utils as aeUtils
 class aiLentilThinlensTemplate(templates.AttributeTemplate):
     
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('aiBokehImagePathTL')
+        attr = self.nodeAttr('bokehImagePathTL')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -29,42 +29,42 @@ class aiLentilThinlensTemplate(templates.AttributeTemplate):
     def setup(self):
 
         self.beginLayout("Thin Lens", collapse=False)
-        self.addControl("aiSensorWidthTL", label="Sensor Width (mm)")
-        self.addControl("aiFocalLengthTL", label="Focal Length (mm)")
-        self.addControl("aiFstopTL", label="F-stop", dynamic=True)
-        self.addControl("aiFocusDistanceTL", label="Focus distance (cm)")
-        self.addControl("aiEnableDofTL", label="Enable DOF")
+        self.addControl("sensorWidthTL", label="Sensor Width (mm)")
+        self.addControl("focalLengthTL", label="Focal Length (mm)")
+        self.addControl("fstopTL", label="F-stop", dynamic=True)
+        self.addControl("focusDistanceTL", label="Focus distance (cm)")
+        self.addControl("enableDofTL", label="Enable DOF")
 
-        self.addControl("aiOpticalVignettingDistanceTL", label="Optical Vignetting Distance")
-        self.addControl("aiOpticalVignettingRadiusTL", label="Optical Vignetting Radius")
-        self.addControl("aiAbbSphericalTL", label="Aberration (spherical)")
-        self.addControl("aiAbbDistortionTL", label="Aberration (distortion)")
-        self.addControl("aiBokehApertureBladesTL", label="Aperture Blades")
-        self.addControl("aiBokehCircleToSquareTL", label="Circle to Square mapping")
-        self.addControl("aiBokehAnamorphicTL", label="Anamorphic stretch")
+        self.addControl("opticalVignettingDistanceTL", label="Optical Vignetting Distance")
+        self.addControl("opticalVignettingRadiusTL", label="Optical Vignetting Radius")
+        self.addControl("abbSphericalTL", label="Aberration (spherical)")
+        self.addControl("abbDistortionTL", label="Aberration (distortion)")
+        self.addControl("bokehApertureBladesTL", label="Aperture Blades")
+        self.addControl("bokehCircleToSquareTL", label="Circle to Square mapping")
+        self.addControl("bokehAnamorphicTL", label="Anamorphic stretch")
         self.endLayout()
 
 
         self.beginLayout("Bokeh Image")
-        self.addControl("aiBokehEnableImageTL", label="Enable Bokeh Image")
-        self.addCustom("aiBokehImagePathTL", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
+        self.addControl("bokehEnableImageTL", label="Enable Bokeh Image")
+        self.addCustom("bokehImagePathTL", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
         self.endLayout()
 
         
         self.beginLayout("Bidirectional", collapse=False)
-        self.addControl("aiBidirMinLuminanceTL", label="Bidirectional Trigger")
-        self.addControl("aiBidirSampleMultTL", label="Samples")
-        self.addControl("aiBidirAddLuminanceTL", label="Add bokeh luminance")
-        self.addControl("aiBidirAddLuminanceTransitionTL", label="Add Lum transition")
+        self.addControl("bidirMinLuminanceTL", label="Bidirectional Trigger")
+        self.addControl("bidirSampleMultTL", label="Samples")
+        self.addControl("bidirAddLuminanceTL", label="Add bokeh luminance")
+        self.addControl("bidirAddLuminanceTransitionTL", label="Add Lum transition")
         self.endLayout()
 
         self.beginLayout("Advanced", collapse=False)
-        self.addControl("aiVignettingRetriesTL", label="Vignetting Retries")
-        self.addControl("aiUnitsTL", label="Units")
+        self.addControl("vignettingRetriesTL", label="Vignetting Retries")
+        self.addControl("unitsTL", label="Units")
         self.endLayout()
         
         self.beginLayout("Experimental", collapse=False)
-        self.addControl("aiAbbComaTL", label="Aberration (coma)")
+        self.addControl("abbComaTL", label="Aberration (coma)")
         self.endLayout()
         
 
