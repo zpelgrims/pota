@@ -62,8 +62,8 @@
  <param name="bokeh_image_pathTL" widget="fileInput" label="Bokeh Image"/>
 </page>
 
-<page name="Biderctional" open="False">   
- <param name="bidir_min_luminanceTL" label="Biderctional Trigger" slider="True" slidermin="0.0" slidermax="1000.0" max="1000.0"/>
+<page name="Bidirectional" open="False">   
+ <param name="bidir_min_luminanceTL" label="Bidirectional Trigger" slider="True" slidermin="0.0" slidermax="1000.0" max="1000.0"/>
  <param int="1" name="bidir_sample_multTL" label="Samples" slider="True" slidermin="0.0" min="0" slidercenter = "20" slidermax="1000"  max="1000"/>
  <param name="bidir_add_luminanceTL" label="Add bokeh luminance" slider="True"/>
  <param name="bidir_add_luminance_transitionTL" label="Add Lum transition" slider="True"/>

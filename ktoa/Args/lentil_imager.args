@@ -3,7 +3,7 @@
 <!-- removing layer_selection to match all DCC-->
 
 <args format="1.0">
- <param name="input"/>
+ <param name="input" label="Input"/>
  <param name="layer_selection" widget="null"/>
- <param widget="checkBox" name="enable"/>
+ <param name="enable" label="Enable" widget="checkBox" />
 </args>

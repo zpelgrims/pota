@@ -1,0 +1,16 @@
+<!-- args file created by: elrachyd@gmail.com -->
+<!-- date: 14/17/2020 -->
+<!-- removing layer_selection to match all DCC-->
+
+<args format="1.0">
+	<param name="enable" label="Enable" widget="checkBox" />
+	<param int="1" name="call_me_dirty" label="Call me Dirty"/>
+
+<page name="Dynamic Array Attributes" open="False"> 
+	<param name="inputs" readOnly="true" widget="sortableArray" isDynamicArray="1" >
+	<hintdict name="childHints">
+	<string value="widget"/>
+	</hintdict>
+	</param>
+</page>
+</args>

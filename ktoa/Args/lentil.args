@@ -91,28 +91,28 @@
 	<string name="cooke__speed_panchro__1920__100mm" 				value="cooke__speed_panchro__1920__100mm"/>
 	</hintdict>
 	</param>
-	 <param name="sensor_widthPO" label="Sensor Width (mm)"slider="True" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
-	 <param name="wavelengthPO" label="Wavelength" slider="True" slidermin="390.0" slidermax="700.0" slidercenter="550.0" max="700.0"/>
+	 <param name="sensor_widthPO" label="Sensor Width (mm)" slider="True" sensitivity="0.01" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
+	 <param name="wavelengthPO" label="Wavelength" slider="True" sensitivity="0.01" slidermin="390.0" slidermax="700.0" slidercenter="550.0" max="700.0"/>
 	 <param widget="checkBox" name="dofPO" label="Enable depth of field"/>
 	 <param name="fstopPO" label="F-Stop" slider="True" slidermin="0.0" slidercenter="2.8" slidermax="64.0" max="64.0"/>
 	 <param name="focus_distancePO" label="Focus distance (cm)" slider="True" slidermin="0.0" slidercenter ="150.0" slidermax="1000000.0"  max="1000000.0"/>
 	 <param name="extra_sensor_shiftPO" slider="True" slidermin="-10.0" slidermax="10.0" label="Extra Sensor shift (mm)"/>
-	 <param int="1" name="bokeh_aperture_bladesPO" slider="True" slidermin="0" slidermax="8"  max="8" label="Aperure blades"/>
+	 <param int="1" name="bokeh_aperture_bladesPO" slider="True" slidermin="0" sliderdefault="0" slidermax="8"  max="8" label="Aperure blades"/>
 </page>
 
-<page name="Polynominal Optics" open="True"> 
+<page name="Bidirectional" open="False"> 
 	<param int="1" name="bidir_sample_multPO" label="Samples" slider="True" slidermin="0.0" min="0" slidercenter = "20" slidermax="1000"  max="1000"/>
 	<param name="bidir_min_luminancePO" label="Minimum Luminance" slider="True" slidermin="0.0" min="0.0" slidercenter = "1.0" slidermax="10000.0"  max="10000.0"/>
 	<param name="bidir_add_luminancePO" label="Additional Luminance" slider="True"/>	
 	<param name="bidir_add_luminance_transitionPO" label="Add Lum trans Width" slider="True"/>	
 </page>
 
-<page name="Bokeh Image" open="True"> 
+<page name="Bokeh Image" open="False"> 
 	<param widget="checkBox" name="bokeh_enable_imagePO" label="Use Bokeh image"/>
 	<param name="bokeh_image_pathPO" widget="fileInput" label="Bokeh image"/>
 </page>
 
-<page name="Vignetting" open="True">  
+<page name="Vignetting" open="False">  
 	<param int="1" name="vignetting_retriesPO" label="Vignetting retries" slider="True" slidermin="1" min="1" slidercenter = "15" slidermax="50"  max="50"/>
 	<param widget="mapper" name="unitsPO" label="Units">
 	<hintdict name="options">

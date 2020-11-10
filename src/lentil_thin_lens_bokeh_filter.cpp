@@ -128,10 +128,12 @@ node_update
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
       
-      bokeh->image[AtString(name.c_str())].clear();
-      bokeh->image_redist[AtString(name.c_str())].clear();
-      bokeh->image[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_redist[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_data_types[AtString(name.c_str())].clear();
+      bokeh->image_col_types[AtString(name.c_str())].clear();
+      bokeh->image_data_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_col_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_ptr_types[AtString(name.c_str())].clear();
+      bokeh->image_ptr_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
     }
   }
 
@@ -162,6 +164,8 @@ filter_output_type
         return AI_TYPE_FLOAT;
       case AI_TYPE_INT:
         return AI_TYPE_INT;
+      case AI_TYPE_UINT:
+        return AI_TYPE_UINT;
       default:
          return AI_TYPE_NONE;
    }
@@ -371,8 +375,7 @@ filter_pixel
         for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                         inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                        transmitted_energy_in_sample, 1, iterator,
-                        bokeh->image_redist, bokeh->image, bokeh->zbuffer);
+                        transmitted_energy_in_sample, 1, iterator, bokeh);
         
         }
       }
@@ -410,6 +413,11 @@ filter_pixel
       AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
       int rgb_energy = filtered_value.r;
       *((int*)data_out) = rgb_energy;
+    }
+    case AI_TYPE_UINT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      unsigned int rgb_energy = filtered_value.r;
+      *((unsigned int*)data_out) = rgb_energy;
     }
   }
 }

@@ -111,52 +111,54 @@ driver_process_bucket {
           
           switch (aov_type){
             case AI_TYPE_RGBA: {
-              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
-              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image_redist /= (image_redist.a == 0.0) ? 1.0 : image_redist.a;
+              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
               
-              ((AtRGBA*)bucket_data)[in_idx] = image_redist;
+              ((AtRGBA*)bucket_data)[in_idx] = image;
               break;
             }
 
             case AI_TYPE_RGB: {
-              AtRGBA image_redist = filter_data->image_redist[aov_name][linear_pixel];
-              image_redist /= (image_redist.a == 0.0) ? 1.0 : image_redist.a;
+              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+              image /= (image.a == 0.0) ? 1.0 : image.a;
 
-              AtRGB final_value = AI_RGB_ZERO;
-              final_value.r = image_redist.r;
-              final_value.g = image_redist.g;
-              final_value.b = image_redist.b;
+              AtRGB final_value = AtRGB(image.r, image.g, image.b);
               ((AtRGB*)bucket_data)[in_idx] = final_value;
               break;
             }
 
             case AI_TYPE_FLOAT: {
-              ((float*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel].r;
+              ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
               break;
             }
 
             case AI_TYPE_INT: {
-              ((int*)bucket_data)[in_idx] = filter_data->image[aov_name][linear_pixel].r;
+              ((int*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+              break;
+            }
+
+            case AI_TYPE_UINT: {
+              ((uint*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
               break;
             }
 
             case AI_TYPE_VECTOR: {
-              AtVector final_value (0, 0, 0);
-              final_value[0] = filter_data->image[aov_name][linear_pixel].r;
-              final_value[1] = filter_data->image[aov_name][linear_pixel].g;
-              final_value[2] = filter_data->image[aov_name][linear_pixel].b;
+              AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 
+                                    filter_data->image_data_types[aov_name][linear_pixel].g,
+                                    filter_data->image_data_types[aov_name][linear_pixel].b);
               ((AtVector*)bucket_data)[in_idx] = final_value;
               break;
             }
-
-            // need to add POINTER type
-
+            
+            case AI_TYPE_POINTER: {
+              ((const void**)bucket_data)[in_idx] = filter_data->image_ptr_types[aov_name][linear_pixel];
+              break;
+            }
           }
         }
       }
     }
   }
-
 }
 
 
