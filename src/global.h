@@ -24,6 +24,7 @@ struct LentilFilterData {
   std::map<AtString, std::vector<AtRGBA> > image_data_types;
   std::map<AtString, std::vector<AtRGBA> > image_col_types;
   std::map<AtString, std::vector<const void *> > image_ptr_types;
+  std::map<AtString, unsigned int> aov_duplicates;
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
@@ -290,7 +291,10 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
                           bool transmitted_energy_in_sample,
                           int transmission_layer,
                           struct AtAOVSampleIterator* sample_iterator, 
-                          LentilFilterData *filter_data) {    
+                          LentilFilterData *filter_data) {
+
+    const float inv_aov_count = 1.0/(double)filter_data->aov_duplicates[aov_name];
+    
     switch(aov_type){
 
         case AI_TYPE_RGBA: {
@@ -300,7 +304,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
           else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
 
-          filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+          filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
           break;
         }

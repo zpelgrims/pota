@@ -112,6 +112,7 @@ node_update
   // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
+  bokeh->aov_duplicates.clear();
 
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -125,6 +126,8 @@ node_update
       std::string type = split_str(output_string, std::string(" ")).end()[-3];
 
       AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
+
+      ++bokeh->aov_duplicates[AtString(name.c_str())];
 
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));

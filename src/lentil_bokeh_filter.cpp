@@ -85,6 +85,7 @@ node_update
   // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
+  bokeh->aov_duplicates.clear();
 
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -101,6 +102,8 @@ node_update
 
       bokeh->aov_list_name.push_back(AtString(name.c_str()));
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
+
+      ++bokeh->aov_duplicates[AtString(name.c_str())];
 
       bokeh->image_data_types[AtString(name.c_str())].clear();
       bokeh->image_data_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
