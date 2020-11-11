@@ -95,8 +95,8 @@ node_update
 
     if (output_string.find(lentil_str) != std::string::npos){
      
-      std::string name = split_str(output_string, std::string(" ")).end()[-4];
-      std::string type = split_str(output_string, std::string(" ")).end()[-3];
+      std::string name = split_str(output_string, std::string(" ")).begin()[0];
+      std::string type = split_str(output_string, std::string(" ")).begin()[1];
 
       AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
 

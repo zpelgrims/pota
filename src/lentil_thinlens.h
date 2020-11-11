@@ -304,6 +304,8 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
         ray_succes = true;
     }
 
+    dir = AiV3Normalize(dir);
+
     if (!ray_succes) weight = AI_RGB_BLACK;
 }
 

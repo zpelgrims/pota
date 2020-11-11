@@ -65,7 +65,8 @@ operator_cook
     const int elements = AiArrayGetNumElements(outputs);
     for (int i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
-        std::string filter = split_str(output_string, std::string(" ")).end()[-2]; // one before last, which is the filter
+        AiMsgInfo("[LENTIL OPERATOR] Original string: %s", output_string.c_str());
+        std::string filter = split_str(output_string, std::string(" ")).begin()[2]; // one before last, which is the filter
         std::string name = split_str(output_string, std::string(" ")).front();
 
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
