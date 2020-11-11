@@ -72,9 +72,6 @@ node_update
     bokeh->enabled = false;
     return;
   }
-
-  CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(AiUniverseGetCamera());
-
   
   // will only work for the node called lentil_replaced_filter
   if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
@@ -144,7 +141,7 @@ node_update
 
   bokeh->pixel_already_visited.clear();
   bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
-  for (int i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
+  for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
   
   bokeh->current_inv_density = 0.0;
 
@@ -311,7 +308,7 @@ filter_pixel
 
 
         // aberration inputs
-        float abb_field_curvature = 0.0;
+        // float abb_field_curvature = 0.0;
 
 
         // ray through center of lens
@@ -419,11 +416,13 @@ filter_pixel
       AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
       int rgb_energy = filtered_value.r;
       *((int*)data_out) = rgb_energy;
+      break;
     }
     // case AI_TYPE_UINT: {
     //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-    //   unsigned int rgb_energy = filtered_value.r;
-    //   *((unsigned int*)data_out) = rgb_energy;
+    //   const unsigned rgb_energy = std::abs(filtered_value.r);
+    //   *((unsigned*)data_out) = rgb_energy;
+    //   break;
     // }
   }
 }

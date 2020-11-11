@@ -141,10 +141,10 @@ driver_process_bucket {
               break;
             }
 
-            // case AI_TYPE_UINT: {
-            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
-            //   break;
-            // }
+            case AI_TYPE_UINT: {
+              ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
+              break;
+            }
 
             case AI_TYPE_VECTOR: {
               AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 

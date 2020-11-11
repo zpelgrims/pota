@@ -113,25 +113,25 @@ inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8
 
         switch (aov_type){
           case AI_TYPE_VECTOR: {
-            AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
+            const AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
             pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
             break;
           }
           case AI_TYPE_FLOAT: {
-            float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
+            const float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
             pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
             break;
           }
           case AI_TYPE_INT: {
-            int sample_energy = AiAOVSampleIteratorGetInt(iterator);
+            const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
             pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
             break;
           }
-          case AI_TYPE_UINT: {
-            unsigned int sample_energy = AiAOVSampleIteratorGetUInt(iterator);
-            pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-            break;
-          }
+          // case AI_TYPE_UINT: {
+          //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
+          //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+          //   break;
+          // }
         }
       }
   }
@@ -299,8 +299,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_RGBA: {
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
-          AtRGBA rgba_energy;
-          rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
+          AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
           if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
           else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
 
@@ -310,8 +309,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         }
 
         case AI_TYPE_RGB: {
-          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
-          AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+          const AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
+          const AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
 
           filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           
@@ -320,8 +319,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_VECTOR: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
-            AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+            const AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
+            const AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
             filter_data->image_data_types[aov_name][px] = rgba_energy;
             filter_data->zbuffer[px] = std::abs(depth);
           }
@@ -331,8 +330,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_FLOAT: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
-            AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+            const float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
+            const AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
             filter_data->image_data_types[aov_name][px] = rgba_energy;
             filter_data->zbuffer[px] = std::abs(depth);
           }
@@ -342,8 +341,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_INT: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
-            AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+            const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
+            const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
             filter_data->image_data_types[aov_name][px] = rgba_energy;
             filter_data->zbuffer[px] = std::abs(depth);
           }
@@ -353,8 +352,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         // case AI_TYPE_UINT: {
         //   if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-        //     unsigned int int_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
-        //     AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+        //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
+        //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
         //     filter_data->image_data_types[aov_name][px] = rgba_energy;
         //     filter_data->zbuffer[px] = std::abs(depth);
         //   }
