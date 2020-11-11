@@ -32,7 +32,8 @@
         max                 FLOAT   100
         default             FLOAT   36
         desc                STRING  "Width of the sensor in mm. Default value is the width of a full frame sensor."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Sensor Width (mm)"
         houdini.help        STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
 
@@ -42,7 +43,8 @@
         max                 FLOAT   700.0
         default             FLOAT   550.0
         desc                STRING  "Wavelength in nanometers."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Wavelength (nm)"
         houdini.help        STRING ""
 
@@ -60,17 +62,21 @@
         max                 FLOAT   64.0
         default             FLOAT   2.8
         desc                STRING  "F-Stop"
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "F-stop"
         houdini.help        STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
 
 
     [attr focus_distancePO]
         min                 FLOAT   0.0
-        max                 FLOAT   1000000.0
+        max                 FLOAT   100000.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   2000.0
         default             FLOAT   150.0
         desc                STRING  "Focus distance in (cm)"
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Focus Distance (cm)"
         houdini.help        STRING "Distance between the lens and the focal plane in centimeter."
 
@@ -80,7 +86,8 @@
         max                 FLOAT   10.0
         default             FLOAT   0.0
         desc                STRING  "Additional Sensor shift (mm)"
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Additional Sensor shift (mm)"
         houdini.help        STRING "The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!)."
 
@@ -91,7 +98,8 @@
         min                 INT     0
         max                 INT     8
         desc                STRING  "Number of aperture blades. < 3 is perfectly circular."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Aperture Blades"
         houdini.help        STRING "Amount of aperture blades. Lower than 3 means perfectly circular."
 
@@ -114,11 +122,14 @@
 
 
     [attr bidir_min_luminancePO]
-        min                 FLOAT    0.0
-        max                 FLOAT    10000
+        min                 FLOAT   0.0
+        max                 FLOAT   100.0
         default             FLOAT   1.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   5.0
         desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Trigger treshold"
         houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
 
@@ -127,22 +138,35 @@
         min                 INT    0
         max                 INT    1000
         default             INT    10
+        softmin             INT     0
+        softmax             INT     150
         desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Samples Multiplier"
         houdini.help        STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
 
 
     [attr bidir_add_luminancePO]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
-
+        animatable          BOOL    true
+        default             FLOAT   0.0
+        min                 FLOAT    0.0
+        max                 FLOAT    100
+        softmin             FLOAT   0.0
+        softmax             FLOAT   20.0
+        
         houdini.label       STRING  "Additional Luminance"
         houdini.help        STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_min_luminance will be affected."
 
 
     [attr bidir_add_luminance_transitionPO]
         desc                STRING  "Additional luminance transition"
-
+        animatable          BOOL    true
+        min                 FLOAT    0.0
+        max                 FLOAT    100.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   5.0
         houdini.label       STRING  "Additional luminance transition"
         houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
 
@@ -152,6 +176,7 @@
         max                 INT    50
         default             INT    15
         desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
-
+        animatable          BOOL    true
+        
         houdini.label       STRING  "Vignetting Retries"
         houdini.help        STRING "Since we're modeling real lenses, it can be that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
