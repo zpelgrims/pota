@@ -50,9 +50,7 @@ driver_supports_pixel_type
           pixel_type == AI_TYPE_RGBA || 
           pixel_type == AI_TYPE_FLOAT || 
           pixel_type == AI_TYPE_VECTOR ||
-          pixel_type == AI_TYPE_INT || 
-          pixel_type == AI_TYPE_UINT || 
-          pixel_type == AI_TYPE_POINTER;
+          pixel_type == AI_TYPE_INT;
 }
  
 driver_open {}
@@ -143,10 +141,10 @@ driver_process_bucket {
               break;
             }
 
-            case AI_TYPE_UINT: {
-              ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
-              break;
-            }
+            // case AI_TYPE_UINT: {
+            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
+            //   break;
+            // }
 
             case AI_TYPE_VECTOR: {
               AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 
@@ -156,10 +154,10 @@ driver_process_bucket {
               break;
             }
             
-            case AI_TYPE_POINTER: {
-              ((const void**)bucket_data)[in_idx] = filter_data->image_ptr_types[aov_name][linear_pixel];
-              break;
-            }
+            // case AI_TYPE_POINTER: {
+            //   ((const void**)bucket_data)[in_idx] = filter_data->image_ptr_types[aov_name][linear_pixel];
+            //   break;
+            // }
           }
         }
       }

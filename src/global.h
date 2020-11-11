@@ -126,6 +126,11 @@ inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8
             pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
             break;
           }
+          case AI_TYPE_UINT: {
+            unsigned int sample_energy = AiAOVSampleIteratorGetUInt(iterator);
+            pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+            break;
+          }
         }
       }
   }
@@ -342,26 +347,26 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           break;
         }
 
-        case AI_TYPE_UINT: {
-          if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            unsigned int int_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
-            AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            filter_data->image_data_types[aov_name][px] = rgba_energy;
-            filter_data->zbuffer[px] = std::abs(depth);
-          }
+        // case AI_TYPE_UINT: {
+        //   if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
+        //     unsigned int int_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
+        //     AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+        //     filter_data->image_data_types[aov_name][px] = rgba_energy;
+        //     filter_data->zbuffer[px] = std::abs(depth);
+        //   }
 
-          break;
-        }
+        //   break;
+        // }
 
-        case AI_TYPE_POINTER: {
-          if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const void *ptr_energy = AiAOVSampleIteratorGetAOVPtr(sample_iterator, aov_name);
-            filter_data->image_ptr_types[aov_name][px] = ptr_energy;
-            filter_data->zbuffer[px] = std::abs(depth);
-          }
+        // case AI_TYPE_POINTER: {
+        //   if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
+        //     const void *ptr_energy = AiAOVSampleIteratorGetAOVPtr(sample_iterator, aov_name);
+        //     filter_data->image_ptr_types[aov_name][px] = ptr_energy;
+        //     filter_data->zbuffer[px] = std::abs(depth);
+        //   }
 
-          break;
-        }
+        //   break;
+        // }
     }
 }
 

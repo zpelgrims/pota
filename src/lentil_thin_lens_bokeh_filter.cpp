@@ -165,10 +165,10 @@ filter_output_type
         return AI_TYPE_FLOAT;
       case AI_TYPE_INT:
         return AI_TYPE_INT;
-      case AI_TYPE_UINT:
-        return AI_TYPE_UINT;
-      case AI_TYPE_POINTER:
-        return AI_TYPE_POINTER;
+      // case AI_TYPE_UINT:
+      //   return AI_TYPE_UINT;
+      // case AI_TYPE_POINTER:
+      //   return AI_TYPE_POINTER;
       default:
          return AI_TYPE_NONE;
    }
@@ -417,11 +417,11 @@ filter_pixel
       int rgb_energy = filtered_value.r;
       *((int*)data_out) = rgb_energy;
     }
-    case AI_TYPE_UINT: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      unsigned int rgb_energy = filtered_value.r;
-      *((unsigned int*)data_out) = rgb_energy;
-    }
+    // case AI_TYPE_UINT: {
+    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+    //   unsigned int rgb_energy = filtered_value.r;
+    //   *((unsigned int*)data_out) = rgb_energy;
+    // }
   }
 }
  
