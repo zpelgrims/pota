@@ -15,20 +15,20 @@
     houdini.order   STRING "first"
     houdini.parm.folder.first STRING  "General;8;Bokeh;3;Bidirectional;4;Additional;1"
     
-    [attr unitsPO]
+    [attr units]
         desc                STRING  "Units"
         
         houdini.label       STRING  "Working unit"
         houdini.help        STRING "Put to M for HtoA."
 
-    [attr lens_modelPO]
+    [attr lens_model]
         desc                STRING  "Lens Model"
 
         houdini.label       STRING  "Lens Model"
         houdini.help        STRING "There's many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has it's own characteristics. See the online documentation for previews of all lens models."
 
 
-    [attr sensor_widthPO]
+    [attr sensor_width]
         min                 FLOAT   0.1
         max                 FLOAT   100
         default             FLOAT   36
@@ -39,7 +39,7 @@
         houdini.help        STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
 
 
-    [attr wavelengthPO]
+    [attr wavelength]
         min                 FLOAT   390.0
         max                 FLOAT   700.0
         default             FLOAT   550.0
@@ -50,7 +50,7 @@
         houdini.help        STRING ""
 
 
-    [attr dofPO]
+    [attr dof]
         default             BOOL    true
         desc                STRING  "Enable Depth of Field"
 
@@ -58,7 +58,7 @@
         houdini.help        STRING "Disabling makes the aperture an infinitesimal point."
 
 
-    [attr fstopPO]
+    [attr fstop]
         min                 FLOAT   0.0
         max                 FLOAT   64.0
         default             FLOAT   2.8
@@ -69,7 +69,7 @@
         houdini.help        STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
 
 
-    [attr focus_distancePO]
+    [attr focus_distance]
         min                 FLOAT   0.0
         max                 FLOAT   100000.0
         softmin             FLOAT   0.0
@@ -82,7 +82,7 @@
         houdini.help        STRING "Distance between the lens and the focal plane in centimeter."
 
 
-    [attr extra_sensor_shiftPO]
+    [attr extra_sensor_shift]
         min                 FLOAT   -10.0
         max                 FLOAT   10.0
         default             FLOAT   0.0
@@ -94,7 +94,7 @@
 
 
 
-    [attr bokeh_aperture_bladesPO]
+    [attr bokeh_aperture_blades]
         default             INT     0
         min                 INT     0
         max                 INT     8
@@ -105,7 +105,7 @@
         houdini.help        STRING "Amount of aperture blades. Lower than 3 means perfectly circular."
 
 
-    [attr bokeh_enable_imagePO]
+    [attr bokeh_enable_image]
         default             BOOL     false
         desc                STRING  "Enable image based bokeh"
 
@@ -113,7 +113,7 @@
         houdini.help        STRING "This option replaces the circular/polygonal aperture with a texture-based one."
 
 
-    [attr bokeh_image_pathPO]
+    [attr bokeh_image_path]
         desc                STRING  "Path to image based bokeh"
 
         houdini.label       STRING  "Image bokeh path"
@@ -122,7 +122,7 @@
         c4d.gui_type        INT     3
 
 
-    [attr bidir_min_luminancePO]
+    [attr bidir_min_luminance]
         min                 FLOAT   0.0
         max                 FLOAT   100.0
         default             FLOAT   1.0
@@ -135,7 +135,7 @@
         houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
 
     
-    [attr bidir_sample_multPO]
+    [attr bidir_sample_mult]
         min                 INT    0
         max                 INT    1000
         default             INT    10
@@ -148,7 +148,7 @@
         houdini.help        STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
 
 
-    [attr bidir_add_luminancePO]
+    [attr bidir_add_luminance]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
         animatable          BOOL    true
         default             FLOAT   0.0
@@ -161,7 +161,7 @@
         houdini.help        STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_min_luminance will be affected."
 
 
-    [attr bidir_add_luminance_transitionPO]
+    [attr bidir_add_luminance_transition]
         desc                STRING  "Additional luminance transition"
         animatable          BOOL    true
         min                 FLOAT    0.0
@@ -172,7 +172,7 @@
         houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
 
 
-    [attr vignetting_retriesPO]
+    [attr vignetting_retries]
         min                 INT    1
         max                 INT    50
         default             INT    15

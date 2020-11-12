@@ -76,7 +76,7 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (AiNodeGetInt(cameranode, "bidir_sample_multPO") == 0){
+  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
     return;

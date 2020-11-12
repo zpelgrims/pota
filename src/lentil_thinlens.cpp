@@ -5,33 +5,33 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentil_thinlensMethods)
 
 enum
 {
-    p_sensor_widthTL,
-    p_focal_lengthTL,
-    p_fstopTL,
-    p_focus_distanceTL,
+    p_sensor_width,
+    p_focal_length,
+    p_fstop,
+    p_focus_distance,
     p_enable_dof,
-    // p_emperical_ca_distTL,
-    p_optical_vignetting_distanceTL,
-    p_optical_vignetting_radiusTL,
+    // p_emperical_ca_dist,
+    p_optical_vignetting_distance,
+    p_optical_vignetting_radius,
 
-    p_abb_sphericalTL,
-    p_abb_distortionTL,
+    p_abb_spherical,
+    p_abb_distortion,
     
 
-    p_bokeh_aperture_bladesTL,
-    p_bokeh_circle_to_squareTL,
-    p_bokeh_anamorphicTL,
+    p_bokeh_aperture_blades,
+    p_bokeh_circle_to_square,
+    p_bokeh_anamorphic,
 
-    p_bokeh_enable_imageTL,
-    p_bokeh_image_pathTL,
+    p_bokeh_enable_image,
+    p_bokeh_image_path,
 
-    p_bidir_min_luminanceTL,
-    p_bidir_sample_multTL,
+    p_bidir_min_luminance,
+    p_bidir_sample_mult,
 
-    p_bidir_add_luminanceTL,
-    p_bidir_add_luminance_transitionTL,
+    p_bidir_add_luminance,
+    p_bidir_add_luminance_transition,
 
-    p_vignetting_retriesTL,
+    p_vignetting_retries,
 
     p_abb_comaTL
 };
@@ -42,36 +42,37 @@ static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
 
 node_parameters
 {
-    AiParameterEnum("unitsTL", cm, Units);
+    AiParameterEnum("units", cm, Units);
 
-    AiParameterFlt("sensor_widthTL", 36.0); // 35mm film
-    AiParameterFlt("focal_lengthTL", 35.0); // in mm
-    AiParameterFlt("fstopTL", 1.4);
-    AiParameterFlt("focus_distanceTL", 100.0); // in cm
-    AiParameterBool("enable_dofTL", true);
+    AiParameterFlt("sensor_width", 36.0); // 35mm film
+    AiParameterFlt("focal_length", 35.0); // in mm
+    AiParameterFlt("fstop", 1.4);
+    AiParameterFlt("focus_distance", 100.0); // in cm
+    AiParameterBool("enable_dof", true);
 
-    // AiParameterFlt("emperical_ca_distTL", 0.0);
-    AiParameterFlt("optical_vignetting_distanceTL", 0.0);
-    AiParameterFlt("optical_vignetting_radiusTL", 2.0);
+    // AiParameterFlt("emperical_ca_dist", 0.0);
+    AiParameterFlt("optical_vignetting_distance", 0.0);
+    AiParameterFlt("optical_vignetting_radius", 2.0);
 
-    AiParameterFlt("abb_sphericalTL", 0.5);
-    AiParameterFlt("abb_distortionTL", 0.0);
+    AiParameterFlt("abb_spherical", 0.5);
+    AiParameterFlt("abb_distortion", 0.0);
 
-    AiParameterInt("bokeh_aperture_bladesTL", 0);
-    AiParameterFlt("bokeh_circle_to_squareTL", 0.0);
-    AiParameterFlt("bokeh_anamorphicTL", 1.0);
-    AiParameterBool("bokeh_enable_imageTL", false);
-    AiParameterStr("bokeh_image_pathTL", "");
+    AiParameterInt("bokeh_aperture_blades", 0);
+    AiParameterFlt("bokeh_circle_to_square", 0.0);
+    AiParameterFlt("bokeh_anamorphic", 1.0);
+    AiParameterBool("bokeh_enable_image", false);
+    AiParameterStr("bokeh_image_path", "");
 
-    AiParameterFlt("bidir_min_luminanceTL", 1.0);
-    AiParameterInt("bidir_sample_multTL", 20);
-    AiParameterFlt("bidir_add_luminanceTL", 0.0);
-    AiParameterFlt("bidir_add_luminance_transitionTL", 1.0);
+    AiParameterFlt("bidir_min_luminance", 1.0);
+    AiParameterInt("bidir_sample_mult", 20);
+    AiParameterFlt("bidir_add_luminance", 0.0);
+    AiParameterFlt("bidir_add_luminance_transition", 1.0);
+    AiParameterBool("bidir_debug", false);
 
-    AiParameterInt("vignetting_retriesTL", 30);
+    AiParameterInt("vignetting_retries", 30);
 
     // experimental
-    AiParameterFlt("abb_comaTL", 0.0);
+    AiParameterFlt("abb_coma", 0.0);
     
     AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -133,7 +134,7 @@ camera_create_ray
     trace_ray_fw_thinlens(true, tries, input.sx, input.sy, input.lensx, input.lensy, origin, dir, weight, r1, r2, tl);
 
     output.origin = origin;
-    output.dir = dir;
+    output.dir = AiV3Normalize(dir);
     output.weight = weight;
     
 }

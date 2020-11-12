@@ -8,28 +8,28 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
 enum {
-  p_unitsPO,
-  p_lens_modelPO,
+  p_units,
+  p_lens_model,
 
-  p_sensor_widthPO,
-  p_wavelengthPO,
-  p_dofPO,
-  p_fstopPO,
-  p_focus_distancePO,
-  p_extra_sensor_shiftPO,
+  p_sensor_width,
+  p_wavelength,
+  p_dof,
+  p_fstop,
+  p_focus_distance,
+  p_extra_sensor_shift,
 
-  p_bokeh_aperture_bladesPO,
-  p_bokeh_enable_imagePO,
-  p_bokeh_image_pathPO,
+  p_bokeh_aperture_blades,
+  p_bokeh_enable_image,
+  p_bokeh_image_path,
 
-  p_bidir_min_luminancePO,
-  p_bidir_sample_multPO,
-  p_bidir_add_luminancePO,
-  p_bidir_add_luminance_transitionPO,
+  p_bidir_min_luminance,
+  p_bidir_sample_mult,
+  p_bidir_add_luminance,
+  p_bidir_add_luminance_transition,
 
   // p_empirical_ca_dist,
 
-  p_vignetting_retriesPO
+  p_vignetting_retries
 };
 
 
@@ -43,31 +43,32 @@ static const char* LensModelNames[] = {
 
 
 node_parameters {
-  AiParameterEnum("unitsPO", cm, Units);
+  AiParameterEnum("units", cm, Units);
 
-  AiParameterEnum("lens_modelPO", angenieux__double_gauss__1953__49mm, LensModelNames);
+  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
 
-  AiParameterFlt("sensor_widthPO", 36.0); // 35mm film
-  AiParameterFlt("wavelengthPO", 550.0); // wavelength in nm
-  AiParameterBool("dofPO", true);
-  AiParameterFlt("fstopPO", 0.0);
-  AiParameterFlt("focus_distancePO", 150.0); // in cm to be consistent with arnold core
-  AiParameterFlt("extra_sensor_shiftPO", 0.0);
-
-
-  AiParameterInt("bokeh_aperture_bladesPO", 0);
-  AiParameterBool("bokeh_enable_imagePO", false);
-  AiParameterStr("bokeh_image_pathPO", "");
+  AiParameterFlt("sensor_width", 36.0); // 35mm film
+  AiParameterFlt("wavelength", 550.0); // wavelength in nm
+  AiParameterBool("dof", true);
+  AiParameterFlt("fstop", 0.0);
+  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("extra_sensor_shift", 0.0);
 
 
-  AiParameterFlt("bidir_min_luminancePO", 1.0);
-  AiParameterInt("bidir_sample_multPO", 20);
-  AiParameterFlt("bidir_add_luminancePO", 0.0);
-  AiParameterFlt("bidir_add_luminance_transitionPO", 1.0);
+  AiParameterInt("bokeh_aperture_blades", 0);
+  AiParameterBool("bokeh_enable_image", false);
+  AiParameterStr("bokeh_image_path", "");
+
+
+  AiParameterFlt("bidir_min_luminance", 1.0);
+  AiParameterInt("bidir_sample_mult", 20);
+  AiParameterFlt("bidir_add_luminance", 0.0);
+  AiParameterFlt("bidir_add_luminance_transition", 1.0);
+  AiParameterBool("bidir_debug", false);
 
   // AiParameterFlt("empirical_ca_dist", 0.0);
 
-  AiParameterInt("vignetting_retriesPO", 15);
+  AiParameterInt("vignetting_retries", 15);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -83,33 +84,27 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-    // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
-    AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
-    if (operator_node != nullptr){
-        if (AiNodeIs(operator_node, AtString("lentil_operator"))){
-            AiNodeSetInt(operator_node, "call_me_dirty", rand());
-        }
-    }
+    
 
-  po->unitModel = (UnitModel) AiNodeGetInt(node, "unitsPO");
-  po->sensor_width = AiNodeGetFlt(node, "sensor_widthPO");
-  po->input_fstop = AiNodeGetFlt(node, "fstopPO");
-  po->focus_distance = AiNodeGetFlt(node, "focus_distancePO") * 10.0; //converting to mm
-  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_modelPO");
-  po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_bladesPO");
-  po->dof = AiNodeGetBool(node, "dofPO");
-  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retriesPO");
-  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminancePO");
-  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_imagePO");
-  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_pathPO");
+  po->unitModel = (UnitModel) AiNodeGetInt(node, "units");
+  po->sensor_width = AiNodeGetFlt(node, "sensor_width");
+  po->input_fstop = AiNodeGetFlt(node, "fstop");
+  po->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
+  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
+  po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
+  po->dof = AiNodeGetBool(node, "dof");
+  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
+  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminance");
+  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_image");
+  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_path");
   // po->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
   
-  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_multPO");
-  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminancePO");
-  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transitionPO");
+  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_mult");
+  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminance");
+  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transition");
 
-  po->lambda = AiNodeGetFlt(node, "wavelengthPO") * 0.001;
-  po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shiftPO");
+  po->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
+  po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shift");
 
   #include "node_update_po.h"
 
@@ -119,6 +114,14 @@ node_update {
       if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
         AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
         AiRenderAbort();
+    }
+
+    // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
+    AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
+    if (operator_node != nullptr){
+        if (AiNodeIs(operator_node, AtString("lentil_operator"))){
+            AiNodeSetInt(operator_node, "call_me_dirty", rand());
+        }
     }
 }
 

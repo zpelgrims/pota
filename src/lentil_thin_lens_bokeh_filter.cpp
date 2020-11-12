@@ -81,7 +81,7 @@ node_update
   }
 
 
-  if (!AiNodeGetBool(cameranode, "enable_dofTL")) {
+  if (!AiNodeGetBool(cameranode, "enable_dof")) {
     AiMsgWarning("[LENTIL FILTER TL] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
     return;
@@ -100,7 +100,7 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
 
 
-  if (AiNodeGetInt(cameranode, "bidir_sample_multTL") == 0) {
+  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0) {
     bokeh->enabled = false;
     return;
   }

@@ -58,52 +58,19 @@ filter_pixel
 {
     LentilDebugFilterData* filter_data = (LentilDebugFilterData*)AiNodeGetLocalData(node);
     
-    float bidir_min_luminance = 0.0;
-    if (filter_data->camera_node_type == filter_data->lentil_thinlens_string){
-        bidir_min_luminance = AiNodeGetFlt(filter_data->camera_node, "bidir_sample_multTL");
-    } else if (filter_data->camera_node_type == filter_data->lentil_po_string) {
-        bidir_min_luminance = AiNodeGetFlt(filter_data->camera_node, "bidir_sample_multPO");
-    }
-
-    const float width = 1.65;
-
-    float aweight = 0.0f;
+    const float bidir_min_luminance = AiNodeGetFlt(filter_data->camera_node, "bidir_min_luminance");
     AtRGBA avalue = AI_RGBA_ZERO;
 
     while (AiAOVSampleIteratorGetNext(iterator))
     {
-        // take into account adaptive sampling
-        float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-        if (inv_density <= 0.f)
-            continue;
-
-        // determine distance to filter center
-        const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
-        const float r = AiSqr(2 / width) * (AiSqr(offset.x) + AiSqr(offset.y));
-        if (r > 1.0f)
-            continue;
-
-        // gaussian filter weight
-        const float weight = AiFastExp(2 * -r) * inv_density;
-
-        // accumulate weights and colors
         AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
         const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
 
-        
         if (sample_luminance > bidir_min_luminance) {
-            sample_energy = AtRGBA(1.0, 1.0, 1.0, sample_energy.a);
-        } else {
-            sample_energy = AtRGBA(0.0, 0.0, 0.0, sample_energy.a);
+            avalue = AtRGBA(1.0, 1.0, 1.0, 1.0);
         }
-        
-       
-        avalue += weight * sample_energy;
-        aweight += weight;
    }
  
-   // compute final filtered color
-   if (aweight != 0.0f) avalue /= aweight;
    *((AtRGBA*)data_out) = avalue;
 }
  
