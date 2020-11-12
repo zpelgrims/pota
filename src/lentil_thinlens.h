@@ -198,7 +198,7 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
             } else {
                 lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), lensx, lensy, 1.0, tl->bokeh_aperture_blades);
             }
-        } else if (tries != 0 && tl->enable_dof){
+        } else if (tries > 0 && tl->enable_dof){
             r1 = xor128() / 4294967296.0;
             r2 = xor128() / 4294967296.0;
 
@@ -299,6 +299,8 @@ inline void trace_ray_fw_thinlens(bool original_ray, int &tries,
             dir *= 0.01; //reverse rays and convert to cm (from mm)
             }
         }
+
+        dir = AiV3Normalize(dir);
 
         // weight = AI_RGB_WHITE;
         ray_succes = true;

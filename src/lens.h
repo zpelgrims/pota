@@ -716,7 +716,7 @@ inline void trace_ray(bool original_ray, int &tries,
   Eigen::VectorXd aperture(5); aperture.setZero();
   Eigen::VectorXd out(5); out.setZero();
 
-  while(ray_succes == false && tries <= camera->vignetting_retries){
+  while(!ray_succes && tries <= camera->vignetting_retries){
 
   	// set sensor position coords
 	  sensor(0) = input_sx * (camera->sensor_width * 0.5);
@@ -729,42 +729,33 @@ inline void trace_ray(bool original_ray, int &tries,
 
 
 	  if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
-	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
-		  Eigen::Vector2d unit_disk(0.0, 0.0);
-
-		  if (tries == 0) {
-        if (camera->bokeh_enable_image) {
+	  
+    Eigen::Vector2d unit_disk(0.0, 0.0);
+    if (tries == 0 && camera->dof) {
+      if (camera->bokeh_enable_image) {
           camera->image.bokehSample(input_lensx, input_lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-        } else {
-          concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
-        }
+      } else if (camera->bokeh_aperture_blades < 2) {
+        concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
       } else {
-		  	if (original_ray) {
-				  r1 = xor128() / 4294967296.0;
-				  r2 = xor128() / 4294967296.0;
-			  }
-
+        lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), input_lensx, input_lensy, 1.0, camera->bokeh_aperture_blades);
+      }
+    } else if (tries > 0 && camera->dof){
+        r1 = xor128() / 4294967296.0;
+        r2 = xor128() / 4294967296.0;
+        
         if (camera->bokeh_enable_image) {
           camera->image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-        } else {
+        } else if (camera->bokeh_aperture_blades < 2) {
           concentric_disk_sample(r1, r2, unit_disk, true);
+        } else {
+          lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, camera->bokeh_aperture_blades);
         }
 		  }
 
       aperture(0) = unit_disk(0) * camera->aperture_radius;
       aperture(1) = unit_disk(1) * camera->aperture_radius;
-	  } 
-	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
-	  	if (tries == 0) lens_sample_triangular_aperture(aperture(0), aperture(1), input_lensx, input_lensy, camera->aperture_radius, camera->bokeh_aperture_blades);
-	  	else {
-	  		if (original_ray) {
-		  		r1 = xor128() / 4294967296.0;
-		  		r2 = xor128() / 4294967296.0;
-	  		}
-
-	  		lens_sample_triangular_aperture(aperture(0), aperture(1), r1, r2, camera->aperture_radius, camera->bokeh_aperture_blades);
-	  	}
-	  }
+	  
+	  
 
 
     // if (camera->empirical_ca_dist > 0.0) {

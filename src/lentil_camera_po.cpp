@@ -84,7 +84,7 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-    
+  crypto_crit_sec_enter();
 
   po->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   po->sensor_width = AiNodeGetFlt(node, "sensor_width");
@@ -123,6 +123,8 @@ node_update {
             AiNodeSetInt(operator_node, "call_me_dirty", rand());
         }
     }
+
+    crypto_crit_sec_leave();
 }
 
 
@@ -143,11 +145,47 @@ camera_create_ray {
 
   trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
 
+
+  // calculate new ray derivatives
+  if (tries > 0){
+    float step = 0.001;
+    AtCameraInput input_dx = input;
+    AtCameraInput input_dy = input;
+    AtCameraOutput output_dx;
+    AtCameraOutput output_dy;
+
+    input_dx.sx += input.dsx * step;
+    input_dy.sy += input.dsy * step;
+
+    Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
+    Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
+    Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+    trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
+
+    Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
+    Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
+    Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
+    trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
+
+    Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
+    Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
+    Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
+    Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
+
+    for (int i = 0; i<3; i++){
+      output.dOdx[i] = out_d0dx(i);
+      output.dOdy[i] = out_dOdy(i);
+      output.dDdx[i] = out_dDdx(i);
+      output.dDdy[i] = out_dDdy(i);
+    }
+  }
+
   for (int i = 0; i<3; i++){
     output.origin[i] = origin(i);
     output.dir[i] = direction(i);
     output.weight[i] = weight(i);
   }
+  
 
   /* 
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
