@@ -138,7 +138,7 @@
     [attr bidir_sample_mult]
         min                 INT    0
         max                 INT    1000
-        default             INT    10
+        default             INT    5
         softmin             INT     0
         softmax             INT     150
         desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
@@ -373,7 +373,7 @@
     [attr bidir_sample_mult]
         min                 INT    0
         max                 INT    1000
-        default             INT    10
+        default             INT    5
         softmin             INT     0
         softmax             INT     150
         desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
