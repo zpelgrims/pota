@@ -57,9 +57,13 @@ filter_output_type
 filter_pixel
 {
     LentilDebugFilterData* filter_data = (LentilDebugFilterData*)AiNodeGetLocalData(node);
-
-    CameraThinLens *tl = (CameraThinLens*)AiNodeGetLocalData(filter_data->camera_node);
-    Camera *po = (Camera*)AiNodeGetLocalData(filter_data->camera_node);
+    
+    float bidir_min_luminance = 0.0;
+    if (filter_data->camera_node_type == filter_data->lentil_thinlens_string){
+        bidir_min_luminance = AiNodeGetFlt(filter_data->camera_node, "bidir_sample_multTL");
+    } else if (filter_data->camera_node_type == filter_data->lentil_po_string) {
+        bidir_min_luminance = AiNodeGetFlt(filter_data->camera_node, "bidir_sample_multPO");
+    }
 
     const float width = 1.65;
 
@@ -86,19 +90,13 @@ filter_pixel
         AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
         const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
 
-        if (filter_data->camera_node_type == filter_data->lentil_thinlens_string){
-            if (sample_luminance > tl->bidir_min_luminance) {
-                sample_energy = AtRGBA(1.0, 1.0, 1.0, sample_energy.a);
-            } else {
-                sample_energy = AtRGBA(0.0, 0.0, 0.0, sample_energy.a);
-            }
-        } else if (filter_data->camera_node_type == filter_data->lentil_po_string){
-             if (sample_luminance > po->bidir_min_luminance) {
-                sample_energy = AtRGBA(1.0, 1.0, 1.0, sample_energy.a);
-            } else {
-                sample_energy = AtRGBA(0.0, 0.0, 0.0, sample_energy.a);
-            }
+        
+        if (sample_luminance > bidir_min_luminance) {
+            sample_energy = AtRGBA(1.0, 1.0, 1.0, sample_energy.a);
+        } else {
+            sample_energy = AtRGBA(0.0, 0.0, 0.0, sample_energy.a);
         }
+        
        
         avalue += weight * sample_energy;
         aweight += weight;
