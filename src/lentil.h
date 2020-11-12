@@ -6,8 +6,8 @@
 #include <fstream>
 #include <vector>
 
-#include "../../polynomial-optics/src/lenssystem.h"
-#include "../../polynomial-optics/src/raytrace.h"
+// #include "../../polynomial-optics/src/lenssystem.h"
+// #include "../../polynomial-optics/src/raytrace.h"
 #include "../../Eigen/Eigen/Dense"
 
 #include "imagebokeh.h"
@@ -34,17 +34,17 @@ struct Draw
 };
 */
 
-struct CameraRaytraced 
-{
-    std::string id;
-    int lenses_cnt;
-    std::vector<lens_element_t> lenses;
-    double first_element_housing_radius;
-    double zoom;
-    double lens_focal_length;
-    double thickness_original;
-    double total_lens_length;
-};
+// struct CameraRaytraced 
+// {
+//     std::string id;
+//     int lenses_cnt;
+//     std::vector<lens_element_t> lenses;
+//     double first_element_housing_radius;
+//     double zoom;
+//     double lens_focal_length;
+//     double thickness_original;
+//     double total_lens_length;
+// };
 
 struct Timing
 {
@@ -56,7 +56,7 @@ struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
-    CameraRaytraced camera_rt;
+    // CameraRaytraced camera_rt;
     imageData image;
 
     #ifdef TIMING

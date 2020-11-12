@@ -5,12 +5,187 @@
 #include "../../Eigen/Eigen/Core"
 #include "../../Eigen/Eigen/LU"
 
-#include "../../polynomial-optics/src/raytrace.h"
 #include "global.h"
 
 #ifndef M_PI
 #  define M_PI 3.14159265358979323846
 #endif
+
+static inline double raytrace_dot(Eigen::Vector3d u, Eigen::Vector3d v) {
+  return u(0)*v(0) + u(1)*v(1) + u(2)*v(2);
+}
+
+static inline void raytrace_cross(Eigen::Vector3d &r, const Eigen::Vector3d u, const Eigen::Vector3d v) {
+  r(0) = u(1)*v(2)-u(2)*v(1);
+  r(1) = u(2)*v(0)-u(0)*v(2);
+  r(2) = u(0)*v(1)-u(1)*v(0);
+}
+
+static inline void raytrace_normalise(Eigen::Vector3d &v) {
+  const double ilen = 1.0f/std::sqrt(raytrace_dot(v,v));
+  for(int k=0;k<3;k++) v(k) *= ilen;
+}
+
+static inline void raytrace_substract(Eigen::Vector3d &u, const Eigen::Vector3d v) {
+  for(int k = 0; k < 3; k++) u(k) -= v(k);
+}
+
+static inline void raytrace_multiply(Eigen::Vector3d &v, const double s) {
+  for(int k = 0; k < 3; k++) v(k) *= s;
+}
+
+static inline void propagate(Eigen::Vector3d &pos, const Eigen::Vector3d dir, const double dist) {
+  for(int i=0;i<3;i++) pos(i) += dir(i) * dist;
+}
+
+
+static inline void planeToCs(const Eigen::Vector2d inpos, const Eigen::Vector2d indir, Eigen::Vector3d &outpos, Eigen::Vector3d &outdir, const double planepos) {
+  outpos(0) = inpos(0);
+  outpos(1) = inpos(1);
+  outpos(2) = planepos;
+
+  outdir(0) = indir(0);
+  outdir(1) = indir(1);
+  outdir(2) = 1;
+
+  raytrace_normalise(outdir);
+}
+
+static inline void csToPlane(const Eigen::Vector3d inpos, const Eigen::Vector3d indir, Eigen::Vector2d &outpos, Eigen::Vector2d &outdir, const double planepos)
+{
+  //intersection with plane at z = planepos
+  const double t = (planepos - inpos(2)) / indir(2);
+
+  outpos(0) = inpos(0) + t * indir(0);
+  outpos(1) = inpos(1) + t * indir(1);
+
+  outdir(0) = indir(0) / std::abs(indir(2));
+  outdir(1) = indir(1) / std::abs(indir(2));
+}
+
+static inline void sphereToCs(const Eigen::Vector2d inpos, const Eigen::Vector2d indir, Eigen::Vector3d &outpos, Eigen::Vector3d &outdir, const double center, const double sphereRad)
+{
+  const Eigen::Vector3d normal(
+    inpos(0)/sphereRad,
+    inpos(1)/sphereRad,
+    std::sqrt(std::max(0.0, sphereRad*sphereRad-inpos(0)*inpos(0)-inpos(1)*inpos(1)))/std::abs(sphereRad)
+  );
+
+  const Eigen::Vector3d tempDir(
+    indir(0),
+    indir(1),
+    std::sqrt(std::max(0.0, 1.0-indir(0)*indir(0)-indir(1)*indir(1)))
+  );
+
+  Eigen::Vector3d ex(normal(2), 0, -normal(0));
+  raytrace_normalise(ex);
+  Eigen::Vector3d ey(0,0,0);
+  raytrace_cross(ey, normal, ex);
+
+  outdir(0) = tempDir(0) * ex(0) + tempDir(1) * ey(0) + tempDir(2) * normal(0);
+  outdir(1) = tempDir(0) * ex(1) + tempDir(1) * ey(1) + tempDir(2) * normal(1);
+  outdir(2) = tempDir(0) * ex(2) + tempDir(1) * ey(2) + tempDir(2) * normal(2);
+
+  outpos(0) = inpos(0);
+  outpos(1) = inpos(1);
+  outpos(2) = normal(2) * sphereRad + center;
+}
+
+static inline void csToSphere(const Eigen::Vector3d inpos, const Eigen::Vector3d indir, Eigen::Vector2d &outpos, Eigen::Vector2d &outdir, const double sphereCenter, const double sphereRad)
+{
+  const Eigen::Vector3d normal(
+    inpos(0)/sphereRad,
+    inpos(1)/sphereRad,
+    std::abs((inpos(2)-sphereCenter)/sphereRad)
+  );
+
+  Eigen::Vector3d tempDir(indir(0), indir(1), indir(2));
+  raytrace_normalise(tempDir);
+
+  // tangent
+  Eigen::Vector3d ex(normal(2), 0, -normal(0));
+  raytrace_normalise(ex);
+  
+  // bitangent
+  Eigen::Vector3d ey(0,0,0);
+  raytrace_cross(ey, normal, ex);
+  
+  // encode ray direction as projected position on unit disk perpendicular to the normal
+  outdir(0) = raytrace_dot(tempDir, ex);
+  outdir(1) = raytrace_dot(tempDir, ey);
+
+  // outpos is unchanged, z term omitted
+  outpos(0) = inpos(0);
+  outpos(1) = inpos(1);
+}
+
+
+static inline void csToCylinder(const Eigen::Vector3d inpos, const Eigen::Vector3d indir, Eigen::Vector2d &outpos, Eigen::Vector2d &outdir, const double center, const double R, const bool cyl_y) {
+
+  Eigen::Vector3d normal(0,0,0);
+  if (cyl_y){
+    normal(0) = inpos(0)/R;
+    normal(2) = std::abs((inpos(2) - center)/R);
+  } else {
+    normal(1) = inpos(1)/R;
+    normal(2) = std::abs((inpos(2) - center)/R);
+  }
+
+  Eigen::Vector3d tempDir(indir(0), indir(1), indir(2));
+  raytrace_normalise(tempDir); //untested
+
+  // tangent
+  Eigen::Vector3d ex(normal(2), 0, -normal(0));
+  
+  // bitangent
+  Eigen::Vector3d ey(0,0,0);
+  raytrace_cross(ey, normal, ex);
+  raytrace_normalise(ey); // not sure if this is necessary
+  
+  // encode ray direction as projected position on unit disk perpendicular to the normal
+  outdir(0) = raytrace_dot(tempDir, ex);
+  outdir(1) = raytrace_dot(tempDir, ey);
+
+  // outpos is unchanged, z term omitted
+  outpos(0) = inpos(0);
+  outpos(1) = inpos(1);
+}
+
+
+static inline void cylinderToCs(const Eigen::Vector2d inpos, const Eigen::Vector2d indir, Eigen::Vector3d &outpos, Eigen::Vector3d &outdir, const double center, const double R, const bool cyl_y) {
+
+  Eigen::Vector3d normal(0,0,0);
+  if (cyl_y){
+    normal(0) = inpos(0)/R;
+    normal(2) = std::sqrt(std::max(0.0, R*R-inpos(0)*inpos(0)))/std::abs(R);
+  } else {
+    normal(1) = inpos(1)/R;
+    normal(2) = std::sqrt(std::max(0.0, R*R-inpos(1)*inpos(1)))/std::abs(R);
+  }
+
+  const Eigen::Vector3d tempDir(
+    indir(0), 
+    indir(1), 
+    std::sqrt(std::max(0.0, 1.0-indir(0)*indir(0)-indir(1)*indir(1)))
+  );
+
+  // tangent
+  Eigen::Vector3d ex(normal(2), 0, -normal(0));
+  raytrace_normalise(ex); // not sure if this is necessary
+  
+  // bitangent
+  Eigen::Vector3d ey(0,0,0);
+  raytrace_cross(ey, normal, ex);
+  raytrace_normalise(ey); // not sure if this is necessary
+  
+  outdir(0) = tempDir(0) * ex(0) + tempDir(1) * ey(0) + tempDir(2) * normal(0);
+  outdir(1) = tempDir(0) * ex(1) + tempDir(1) * ey(1) + tempDir(2) * normal(1);
+  outdir(2) = tempDir(0) * ex(2) + tempDir(1) * ey(2) + tempDir(2) * normal(2);
+
+  outpos(0) = inpos(0);
+  outpos(1) = inpos(1);
+  outpos(2) = normal(2) * R + center;
+}
 
 
 
