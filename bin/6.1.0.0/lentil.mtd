@@ -10,15 +10,16 @@
     houdini.icon            STRING  "SHOP_lens"
     houdini.label           STRING  "lentil"
     houdini.help_url        STRING  "http://www.lentil.xyz"
+    houdini.optional        BOOL true
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;8;Bokeh;3;Bidirectional;5;Additional;1"
+    houdini.parm.folder.first STRING  "General;8;Bokeh;3;Bidirectional;4;Additional;1"
     
     [attr unitsPO]
         desc                STRING  "Units"
         
         houdini.label       STRING  "Working unit"
-        houdini.help        STRING ""
+        houdini.help        STRING "Put to M for HtoA."
 
     [attr lens_modelPO]
         desc                STRING  "Lens Model"

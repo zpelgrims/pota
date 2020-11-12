@@ -12,7 +12,7 @@
     houdini.help_url        STRING  "http://www.lentil.xyz"
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;6;Bokeh;9;Bidirectional;5;Additional;1"
+    houdini.parm.folder.first STRING  "General;6;Bokeh;9;Bidirectional;4;Additional;2"
     
 
     [attr unitsTL]
