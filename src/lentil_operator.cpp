@@ -102,12 +102,11 @@ operator_cleanup
     return true;
 }
 
-node_loader
-{
-    if (i>0) return 0;
+
+
+void registerLentilOperator(AtNodeLib* node) {
     node->methods = (AtNodeMethods*)LentilOperatorMtd;
     node->name = "lentil_operator";
     node->node_type = AI_NODE_OPERATOR;
     strcpy(node->version, AI_VERSION);
-    return true;
 }

@@ -1,4 +1,0 @@
-[node lentil_thin_lens_bokeh_filter]
-    maya.attr_prefix        STRING ""
-    maya.translator         STRING "lentil_thin_lens_bokeh_filter"
-    maya.id                  INT      0x00070243

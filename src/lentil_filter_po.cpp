@@ -435,14 +435,11 @@ filter_pixel
  
 node_finish {}
 
-node_loader
-{
-   if (i>0) return false;
-   node->methods = (AtNodeMethods*) LentilFilterDataMtd;
-   node->output_type = AI_TYPE_NONE;
-   node->name = "lentil_bokeh_filter";
-   node->node_type = AI_NODE_FILTER;
-   strcpy(node->version, AI_VERSION);
-   return true;
+
+void registerLentilFilterPO(AtNodeLib* node) {
+    node->methods = (AtNodeMethods*) LentilFilterDataMtd;
+    node->output_type = AI_TYPE_NONE;
+    node->name = "lentil_bokeh_filter";
+    node->node_type = AI_NODE_FILTER;
+    strcpy(node->version, AI_VERSION);
 }
- 

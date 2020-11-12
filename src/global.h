@@ -44,7 +44,7 @@ struct LentilFilterData {
 
 
 
-std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
+inline std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
     std::size_t pos = s.find(toReplace);
     if (pos == std::string::npos) return s;
     return s.replace(pos, toReplace.length(), replaceWith);
@@ -247,7 +247,7 @@ static inline void lens_sample_triangular_aperture(double &x, double &y, double 
 }
 
 
-float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
+inline float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
   // additional luminance with soft transition
   if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
     float perc = (sample_luminance - minimum_luminance) / transition_width;
@@ -261,7 +261,7 @@ float additional_luminance_soft_trans(float sample_luminance, float additional_l
 
 
 
-std::vector<std::string> split_str(std::string str, std::string token)
+inline std::vector<std::string> split_str(std::string str, std::string token)
 {
     std::vector<std::string>result;
     while(str.size())
@@ -402,7 +402,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
     }
   }
 
-unsigned int string_to_arnold_type(std::string str){
+inline unsigned int string_to_arnold_type(std::string str){
   if (str == "float" || str == "FLOAT" || str == "flt" || str == "FLT") return AI_TYPE_FLOAT;
   else if (str == "rgba" || str == "RGBA") return AI_TYPE_RGBA;
   else if (str == "rgb" || str == "RGB") return AI_TYPE_RGB;
@@ -412,7 +412,7 @@ unsigned int string_to_arnold_type(std::string str){
 }
 
 
-std::string erase_string(std::string str, std::string pattern) {
+inline std::string erase_string(std::string str, std::string pattern) {
   std::string::size_type i = str.find(pattern);
   while (i != std::string::npos) {
     str.erase(i, pattern.length());

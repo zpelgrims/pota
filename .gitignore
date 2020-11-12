@@ -23,3 +23,5 @@
 /htoa/backup/*
 
 !bokeh_imgs/*.png
+
+/build/*

@@ -74,15 +74,11 @@ filter_pixel
    *((AtRGBA*)data_out) = avalue;
 }
  
-node_loader
-{
-   if (i>0)
-      return false;
- 
-   node->methods      = LentilDebugFilterMtd;
-   node->output_type  = AI_TYPE_NONE;
-   node->name         = "lentil_debug_filter";
-   node->node_type    = AI_NODE_FILTER;
-   strcpy(node->version, AI_VERSION);
-   return true;
+
+void registerLentilDebugFilter(AtNodeLib* node) {
+    node->methods = (AtNodeMethods*) LentilDebugFilterMtd;
+    node->output_type = AI_TYPE_NONE;
+    node->name = "lentil_debug_filter";
+    node->node_type = AI_NODE_FILTER;
+    strcpy(node->version, AI_VERSION);
 }

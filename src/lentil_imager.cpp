@@ -178,14 +178,11 @@ node_finish {
   delete bokeh;
 }
 
-node_loader
-{
-  if (i>0) return false;
-  node->methods = (AtNodeMethods*) LentilImagerMtd;
-  node->output_type = AI_TYPE_NONE;
-  node->name = "lentil_imager";
-  node->node_type = AI_NODE_DRIVER;
-  strcpy(node->version, AI_VERSION);
-  return true;
+
+ void registerLentilImager(AtNodeLib* node) {
+    node->methods = (AtNodeMethods*) LentilImagerMtd;
+    node->output_type = AI_TYPE_NONE;
+    node->name = "lentil_imager";
+    node->node_type = AI_NODE_DRIVER;
+    strcpy(node->version, AI_VERSION);
 }
- 

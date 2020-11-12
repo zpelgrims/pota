@@ -430,14 +430,11 @@ filter_pixel
  
 node_finish {}
 
-node_loader
-{
-  if (i>0) return false;
-  node->methods = (AtNodeMethods*) ThinLensBokehFilterMtd;
-  node->output_type = AI_TYPE_NONE;
-  node->name = "lentil_thin_lens_bokeh_filter";
-  node->node_type = AI_NODE_FILTER;
-  strcpy(node->version, AI_VERSION);
-  return true;
+
+void registerLentilFilterTL(AtNodeLib* node) {
+    node->methods = (AtNodeMethods*) ThinLensBokehFilterMtd;
+    node->output_type = AI_TYPE_NONE;
+    node->name = "lentil_thin_lens_bokeh_filter";
+    node->node_type = AI_NODE_FILTER;
+    strcpy(node->version, AI_VERSION);
 }
- 

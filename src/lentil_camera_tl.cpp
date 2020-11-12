@@ -151,13 +151,11 @@ camera_reverse_ray
     return true;
 }
 
-node_loader
-{
-    if (i != 0) return false;
+
+void registerLentilCameraTL(AtNodeLib* node) {
     node->methods = lentil_thinlensMethods;
     node->output_type = AI_TYPE_UNDEFINED;
     node->name = "lentil_thinlens";
     node->node_type = AI_NODE_CAMERA;
     strcpy(node->version, AI_VERSION);
-    return true;
 }

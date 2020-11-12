@@ -256,7 +256,7 @@ static inline float lens_aperture_area(const float radius, const int blades)
 
 // returns sensor offset in mm
 // traces rays backwards through the lens
-double camera_set_focus(double dist, Camera *camera)
+inline double camera_set_focus(double dist, Camera *camera)
 {
   const Eigen::Vector3d target(0, 0, dist);
   Eigen::VectorXd sensor(5); sensor.setZero();
@@ -311,7 +311,7 @@ double camera_set_focus(double dist, Camera *camera)
 
 
 // returns sensor offset in mm
-double camera_set_focus_infinity(Camera *camera)
+inline double camera_set_focus_infinity(Camera *camera)
 {
 	double parallel_ray_height = camera->lens_aperture_housing_radius * 0.1;
   const Eigen::Vector3d target(0.0, parallel_ray_height, AI_BIG);
@@ -353,7 +353,7 @@ double camera_set_focus_infinity(Camera *camera)
 }
 
 
-std::vector<double> logarithmic_values()
+inline std::vector<double> logarithmic_values()
 {
   double min = 0.0;
   double max = 45.0;
@@ -370,7 +370,7 @@ std::vector<double> logarithmic_values()
 
 // line plane intersection with fixed intersection at y = 0
 // used for finding the focal length and sensor shift
-Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector3d rayDirection)
+inline Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector3d rayDirection)
 {
   Eigen::Vector3d coord(100.0, 0.0, 100.0);
   Eigen::Vector3d planeNormal(0.0, 1.0, 0.0);
@@ -380,7 +380,7 @@ Eigen::Vector3d line_plane_intersection(Eigen::Vector3d rayOrigin, Eigen::Vector
 }
 
 
-double camera_get_y0_intersection_distance(double sensor_shift, double intersection_distance, Camera *camera)
+inline double camera_get_y0_intersection_distance(double sensor_shift, double intersection_distance, Camera *camera)
 {
   Eigen::VectorXd sensor(5); sensor.setZero();
   Eigen::VectorXd aperture(5); aperture.setZero();
@@ -409,7 +409,7 @@ double camera_get_y0_intersection_distance(double sensor_shift, double intersect
 
 
 // focal_distance is in mm
-double logarithmic_focus_search(const double focal_distance, Camera *camera){
+inline double logarithmic_focus_search(const double focal_distance, Camera *camera){
   double closest_distance = 999999999.0;
   double best_sensor_shift = 0.0;
   for (double sensorshift : logarithmic_values()){
@@ -763,7 +763,7 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
 
 // note that this is all with an unshifted sensor
-void trace_backwards_for_fstop(Camera *camera, const double fstop_target, double &calculated_fstop, double &calculated_aperture_radius)
+inline void trace_backwards_for_fstop(Camera *camera, const double fstop_target, double &calculated_fstop, double &calculated_aperture_radius)
 {
   const int maxrays = 1000;
   double best_valid_fstop = 0.0;
