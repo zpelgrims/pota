@@ -144,8 +144,8 @@ filter_output_type
         return AI_TYPE_VECTOR;
       case AI_TYPE_FLOAT:
         return AI_TYPE_FLOAT;
-      case AI_TYPE_INT:
-        return AI_TYPE_INT;
+      // case AI_TYPE_INT:
+      //   return AI_TYPE_INT;
       // case AI_TYPE_UINT:
       //   return AI_TYPE_UINT;
       // case AI_TYPE_POINTER:
@@ -425,12 +425,12 @@ filter_pixel
       *((float*)data_out) = rgb_energy;
       break;
     }
-    case AI_TYPE_INT: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      int rgb_energy = filtered_value.r;
-      *((int*)data_out) = rgb_energy;
-      break;
-    }
+    // case AI_TYPE_INT: {
+    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+    //   int rgb_energy = filtered_value.r;
+    //   *((int*)data_out) = rgb_energy;
+    //   break;
+    // }
     // case AI_TYPE_UINT: {
     //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
     //   unsigned rgb_energy = std::abs(filtered_value.r);

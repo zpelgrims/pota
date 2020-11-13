@@ -41,7 +41,8 @@ struct CameraThinLens
     unsigned int bidir_sample_mult;
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
-
+    bool bidir_debug;
+    
     int vignetting_retries;
 
     AtNode *filter_node;

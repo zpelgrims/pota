@@ -37,16 +37,16 @@
  <param int="1" name="vignetting_retries" label="Vignetting Retries" slider="True" slidermin="1" min="1" slidercenter="30" slidermax="50" max="50"/>
  <param widget="mapper" name="units" label="Units">
 	<hintdict name="options">
-	<string name="mm" 	value="mm"/>
-	<string name="dm" 	value="dm"/>
-	<string name="m" 	value="m"/>
-	<string name="cm" 	value="cm"/>
+	<int value="mm"/>
+	<int value="dm"/>
+	<int value="m"/>
+	<int value="cm"/>
 	</hintdict>
 	</param>
 </page>
 
 <page name="Experimental" open="False">
- <param name="abb_coma"label="Aberraton(coma)" slider="True" slidermin="-1.0" slidermax="1.0" max="1.0"/> 
+ <param name="abb_coma" label="Aberraton(coma)" slider="True" slidermin="-1.0" slidermax="1.0" max="1.0"/> 
 </page>
 
 <page name="Commom Attributes" open="False"> 
@@ -60,8 +60,8 @@
  param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
  <param widget="mapper" name="handedness">
 	<hintdict name="options">
-	<string name="right"	value="right"/>
-	<string name="left"		value="left"/>
+	<int value="right"/>
+	<int value="left"/>
 	</hintdict>
 	</param>
  <param name="near_clip"/>
@@ -72,18 +72,18 @@
  <param name="motion_end" label="Motion End" slider="True"/>
 	<param widget="mapper" name="shutter_type">
 	<hintdict name="options">
-	<string name="box"		value="box"/>
-	<string name="curve" 	value="curve"/>
-	<string name="triangle"	value="triangle"/>
+	<int value="box"/>
+	<int value="curve"/>
+	<int value="triangle"/>
 	</hintdict>
 	</param>
 <param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
 	<hintdict name="options">
-	<string name="top" 		value="top"/>
-	<string name="left"  	value="left"/>
-	<string name="off"  	value="off"/>
-	<string name="right"  	value="right"/>
-	<string name="bottom"  	value="bottom"/>
+	<int value="top"/>
+	<int value="left"/>
+	<int value="off"/>
+	<int value="right"/>
+	<int value="bottom"/>
 	</hintdict>
 	</param>
 </page>

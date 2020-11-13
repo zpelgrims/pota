@@ -26,6 +26,7 @@ enum {
   p_bidir_sample_mult,
   p_bidir_add_luminance,
   p_bidir_add_luminance_transition,
+  p_bidir_debug,
 
   // p_empirical_ca_dist,
 

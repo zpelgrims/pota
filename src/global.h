@@ -162,11 +162,11 @@ inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8
             pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
             break;
           }
-          case AI_TYPE_INT: {
-            const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
-            pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-            break;
-          }
+          // case AI_TYPE_INT: {
+          //   const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
+          //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+          //   break;
+          // }
           // case AI_TYPE_UINT: {
           //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
           //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
@@ -379,16 +379,16 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           break;
         }
 
-        case AI_TYPE_INT: {
-          if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
-            const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            filter_data->image_data_types[aov_name][px] = rgba_energy;
-            filter_data->zbuffer[px] = std::abs(depth);
-          }
+        // case AI_TYPE_INT: {
+        //   if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
+        //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
+        //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+        //     filter_data->image_data_types[aov_name][px] = rgba_energy;
+        //     filter_data->zbuffer[px] = std::abs(depth);
+        //   }
 
-          break;
-        }
+        //   break;
+        // }
 
         // case AI_TYPE_UINT: {
         //   if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){

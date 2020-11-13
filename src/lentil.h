@@ -116,6 +116,7 @@ struct Camera
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
     int bidir_sample_mult;
+    bool bidir_debug;
     float extra_sensor_shift;
 
     AtNode *filter_node;

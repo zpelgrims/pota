@@ -21,16 +21,14 @@ enum
     p_bokeh_aperture_blades,
     p_bokeh_circle_to_square,
     p_bokeh_anamorphic,
-
     p_bokeh_enable_image,
     p_bokeh_image_path,
 
     p_bidir_min_luminance,
     p_bidir_sample_mult,
-
     p_bidir_add_luminance,
     p_bidir_add_luminance_transition,
-
+    p_bidir_debug,
     p_vignetting_retries,
 
     p_abb_comaTL
