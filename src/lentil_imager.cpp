@@ -173,11 +173,10 @@ driver_close {}
 node_finish {
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
   // delete imager_data;
-  crypto_crit_sec_enter();
+
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   delete bokeh;
-  crypto_crit_sec_leave();
 }
 
 

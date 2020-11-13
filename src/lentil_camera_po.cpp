@@ -84,8 +84,6 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  crypto_crit_sec_enter();
-
   po->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   po->sensor_width = AiNodeGetFlt(node, "sensor_width");
   po->input_fstop = AiNodeGetFlt(node, "fstop");
@@ -124,7 +122,6 @@ node_update {
         }
     }
 
-    crypto_crit_sec_leave();
 }
 
 

@@ -71,7 +71,6 @@ operator_cook
     // const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_debug_operator");
     // if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
 
-    crypto_crit_sec_enter();
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");
 
@@ -86,7 +85,7 @@ operator_cook
         
         AiArraySetStr(outputs, i, AtString(output_string.c_str()));
     }
-    crypto_crit_sec_leave();
+    
     
     return true;
 }
