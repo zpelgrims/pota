@@ -1,9 +1,6 @@
 <!-- args file created by: elrachyd@gmail.com -->
-<!-- Katana GUI based on Maya -->
-<!-- date: 14/17/2020 -->
 
 <args format="1.0">
-
 
 <page name="Thin lens" open="True"> 
  <param name="sensor_width" label="Sensor Width(mm)" slider="True" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
@@ -37,10 +34,10 @@
  <param int="1" name="vignetting_retries" label="Vignetting Retries" slider="True" slidermin="1" min="1" slidercenter="30" slidermax="50" max="50"/>
  <param widget="mapper" name="units" label="Units">
 	<hintdict name="options">
-	<int value="mm"/>
-	<int value="dm"/>
-	<int value="m"/>
-	<int value="cm"/>
+	<string value="mm"/>
+	<string value="dm"/>
+	<string value="m"/>
+	<string value="cm"/>
 	</hintdict>
 	</param>
 </page>
@@ -60,8 +57,8 @@
  param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
  <param widget="mapper" name="handedness">
 	<hintdict name="options">
-	<int value="right"/>
-	<int value="left"/>
+	<string value="right"/>
+	<string value="left"/>
 	</hintdict>
 	</param>
  <param name="near_clip"/>
@@ -72,18 +69,18 @@
  <param name="motion_end" label="Motion End" slider="True"/>
 	<param widget="mapper" name="shutter_type">
 	<hintdict name="options">
-	<int value="box"/>
-	<int value="curve"/>
-	<int value="triangle"/>
+	<string value="box"/>
+	<string value="curve"/>
+	<string value="triangle"/>
 	</hintdict>
 	</param>
 <param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
 	<hintdict name="options">
-	<int value="top"/>
-	<int value="left"/>
-	<int value="off"/>
-	<int value="right"/>
-	<int value="bottom"/>
+	<string value="top"/>
+	<string value="left"/>
+	<string value="off"/>
+	<string value="right"/>
+	<string value="bottom"/>
 	</hintdict>
 	</param>
 </page>
