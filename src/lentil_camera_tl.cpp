@@ -112,8 +112,8 @@ node_update
     // }
 }
 
-node_plugin_initialize {return crypto_crit_sec_init();}
-node_plugin_cleanup {crypto_crit_sec_close();}
+// node_plugin_initialize {return crypto_crit_sec_init();}
+// node_plugin_cleanup {crypto_crit_sec_close();}
 
 node_finish
 {
