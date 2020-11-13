@@ -36,7 +36,7 @@ operator_init
     operator_data->camera_node_type = AtString(AiNodeEntryGetName(nentry));
 
     operator_data->debug = AiNodeGetBool(operator_data->camera_node, "bidir_debug");
-
+    
     operator_data->cook = false;
 
     if (operator_data->debug) {

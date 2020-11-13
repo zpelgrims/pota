@@ -305,7 +305,7 @@ camera_reverse_ray {
 
 
 void registerLentilCameraPO(AtNodeLib* node) {
-    node->methods = lentilMethods;
+    node->methods = (AtNodeMethods*) lentilMethods;
     node->output_type = AI_TYPE_UNDEFINED;
     node->name = "lentil";
     node->node_type = AI_NODE_CAMERA;

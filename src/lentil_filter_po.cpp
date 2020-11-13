@@ -50,9 +50,9 @@ node_update
   AtNode *cameranode = AiUniverseGetCamera();
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {
+    bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER PO] Camera is not of type lentil. A full scene update is required.");
     AiRenderAbort();
-    bokeh->enabled = false;
     return;
   }
 
@@ -63,6 +63,13 @@ node_update
     return;
   }
 
+  // if progressive rendering is on, don't redistribute
+  if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
+    bokeh->enabled = false;
+    AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
+    AiRenderAbort();
+    return;
+  }
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
@@ -120,7 +127,7 @@ node_update
   
   bokeh->current_inv_density = 0.0;
 
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Setup completed.");
 
   AiFilterUpdate(node, bokeh->filter_width);
 }
@@ -153,6 +160,8 @@ filter_pixel
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
 
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;

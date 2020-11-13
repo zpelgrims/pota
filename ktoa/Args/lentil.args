@@ -3,44 +3,7 @@
 <!-- date: 14/17/2020 -->
 
 <args format="1.0">
-<page name="Commom Attributes" open="False"> 
-	<param name="exposure" label="Exposure" slider="True" slidermin="-100.0" min="0.0 "slidermax="100.0" max="100.0"/>
-	<param name="rolling_shutter_duration" label="Rolling Shutter" slider="True"/>
-	<param name="filtermap" label="Filtermap"/>
-	<param widget="checkBox" name="projective"/>
-	<param int="1" name="aperture_blades" label="Aperture Blades" slider="True" slidermin="0" slidermax="40"/>
-	<param name="aperture_rotation" label="Aperture Rotation" slider="True" slidermin="0.0" min="0.0" slidermax="50.0" max="360.0"/>
-	<param name="aperture_blade_curvature" label="Aperture Blade Curvature" slider="True" slidermin="-20.0" min="-20.0" slidermax="20.0" max="20.0"/>
-	<param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
-		<param widget="mapper" name="handedness">
-		<hintdict name="options">
-		<string name="right"	value="right"/>
-		<string name="left"		value="left"/>
-		</hintdict>
-		</param>
-	<param name="near_clip"/>
-	<param name="far_clip"/>
-	<param name="shutter_start" label="Shutter Start" slider="True"/>
-	<param name="shutter_end" label="Shutter End" slider="True"/>
-	<param name="motion_start" label="Motion Start" slider="True"/>
-	<param name="motion_end" label="Motion End" slider="True"/>
-		<param widget="mapper" name="shutter_type">
-		<hintdict name="options">
-		<string name="box"		value="box"/>
-		<string name="curve" 	value="curve"/>
-		<string name="triangle"	value="triangle"/>
-		</hintdict>
-		</param>
-	<param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
-		<hintdict name="options">
-		<string name="top" 		value="top"/>
-		<string name="left"  	value="left"/>
-		<string name="off"  	value="off"/>
-		<string name="right"  	value="right"/>
-		<string name="bottom"  	value="bottom"/>
-		</hintdict>
-		</param>
-</page>
+
 
 <page name="Polynominal Optics" open="True"> 
 	<param widget="mapper" name="lens_model" label="Lens Model">
@@ -123,6 +86,45 @@
 	<string name="cm" 	value="cm"/>
 	</hintdict>
 	</param>	
+</page>
+
+<page name="Commom Attributes" open="False"> 
+	<param name="exposure" label="Exposure" slider="True" slidermin="-100.0" min="0.0 "slidermax="100.0" max="100.0"/>
+	<param name="rolling_shutter_duration" label="Rolling Shutter" slider="True"/>
+	<param name="filtermap" label="Filtermap"/>
+	<param widget="checkBox" name="projective"/>
+	<param int="1" name="aperture_blades" label="Aperture Blades" slider="True" slidermin="0" slidermax="40"/>
+	<param name="aperture_rotation" label="Aperture Rotation" slider="True" slidermin="0.0" min="0.0" slidermax="50.0" max="360.0"/>
+	<param name="aperture_blade_curvature" label="Aperture Blade Curvature" slider="True" slidermin="-20.0" min="-20.0" slidermax="20.0" max="20.0"/>
+	<param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
+		<param widget="mapper" name="handedness">
+		<hintdict name="options">
+		<string name="right"	value="right"/>
+		<string name="left"		value="left"/>
+		</hintdict>
+		</param>
+	<param name="near_clip"/>
+	<param name="far_clip"/>
+	<param name="shutter_start" label="Shutter Start" slider="True"/>
+	<param name="shutter_end" label="Shutter End" slider="True"/>
+	<param name="motion_start" label="Motion Start" slider="True"/>
+	<param name="motion_end" label="Motion End" slider="True"/>
+		<param widget="mapper" name="shutter_type">
+		<hintdict name="options">
+		<string name="box"		value="box"/>
+		<string name="curve" 	value="curve"/>
+		<string name="triangle"	value="triangle"/>
+		</hintdict>
+		</param>
+	<param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
+		<hintdict name="options">
+		<string name="top" 		value="top"/>
+		<string name="left"  	value="left"/>
+		<string name="off"  	value="off"/>
+		<string name="right"  	value="right"/>
+		<string name="bottom"  	value="bottom"/>
+		</hintdict>
+		</param>
 </page>
 
 <page name="Dynamic Array Attributes" open="False"> 
