@@ -26,6 +26,41 @@ inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_pos
   return pixel;
 }
 
+inline float thinlens_get_image_dist_focusdist(Camera *po){
+    return (-po->focal_length * -po->focus_distance) / (-po->focal_length + -po->focus_distance);
+}
+
+
+inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, Camera *po){
+  // world to camera space transform, static just for CoC
+  AtMatrix world_to_camera_matrix_static;
+  float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
+  AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
+  AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+  
+  switch (po->unitModel){
+    case mm:
+    {
+      camera_space_sample_position_static *= 0.1;
+    } break;
+    case cm:
+    { 
+      camera_space_sample_position_static *= 1.0;
+    } break;
+    case dm:
+    {
+      camera_space_sample_position_static *= 10.0;
+    } break;
+    case m:
+    {
+      camera_space_sample_position_static *= 100.0;
+    }
+  }
+  
+  const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position_static.z) / (-po->focal_length + camera_space_sample_position_static.z);
+  const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
+  return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
+}
 
 node_parameters 
 {
@@ -51,7 +86,7 @@ node_update
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil"))) {
     bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER PO] Camera is not of type lentil. A full scene update is required.");
+    AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
     AiRenderAbort();
     return;
   }
@@ -68,6 +103,12 @@ node_update
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
     AiRenderAbort();
+    return;
+  }
+
+  if (!AiNodeGetBool(cameranode, "enable_dof")) {
+    AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
+    bokeh->enabled = false;
     return;
   }
   
@@ -127,7 +168,7 @@ node_update
   
   bokeh->current_inv_density = 0.0;
 
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Setup completed.");
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed.");
 
   AiFilterUpdate(node, bokeh->filter_width);
 }
@@ -161,9 +202,8 @@ filter_pixel
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER PO] Starting bidirectional sampling.");
-
   if (bokeh->enabled){
+    AiMsgInfo("[LENTIL FILTER] Starting bidirectional sampling.");
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
@@ -210,235 +250,416 @@ filter_pixel
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
       
-      AtMatrix world_to_camera_matrix_static;
-      float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-      AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
-      AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
-      switch (po->unitModel){
-        case mm:
-        {
-          camera_space_sample_position_static *= 0.1;
-        } break;
-        case cm:
+
+
+      switch (po->cameraType){
+        case PolynomialOptics:
         { 
-          camera_space_sample_position_static *= 1.0;
-        } break;
-        case dm:
-        {
-          camera_space_sample_position_static *= 10.0;
-        } break;
-        case m:
-        {
-          camera_space_sample_position_static *= 100.0;
-        }
-      }
-
-      if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
-
-      // early out, before coc
-      bool transmission_dump_already_happened = false;
-      if (redistribute == false){
-        filter_and_add_to_buffer(px, py, filter_width_half, 
-                                1.0, inv_density, depth, transmitted_energy_in_sample, 0,
-                                iterator, bokeh);
-        if (!transmitted_energy_in_sample) continue;
-        else transmission_dump_already_happened = true;
-      }
-      
-      
-      
-      // additional luminance with soft transition
-      float fitted_bidir_add_luminance = 0.0;
-      if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-
-      Eigen::Vector2d sensor_position(0, 0);
-
-
-      // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-      AtVector2 bbox_min (0, 0);
-      AtVector2 bbox_max (0, 0);
-      int proberays_total_samples = 0;
-      int proberays_base_rays = 32;
-      int proberays_max_rays = proberays_base_rays * 2;
-      std::vector<AtVector2> pixelcache;
-
-      for(int count=0; count<proberays_base_rays; count++) {
-        ++proberays_total_samples;
-        if (proberays_total_samples >= proberays_max_rays) continue;
-
-        Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
-        switch (po->unitModel){
-          case mm:
-          {
-            camera_space_sample_position_mb_eigen *= 0.1;
-          } break;
-          case cm:
-          { 
-            camera_space_sample_position_mb_eigen *= 1.0;
-          } break;
-          case dm:
-          {
-            camera_space_sample_position_mb_eigen *= 10.0;
-          } break;
-          case m:
-          {
-            camera_space_sample_position_mb_eigen *= 100.0;
-          }
-        }
-      
-        if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
-          --count;
-          continue;
-        }
-
-        const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
-
-        //figure out why sometimes pixel is nan, can't just skip it
-        if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
-            (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-        {
-          --count;
-          continue;
-        }
-
-        // expand bbox
-        if (count == 0) {
-          bbox_min = {(float)pixel(0), (float)pixel(1)};
-          bbox_max = {(float)pixel(0), (float)pixel(1)};
-        } else {
-          bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
-          bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
-        }
-
-        pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
-      }
-
-
-      double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-      if (bbox_area < 20.0) redistribute = false; //might have to increase this?
-      int samples = std::floor(bbox_area * std::pow(po->bidir_sample_mult,2) * 0.001);
-      samples = std::ceil((double)(samples) * inv_density);
-      samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
-      float inv_samples = 1.0 / static_cast<double>(samples);
-
-
-      // early out, after coc
-      if (redistribute == false){
-        if (!transmission_dump_already_happened){
-          filter_and_add_to_buffer(px, py, filter_width_half, 
-                                  1.0, inv_density, depth, transmitted_energy_in_sample, 0,
-                                  iterator, bokeh);
-        }
-        if (!transmitted_energy_in_sample) continue;
-      }
-
-
-      unsigned int total_samples_taken = 0;
-      unsigned int max_total_samples = samples*5;
-        
-
-      for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
-        
-        Eigen::Vector2d pixel;
-        
-        if (count < pixelcache.size()){ // redist already taken samples from probe rays
-          pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
-        } else {
-
-          Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
+          AtMatrix world_to_camera_matrix_static;
+          float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
+          AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
+          AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
             case mm:
             {
-              camera_space_sample_position_mb_eigen *= 0.1;
+              camera_space_sample_position_static *= 0.1;
             } break;
             case cm:
             { 
-              camera_space_sample_position_mb_eigen *= 1.0;
+              camera_space_sample_position_static *= 1.0;
             } break;
             case dm:
             {
-              camera_space_sample_position_mb_eigen *= 10.0;
+              camera_space_sample_position_static *= 10.0;
             } break;
             case m:
             {
-              camera_space_sample_position_mb_eigen *= 100.0;
+              camera_space_sample_position_static *= 100.0;
             }
           }
 
-          if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
-            --count;
-            continue;
+          if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
+
+          // early out, before coc
+          bool transmission_dump_already_happened = false;
+          if (redistribute == false){
+            filter_and_add_to_buffer(px, py, filter_width_half, 
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    iterator, bokeh);
+            if (!transmitted_energy_in_sample) continue;
+            else transmission_dump_already_happened = true;
+          }
+          
+          
+          
+          // additional luminance with soft transition
+          float fitted_bidir_add_luminance = 0.0;
+          if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
+
+          Eigen::Vector2d sensor_position(0, 0);
+
+
+          // PROBE RAYS samples to determine size of bokeh & subsequent sample count
+          AtVector2 bbox_min (0, 0);
+          AtVector2 bbox_max (0, 0);
+          int proberays_total_samples = 0;
+          int proberays_base_rays = 32;
+          int proberays_max_rays = proberays_base_rays * 2;
+          std::vector<AtVector2> pixelcache;
+
+          for(int count=0; count<proberays_base_rays; count++) {
+            ++proberays_total_samples;
+            if (proberays_total_samples >= proberays_max_rays) continue;
+
+            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
+            switch (po->unitModel){
+              case mm:
+              {
+                camera_space_sample_position_mb_eigen *= 0.1;
+              } break;
+              case cm:
+              { 
+                camera_space_sample_position_mb_eigen *= 1.0;
+              } break;
+              case dm:
+              {
+                camera_space_sample_position_mb_eigen *= 10.0;
+              } break;
+              case m:
+              {
+                camera_space_sample_position_mb_eigen *= 100.0;
+              }
+            }
+          
+            if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
+              --count;
+              continue;
+            }
+
+            const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+
+            //figure out why sometimes pixel is nan, can't just skip it
+            if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
+                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+            {
+              --count;
+              continue;
+            }
+
+            // expand bbox
+            if (count == 0) {
+              bbox_min = {(float)pixel(0), (float)pixel(1)};
+              bbox_max = {(float)pixel(0), (float)pixel(1)};
+            } else {
+              bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
+              bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
+            }
+
+            pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
           }
 
-          pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
 
-          // if outside of image
-          if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
-              (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-          {
-            --count; // much room for improvement here, potentially many samples are wasted outside of frame
-            continue;
+          double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
+          if (bbox_area < 20.0) redistribute = false; //might have to increase this?
+          int samples = std::floor(bbox_area * std::pow(po->bidir_sample_mult,2) * 0.001);
+          samples = std::ceil((double)(samples) * inv_density);
+          samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+          float inv_samples = 1.0 / static_cast<double>(samples);
+
+
+          // early out, after coc
+          if (redistribute == false){
+            if (!transmission_dump_already_happened){
+              filter_and_add_to_buffer(px, py, filter_width_half, 
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      iterator, bokeh);
+            }
+            if (!transmitted_energy_in_sample) continue;
           }
+
+
+          unsigned int total_samples_taken = 0;
+          unsigned int max_total_samples = samples*5;
+            
+
+          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+            
+            Eigen::Vector2d pixel;
+            
+            if (count < pixelcache.size()){ // redist already taken samples from probe rays
+              pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
+            } else {
+
+              Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
+              switch (po->unitModel){
+                case mm:
+                {
+                  camera_space_sample_position_mb_eigen *= 0.1;
+                } break;
+                case cm:
+                { 
+                  camera_space_sample_position_mb_eigen *= 1.0;
+                } break;
+                case dm:
+                {
+                  camera_space_sample_position_mb_eigen *= 10.0;
+                } break;
+                case m:
+                {
+                  camera_space_sample_position_mb_eigen *= 100.0;
+                }
+              }
+
+              if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
+                --count;
+                continue;
+              }
+
+              pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+
+              // if outside of image
+              if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+                  (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+              {
+                --count; // much room for improvement here, potentially many samples are wasted outside of frame
+                continue;
+              }
+            }
+
+            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+
+            // write sample to image
+            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
+
+            for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                            inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                            transmitted_energy_in_sample, 1, iterator, bokeh);
+            }
+          }
+        
+          break;
         }
+        case ThinLens:
+        {
+          // early out, before coc
+          bool transmission_dump_already_happened = false;
+          if (redistribute == false){
+            filter_and_add_to_buffer(px, py, filter_width_half, 
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    iterator, bokeh);
+            if (!transmitted_energy_in_sample) continue;
+            else transmission_dump_already_happened = true;
+          }
+          
+          
+          // additional luminance with soft transition
+          float fitted_bidir_add_luminance = 0.0;
+          if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
+          
 
-        // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+          float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
+          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
+          if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
+          int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+          samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+          float inv_samples = 1.0/static_cast<double>(samples);
 
-        // write sample to image
-        unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
 
-        for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-          add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                        inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                        transmitted_energy_in_sample, 1, iterator, bokeh);
+          // early out, after coc
+          if (redistribute == false){
+            if (!transmission_dump_already_happened){
+              filter_and_add_to_buffer(px, py, filter_width_half, 
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      iterator, bokeh);
+            }
+            if (!transmitted_energy_in_sample) continue;
+          }
+        
+        
+          unsigned int total_samples_taken = 0;
+          unsigned int max_total_samples = samples*5;
+
+          for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
+            
+            unsigned int seed = tea<8>((px*py+px), total_samples_taken);
+
+            // world to camera space transform, motion blurred
+            AtMatrix world_to_camera_matrix_motionblurred;
+            float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
+            AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+            AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+            switch (po->unitModel){
+              case mm:
+              {
+                camera_space_sample_position_mb *= 0.1;
+              } break;
+              case cm:
+              { 
+                camera_space_sample_position_mb *= 1.0;
+              } break;
+              case dm:
+              {
+                camera_space_sample_position_mb *= 10.0;
+              } break;
+              case m:
+              {
+                camera_space_sample_position_mb *= 100.0;
+              }
+            }
+            float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
+
+            // either get uniformly distributed points on the unit disk or bokeh image
+            Eigen::Vector2d unit_disk(0, 0);
+            if (po->bokeh_enable_image) po->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
+            else if (po->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, po->abb_spherical, po->circle_to_square, po->bokeh_anamorphic);
+            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, po->bokeh_aperture_blades);
+
+
+
+            unit_disk(0) *= po->bokeh_anamorphic;
+            AtVector lens(unit_disk(0) * po->aperture_radius, unit_disk(1) * po->aperture_radius, 0.0);
+
+
+            // aberration inputs
+            // float abb_field_curvature = 0.0;
+
+
+            // ray through center of lens
+            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
+            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+            // perturb ray direction to simulate coma aberration
+            // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
+            // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
+            float abb_coma = po->abb_coma * abb_coma_multipliers(po->sensor_width, po->focal_length, dir_from_center, unit_disk);
+            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
+            camera_space_sample_position_mb = AiV3Length(camera_space_sample_position_mb) * dir_lens_to_P;
+            dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
+
+            float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
+            AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
+
+
+            // depth of field
+            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+
+
+
+
+
+            float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(po)/dir_from_lens_to_image_sample.z);
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+            
+            // bring back to (x, y, 1)
+            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                      focusdist_image_point.y / focusdist_image_point.z);
+            // transform to screenspace coordinate mapping
+            sensor_position /= (po->sensor_width*0.5)/-po->focal_length;
+
+
+            // optical vignetting
+            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+            if (po->optical_vignetting_distance > 0.0){
+              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
+              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, po->aperture_radius, po->optical_vignetting_radius, po->optical_vignetting_distance, lerp_squircle_mapping(po->circle_to_square))){
+                  --count;
+                  continue;
+              }
+            }
+
+
+            // barrel distortion (inverse)
+            if (po->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), po->abb_distortion);
+            
+
+            // convert sensor position to pixel position
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+
+            // if outside of image
+            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
+              --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
+              continue;
+            }
+
+            // write sample to image
+            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
+            if (!redistribute) pixelnumber = static_cast<int>(bokeh->xres * py + px);
+
+            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+
+            for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                            inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                            transmitted_energy_in_sample, 1, iterator, bokeh);
+            
+            }
+          }
+
+          break;
         }
       }
     }
-  }
+  } 
   
-
-  just_filter:
-
+  
   // do regular filtering (passthrough) for display purposes
+  just_filter:
   AiAOVSampleIteratorReset(iterator);
 
-  switch(data_type){
-    case AI_TYPE_RGBA: {
-      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
-      *((AtRGBA*)data_out) = filtered_value;
-      break;
+  if (po->bidir_debug){
+    AtRGBA avalue = AI_RGBA_ZERO;
+    while (AiAOVSampleIteratorGetNext(iterator))
+    {
+      AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+      const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
+
+      if (sample_luminance > po->bidir_min_luminance) {
+          avalue = AtRGBA(1.0, 1.0, 1.0, 1.0);
+      }
+   }
+   *((AtRGBA*)data_out) = avalue;
+  } 
+  else {
+    switch(data_type){
+      case AI_TYPE_RGBA: {
+        AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+        *((AtRGBA*)data_out) = filtered_value;
+        break;
+      }
+      case AI_TYPE_RGB: {
+        AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+        AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+        *((AtRGB*)data_out) = rgb_energy;
+        break;
+      }
+      case AI_TYPE_VECTOR: {
+        AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+        AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+        *((AtVector*)data_out) = rgb_energy;
+        break;
+      }
+      case AI_TYPE_FLOAT: {
+        AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+        float rgb_energy = filtered_value.r;
+        *((float*)data_out) = rgb_energy;
+        break;
+      }
+      // case AI_TYPE_INT: {
+      //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      //   int rgb_energy = filtered_value.r;
+      //   *((int*)data_out) = rgb_energy;
+      //   break;
+      // }
+      // case AI_TYPE_UINT: {
+      //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      //   unsigned rgb_energy = std::abs(filtered_value.r);
+      //   *((unsigned*)data_out) = rgb_energy;
+      //   break;
+      // }
     }
-    case AI_TYPE_RGB: {
-      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
-       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
-      *((AtRGB*)data_out) = rgb_energy;
-      break;
-    }
-    case AI_TYPE_VECTOR: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
-      *((AtVector*)data_out) = rgb_energy;
-      break;
-    }
-    case AI_TYPE_FLOAT: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      float rgb_energy = filtered_value.r;
-      *((float*)data_out) = rgb_energy;
-      break;
-    }
-    // case AI_TYPE_INT: {
-    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-    //   int rgb_energy = filtered_value.r;
-    //   *((int*)data_out) = rgb_energy;
-    //   break;
-    // }
-    // case AI_TYPE_UINT: {
-    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-    //   unsigned rgb_energy = std::abs(filtered_value.r);
-    //   *((unsigned*)data_out) = rgb_energy;
-    //   break;
-    // }
   }
-  
 }
 
  

@@ -728,10 +728,10 @@ inline void trace_ray(bool original_ray, int &tries,
     out.setZero();
 
 
-	  if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
+	  if (!camera->enable_dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
 	  
     Eigen::Vector2d unit_disk(0.0, 0.0);
-    if (tries == 0 && camera->dof) {
+    if (tries == 0 && camera->enable_dof) {
       if (camera->bokeh_enable_image) {
           camera->image.bokehSample(input_lensx, input_lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
       } else if (camera->bokeh_aperture_blades < 2) {
@@ -739,7 +739,7 @@ inline void trace_ray(bool original_ray, int &tries,
       } else {
         lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), input_lensx, input_lensy, 1.0, camera->bokeh_aperture_blades);
       }
-    } else if (tries > 0 && camera->dof){
+    } else if (tries > 0 && camera->enable_dof){
         r1 = xor128() / 4294967296.0;
         r2 = xor128() / 4294967296.0;
         
@@ -767,7 +767,7 @@ inline void trace_ray(bool original_ray, int &tries,
     // }
     
 
-	  if (camera->dof) {
+	  if (camera->enable_dof) {
 	  	// aperture sampling, to make sure ray is able to propagate through whole lens system
 	  	lens_pt_sample_aperture(sensor, aperture, camera->sensor_shift, camera);
 	  }
@@ -880,8 +880,8 @@ inline bool trace_backwards(Eigen::Vector3d target,
 
     Eigen::Vector2d unit_disk(0.0, 0.0);
 
-    if (!camera->dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
-	  else if (camera->dof && camera->bokeh_aperture_blades <= 2) {
+    if (!camera->enable_dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
+	  else if (camera->enable_dof && camera->bokeh_aperture_blades <= 2) {
       unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
       if (camera->bokeh_enable_image) camera->image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
@@ -890,7 +890,7 @@ inline bool trace_backwards(Eigen::Vector3d target,
       aperture(0) = unit_disk(0) * camera->aperture_radius;
       aperture(1) = unit_disk(1) * camera->aperture_radius;
 	  } 
-	  else if (camera->dof && camera->bokeh_aperture_blades > 2) {
+	  else if (camera->enable_dof && camera->bokeh_aperture_blades > 2) {
       unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
       lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), camera->aperture_radius, camera->bokeh_aperture_blades);
     }

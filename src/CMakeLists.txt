@@ -1,5 +1,5 @@
  
-set(SRC lentil.cpp lentil_loader.cpp lentil_camera_po.cpp lentil_camera_tl.cpp lentil_filter_po.cpp lentil_filter_tl.cpp lentil_filter_debug.cpp lentil_operator.cpp lentil_imager.cpp)
+set(SRC lentil.cpp lentil_loader.cpp lentil_camera_po.cpp lentil_filter_po.cpp lentil_operator.cpp lentil_imager.cpp)
 set(SHADER lentil)
 #set(UI ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.ui)
 #set(MTD ${CMAKE_CURRENT_BINARY_DIR}/${SHADER}.mtd)

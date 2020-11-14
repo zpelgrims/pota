@@ -2,7 +2,6 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "lentil_thinlens.h"
 #include "lentil.h"
 
 // currently this works by searching for a node with specific name "lentil_replaced_filter", not ideal.

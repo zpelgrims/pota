@@ -34,24 +34,12 @@ operator_init
     operator_data->camera_node = AiUniverseGetCamera();
     const AtNodeEntry *nentry = AiNodeGetNodeEntry(operator_data->camera_node);
     operator_data->camera_node_type = AtString(AiNodeEntryGetName(nentry));
-
-    operator_data->debug = AiNodeGetBool(operator_data->camera_node, "bidir_debug");
     
     operator_data->cook = false;
 
-    if (operator_data->debug) {
-        if (operator_data->camera_node_type == AtString("lentil_thinlens") || operator_data->camera_node_type == AtString("lentil")){
-            operator_data->filter = AiNode("lentil_debug_filter", AtString("lentil_debug_filter"));
-            operator_data->cook = true;
-        }
-    } else {
-        if (operator_data->camera_node_type == AtString("lentil_thinlens")){
-            operator_data->filter = AiNode("lentil_thin_lens_bokeh_filter", AtString("lentil_replaced_filter"));
-            operator_data->cook = true;
-        } else if (operator_data->camera_node_type == AtString("lentil")){
-            operator_data->filter = AiNode("lentil_bokeh_filter", AtString("lentil_replaced_filter"));
-            operator_data->cook = true;
-        }
+    if (operator_data->camera_node_type == AtString("lentil")){
+        operator_data->filter = AiNode("lentil_bokeh_filter", AtString("lentil_replaced_filter"));
+        operator_data->cook = true;
     }
     
 
@@ -67,9 +55,6 @@ operator_cook
         AiMsgWarning("[LENTIL OPERATOR] Camera is not of type lentil or lentil_thinlens");
         return false;
     }
-
-    // const AtNodeEntry *ne_filterdebug = AiNodeEntryLookUp("lentil_debug_operator");
-    // if (AiNodeEntryGetCount(ne_filterdebug) != 0) return false;
 
     AtNode* options = AiUniverseGetOptions();
     AtArray* outputs = AiNodeGetArray(options, "outputs");

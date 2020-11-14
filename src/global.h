@@ -3,13 +3,6 @@
 #include <map>
 #include <vector>
 
-// enum to switch between units in interface dropdown
-enum UnitModel{
-    mm,
-    cm,
-    dm,
-    m
-};
 
 struct LentilFilterData {
   unsigned xres;

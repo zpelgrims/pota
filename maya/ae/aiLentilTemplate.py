@@ -36,17 +36,37 @@ class aiLentilTemplate(templates.AttributeTemplate):
 
         #self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
 
-        self.beginLayout("Polynomial Optics", collapse=False)
-        self.addControl("lensModel", label="Lens Model")
+        self.beginLayout("Global", collapse=False)
+        self.addControl("cameratype", label="Camera Type")
         self.addControl("sensorWidth", label="Sensor Width (mm)")
-        self.addControl("wavelength", label="Wavelength (nm)")
-        self.addControl("dof", label="Enable depth of field")
+        self.addControl("enableDof", label="Enable depth of field")
         self.addControl("fstop", label="F-stop", dynamic=True)
         self.addControl("focusDistance", label="Focus distance (cm)")
-        self.addControl("extraSensorShift", label="Extra Sensor shift (mm)")
-        self.addControl("bokehApertureBlades", label="Aperture blades")
         self.endLayout()
 
+        # po specific
+        self.beginLayout("Polynomial Optics", collapse=False)
+        self.addControl("lensModel", label="Lens Model")
+        self.addControl("wavelength", label="Wavelength (nm)")
+        self.addControl("extraSensorShift", label="Extra Sensor shift (mm)")
+        self.endLayout()
+
+        # tl specific
+        self.beginLayout("Thin Lens", collapse=False)
+        self.addControl("focalLength", label="Focal Length (mm)")
+        self.addControl("opticalVignettingDistance", label="Optical Vignetting Distance")
+        self.addControl("opticalVignettingRadius", label="Optical Vignetting Radius")
+        self.addControl("abbSpherical", label="Aberration (spherical)")
+        self.addControl("abbDistortion", label="Aberration (distortion)")
+        self.addControl("bokehApertureBlades", label="Aperture Blades")
+        self.addControl("bokehCircleToSquare", label="Circle to Square mapping")
+        self.addControl("bokehAnamorphic", label="Anamorphic stretch")
+        self.beginLayout("Experimental", collapse=True)
+        self.addControl("abbComa", label="Aberration (coma)")
+        self.endLayout()
+        self.endLayout()
+
+        # bidir
         self.beginLayout("Bidirectional")
         self.addControl("bidirSampleMult", label="Samples")
         self.addControl("bidirMinLuminance", label="Minimum luminance")
@@ -55,17 +75,16 @@ class aiLentilTemplate(templates.AttributeTemplate):
         self.addControl("bidirDebug", label="Debug")
         self.endLayout()
 
-        self.beginLayout("Bokeh Image")
+        self.beginLayout("Bokeh Global")
+        self.addControl("bokehApertureBlades", label="Aperture blades")
         self.addControl("bokehEnableImage", label="Use Bokeh Image")
         self.addCustom("bokehImagePath", self.filenameNewBokehInput, self.filenameReplaceBokehInput)
-
         self.endLayout()
         
 
         self.beginLayout("Advanced options")
         self.addControl("vignettingRetries", label="Vignetting retries")
         self.addControl("units", label="Units")
-
         self.endLayout()
 
 

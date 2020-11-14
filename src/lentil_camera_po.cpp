@@ -1,40 +1,13 @@
 #include <ai.h>
 #include "lentil.h"
 #include "lens.h"
-#include <cmath>
 #include <vector>
 
 AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
-enum {
-  p_units,
-  p_lens_model,
-
-  p_sensor_width,
-  p_wavelength,
-  p_dof,
-  p_fstop,
-  p_focus_distance,
-  p_extra_sensor_shift,
-
-  p_bokeh_aperture_blades,
-  p_bokeh_enable_image,
-  p_bokeh_image_path,
-
-  p_bidir_min_luminance,
-  p_bidir_sample_mult,
-  p_bidir_add_luminance,
-  p_bidir_add_luminance_transition,
-  p_bidir_debug,
-
-  // p_empirical_ca_dist,
-
-  p_vignetting_retries
-};
-
-
 static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
+static const char* CameraTypes[] = {"ThinLens", "PolynomialOptics", NULL};
 
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] = {
@@ -44,32 +17,46 @@ static const char* LensModelNames[] = {
 
 
 node_parameters {
+  // global
+  AiParameterEnum("cameratype", ThinLens, CameraTypes);
   AiParameterEnum("units", cm, Units);
-
-  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
-
   AiParameterFlt("sensor_width", 36.0); // 35mm film
-  AiParameterFlt("wavelength", 550.0); // wavelength in nm
-  AiParameterBool("dof", true);
+  AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
   AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+
+
+  // po specifics
+  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
+  AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterFlt("extra_sensor_shift", 0.0);
 
+  // tl specifics
+  AiParameterFlt("focal_length", 35.0); // in mm
+  AiParameterFlt("optical_vignetting_distance", 0.0);
+  AiParameterFlt("optical_vignetting_radius", 2.0);
+  AiParameterFlt("abb_spherical", 0.5);
+  AiParameterFlt("abb_distortion", 0.0);
+  AiParameterFlt("bokeh_circle_to_square", 0.0);
+  AiParameterFlt("bokeh_anamorphic", 1.0);
 
+  // bokeh
   AiParameterInt("bokeh_aperture_blades", 0);
   AiParameterBool("bokeh_enable_image", false);
   AiParameterStr("bokeh_image_path", "");
 
-
+  // bidir
   AiParameterFlt("bidir_min_luminance", 1.0);
   AiParameterInt("bidir_sample_mult", 20);
   AiParameterFlt("bidir_add_luminance", 0.0);
   AiParameterFlt("bidir_add_luminance_transition", 1.0);
   AiParameterBool("bidir_debug", false);
 
-  // AiParameterFlt("empirical_ca_dist", 0.0);
-
+  // advanced
   AiParameterInt("vignetting_retries", 15);
+
+  // experimental
+  AiParameterFlt("abb_coma", 0.0);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -85,43 +72,79 @@ node_update {
   AiCameraUpdate(node, false);
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
+  // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
+  AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
+  if (operator_node != nullptr){
+      if (AiNodeIs(operator_node, AtString("lentil_operator"))){
+          AiNodeSetInt(operator_node, "call_me_dirty", rand());
+      }
+  }
+
+
+  // global params
+  po->cameraType = (CameraType) AiNodeGetInt(node, "cameratype");
   po->unitModel = (UnitModel) AiNodeGetInt(node, "units");
   po->sensor_width = AiNodeGetFlt(node, "sensor_width");
-  po->input_fstop = AiNodeGetFlt(node, "fstop");
-  po->focus_distance = AiNodeGetFlt(node, "focus_distance") * 10.0; //converting to mm
-  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
+  po->enable_dof = AiNodeGetBool(node, "enable_dof");
+  po->input_fstop = clamp_min(AiNodeGetFlt(node, "fstop"), 0.01);
+  po->focus_distance = AiNodeGetFlt(node, "focus_distance"); //converting to mm
   po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
-  po->dof = AiNodeGetBool(node, "dof");
-  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminance");
-  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_image");
-  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_path");
-  // po->empirical_ca_dist = AiNodeGetFlt(node, "empirical_ca_dist");
-  
-  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_mult");
-  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminance");
-  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transition");
 
+  // po-specific params
+  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
   po->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
   po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shift");
 
-  #include "node_update_po.h"
+  // tl specific params
+  po->focal_length = clamp_min(AiNodeGetFlt(node, "focal_length"), 0.01);
+  po->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distance");
+  po->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radius");
+  po->abb_spherical = AiNodeGetFlt(node, "abb_spherical");
+  po->abb_spherical = clamp(po->abb_spherical, 0.001, 0.999);
+  po->abb_distortion = AiNodeGetFlt(node, "abb_distortion");
+  po->abb_coma = AiNodeGetFlt(node, "abb_coma");
+  po->circle_to_square = AiNodeGetFlt(node, "bokeh_circle_to_square");
+  po->circle_to_square = clamp(po->circle_to_square, 0.01, 0.99);
+  po->bokeh_anamorphic = AiNodeGetFlt(node, "bokeh_anamorphic");
+  po->bokeh_anamorphic = clamp(po->bokeh_anamorphic, 0.01, 99999.0);
 
-    // make probability functions of the bokeh image
+  // bidir params
+  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminance");
+  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_image");
+  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_path");
+  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_mult");
+  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminance");
+  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transition");
+  po->bidir_debug = AiNodeGetBool(node, "bidir_debug");
+  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
+
+
+  switch (po->cameraType){
+    case PolynomialOptics:
+    { 
+      #include "node_update_po.h"
+
+      break;
+    }
+    case ThinLens:
+    {
+      po->focus_distance *= 10.0;
+      po->fov = 2.0 * std::atan(po->sensor_width / (2.0*po->focal_length));
+      po->tan_fov = std::tan(po->fov/2.0);
+      po->aperture_radius = (po->focal_length / (2.0 * po->input_fstop)) / 10.0;
+      
+      break;
+    }
+  }
+
+
+  // make probability functions of the bokeh image
   // if (!(po->stored_useImage == AiNodeGetBool(node, "bokeh_enable_imagePO") && po->stored_path == AiNodeGetStr(node, "bokeh_image_pathPO")) {
-      po->image.invalidate();
-      if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
-        AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
-        AiRenderAbort();
-    }
-
-    // try to force recomputation of the operator, if i don't write some data to it, it only runs on scene init
-    AtNode *operator_node = (AtNode*)AiNodeGetPtr(AiUniverseGetOptions(), "operator");
-    if (operator_node != nullptr){
-        if (AiNodeIs(operator_node, AtString("lentil_operator"))){
-            AiNodeSetInt(operator_node, "call_me_dirty", rand());
-        }
-    }
+  po->image.invalidate();
+  if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
+    AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
+    AiRenderAbort();
+  }
 
 }
 
@@ -135,54 +158,102 @@ node_finish {
 camera_create_ray {
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
-  int tries = 0;
-  double random1 = 0.0, random2 = 0.0; 
-  Eigen::Vector3d origin(0, 0, 0);
-  Eigen::Vector3d direction(0, 0, 0);
-  Eigen::Vector3d weight(1, 1, 1);
 
-  trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
+  switch (po->cameraType){
+    case PolynomialOptics:
+    { 
+      int tries = 0;
+      double random1 = 0.0, random2 = 0.0; 
+      Eigen::Vector3d origin(0, 0, 0);
+      Eigen::Vector3d direction(0, 0, 0);
+      Eigen::Vector3d weight(1, 1, 1);
+
+      trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
 
 
-  // calculate new ray derivatives
-  if (tries > 0){
-    float step = 0.001;
-    AtCameraInput input_dx = input;
-    AtCameraInput input_dy = input;
-    AtCameraOutput output_dx;
-    AtCameraOutput output_dy;
+      // calculate new ray derivatives
+      if (tries > 0){
+        float step = 0.001;
+        AtCameraInput input_dx = input;
+        AtCameraInput input_dy = input;
+        AtCameraOutput output_dx;
+        AtCameraOutput output_dy;
 
-    input_dx.sx += input.dsx * step;
-    input_dy.sy += input.dsy * step;
+        input_dx.sx += input.dsx * step;
+        input_dy.sy += input.dsy * step;
 
-    Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
-    Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
-    Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-    trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
+        Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
+        Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
+        Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+        trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
 
-    Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
-    Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
-    Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-    trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
+        Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
+        Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
+        Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
+        trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
 
-    Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
-    Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
-    Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
-    Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
+        Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
+        Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
+        Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
+        Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
 
-    for (int i = 0; i<3; i++){
-      output.dOdx[i] = out_d0dx(i);
-      output.dOdy[i] = out_dOdy(i);
-      output.dDdx[i] = out_dDdx(i);
-      output.dDdy[i] = out_dDdy(i);
+        for (int i = 0; i<3; i++){
+          output.dOdx[i] = out_d0dx(i);
+          output.dOdy[i] = out_dOdy(i);
+          output.dDdx[i] = out_dDdx(i);
+          output.dDdy[i] = out_dDdy(i);
+        }
+      }
+
+      for (int i = 0; i<3; i++){
+        output.origin[i] = origin(i);
+        output.dir[i] = direction(i);
+        output.weight[i] = weight(i);
+      }
+
+      break;
+    }
+
+    case ThinLens:
+    {
+      int tries = 0;
+      float r1 = 0.0, r2 = 0.0;
+      AtVector origin (0, 0, 0);
+      AtVector dir (0, 0, 0);
+      AtRGB weight (1, 1, 1);
+      
+      trace_ray_fw_thinlens(true, tries, input.sx, input.sy, input.lensx, input.lensy, origin, dir, weight, r1, r2, po);
+
+      if (tries > 0){
+        
+          float step = 0.001;
+          AtCameraInput input_dx = input;
+          AtCameraInput input_dy = input;
+          AtCameraOutput output_dx;
+          AtCameraOutput output_dy;
+
+          input_dx.sx += input.dsx * step;
+          input_dy.sy += input.dsy * step;
+
+          trace_ray_fw_thinlens(false, tries, input_dx.sx, input_dx.sy, r1, r2, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2, po);
+          trace_ray_fw_thinlens(false, tries, input_dy.sx, input_dy.sy, r1, r2, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2, po);
+
+          output.dOdx = (output_dx.origin - origin) / step;
+          output.dOdy = (output_dy.origin - origin) / step;
+          output.dDdx = (output_dx.dir - dir) / step;
+          output.dDdy = (output_dy.dir - dir) / step;
+      }
+
+
+      output.origin = origin;
+      output.dir = AiV3Normalize(dir);
+      output.weight = weight;
+      
+      break;
     }
   }
-
-  for (int i = 0; i<3; i++){
-    output.origin[i] = origin(i);
-    output.dir[i] = direction(i);
-    output.weight[i] = weight(i);
-  }
+  
+  
   
 
   /* 
