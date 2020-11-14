@@ -170,7 +170,7 @@ node_update
   
   bokeh->current_inv_density = 0.0;
 
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed.");
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed, starting bidirectional sampling.");
 
   AiFilterUpdate(node, bokeh->filter_width);
 }
@@ -205,7 +205,6 @@ filter_pixel
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (bokeh->enabled){
-    AiMsgInfo("[LENTIL FILTER] Starting bidirectional sampling.");
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = xres/yres;
