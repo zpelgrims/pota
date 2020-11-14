@@ -1,8 +1,5 @@
 #include <ai.h>
-#include <vector>
-#include <iostream>
-#include <map>
-#include "lentil.h"
+#include "global.h"
 
 // currently this works by searching for a node with specific name "lentil_replaced_filter", not ideal.
 

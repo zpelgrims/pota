@@ -1,8 +1,6 @@
 #include <ai.h>
-#include <vector>
 #include "lentil.h"
 #include "lens.h"
-#include "global.h"
 
  
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);

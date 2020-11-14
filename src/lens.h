@@ -480,7 +480,10 @@ inline double camera_set_focus(double dist, Camera *camera)
     } else {
       return offset; // in mm
     }
+  } else {
+    return 0.0;
   }
+
 }
 
 
@@ -523,8 +526,8 @@ inline double camera_set_focus_infinity(Camera *camera)
   
   // check NaN cases
   if(offset == offset){
-  return offset;
-  }
+    return offset;
+  } else {return 0.0;}
 }
 
 
