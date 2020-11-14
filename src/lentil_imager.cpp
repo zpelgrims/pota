@@ -93,8 +93,6 @@ driver_process_bucket {
   int aov_type = 0;
   const void *bucket_data;
 
-
-
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
     AiMsgInfo("[LENTIL IMAGER] Imager found AOV: %s", aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
@@ -169,10 +167,11 @@ driver_close {}
 node_finish {
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
   // delete imager_data;
-
+  crypto_crit_sec_enter();
   const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   delete bokeh;
+  crypto_crit_sec_leave();
 }
 
 
