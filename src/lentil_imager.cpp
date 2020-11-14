@@ -45,8 +45,7 @@ driver_supports_pixel_type
   return  pixel_type == AI_TYPE_RGBA || 
           pixel_type == AI_TYPE_RGBA || 
           pixel_type == AI_TYPE_FLOAT || 
-          pixel_type == AI_TYPE_VECTOR ||
-          pixel_type == AI_TYPE_INT;
+          pixel_type == AI_TYPE_VECTOR;
 }
  
 driver_open {}
@@ -97,6 +96,7 @@ driver_process_bucket {
 
 
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
+    AiMsgInfo("[LENTIL IMAGER] Imager found AOV: %s", aov_name_cstr);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
@@ -132,6 +132,14 @@ driver_process_bucket {
               break;
             }
 
+            case AI_TYPE_VECTOR: {
+              AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 
+                                    filter_data->image_data_types[aov_name][linear_pixel].g,
+                                    filter_data->image_data_types[aov_name][linear_pixel].b);
+              ((AtVector*)bucket_data)[in_idx] = final_value;
+              break;
+            }
+
             // case AI_TYPE_INT: {
             //   ((int*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
             //   break;
@@ -142,14 +150,6 @@ driver_process_bucket {
             //   break;
             // }
 
-            case AI_TYPE_VECTOR: {
-              AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 
-                                    filter_data->image_data_types[aov_name][linear_pixel].g,
-                                    filter_data->image_data_types[aov_name][linear_pixel].b);
-              ((AtVector*)bucket_data)[in_idx] = final_value;
-              break;
-            }
-            
             // case AI_TYPE_POINTER: {
             //   ((const void**)bucket_data)[in_idx] = filter_data->image_ptr_types[aov_name][linear_pixel];
             //   break;

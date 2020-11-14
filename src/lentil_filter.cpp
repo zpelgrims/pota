@@ -200,6 +200,14 @@ filter_output_type
 filter_pixel
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+
+  if (!AiNodeIs(AiUniverseGetCamera(), AtString("lentil_camera"))) {
+    bokeh->enabled = false;
+    AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
+    AiRenderAbort();
+    return;
+  }
+
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
   if (bokeh->enabled){
