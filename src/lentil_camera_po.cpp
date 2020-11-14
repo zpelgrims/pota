@@ -121,14 +121,14 @@ node_update {
 
   switch (po->cameraType){
     case PolynomialOptics:
-    { 
+    {
+      po->focus_distance *= 10.0;
       #include "node_update_po.h"
 
       break;
     }
     case ThinLens:
     {
-      po->focus_distance *= 10.0;
       po->fov = 2.0 * std::atan(po->sensor_width / (2.0*po->focal_length));
       po->tan_fov = std::tan(po->fov/2.0);
       po->aperture_radius = (po->focal_length / (2.0 * po->input_fstop)) / 10.0;
@@ -379,7 +379,7 @@ camera_reverse_ray {
 void registerLentilCameraPO(AtNodeLib* node) {
     node->methods = (AtNodeMethods*) lentilMethods;
     node->output_type = AI_TYPE_UNDEFINED;
-    node->name = "lentil";
+    node->name = "lentil_camera";
     node->node_type = AI_NODE_CAMERA;
     strcpy(node->version, AI_VERSION);
 }

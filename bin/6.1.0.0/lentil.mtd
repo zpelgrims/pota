@@ -1,8 +1,8 @@
-[node lentil]
+[node lentil_camera]
     desc STRING "Polynomial optics camera shader"
     maya.name               STRING  "camera"
     maya.id                 INT     0x00070507
-    maya.translator         STRING  "lentil"
+    maya.translator         STRING  "lentil_camera"
     maya.attr_prefix        STRING ""
 
     c4d.classification      STRING  "generic"
@@ -322,7 +322,7 @@
         maya.hide               BOOL     TRUE
 
 
-[node lentil_bokeh_filter]
+[node lentil_filter]
     maya.attr_prefix        STRING ""
-    maya.translator         STRING "lentil_bokeh_filter"
+    maya.translator         STRING "lentil_filter"
     maya.id                  INT      0x00070948

@@ -1,6 +1,6 @@
 //Maya ASCII 2018ff08 scene
 //Name: lentil_base_setup_new.ma
-//Last modified: Sat, Nov 14, 2020 12:26:03 PM
+//Last modified: Sat, Nov 14, 2020 12:52:39 PM
 //Codeset: UTF-8
 requires maya "2018ff08";
 requires "stereoCamera" "10.0";
@@ -32,10 +32,10 @@ createNode camera -s -n "perspShape" -p "persp";
 	setAttr ".ai_focus_distance" 30;
 	setAttr ".ai_aperture_size" 1;
 	setAttr ".ai_edof" yes;
-	setAttr ".ai_translator" -type "string" "perspective";
-	setAttr ".cameratype" 1;
+	setAttr ".ai_translator" -type "string" "lentil";
 	setAttr ".focus_distance" 30;
 	setAttr ".focal_length" 50;
+	setAttr ".bidir_debug" yes;
 createNode transform -s -n "top";
 	rename -uid "9F6F2133-49A8-CA0A-727A-349A21BF4F2A";
 	setAttr ".v" no;
@@ -758,19 +758,19 @@ createNode pointLight -n "pointLightShape1" -p "pointLight1";
 	setAttr ".ai_radius" 0.66820347309112549;
 	setAttr ".ai_camera" 1;
 createNode lightLinker -s -n "lightLinker1";
-	rename -uid "88CB6364-BA4F-3DC9-85EA-7ABAA7D394EE";
+	rename -uid "1E428632-AD41-650E-B3F7-25A980D0FFBB";
 	setAttr -s 2 ".lnk";
 	setAttr -s 2 ".slnk";
 createNode shapeEditorManager -n "shapeEditorManager";
-	rename -uid "A0570F87-4B43-A9EC-241C-6CA4EB51FAA5";
+	rename -uid "0AC3FA6C-4D43-5251-6D82-1C847BF3A33F";
 createNode poseInterpolatorManager -n "poseInterpolatorManager";
-	rename -uid "CBB4FCFB-5144-169D-48F3-DBB37DBBCF1C";
+	rename -uid "F81FD981-0444-A33E-2208-E8A1F0189B40";
 createNode displayLayerManager -n "layerManager";
-	rename -uid "CC2CC245-754A-56BD-0C3C-128BDFD3FCAB";
+	rename -uid "8B00B64C-CA4F-FE79-F274-83A1A086A8BF";
 createNode displayLayer -n "defaultLayer";
 	rename -uid "8B7D63FC-498A-FB4F-3BB9-B4A3BDEEAF8E";
 createNode renderLayerManager -n "renderLayerManager";
-	rename -uid "79234A45-064C-0E1F-AFD9-3EAB46CCE3D3";
+	rename -uid "BDFD6CEE-2A4E-3F0E-A5F9-0CB5D8BA290A";
 createNode renderLayer -n "defaultRenderLayer";
 	rename -uid "6A5D892B-4486-1F7D-B835-D489702956C8";
 	setAttr ".g" yes;
@@ -780,7 +780,7 @@ createNode aiOptions -s -n "defaultArnoldRenderOptions";
 	setAttr ".logf" -type "string" "";
 	setAttr ".logv" 3;
 	setAttr ".version" -type "string" "4.1.0";
-	setAttr ".ARV_options" -type "string" "Test Resolution=100%;Camera=perspShape;Color Management.Gamma=1;Color Management.Exposure=0;Background.BG=BG Color;Background.Color=0 0 0;Background.Image=;Background.Scale=1      1;Background.Offset=0      0;Background.Apply Color Management=1;Foreground.Enable FG=0;Foreground.Image=;Foreground.Scale=1      1;Foreground.Offset=0      0;Foreground.Apply Color Management=1;";
+	setAttr ".ARV_options" -type "string" "Test Resolution=100%;Camera=perspShape;Color Management.Gamma=1;Color Management.Exposure=0;Background.BG=BG Color;Background.Color=0 0 0;Background.Image=;Background.Scale=1        1;Background.Offset=0        0;Background.Apply Color Management=1;Foreground.Enable FG=0;Foreground.Image=;Foreground.Scale=1        1;Foreground.Offset=0        0;Foreground.Apply Color Management=1;";
 createNode aiAOVFilter -s -n "defaultArnoldFilter";
 	rename -uid "8377149B-43AA-B712-89E1-40AEE522732A";
 	setAttr ".ai_translator" -type "string" "gaussian";

@@ -37,8 +37,8 @@ operator_init
     
     operator_data->cook = false;
 
-    if (operator_data->camera_node_type == AtString("lentil")){
-        operator_data->filter = AiNode("lentil_bokeh_filter", AtString("lentil_replaced_filter"));
+    if (operator_data->camera_node_type == AtString("lentil_camera")){
+        operator_data->filter = AiNode("lentil_filter", AtString("lentil_replaced_filter"));
         operator_data->cook = true;
     }
     
@@ -52,7 +52,7 @@ operator_cook
     LentilOperatorData* operator_data = (LentilOperatorData*)AiNodeGetLocalData(op);
 
     if (operator_data->cook == false) {
-        AiMsgWarning("[LENTIL OPERATOR] Camera is not of type lentil or lentil_thinlens");
+        AiMsgWarning("[LENTIL OPERATOR] Camera is not of type lentil_camera");
         return false;
     }
 

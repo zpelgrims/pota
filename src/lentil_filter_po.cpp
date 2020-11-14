@@ -69,8 +69,6 @@ node_parameters
  
 node_initialize
 {
-
-
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new LentilFilterData());
@@ -84,7 +82,7 @@ node_update
 
   AtNode *cameranode = AiUniverseGetCamera();
   // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil"))) {
+  if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
     AiRenderAbort();
@@ -93,8 +91,9 @@ node_update
 
   // will only work for the node called lentil_replaced_filter
   if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
-    AiMsgWarning("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
     bokeh->enabled = false;
+    AiMsgError("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
+    AiRenderAbort();
     return;
   }
 
@@ -109,7 +108,6 @@ node_update
   if (!AiNodeGetBool(cameranode, "enable_dof")) {
     AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
-    return;
   }
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
@@ -127,7 +125,11 @@ node_update
   if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
-    return;
+  }
+
+  if (AiNodeGetBool(cameranode, "bidir_debug")) {
+    bokeh->enabled = false;
+    AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
   }
 
   // prepare framebuffers for all AOVS
@@ -607,59 +609,57 @@ filter_pixel
   // do regular filtering (passthrough) for display purposes
   just_filter:
   AiAOVSampleIteratorReset(iterator);
+  switch(data_type){
+    case AI_TYPE_RGBA: {
+      AtRGBA value_out = AI_RGBA_ZERO;
+      if (po->bidir_debug){
+        while (AiAOVSampleIteratorGetNext(iterator))
+        {
+          AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+          const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
+          if (sample_luminance > po->bidir_min_luminance) {
+              value_out = AtRGBA(1.0, 1.0, 1.0, 1.0);
+          }
+        }
+      } else {
+        value_out = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      }
 
-  if (po->bidir_debug){
-    AtRGBA avalue = AI_RGBA_ZERO;
-    while (AiAOVSampleIteratorGetNext(iterator))
-    {
-      AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-      const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
-
-      if (sample_luminance > po->bidir_min_luminance) {
-          avalue = AtRGBA(1.0, 1.0, 1.0, 1.0);
-      }
-   }
-   *((AtRGBA*)data_out) = avalue;
-  } 
-  else {
-    switch(data_type){
-      case AI_TYPE_RGBA: {
-        AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
-        *((AtRGBA*)data_out) = filtered_value;
-        break;
-      }
-      case AI_TYPE_RGB: {
-        AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
-        AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
-        *((AtRGB*)data_out) = rgb_energy;
-        break;
-      }
-      case AI_TYPE_VECTOR: {
-        AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-        AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
-        *((AtVector*)data_out) = rgb_energy;
-        break;
-      }
-      case AI_TYPE_FLOAT: {
-        AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-        float rgb_energy = filtered_value.r;
-        *((float*)data_out) = rgb_energy;
-        break;
-      }
-      // case AI_TYPE_INT: {
-      //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      //   int rgb_energy = filtered_value.r;
-      //   *((int*)data_out) = rgb_energy;
-      //   break;
-      // }
-      // case AI_TYPE_UINT: {
-      //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-      //   unsigned rgb_energy = std::abs(filtered_value.r);
-      //   *((unsigned*)data_out) = rgb_energy;
-      //   break;
-      // }
+      *((AtRGBA*)data_out) = value_out;
+      break;
     }
+    case AI_TYPE_RGB: {
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtRGB*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_VECTOR: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
+      *((AtVector*)data_out) = rgb_energy;
+      break;
+    }
+    case AI_TYPE_FLOAT: {
+      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      float rgb_energy = filtered_value.r;
+      *((float*)data_out) = rgb_energy;
+      break;
+    }
+    // case AI_TYPE_INT: {
+    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+    //   int rgb_energy = filtered_value.r;
+    //   *((int*)data_out) = rgb_energy;
+    //   break;
+    // }
+    // case AI_TYPE_UINT: {
+    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+    //   unsigned rgb_energy = std::abs(filtered_value.r);
+    //   *((unsigned*)data_out) = rgb_energy;
+    //   break;
+    // }
   }
+  
 }
 
  
@@ -669,7 +669,7 @@ node_finish {}
 void registerLentilFilterPO(AtNodeLib* node) {
     node->methods = (AtNodeMethods*) LentilFilterDataMtd;
     node->output_type = AI_TYPE_NONE;
-    node->name = "lentil_bokeh_filter";
+    node->name = "lentil_filter";
     node->node_type = AI_NODE_FILTER;
     strcpy(node->version, AI_VERSION);
 }
