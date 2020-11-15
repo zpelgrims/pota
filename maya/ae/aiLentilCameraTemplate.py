@@ -6,7 +6,7 @@ import mtoa.ui.ae.utils as aeUtils
 class aiLentilCameraTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehInput(self, mData) :
-        attr = self.nodeAttr('bokehImagePathPO')
+        attr = self.nodeAttr('bokehImagePath')
         cmds.setAttr(attr,mData,type="string")
 
     def LoadFilenameButtonPushBokehInput(self, *args):
@@ -58,7 +58,6 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.addControl("opticalVignettingRadius", label="Optical Vignetting Radius")
         self.addControl("abbSpherical", label="Aberration (spherical)")
         self.addControl("abbDistortion", label="Aberration (distortion)")
-        self.addControl("bokehApertureBlades", label="Aperture Blades")
         self.addControl("bokehCircleToSquare", label="Circle to Square mapping")
         self.addControl("bokehAnamorphic", label="Anamorphic stretch")
         self.beginLayout("Experimental", collapse=True)
