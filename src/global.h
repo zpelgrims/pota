@@ -31,7 +31,23 @@ struct LentilFilterData {
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
 
-  int global_run;
+  int global_run_counter;
+  float frame_aspect_ratio;
+  std::vector<int> x;
+  std::vector<int> y;
+  std::vector<float> coc_squared_pixels;
+  std::vector<bool> transmitted_energy_in_sample;
+  std::vector<bool> partly_redistributed;
+  std::vector<float> sample_luminance;
+  std::vector<AtRGBA> sample_transmission;
+  std::vector<float> depth;
+  std::vector<AtVector> sample_pos_ws;
+  std::vector<AtRGBA> sample;
+  std::vector<float> inv_density;
+  std::vector<float> circle_of_confusion;
+  std::vector<float> bbox_area;
+  std::vector<AtVector2> offset;
+  std::vector<std::vector<AtRGBA>> aov;
 }; extern struct LentilFilterData bokeh;
 
 
@@ -72,6 +88,59 @@ inline void crypto_crit_sec_leave() {
     // (Used by Cryptomatte filter.)
     if (g_critsec_active)
         AiCritSecLeave(&g_critsec);
+}
+
+
+inline float linear_interpolate(float perc, float a, float b){
+    return a + perc * (b - a);
+}
+
+inline float clamp(float in, const float min, const float max) {
+    if (in < min) in = min;
+    if (in > max) in = max;
+    return in;
+}
+
+inline float clamp_min(float in, const float min) {
+    if (in < min) in = min;
+    return in;
+}
+
+// xorshift fast random number generator
+inline uint32_t xor128(void){
+  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
+  uint32_t t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
+}
+
+
+inline AtRGBA get_aov_value(struct AtAOVSampleIterator* sample_iterator, int aov_type, AtString aov_name) {    
+    switch(aov_type){
+        case AI_TYPE_RGBA: {
+          return AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
+        }
+
+        case AI_TYPE_RGB: {
+          AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
+          return AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
+        }
+
+        case AI_TYPE_VECTOR: {
+          AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
+          return AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
+        }
+
+        case AI_TYPE_FLOAT: {
+          float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
+          return AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+        }
+
+        case AI_TYPE_INT: {
+          int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
+          return AtRGBA(int_energy, int_energy, int_energy, 1.0);
+        }
+    }
 }
 
 
@@ -172,28 +241,7 @@ inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8
    return pixel_energy;
 }
 
-inline float linear_interpolate(float perc, float a, float b){
-    return a + perc * (b - a);
-}
 
-inline float clamp(float in, const float min, const float max) {
-    if (in < min) in = min;
-    if (in > max) in = max;
-    return in;
-}
-
-inline float clamp_min(float in, const float min) {
-    if (in < min) in = min;
-    return in;
-}
-
-// xorshift fast random number generator
-inline uint32_t xor128(void){
-  static uint32_t x = 123456789, y = 362436069, z = 521288629, w = 88675123;
-  uint32_t t = x ^ (x << 11);
-  x = y; y = z; z = w;
-  return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
-}
 
 // https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
 // Tiny Encryption Algorithm (TEA) to calculate a the seed per launch index and iteration.
@@ -323,8 +371,9 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                           bool transmitted_energy_in_sample,
                           int transmission_layer,
-                          struct AtAOVSampleIterator* sample_iterator, 
-                          LentilFilterData *filter_data) {
+                          LentilFilterData *filter_data,
+                          AtRGBA rgba_energy,
+                          AtRGBA transmitted_energy) {
 
     const float inv_aov_count = 1.0/(double)filter_data->aov_duplicates[aov_name];
     
@@ -332,9 +381,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_RGBA: {
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
-          AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
-          if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
-          else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
+          if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = transmitted_energy;
+          else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= transmitted_energy;
 
           filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
@@ -342,8 +390,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         }
 
         case AI_TYPE_RGB: {
-          const AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
-          const AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
 
           filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           
@@ -352,8 +398,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_VECTOR: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
-            const AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
             filter_data->image_data_types[aov_name][px] = rgba_energy;
             filter_data->zbuffer[px] = std::abs(depth);
           }
@@ -363,8 +407,6 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_FLOAT: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
-            const AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
             filter_data->image_data_types[aov_name][px] = rgba_energy;
             filter_data->zbuffer[px] = std::abs(depth);
           }
@@ -409,7 +451,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                      float inv_samples, float inv_density, float depth, 
                                      bool transmitted_energy_in_sample, int transmission_layer,
-                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
+                                     AtVector2 offset, LentilFilterData *filter_data,
+                                     std::vector<AtRGBA> &aov_values, AtRGBA transmission_energy){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -420,16 +463,15 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
 
         const unsigned pixelnumber = static_cast<int>(filter_data->xres * y + x);
         
-        const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-        AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
+        AtVector2 subpixel_pos_dist = AtVector2((px+offset.x) - x, (py+offset.y) - y);
         float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_data->filter_width);
         if (filter_weight == 0) continue;
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
-                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
-                        filter_data);
+                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer,
+                        filter_data, aov_values[i], transmission_energy);
         }
       }
     }

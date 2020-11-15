@@ -15,6 +15,11 @@ add_library(${SHADER} SHARED ${SRC})
 target_link_libraries(${SHADER} ai)
 set_target_properties(${SHADER} PROPERTIES PREFIX "")
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(${SHADER} PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
 #add_custom_command(OUTPUT ${MTD} COMMAND python ARGS ${CMAKE_SOURCE_DIR}/uigen.py ${UI} ${MTD} ${AE} ${AEXML} ${NEXML} ${SPDL} ${KARGS} ${CMAKE_CURRENT_BINARY_DIR} ${HTML} DEPENDS ${UI})
 #add_custom_target(${SHADER}UI ALL DEPENDS ${MTD})
 

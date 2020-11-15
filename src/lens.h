@@ -985,3 +985,58 @@ inline void trace_backwards_for_fstop(Camera *camera, const double fstop_target,
   calculated_fstop = best_valid_fstop;
   calculated_aperture_radius = best_valid_aperture_radius;
 }
+
+
+// world to camera space transform, motion blurred
+inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
+  AtMatrix world_to_camera_matrix_motionblurred;
+  float currenttime = linear_interpolate(xor128() / 4294967296.0, time_start, time_end); // should I create new random sample, or can I re-use another one?
+  AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+  const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+  Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
+  return camera_space_sample_position_mb_eigen;
+}
+
+inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float sensor_width, const float frame_aspect_ratio, const double xres, const double yres){
+  // convert sensor position to pixel position
+  const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
+  const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
+                              ((-s(1) + 1.0) / 2.0) * yres);
+  return pixel;
+}
+
+inline float thinlens_get_image_dist_focusdist(Camera *po){
+    return (-po->focal_length * -po->focus_distance) / (-po->focal_length + -po->focus_distance);
+}
+
+
+inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, Camera *po){
+  // world to camera space transform, static just for CoC
+  AtMatrix world_to_camera_matrix_static;
+  float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
+  AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
+  AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
+  
+  switch (po->unitModel){
+    case mm:
+    {
+      camera_space_sample_position_static *= 0.1;
+    } break;
+    case cm:
+    { 
+      camera_space_sample_position_static *= 1.0;
+    } break;
+    case dm:
+    {
+      camera_space_sample_position_static *= 10.0;
+    } break;
+    case m:
+    {
+      camera_space_sample_position_static *= 100.0;
+    }
+  }
+  
+  const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position_static.z) / (-po->focal_length + camera_space_sample_position_static.z);
+  const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
+  return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
+}
