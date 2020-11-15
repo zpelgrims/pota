@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 project(lentilArnold)
 
 set(CM_MAJOR_VERSION 1)
-set(CM_MINOR_VERSION 1)
+set(CM_MINOR_VERSION 4)
 set(CM_PATCH_VERSION 0)
 set(CM_VERSION "${CM_MAJOR_VERSION}.${CM_MINOR_VERSION}.${CM_PATCH_VERSION}")
 
@@ -86,7 +86,7 @@ set(SUBDIRECTORIES
 function(build_shader)
     foreach(SHADER ${ARGV})
         set(SRC ${SHADER}.cpp)
-        set(UI ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.ui)
+        #set(UI ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}.ui)
         #set(MTD ${CMAKE_CURRENT_BINARY_DIR}/${SHADER}.mtd)
         #set(AE ${CMAKE_CURRENT_BINARY_DIR}/${SHADER}Template.py)
         #set(AEXML ${CMAKE_CURRENT_BINARY_DIR}/AE${SHADER}Template.xml)

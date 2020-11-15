@@ -2,7 +2,7 @@
 #include "lentil.h"
 #include "lens.h"
 
- 
+
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
 
@@ -68,7 +68,7 @@ node_parameters
 node_initialize
 {
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
-  AiFilterInitialize(node, true, required_aovs);
+  AiFilterInitialize(node, false, required_aovs);
   AiNodeSetLocalData(node, new LentilFilterData());
 }
  
