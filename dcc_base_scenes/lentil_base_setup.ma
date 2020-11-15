@@ -1,6 +1,6 @@
 //Maya ASCII 2019 scene
 //Name: lentil_base_setup.ma
-//Last modified: Sun, Nov 15, 2020 04:58:20 PM
+//Last modified: Sun, Nov 15, 2020 04:58:55 PM
 //Codeset: 1252
 requires maya "2019";
 requires -nodeType "aiOptions" -nodeType "aiAOV" -nodeType "aiAOVDriver" -nodeType "aiAOVFilter"
@@ -35,7 +35,6 @@ createNode camera -s -n "perspShape" -p "persp";
 	setAttr ".focal_length" 40;
 	setAttr ".optical_vignetting_distance" 4;
 	setAttr ".bidir_sample_mult" 10;
-	setAttr ".abb_coma" 1;
 createNode transform -s -n "top";
 	rename -uid "9F6F2133-49A8-CA0A-727A-349A21BF4F2A";
 	setAttr ".v" no;
