@@ -146,6 +146,10 @@ void trace_backwards_thinlens(int s, LentilFilterData *filter_data, Camera *po){
 
 
 void trace_backwards_po(int s, LentilFilterData *filter_data, Camera *po){
+
+
+  Eigen::Vector2d sensor_position(0, 0);
+
   // additional luminance with soft transition
   float fitted_bidir_add_luminance = 0.0;
   if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(filter_data->sample_luminance[s], po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
@@ -163,7 +167,6 @@ void trace_backwards_po(int s, LentilFilterData *filter_data, Camera *po){
   for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
     
     Eigen::Vector2d pixel;
-    Eigen::Vector2d sensor_position(0, 0);
     
     // if (count < pixelcache.size()){ // redist already taken samples from probe rays
     //   pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
@@ -319,19 +322,27 @@ driver_process_bucket {
   }
 
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
-  bool cameratype = 0;
+  
 
   AiMsgInfo("starting bidirectional sampling");
 
-  if (cameratype == 0) {
-    #pragma omp parallel for
-    for (int s = 0; s<filter_data->global_run_counter; s++){
-      trace_backwards_thinlens(s, filter_data, po);
+  switch (po->cameraType){
+    case PolynomialOptics:
+    {
+      #pragma omp parallel for
+      for (int s = 0; s<filter_data->global_run_counter; s++){
+        trace_backwards_po(s, filter_data, po);
+      }
+
+      break;
     }
-  } else {
-    #pragma omp parallel for
-    for (int s = 0; s<filter_data->global_run_counter; s++){
-      trace_backwards_po(s, filter_data, po);
+    case ThinLens:
+    {
+      #pragma omp parallel for
+      for (int s = 0; s<filter_data->global_run_counter; s++){
+        trace_backwards_thinlens(s, filter_data, po);
+      }
+      break;
     }
   }
       
