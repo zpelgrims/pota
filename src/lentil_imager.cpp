@@ -18,7 +18,7 @@ void trace_backwards_thinlens(int s, LentilFilterData *filter_data, Camera *po){
   if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(filter_data->sample_luminance[s], po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
             
 
-  int samples = std::ceil(filter_data->coc_squared_pixels[s] * filter_data->inv_density[s]); // aa_sample independence
+  int samples = std::ceil(coc_squared_pixels * filter_data->inv_density[s]); // aa_sample independence
   samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
   float inv_samples = 1.0/static_cast<double>(samples);
 
@@ -321,6 +321,8 @@ driver_process_bucket {
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
   bool cameratype = 0;
 
+  AiMsgInfo("starting bidirectional sampling");
+
   if (cameratype == 0) {
     #pragma omp parallel for
     for (int s = 0; s<filter_data->global_run_counter; s++){
@@ -335,7 +337,7 @@ driver_process_bucket {
       
     
 
-  
+  AiMsgInfo("Starting dump to arnold framebuffer");
 
 
 
