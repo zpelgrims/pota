@@ -61,7 +61,7 @@ node_parameters {
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
-node_plugin_initialize {crypto_crit_sec_init();}
+node_plugin_initialize {return crypto_crit_sec_init();}
 node_plugin_cleanup {crypto_crit_sec_close();}
 
 node_initialize {

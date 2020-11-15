@@ -13,7 +13,7 @@
     houdini.optional        BOOL true
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;8;Bokeh;3;Bidirectional;5;Additional;1"
+    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;7;Bokeh;3;Bidirectional;5;Additional;2"
     
     [attr cameratype]
         desc                STRING  "Camera Type"
