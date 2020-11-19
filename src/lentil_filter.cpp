@@ -2,9 +2,35 @@
 #include "lentil.h"
 #include "lens.h"
 
+#include "../../../CryptomatteArnold/cryptomatte/filters.h"
 
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
+
+
+// crypto stuff
+struct CryptomatteFilterData {
+  float (*filter_func)(AtVector2, float) = nullptr;
+  float width = 2.0f;
+  int rank = -1;
+  int filter = 0;
+  bool noop = false;
+};
+
+typedef std::map<float, float> sw_map_t;
+typedef std::map<float, float>::iterator sw_map_iterator_t;
+
+void write_to_samples_map(sw_map_t* vals, float hash, float sample_weight) {
+    (*vals)[hash] += sample_weight;
+}
+
+
+
+
+
+
+
+
 
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
@@ -62,13 +88,18 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
 
 node_parameters 
 {
+  AiParameterFlt("width", 2.0);
+  AiParameterInt("rank", -1);
+  AiParameterEnum("filter", p_filter_gaussian, filterEnumNames);
+  AiParameterBool("noop", false);
+
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
-  AiFilterInitialize(node, false, required_aovs);
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
+  AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new LentilFilterData());
 }
  
@@ -162,6 +193,69 @@ node_update
     }
   }
 
+
+
+  // crypto stuff
+  bokeh->crypto_hash_map.clear();
+  bokeh->crypto_total_weight.clear();
+
+  bokeh->aov_list_name.push_back(AtString("crypto_asset00"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_asset00")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_asset00")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_asset01"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_asset01")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_asset01")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_asset02"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_asset02")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_asset02")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_material00"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_material00")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_material00")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_material01"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_material01")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_material01")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_material02"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_material02")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_material02")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_object00"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_object00")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_object00")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_object01"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_object01")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_object01")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
+  bokeh->aov_list_name.push_back(AtString("crypto_object02"));
+  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+  bokeh->crypto_hash_map[AtString("crypto_object02")].clear();
+  bokeh->crypto_hash_map[AtString("crypto_object02")].resize(bokeh->xres * bokeh->yres);
+  bokeh->crypto_total_weight[AtString("crypto_object02")].clear();
+  bokeh->crypto_total_weight[AtString("crypto_object02")].resize(bokeh->xres * bokeh->yres);
+
+
+
   bokeh->pixel_already_visited.clear();
   bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
   for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
@@ -183,8 +277,10 @@ filter_output_type
          return AI_TYPE_RGB;
       case AI_TYPE_VECTOR:
         return AI_TYPE_VECTOR;
+      // case AI_TYPE_FLOAT:
+      //   return AI_TYPE_FLOAT; // ORIG
       case AI_TYPE_FLOAT:
-        return AI_TYPE_FLOAT;
+        return AI_TYPE_RGBA; // CRYPTO TEST
       // case AI_TYPE_INT:
       //   return AI_TYPE_INT;
       // case AI_TYPE_UINT:
@@ -210,6 +306,18 @@ filter_pixel
 
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
+
+  const AtString crypto_object00 = AtString("crypto_object00");
+  const AtString crypto_object01 = AtString("crypto_object01");
+  const AtString crypto_object02 = AtString("crypto_object02");
+  const AtString crypto_asset00 = AtString("crypto_asset00");
+  const AtString crypto_asset01 = AtString("crypto_asset01");
+  const AtString crypto_asset02 = AtString("crypto_asset02");
+  const AtString crypto_material00 = AtString("crypto_material00");
+  const AtString crypto_material01 = AtString("crypto_material01");
+  const AtString crypto_material02 = AtString("crypto_material02");
+
+
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -226,6 +334,7 @@ filter_pixel
 
 
     while (AiAOVSampleIteratorGetNext(iterator)) {
+
       
       bool redistribute = true;
 
@@ -267,22 +376,10 @@ filter_pixel
           AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
           AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
-            case mm:
-            {
-              camera_space_sample_position_static *= 0.1;
-            } break;
-            case cm:
-            { 
-              camera_space_sample_position_static *= 1.0;
-            } break;
-            case dm:
-            {
-              camera_space_sample_position_static *= 10.0;
-            } break;
-            case m:
-            {
-              camera_space_sample_position_static *= 100.0;
-            }
+            case mm: { camera_space_sample_position_static *= 0.1; } break;
+            case cm: { camera_space_sample_position_static *= 1.0; } break;
+            case dm: { camera_space_sample_position_static *= 10.0;} break;
+            case m:  { camera_space_sample_position_static *= 100.0;}
           }
 
           if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
@@ -320,22 +417,10 @@ filter_pixel
 
             Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
             switch (po->unitModel){
-              case mm:
-              {
-                camera_space_sample_position_mb_eigen *= 0.1;
-              } break;
-              case cm:
-              { 
-                camera_space_sample_position_mb_eigen *= 1.0;
-              } break;
-              case dm:
-              {
-                camera_space_sample_position_mb_eigen *= 10.0;
-              } break;
-              case m:
-              {
-                camera_space_sample_position_mb_eigen *= 100.0;
-              }
+              case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
+              case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
+              case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
+              case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
             }
           
             if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
@@ -399,22 +484,10 @@ filter_pixel
 
               Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
               switch (po->unitModel){
-                case mm:
-                {
-                  camera_space_sample_position_mb_eigen *= 0.1;
-                } break;
-                case cm:
-                { 
-                  camera_space_sample_position_mb_eigen *= 1.0;
-                } break;
-                case dm:
-                {
-                  camera_space_sample_position_mb_eigen *= 10.0;
-                } break;
-                case m:
-                {
-                  camera_space_sample_position_mb_eigen *= 100.0;
-                }
+                case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
+                case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
+                case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
+                case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
               }
 
               if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
@@ -441,7 +514,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh);
+                            transmitted_energy_in_sample, 1, iterator, bokeh, true);
             }
           }
         
@@ -497,22 +570,10 @@ filter_pixel
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             switch (po->unitModel){
-              case mm:
-              {
-                camera_space_sample_position_mb *= 0.1;
-              } break;
-              case cm:
-              { 
-                camera_space_sample_position_mb *= 1.0;
-              } break;
-              case dm:
-              {
-                camera_space_sample_position_mb *= 10.0;
-              } break;
-              case m:
-              {
-                camera_space_sample_position_mb *= 100.0;
-              }
+              case mm: { camera_space_sample_position_mb *= 0.1; } break;
+              case cm: { camera_space_sample_position_mb *= 1.0; } break;
+              case dm: { camera_space_sample_position_mb *= 10.0;} break;
+              case m:  { camera_space_sample_position_mb *= 100.0;}
             }
             float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
 
@@ -599,7 +660,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh);
+                            transmitted_energy_in_sample, 1, iterator, bokeh, true);
             
             }
           }

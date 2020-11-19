@@ -8,6 +8,17 @@
 
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
+
+
+class compareTail {
+public:
+    bool operator()(const std::pair<float, float> x, const std::pair<float, float> y) {
+        return x.second > y.second;
+    }
+};
+
+
+
 // struct LentilImagerData {
 //     AtString camera_node_type;
 //     AtString lentil_thinlens_string;
@@ -90,6 +101,7 @@ driver_process_bucket {
     return;
   }
 
+
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
@@ -127,7 +139,62 @@ driver_process_bucket {
             }
 
             case AI_TYPE_FLOAT: {
-              ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+              std::string aov_name_string = aov_name_cstr;
+              if (aov_name_string.find("crypto") != std::string::npos) {
+          
+                int rank = 0;
+                if (aov_name == AtString("crypto_material00")) rank = 0;
+                if (aov_name == AtString("crypto_material01")) rank = 2;
+                if (aov_name == AtString("crypto_material02")) rank = 4;
+
+                if (aov_name == AtString("crypto_asset00")) rank = 0;
+                if (aov_name == AtString("crypto_asset01")) rank = 2;
+                if (aov_name == AtString("crypto_asset02")) rank = 4;
+
+                if (aov_name == AtString("crypto_object00")) rank = 0;
+                if (aov_name == AtString("crypto_object01")) rank = 2;
+                if (aov_name == AtString("crypto_object02")) rank = 4;
+                
+                
+                // crypto ranking
+                AtRGBA out = AI_RGBA_ZERO;
+                for (int i=0; i < filter_data->xres*filter_data->yres; i++) {
+                  // rank 0 means if vals.size() does not contain 0, we can stop
+                  // rank 2 means if vals.size() does not contain 2, we can stop
+                  if (filter_data->crypto_hash_map[aov_name][i].size() <= rank)
+                      return;
+
+                  std::map<float, float>::iterator vals_iter;
+
+                  std::vector<std::pair<float, float>> all_vals;
+                  std::vector<std::pair<float, float>>::iterator all_vals_iter;
+
+                  all_vals.reserve(filter_data->crypto_hash_map[aov_name][i].size());
+                  for (vals_iter = filter_data->crypto_hash_map[aov_name][i].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][i].end(); ++vals_iter)
+                      all_vals.push_back(*vals_iter);
+
+                  std::sort(all_vals.begin(), all_vals.end(), compareTail());
+
+                  int iter = 0;
+                  
+                  for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
+                      if (iter == rank) {
+                          out.r = all_vals_iter->first;
+                          out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][i]);
+                      } else if (iter == rank + 1) {
+                          out.b = all_vals_iter->first;
+                          out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][i]);
+                      }
+                      iter++;
+                  }
+                }
+                ((AtRGBA*)bucket_data)[in_idx] = out;
+              }
+
+              else {
+                ((AtRGBA*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel];
+              }
+              
               break;
             }
 
