@@ -571,6 +571,7 @@ filter_pixel
               case dm: { camera_space_sample_position_mb *= 10.0;} break;
               case m:  { camera_space_sample_position_mb *= 100.0;}
             }
+            
             float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image

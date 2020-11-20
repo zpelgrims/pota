@@ -321,26 +321,26 @@ inline std::vector<std::string> split_str(std::string str, std::string token)
 }
 
 
-inline bool determine_crypto_aov(struct AtAOVSampleIterator* sample_iterator) {
-  // will need to watch out for cases where values might be equal, but aov's are actually different?
-  // zero values (most common case) will need to be skipped prior
+// inline bool determine_crypto_aov(struct AtAOVSampleIterator* sample_iterator) {
+//   // will need to watch out for cases where values might be equal, but aov's are actually different?
+//   // zero values (most common case) will need to be skipped prior
   
-  float primary_sample = AiAOVSampleIteratorGetFlt(sample_iterator);
-  if (primary_sample == 0.0) return false; // untested
+//   float primary_sample = AiAOVSampleIteratorGetFlt(sample_iterator);
+//   if (primary_sample == 0.0) return false; // untested
 
 
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset00")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset01")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset02")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object00")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object01")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object02")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material00")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material01")) == primary_sample) return true;
-  if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material02")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset00")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset01")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_asset02")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object00")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object01")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_object02")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material00")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material01")) == primary_sample) return true;
+//   if (AiAOVSampleIteratorGetAOVFlt(sample_iterator, AtString("crypto_material02")) == primary_sample) return true;
 
-  return false;
-}
+//   return false;
+// }
 
 inline float crypto_gaussian(AtVector2 p, float width) {
     /* matches Arnold's exactly. */
@@ -409,10 +409,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_FLOAT: {
           // CRYPTO SIDECASE
-          // const bool crypto = determine_crypto_aov(sample_iterator);
           std::string aov_name_str = aov_name.c_str();
-          const bool crypto = aov_name_str.find("crypto") != std::string::npos;
-          if (crypto) {
+          if (aov_name_str.find("crypto_") != std::string::npos) {
             float sample_weight = 1.0; // redist isn't filtered atm
             if (!redistribution) sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(sample_iterator), 2.0);
             // if (sample_weight == 0.0f) continue;
