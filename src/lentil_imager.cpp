@@ -55,7 +55,7 @@ node_update
 driver_supports_pixel_type 
 {
   return  pixel_type == AI_TYPE_RGBA || 
-          pixel_type == AI_TYPE_RGBA || 
+          pixel_type == AI_TYPE_RGB || 
           pixel_type == AI_TYPE_FLOAT || 
           pixel_type == AI_TYPE_VECTOR;
 }
@@ -123,7 +123,7 @@ driver_process_bucket {
           switch (aov_type){
             case AI_TYPE_RGBA: {
 
-              // AiMsgInfo("test");
+
               std::string aov_name_string = aov_name_cstr;
               if (aov_name_string.find("crypto") != std::string::npos) {
           
@@ -143,42 +143,37 @@ driver_process_bucket {
                 
                 // crypto ranking
                 AtRGBA out = AI_RGBA_ZERO;
-                // AiMsgInfo("checking wehere crash is");
-                // for (int i=0; i < filter_data->xres*filter_data->yres; i++) {
-                  // rank 0 means if vals.size() does not contain 0, we can stop
-                  // rank 2 means if vals.size() does not contain 2, we can stop
-                  if (filter_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
-                    // AiMsgWarning("returned at rank size check");
-                    continue;
-                  }
+                // rank 0 means if vals.size() does not contain 0, we can stop
+                // rank 2 means if vals.size() does not contain 2, we can stop
+                if (filter_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
+                  break;
+                }
 
-                  std::map<float, float>::iterator vals_iter;
+                std::map<float, float>::iterator vals_iter;
 
-                  std::vector<std::pair<float, float>> all_vals;
-                  std::vector<std::pair<float, float>>::iterator all_vals_iter;
+                std::vector<std::pair<float, float>> all_vals;
+                std::vector<std::pair<float, float>>::iterator all_vals_iter;
 
-                  // AiMsgInfo("all vals size: %d", filter_data->crypto_hash_map[aov_name][linear_pixel].size());
+                all_vals.reserve(filter_data->crypto_hash_map[aov_name][linear_pixel].size());
+                for (vals_iter = filter_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter){
+                   all_vals.push_back(*vals_iter);
+                }
 
-                  all_vals.reserve(filter_data->crypto_hash_map[aov_name][linear_pixel].size());
-                  for (vals_iter = filter_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter)
-                      // AiMsgInfo("vals_iter: %f, %f", vals_iter->first, vals_iter->second);
-                      all_vals.push_back(*vals_iter);
+                std::sort(all_vals.begin(), all_vals.end(), compareTail());
 
-                  std::sort(all_vals.begin(), all_vals.end(), compareTail());
-
-                  int iter = 0;
-                  
-                  for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
-                      if (iter == rank) {
-                          out.r = all_vals_iter->first;
-                          out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
-                      } else if (iter == rank + 1) {
-                          out.b = all_vals_iter->first;
-                          out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
-                      }
-                      iter++;
-                  }
-                // }
+                int iter = 0;
+                
+                for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
+                    if (iter == rank) {
+                        out.r = all_vals_iter->first;
+                        out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
+                    } else if (iter == rank + 1) {
+                        out.b = all_vals_iter->first;
+                        out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
+                    }
+                    iter++;
+                }
+                
                 ((AtRGBA*)bucket_data)[in_idx] = out;
               }
 

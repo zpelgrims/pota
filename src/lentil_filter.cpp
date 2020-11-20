@@ -201,48 +201,56 @@ node_update
   bokeh->crypto_hash_map[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_asset00")].clear();
   bokeh->crypto_total_weight[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_asset01"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_asset01")].clear();
   bokeh->crypto_hash_map[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_asset01")].clear();
   bokeh->crypto_total_weight[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_asset02"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_asset02")].clear();
   bokeh->crypto_hash_map[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_asset02")].clear();
   bokeh->crypto_total_weight[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_material00"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_material00")].clear();
   bokeh->crypto_hash_map[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_material00")].clear();
   bokeh->crypto_total_weight[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_material01"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_material01")].clear();
   bokeh->crypto_hash_map[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_material01")].clear();
   bokeh->crypto_total_weight[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_material02"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_material02")].clear();
   bokeh->crypto_hash_map[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_material02")].clear();
   bokeh->crypto_total_weight[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_object00"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_object00")].clear();
   bokeh->crypto_hash_map[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_object00")].clear();
   bokeh->crypto_total_weight[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_object01"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_object01")].clear();
   bokeh->crypto_hash_map[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
   bokeh->crypto_total_weight[AtString("crypto_object01")].clear();
   bokeh->crypto_total_weight[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
+
   bokeh->aov_list_name.push_back(AtString("crypto_object02"));
   bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
   bokeh->crypto_hash_map[AtString("crypto_object02")].clear();
@@ -276,7 +284,7 @@ filter_output_type
       // case AI_TYPE_FLOAT:
       //   return AI_TYPE_FLOAT; // ORIG
       case AI_TYPE_FLOAT:
-        return AI_TYPE_FLOAT; // CRYPTO TEST
+        return AI_TYPE_RGBA; // CRYPTO TEST
       // case AI_TYPE_INT:
       //   return AI_TYPE_INT;
       // case AI_TYPE_UINT:
@@ -328,10 +336,8 @@ filter_pixel
         goto just_filter;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
-
-    while (AiAOVSampleIteratorGetNext(iterator)) {
-
-      
+    
+    for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
@@ -384,7 +390,7 @@ filter_pixel
           bool transmission_dump_already_happened = false;
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
@@ -459,7 +465,7 @@ filter_pixel
           if (redistribute == false){
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
                                       iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
@@ -510,7 +516,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh, true);
+                            transmitted_energy_in_sample, 1, sampleid, iterator, bokeh, true);
             }
           }
         
@@ -522,7 +528,7 @@ filter_pixel
           bool transmission_dump_already_happened = false;
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
@@ -546,7 +552,7 @@ filter_pixel
           if (redistribute == false){
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                       iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
@@ -657,7 +663,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh, true);
+                            transmitted_energy_in_sample, 1, sampleid, iterator, bokeh, true);
             
             }
           }
@@ -665,6 +671,7 @@ filter_pixel
           break;
         }
       }
+
     }
   } 
   

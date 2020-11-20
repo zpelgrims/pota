@@ -366,9 +366,21 @@ inline float crypto_gaussian(AtVector2 p, float width) {
     }
 }
 
+
+inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
+  AiAOVSampleIteratorReset(iterator);
+  
+  for (int i = 0; AiAOVSampleIteratorGetNext(iterator) == true; i++){
+    if (i == id) return;
+  }
+
+  return;
+}
+
+
 inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
-                          bool transmitted_energy_in_sample, int transmission_layer,
+                          bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
                           struct AtAOVSampleIterator* sample_iterator, LentilFilterData *filter_data, bool redistribution) {
 
 
@@ -431,16 +443,16 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
                 iterative_transparency_weight *= (1.0f - sub_sample_opacity);
 
                 quota -= sub_sample_weight;
-                // write_to_samples_map(&vals, sample_value, sub_sample_weight);
-                filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight;
+                filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
                 
             }
 
             if (quota > 0.0) {
                 // the remaining values gets allocated to the last sample
-                // write_to_samples_map(&vals, sample_value, quota);
-                filter_data->crypto_hash_map[aov_name][px][sample_value] += quota;
+                filter_data->crypto_hash_map[aov_name][px][sample_value] += quota; // write_to_samples_map(&vals, sample_value, quota);
             }
+
+            reset_iterator_to_id(sample_iterator, sampleid);
           } 
           
           // usualz
@@ -452,6 +464,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
               filter_data->zbuffer[px] = std::abs(depth);
             }
           }
+
           break;
         }
 
@@ -491,7 +504,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                      float inv_samples, float inv_density, float depth, 
-                                     bool transmitted_energy_in_sample, int transmission_layer,
+                                     bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
                                      struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
@@ -511,7 +524,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
-                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
+                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, sampleid, iterator,
                         filter_data, false);
         }
       }
