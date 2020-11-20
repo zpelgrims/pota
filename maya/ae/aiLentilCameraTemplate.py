@@ -41,7 +41,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.addControl("sensorWidth", label="Sensor Width (mm)")
         self.addControl("enableDof", label="Enable depth of field")
         self.addControl("fstop", label="F-stop", dynamic=True)
-        self.addControl("focusDistance", label="Focus distance (cm)")
+        self.addControl("focusDist", label="Focus distance (cm)")
         self.endLayout()
 
         # po specific

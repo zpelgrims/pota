@@ -23,7 +23,7 @@ node_parameters {
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focus_distance", 150.0); // in cm to be consistent with arnold core
+  AiParameterFlt("focus_dist", 150.0); // in cm to be consistent with arnold core
 
 
   // po specifics
@@ -89,7 +89,7 @@ node_update {
   po->sensor_width = AiNodeGetFlt(node, "sensor_width");
   po->enable_dof = AiNodeGetBool(node, "enable_dof");
   po->input_fstop = clamp_min(AiNodeGetFlt(node, "fstop"), 0.01);
-  po->focus_distance = AiNodeGetFlt(node, "focus_distance"); //converting to mm
+  po->focus_distance = AiNodeGetFlt(node, "focus_dist"); //converting to mm
   po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
 
   // po-specific params

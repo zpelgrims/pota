@@ -57,7 +57,7 @@
         houdini.help        STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
 
 
-    [attr focus_distance]
+    [attr focus_dist]
         min                 FLOAT   0.0
         max                 FLOAT   100000.0
         softmin             FLOAT   0.0

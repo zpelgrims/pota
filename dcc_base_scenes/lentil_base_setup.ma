@@ -31,7 +31,7 @@ createNode camera -s -n "perspShape" -p "persp";
 	setAttr ".dr" yes;
 	setAttr ".ai_translator" -type "string" "lentil_camera";
 	setAttr ".fstop" 1.3999999761581421;
-	setAttr ".focus_distance" 40;
+	setAttr ".focus_dist" 40;
 	setAttr ".focal_length" 40;
 	setAttr ".optical_vignetting_distance" 4;
 	setAttr ".bidir_sample_mult" 10;

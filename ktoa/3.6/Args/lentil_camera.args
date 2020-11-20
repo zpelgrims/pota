@@ -49,7 +49,7 @@
 		</hintdict>
 	</param>
 		<param name="sensor_width" label="Sensor Width (mm)" slider="True" sensitivity="0.01" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
-		<param name="focus_distance" label="Focus distance (cm)" slider="True" slidermin="0.0" slidercenter ="150.0" slidermax="1000000.0"  max="1000000.0"/>
+		<param name="focus_dist" label="Focus distance (cm)" slider="True" slidermin="0.0" slidercenter ="150.0" slidermax="1000000.0"  max="1000000.0"/>
 		<param name="fstop" label="F-stop" slider="True" slidermin="0.0" slidercenter="2.8" slidermax="64.0" max="64.0"/>
 		<param widget="checkBox" name="enable_dof" label="Enable DOF"/>
 </page>
