@@ -125,6 +125,8 @@ driver_process_bucket {
 
 
               std::string aov_name_string = aov_name_cstr;
+
+              // CRYPTOMATTE
               if (aov_name_string.find("crypto") != std::string::npos) {
           
                 int rank = 0;

@@ -420,12 +420,13 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         }
 
         case AI_TYPE_FLOAT: {
-          // CRYPTO SIDECASE
+          
+          // CRYPTOMATTE
           std::string aov_name_str = aov_name.c_str();
           if (aov_name_str.find("crypto_") != std::string::npos) {
             float sample_weight = 1.0; // redist isn't filtered atm
             if (!redistribution) sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(sample_iterator), 2.0);
-            // if (sample_weight == 0.0f) continue;
+            if (sample_weight == 0.0f) break;
             sample_weight *= AiAOVSampleIteratorGetInvDensity(sample_iterator);
             sample_weight *= inv_samples;
 

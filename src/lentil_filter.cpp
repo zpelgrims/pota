@@ -6,27 +6,7 @@
 
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
-
-
-// crypto stuff
-struct CryptomatteFilterData {
-  float (*filter_func)(AtVector2, float) = nullptr;
-  float width = 2.0f;
-  int rank = -1;
-  int filter = 0;
-  bool noop = false;
-};
-
-typedef std::map<float, float> sw_map_t;
-typedef std::map<float, float>::iterator sw_map_iterator_t;
-
-
-
-
-
-
-
-
+ 
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
   AtMatrix world_to_camera_matrix_motionblurred;
@@ -80,6 +60,9 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
   const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
   return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
 }
+
+
+
 
 node_parameters 
 {
@@ -160,6 +143,9 @@ node_update
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
   bokeh->aov_duplicates.clear();
+  bokeh->crypto_hash_map.clear();
+  bokeh->crypto_total_weight.clear();
+
 
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -171,94 +157,44 @@ node_update
      
       std::string name = split_str(output_string, std::string(" ")).begin()[0];
       std::string type = split_str(output_string, std::string(" ")).begin()[1];
+      AtString name_as = AtString(name.c_str());
 
-      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
-
-      bokeh->aov_list_name.push_back(AtString(name.c_str()));
+      bokeh->aov_list_name.push_back(name_as);
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
 
-      ++bokeh->aov_duplicates[AtString(name.c_str())];
+      ++bokeh->aov_duplicates[name_as];
 
-      bokeh->image_data_types[AtString(name.c_str())].clear();
-      bokeh->image_data_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_col_types[AtString(name.c_str())].clear();
-      bokeh->image_col_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_ptr_types[AtString(name.c_str())].clear();
-      bokeh->image_ptr_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_data_types[name_as].clear();
+      bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_col_types[name_as].clear();
+      bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_ptr_types[name_as].clear();
+      bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
+
+      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
     }
   }
 
 
+  // crypto setup, still hardcoded
+  std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
+  std::vector<std::string> crypto_ranks{"00", "01", "02"};
+  for (const auto& crypto_type: crypto_types) {
+    for (const auto& crypto_rank : crypto_ranks) {
+      std::string name_as_s = crypto_type+crypto_rank;
+      AtString name_as = AtString(name_as_s.c_str());
 
-  // crypto stuff
+      bokeh->aov_list_name.push_back(name_as);
+      bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+      bokeh->crypto_hash_map[name_as].clear();
+      bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
+      bokeh->crypto_total_weight[name_as].clear();
+      bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
+
+      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+    }
+  }
   
-  bokeh->crypto_hash_map.clear();
-  bokeh->crypto_total_weight.clear();
-
-  bokeh->aov_list_name.push_back(AtString("crypto_asset00"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_asset00")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_asset00")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_asset00")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_asset01"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_asset01")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_asset01")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_asset01")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_asset02"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_asset02")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_asset02")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_asset02")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_material00"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_material00")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_material00")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_material00")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_material01"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_material01")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_material01")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_material01")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_material02"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_material02")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_material02")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_material02")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_object00"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_object00")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_object00")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_object00")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_object01"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_object01")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_object01")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_object01")].resize(bokeh->xres * bokeh->yres);
-
-  bokeh->aov_list_name.push_back(AtString("crypto_object02"));
-  bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-  bokeh->crypto_hash_map[AtString("crypto_object02")].clear();
-  bokeh->crypto_hash_map[AtString("crypto_object02")].resize(bokeh->xres * bokeh->yres);
-  bokeh->crypto_total_weight[AtString("crypto_object02")].clear();
-  bokeh->crypto_total_weight[AtString("crypto_object02")].resize(bokeh->xres * bokeh->yres);
-
-
 
   bokeh->pixel_already_visited.clear();
   bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
@@ -309,18 +245,6 @@ filter_pixel
   }
 
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
-
-
-  // const AtString crypto_object00 = AtString("crypto_object00");
-  // const AtString crypto_object01 = AtString("crypto_object01");
-  // const AtString crypto_object02 = AtString("crypto_object02");
-  // const AtString crypto_asset00 = AtString("crypto_asset00");
-  // const AtString crypto_asset01 = AtString("crypto_asset01");
-  // const AtString crypto_asset02 = AtString("crypto_asset02");
-  // const AtString crypto_material00 = AtString("crypto_material00");
-  // const AtString crypto_material01 = AtString("crypto_material01");
-  // const AtString crypto_material02 = AtString("crypto_material02");
-
 
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
