@@ -20,11 +20,6 @@ struct CryptomatteFilterData {
 typedef std::map<float, float> sw_map_t;
 typedef std::map<float, float>::iterator sw_map_iterator_t;
 
-void write_to_samples_map(sw_map_t* vals, float hash, float sample_weight) {
-    (*vals)[hash] += sample_weight;
-}
-
-
 
 
 
@@ -196,6 +191,7 @@ node_update
 
 
   // crypto stuff
+  
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
 
@@ -280,7 +276,7 @@ filter_output_type
       // case AI_TYPE_FLOAT:
       //   return AI_TYPE_FLOAT; // ORIG
       case AI_TYPE_FLOAT:
-        return AI_TYPE_RGBA; // CRYPTO TEST
+        return AI_TYPE_FLOAT; // CRYPTO TEST
       // case AI_TYPE_INT:
       //   return AI_TYPE_INT;
       // case AI_TYPE_UINT:
@@ -307,15 +303,15 @@ filter_pixel
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
 
 
-  const AtString crypto_object00 = AtString("crypto_object00");
-  const AtString crypto_object01 = AtString("crypto_object01");
-  const AtString crypto_object02 = AtString("crypto_object02");
-  const AtString crypto_asset00 = AtString("crypto_asset00");
-  const AtString crypto_asset01 = AtString("crypto_asset01");
-  const AtString crypto_asset02 = AtString("crypto_asset02");
-  const AtString crypto_material00 = AtString("crypto_material00");
-  const AtString crypto_material01 = AtString("crypto_material01");
-  const AtString crypto_material02 = AtString("crypto_material02");
+  // const AtString crypto_object00 = AtString("crypto_object00");
+  // const AtString crypto_object01 = AtString("crypto_object01");
+  // const AtString crypto_object02 = AtString("crypto_object02");
+  // const AtString crypto_asset00 = AtString("crypto_asset00");
+  // const AtString crypto_asset01 = AtString("crypto_asset01");
+  // const AtString crypto_asset02 = AtString("crypto_asset02");
+  // const AtString crypto_material00 = AtString("crypto_material00");
+  // const AtString crypto_material01 = AtString("crypto_material01");
+  // const AtString crypto_material02 = AtString("crypto_material02");
 
 
   if (bokeh->enabled){

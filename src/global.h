@@ -408,12 +408,14 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         }
 
         case AI_TYPE_FLOAT: {
-            // CRYPTO SIDECASE
-          const bool crypto = determine_crypto_aov(sample_iterator);
+          // CRYPTO SIDECASE
+          // const bool crypto = determine_crypto_aov(sample_iterator);
+          std::string aov_name_str = aov_name.c_str();
+          const bool crypto = aov_name_str.find("crypto") != std::string::npos;
           if (crypto) {
             float sample_weight = 1.0; // redist isn't filtered atm
             if (!redistribution) sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(sample_iterator), 2.0);
-            if (sample_weight == 0.0f) return;
+            // if (sample_weight == 0.0f) continue;
             sample_weight *= AiAOVSampleIteratorGetInvDensity(sample_iterator);
             sample_weight *= inv_samples;
 
@@ -424,7 +426,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
             while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
                 const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, AtString("opacity")));
-                sample_value = AiAOVSampleIteratorGetFlt(sample_iterator);
+                sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
                 const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight * sample_weight;
 
                 // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
@@ -433,6 +435,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
                 quota -= sub_sample_weight;
                 // write_to_samples_map(&vals, sample_value, sub_sample_weight);
                 filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight;
+                
             }
 
             if (quota > 0.0) {

@@ -107,7 +107,7 @@ driver_process_bucket {
   const void *bucket_data;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
-    AiMsgInfo("[LENTIL IMAGER] Imager found AOV: %s", aov_name_cstr);
+    AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %d", aov_name_cstr, aov_type);
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
@@ -119,26 +119,11 @@ driver_process_bucket {
           int x = i + bucket_xo;
           int in_idx = j * bucket_size_x + i;
           int linear_pixel = x + (y * (double)filter_data->xres);
-          
+
           switch (aov_type){
             case AI_TYPE_RGBA: {
-              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
-              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
-              
-              ((AtRGBA*)bucket_data)[in_idx] = image;
-              break;
-            }
 
-            case AI_TYPE_RGB: {
-              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
-              image /= (image.a == 0.0) ? 1.0 : image.a;
-
-              AtRGB final_value = AtRGB(image.r, image.g, image.b);
-              ((AtRGB*)bucket_data)[in_idx] = final_value;
-              break;
-            }
-
-            case AI_TYPE_FLOAT: {
+              // AiMsgInfo("test");
               std::string aov_name_string = aov_name_cstr;
               if (aov_name_string.find("crypto") != std::string::npos) {
           
@@ -158,19 +143,25 @@ driver_process_bucket {
                 
                 // crypto ranking
                 AtRGBA out = AI_RGBA_ZERO;
-                for (int i=0; i < filter_data->xres*filter_data->yres; i++) {
+                // AiMsgInfo("checking wehere crash is");
+                // for (int i=0; i < filter_data->xres*filter_data->yres; i++) {
                   // rank 0 means if vals.size() does not contain 0, we can stop
                   // rank 2 means if vals.size() does not contain 2, we can stop
-                  if (filter_data->crypto_hash_map[aov_name][i].size() <= rank)
-                      return;
+                  if (filter_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
+                    // AiMsgWarning("returned at rank size check");
+                    continue;
+                  }
 
                   std::map<float, float>::iterator vals_iter;
 
                   std::vector<std::pair<float, float>> all_vals;
                   std::vector<std::pair<float, float>>::iterator all_vals_iter;
 
-                  all_vals.reserve(filter_data->crypto_hash_map[aov_name][i].size());
-                  for (vals_iter = filter_data->crypto_hash_map[aov_name][i].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][i].end(); ++vals_iter)
+                  // AiMsgInfo("all vals size: %d", filter_data->crypto_hash_map[aov_name][linear_pixel].size());
+
+                  all_vals.reserve(filter_data->crypto_hash_map[aov_name][linear_pixel].size());
+                  for (vals_iter = filter_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter)
+                      // AiMsgInfo("vals_iter: %f, %f", vals_iter->first, vals_iter->second);
                       all_vals.push_back(*vals_iter);
 
                   std::sort(all_vals.begin(), all_vals.end(), compareTail());
@@ -180,20 +171,40 @@ driver_process_bucket {
                   for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
                       if (iter == rank) {
                           out.r = all_vals_iter->first;
-                          out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][i]);
+                          out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
                       } else if (iter == rank + 1) {
                           out.b = all_vals_iter->first;
-                          out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][i]);
+                          out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
                       }
                       iter++;
                   }
-                }
+                // }
                 ((AtRGBA*)bucket_data)[in_idx] = out;
               }
 
               else {
-                ((AtRGBA*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel];
+
+                AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+                if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
+                
+                ((AtRGBA*)bucket_data)[in_idx] = image;
               }
+              break;
+            }
+
+            case AI_TYPE_RGB: {
+              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+              image /= (image.a == 0.0) ? 1.0 : image.a;
+
+              AtRGB final_value = AtRGB(image.r, image.g, image.b);
+              ((AtRGB*)bucket_data)[in_idx] = final_value;
+              break;
+            }
+
+            case AI_TYPE_FLOAT: {
+              
+                ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+              
               
               break;
             }
