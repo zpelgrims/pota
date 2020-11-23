@@ -298,7 +298,7 @@ filter_pixel
 
       float sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(iterator), 2.0);
       if (sample_weight == 0.0f) continue;
-      std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, sample_weight, iterator, sampleid);
+      std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, sample_weight*inv_density, iterator, sampleid);
 
       switch (po->cameraType){
         case PolynomialOptics:
@@ -450,7 +450,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], inv_density * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
@@ -606,7 +606,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], inv_density * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
