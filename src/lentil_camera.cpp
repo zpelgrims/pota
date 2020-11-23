@@ -57,6 +57,7 @@ node_parameters {
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);
+  AiParameterBool("cryptomatte", true);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -119,6 +120,7 @@ node_update {
   po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transition");
   po->bidir_debug = AiNodeGetBool(node, "bidir_debug");
   po->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
+  po->cryptomatte = AiNodeGetBool(node, "cryptomatte");
 
 
   switch (po->cameraType){

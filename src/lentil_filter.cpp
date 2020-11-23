@@ -177,21 +177,23 @@ node_update
 
 
   // crypto setup, still hardcoded
-  std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
-  std::vector<std::string> crypto_ranks{"00", "01", "02"};
-  for (const auto& crypto_type: crypto_types) {
-    for (const auto& crypto_rank : crypto_ranks) {
-      std::string name_as_s = crypto_type+crypto_rank;
-      AtString name_as = AtString(name_as_s.c_str());
+  if (AiNodeGetBool(cameranode, "cryptomatte")) {
+    std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
+    std::vector<std::string> crypto_ranks{"00", "01", "02"};
+    for (const auto& crypto_type: crypto_types) {
+      for (const auto& crypto_rank : crypto_ranks) {
+        std::string name_as_s = crypto_type+crypto_rank;
+        AtString name_as = AtString(name_as_s.c_str());
 
-      bokeh->aov_list_name.push_back(name_as);
-      bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-      bokeh->crypto_hash_map[name_as].clear();
-      bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
-      bokeh->crypto_total_weight[name_as].clear();
-      bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
+        bokeh->aov_list_name.push_back(name_as);
+        bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+        bokeh->crypto_hash_map[name_as].clear();
+        bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
+        bokeh->crypto_total_weight[name_as].clear();
+        bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
 
-      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+        AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+      }
     }
   }
   
