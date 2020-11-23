@@ -177,6 +177,7 @@ node_update
 
 
   // crypto setup, still hardcoded
+  bokeh->cryptomatte_aov_names.clear();
   if (AiNodeGetBool(cameranode, "cryptomatte")) {
     std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
     std::vector<std::string> crypto_ranks{"00", "01", "02"};
@@ -192,6 +193,7 @@ node_update
         bokeh->crypto_total_weight[name_as].clear();
         bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
 
+        bokeh->cryptomatte_aov_names.push_back(name_as);
         AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
       }
     }
@@ -293,8 +295,10 @@ filter_pixel
       if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
-      
 
+      float sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(iterator), 2.0);
+      if (sample_weight == 0.0f) continue;
+      std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, sample_weight, iterator, sampleid);
 
       switch (po->cameraType){
         case PolynomialOptics:
@@ -317,7 +321,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh);
+                                    iterator, bokeh, cryptomatte_cache_no_redistribution);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
@@ -392,10 +396,14 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
-                                      iterator, bokeh);
+                                      iterator, bokeh, cryptomatte_cache_no_redistribution);
             }
             if (!transmitted_energy_in_sample) continue;
           }
+
+
+          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, inv_density * inv_samples, iterator, sampleid);
 
 
           unsigned int total_samples_taken = 0;
@@ -440,9 +448,14 @@ filter_pixel
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              if (aov_name_str.find("crypto_") != std::string::npos) {
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], inv_density * inv_samples);
+              } else {
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, sampleid, iterator, bokeh, true);
+                            transmitted_energy_in_sample, 1, iterator, bokeh);
+              }
             }
           }
         
@@ -455,7 +468,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh);
+                                    iterator, bokeh, cryptomatte_cache_no_redistribution);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
@@ -479,11 +492,15 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                      iterator, bokeh);
+                                      iterator, bokeh, cryptomatte_cache_no_redistribution);
             }
             if (!transmitted_energy_in_sample) continue;
           }
-        
+
+
+          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, inv_density * inv_samples, iterator, sampleid);
+
         
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -587,10 +604,14 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              if (aov_name_str.find("crypto_") != std::string::npos) {
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], inv_density * inv_samples);
+              } else {
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, sampleid, iterator, bokeh, true);
-            
+                            transmitted_energy_in_sample, 1, iterator, bokeh);
+              }
             }
           }
 

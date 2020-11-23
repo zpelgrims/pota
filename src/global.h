@@ -28,6 +28,8 @@ struct LentilFilterData {
   std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
   std::map<AtString, std::vector<float>> crypto_total_weight;
 
+  std::vector<AtString> cryptomatte_aov_names;
+
   const AtString atstring_rgba = AtString("RGBA");
   const AtString atstring_p = AtString("P");
   const AtString atstring_z = AtString("Z");
@@ -358,10 +360,57 @@ inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
 }
 
 
+// get all depth samples so i can re-use them
+inline std::map<AtString, std::map<float, float>> cryptomatte_construct_cache(std::vector<AtString> &cryptomatte_aov_names, float sample_weight,
+                                                                             struct AtAOVSampleIterator* sample_iterator, const int sampleid) {
+  std::map<AtString, std::map<float, float>> crypto_hashmap;
+  
+
+  for (auto &aov : cryptomatte_aov_names) {
+
+    float iterative_transparency_weight = 1.0f;
+    float quota = sample_weight;
+    float sample_value = 0.0f;
+
+    while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
+        const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, AtString("opacity")));
+        sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov);
+        const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight * sample_weight;
+
+        // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
+        iterative_transparency_weight *= (1.0f - sub_sample_opacity);
+
+        quota -= sub_sample_weight;
+
+        // filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
+        crypto_hashmap[aov][sample_value] += sub_sample_weight;
+    }
+
+    if (quota > 0.0) {
+        // the remaining values gets allocated to the last sample
+        // filter_data->crypto_hash_map[aov_name][px][sample_value] += quota; // write_to_samples_map(&vals, sample_value, quota);
+        crypto_hashmap[aov][sample_value] += quota;
+    }
+
+    reset_iterator_to_id(sample_iterator, sampleid);
+  }
+
+  return crypto_hashmap;
+}
+
+
+// assumed to be of type INPUT_TYPE_FLOAT
+inline void add_to_buffer_cryptomatte(int px, LentilFilterData *filter_data, std::map<float, float> &cryptomatte_cache, const AtString aov_name, const float sample_weight) {
+  for (auto const& sample : cryptomatte_cache) {
+    filter_data->crypto_total_weight[aov_name][px] += sample_weight;
+    filter_data->crypto_hash_map[aov_name][px][sample.first] += sample.second; //filter_data->crypto_hash_map[aov_name][px][sample_value] += cryptomatte_cache[aov_name]; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
+  }
+}
+
 inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
-                          bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
-                          struct AtAOVSampleIterator* sample_iterator, LentilFilterData *filter_data, bool redistribution) {
+                          bool transmitted_energy_in_sample, int transmission_layer,
+                          struct AtAOVSampleIterator* sample_iterator, LentilFilterData *filter_data) {
 
 
     const float inv_aov_count = 1.0/(double)filter_data->aov_duplicates[aov_name];
@@ -400,49 +449,13 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         }
 
         case AI_TYPE_FLOAT: {
-          // CRYPTOMATTE
-          std::string aov_name_str = aov_name.c_str();
-          if (aov_name_str.find("crypto_") != std::string::npos) {
-            float sample_weight = redistribution ? 1.0 : crypto_gaussian(AiAOVSampleIteratorGetOffset(sample_iterator), 2.0); // redist isn't filtered atm
-            if (sample_weight == 0.0f) break;
-            sample_weight *= inv_density * inv_samples;
-
-            float iterative_transparency_weight = 1.0f;
-            float quota = sample_weight;
-            float sample_value = 0.0f;
-            filter_data->crypto_total_weight[aov_name][px] += quota;
-
-            while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
-                const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, AtString("opacity")));
-                sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
-                const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight * sample_weight;
-
-                // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
-                iterative_transparency_weight *= (1.0f - sub_sample_opacity);
-
-                quota -= sub_sample_weight;
-                filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
-                
-            }
-
-            if (quota > 0.0) {
-                // the remaining values gets allocated to the last sample
-                filter_data->crypto_hash_map[aov_name][px][sample_value] += quota; // write_to_samples_map(&vals, sample_value, quota);
-            }
-
-            reset_iterator_to_id(sample_iterator, sampleid);
-          } 
-          
-          // usualz
-          else {
-            if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-              const float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
-              const AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
-              filter_data->image_data_types[aov_name][px] = rgba_energy;
-              filter_data->zbuffer[px] = std::abs(depth);
-            }
+          if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
+            const float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
+            const AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
+            filter_data->image_data_types[aov_name][px] = rgba_energy;
+            filter_data->zbuffer[px] = std::abs(depth);
           }
-
+      
           break;
         }
 
@@ -483,7 +496,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                      float inv_samples, float inv_density, float depth, 
                                      bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
-                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
+                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data, std::map<AtString, std::map<float, float>> &cryptomatte_cache_filtered){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -501,9 +514,14 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
-          add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
-                        inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, sampleid, iterator,
-                        filter_data, false);
+          std::string aov_name_str = filter_data->aov_list_name[i].c_str();
+          if (aov_name_str.find("crypto_") != std::string::npos) {
+            add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache_filtered[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], inv_density);
+          } else {
+            add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
+                          inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
+                          filter_data);
+          }
         }
       }
     }
