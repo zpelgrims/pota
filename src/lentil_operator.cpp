@@ -69,7 +69,7 @@ operator_cook
         std::string filter = split_str(output_string, std::string(" ")).begin()[2];
         std::string name = split_str(output_string, std::string(" ")).front();
         
-        // if (name.find("crypto") != std::string::npos) continue;
+        if (name.find("crypto") != std::string::npos) continue;
 
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
         AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
