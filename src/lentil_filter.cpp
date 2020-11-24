@@ -145,7 +145,7 @@ node_update
   bokeh->aov_duplicates.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
-
+  
 
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
@@ -296,9 +296,6 @@ filter_pixel
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
 
-      float sample_weight = crypto_gaussian(AiAOVSampleIteratorGetOffset(iterator), 2.0);
-      if (sample_weight == 0.0f) continue;
-      std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, sample_weight*inv_density, iterator, sampleid);
 
       switch (po->cameraType){
         case PolynomialOptics:
@@ -321,7 +318,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, cryptomatte_cache_no_redistribution);
+                                    iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
@@ -396,7 +393,7 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
-                                      iterator, bokeh, cryptomatte_cache_no_redistribution);
+                                      iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
           }
@@ -468,7 +465,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, cryptomatte_cache_no_redistribution);
+                                    iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
@@ -492,7 +489,7 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                      iterator, bokeh, cryptomatte_cache_no_redistribution);
+                                      iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
           }

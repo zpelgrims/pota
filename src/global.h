@@ -399,10 +399,9 @@ inline std::map<AtString, std::map<float, float>> cryptomatte_construct_cache(st
 }
 
 
-// assumed to be of type INPUT_TYPE_FLOAT
 inline void add_to_buffer_cryptomatte(int px, LentilFilterData *filter_data, std::map<float, float> &cryptomatte_cache, const AtString aov_name, const float sample_weight) {
+  filter_data->crypto_total_weight[aov_name][px] += sample_weight;
   for (auto const& sample : cryptomatte_cache) {
-    filter_data->crypto_total_weight[aov_name][px] += sample_weight;
     filter_data->crypto_hash_map[aov_name][px][sample.first] += sample.second; //filter_data->crypto_hash_map[aov_name][px][sample_value] += cryptomatte_cache[aov_name]; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
   }
 }
@@ -496,7 +495,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                      float inv_samples, float inv_density, float depth, 
                                      bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
-                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data, std::map<AtString, std::map<float, float>> &cryptomatte_cache_filtered){
+                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -513,10 +512,15 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         if (filter_weight == 0) continue;
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
+
+
+        std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(filter_data->cryptomatte_aov_names, filter_weight * inv_samples * inv_filter_samples * inv_density, iterator, sampleid);
+
+
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           std::string aov_name_str = filter_data->aov_list_name[i].c_str();
           if (aov_name_str.find("crypto_") != std::string::npos) {
-            add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache_filtered[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], inv_density);
+            add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache_no_redistribution[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
           } else {
             add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
                           inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
