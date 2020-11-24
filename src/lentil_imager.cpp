@@ -102,6 +102,18 @@ driver_process_bucket {
   }
 
 
+  const AtString crypto_material00 = AtString("crypto_material00");
+  const AtString crypto_material01 = AtString("crypto_material01");
+  const AtString crypto_material02 = AtString("crypto_material02");
+  const AtString crypto_object00 = AtString("crypto_object00");
+  const AtString crypto_object01 = AtString("crypto_object01");
+  const AtString crypto_object02 = AtString("crypto_object02");
+  const AtString crypto_asset00 = AtString("crypto_asset00");
+  const AtString crypto_asset01 = AtString("crypto_asset01");
+  const AtString crypto_asset02 = AtString("crypto_asset02");
+
+
+
   const char *aov_name_cstr = 0;
   int aov_type = 0;
   const void *bucket_data;
@@ -111,7 +123,7 @@ driver_process_bucket {
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
       if (AtString(aov_name_cstr) == AtString("transmission")) continue;
       AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
-      AtString aov_name = AtString(aov_name_cstr);
+      const AtString aov_name = AtString(aov_name_cstr);
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {
@@ -130,18 +142,9 @@ driver_process_bucket {
               if (aov_name_string.find("crypto") != std::string::npos) {
           
                 int rank = 0;
-                if (aov_name == AtString("crypto_material00")) rank = 0;
-                if (aov_name == AtString("crypto_material01")) rank = 2;
-                if (aov_name == AtString("crypto_material02")) rank = 4;
-
-                if (aov_name == AtString("crypto_asset00")) rank = 0;
-                if (aov_name == AtString("crypto_asset01")) rank = 2;
-                if (aov_name == AtString("crypto_asset02")) rank = 4;
-
-                if (aov_name == AtString("crypto_object00")) rank = 0;
-                if (aov_name == AtString("crypto_object01")) rank = 2;
-                if (aov_name == AtString("crypto_object02")) rank = 4;
-                
+                // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
+                if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
+                else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
                 
                 // crypto ranking
                 AtRGBA out = AI_RGBA_ZERO;
@@ -152,7 +155,6 @@ driver_process_bucket {
                 }
 
                 std::map<float, float>::iterator vals_iter;
-
                 std::vector<std::pair<float, float>> all_vals;
                 std::vector<std::pair<float, float>>::iterator all_vals_iter;
 
@@ -179,8 +181,8 @@ driver_process_bucket {
                 ((AtRGBA*)bucket_data)[in_idx] = out;
               }
 
+              // usualz
               else {
-
                 AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
                 if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
                 
@@ -199,10 +201,7 @@ driver_process_bucket {
             }
 
             case AI_TYPE_FLOAT: {
-              
-                ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
-              
-              
+              ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
               break;
             }
 

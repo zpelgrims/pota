@@ -2,7 +2,6 @@
 #include "lentil.h"
 #include "lens.h"
 
-#include "../../../CryptomatteArnold/cryptomatte/filters.h"
 
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
@@ -66,11 +65,6 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
 
 node_parameters 
 {
-  AiParameterFlt("width", 2.0);
-  AiParameterInt("rank", -1);
-  AiParameterEnum("filter", p_filter_gaussian, filterEnumNames);
-  AiParameterBool("noop", false);
-
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
