@@ -400,7 +400,7 @@ filter_pixel
 
 
           // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
-          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, inv_density * inv_samples, iterator, sampleid);
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
 
 
           unsigned int total_samples_taken = 0;
@@ -496,7 +496,7 @@ filter_pixel
 
 
           // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
-          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, inv_density * inv_samples, iterator, sampleid);
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
 
         
           unsigned int total_samples_taken = 0;
