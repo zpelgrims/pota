@@ -5,6 +5,11 @@
 
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
+
+
+struct InternalFilterData {
+  AtNode *imager_node;
+};
  
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
@@ -72,137 +77,14 @@ node_initialize
 {
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
-  AiNodeSetLocalData(node, new LentilFilterData());
+  AiNodeSetLocalData(node, new InternalFilterData());
 }
  
 node_update 
 {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-  
-  bokeh->enabled = true;
-
-  AtNode *cameranode = AiUniverseGetCamera();
-  // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-    AiRenderAbort();
-    return;
-  }
-
-  // will only work for the node called lentil_replaced_filter
-  if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
-    AiRenderAbort();
-    return;
-  }
-
-  // if progressive rendering is on, don't redistribute
-  if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
-    AiRenderAbort();
-    return;
-  }
-
-  if (!AiNodeGetBool(cameranode, "enable_dof")) {
-    AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
-    bokeh->enabled = false;
-  }
-  
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->filter_width = 2.0;
-  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
-
-  bokeh->zbuffer.clear();
-  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
-
-  bokeh->time_start = AiCameraGetShutterStart();
-  bokeh->time_end = AiCameraGetShutterEnd();
-
-
-  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
-  }
-
-  if (AiNodeGetBool(cameranode, "bidir_debug")) {
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
-  }
-
-  // prepare framebuffers for all AOVS
-  bokeh->aov_list_name.clear();
-  bokeh->aov_list_type.clear();
-  bokeh->aov_duplicates.clear();
-  bokeh->crypto_hash_map.clear();
-  bokeh->crypto_total_weight.clear();
-  
-
-  AtNode* options = AiUniverseGetOptions();
-  AtArray* outputs = AiNodeGetArray(options, "outputs");
-  for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
-    std::string output_string = AiArrayGetStr(outputs, i).c_str();
-    std::string lentil_str = "lentil_replaced_filter";
-
-    if (output_string.find(lentil_str) != std::string::npos){
-     
-      std::string name = split_str(output_string, std::string(" ")).begin()[0];
-      std::string type = split_str(output_string, std::string(" ")).begin()[1];
-      AtString name_as = AtString(name.c_str());
-
-      bokeh->aov_list_name.push_back(name_as);
-      bokeh->aov_list_type.push_back(string_to_arnold_type(type));
-
-      ++bokeh->aov_duplicates[name_as];
-
-      bokeh->image_data_types[name_as].clear();
-      bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_col_types[name_as].clear();
-      bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_ptr_types[name_as].clear();
-      bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
-
-      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
-    }
-  }
-
-
-  // crypto setup, still hardcoded
-  bokeh->cryptomatte_aov_names.clear();
-  if (AiNodeGetBool(cameranode, "cryptomatte")) {
-    std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
-    std::vector<std::string> crypto_ranks{"00", "01", "02"};
-    for (const auto& crypto_type: crypto_types) {
-      for (const auto& crypto_rank : crypto_ranks) {
-        std::string name_as_s = crypto_type+crypto_rank;
-        AtString name_as = AtString(name_as_s.c_str());
-
-        bokeh->aov_list_name.push_back(name_as);
-        bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-        bokeh->crypto_hash_map[name_as].clear();
-        bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
-        bokeh->crypto_total_weight[name_as].clear();
-        bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
-
-        bokeh->cryptomatte_aov_names.push_back(name_as);
-        AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
-      }
-    }
-  }
-  
-
-  bokeh->pixel_already_visited.clear();
-  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
-  for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
-  
-  bokeh->current_inv_density = 0.0;
-
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed, starting bidirectional sampling.");
-
-  AiFilterUpdate(node, bokeh->filter_width);
+  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+  ifd->imager_node = AiNodeLookUpByName("/c4d_display/Arnold_lentil_imager");
+  AiFilterUpdate(node, 2.0);
 }
  
 filter_output_type
@@ -233,7 +115,9 @@ filter_output_type
 
 filter_pixel
 {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("/c4d_display/Arnold_lentil_imager");
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
   if (!AiNodeIs(AiUniverseGetCamera(), AtString("lentil_camera"))) {
     bokeh->enabled = false;
@@ -270,7 +154,7 @@ filter_pixel
     
       if (inv_density <= 0.f) continue; // does this every happen? test
       if (inv_density > 0.2){
-        continue; // skip when aa samples are below 3
+        goto just_filter; // skip when aa samples are below 3
       }
       
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
@@ -671,7 +555,10 @@ filter_pixel
 }
 
  
-node_finish {}
+node_finish {
+   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+   delete ifd;
+}
 
 
 void registerLentilFilterPO(AtNodeLib* node) {

@@ -21,7 +21,6 @@ struct LentilFilterData {
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
-  std::vector<int> aov_types;
   std::vector<bool> pixel_already_visited;
   AtString rgba_string;
 
@@ -35,8 +34,6 @@ struct LentilFilterData {
   const AtString atstring_z = AtString("Z");
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
-
-  int global_run;
 }; extern struct LentilFilterData bokeh;
 
 

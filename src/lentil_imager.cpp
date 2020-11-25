@@ -36,8 +36,7 @@ node_parameters
  
 node_initialize
 {
-  // LentilImagerData* imager_data = (LentilImagerData*)AiMalloc(sizeof(LentilImagerData));
-  // AiNodeSetLocalData(node, imager_data);  
+  AiNodeSetLocalData(node, new LentilFilterData());
   AiDriverInitialize(node, false);
 }
  
@@ -46,10 +45,139 @@ node_update
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
   AiRenderSetHintInt(AtString("imager_padding"), 0);
 
-  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-  // if (filter_data->enabled) AiMsgInfo("[LENTIL IMAGER] Starting Imager.");
+  // crypto_crit_sec_enter();
+
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  
+  bokeh->enabled = true;
+
+  AtNode *cameranode = AiUniverseGetCamera();
+  // disable for non-lentil cameras
+  if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
+    bokeh->enabled = false;
+    AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
+    AiRenderAbort();
+    return;
+  }
+
+  // // will only work for the node called lentil_replaced_filter
+  // if (AtString(AiNodeGetName(node)) != AtString("/c4d_display/Arnold_lentil_imager")){
+  //   bokeh->enabled = false;
+  //   AiMsgError("[LENTIL FILTER] node is not named correctly: %s (should be:  /c4d_display/Arnold_lentil_imager).", AiNodeGetName(node));
+  //   AiRenderAbort();
+  //   return;
+  // }
+
+  // if progressive rendering is on, don't redistribute
+  if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
+    bokeh->enabled = false;
+    AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
+    AiRenderAbort();
+    return;
+  }
+
+  if (!AiNodeGetBool(cameranode, "enable_dof")) {
+    AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
+    bokeh->enabled = false;
+  }
+  
+  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  bokeh->filter_width = 2.0;
+  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
+
+  bokeh->zbuffer.clear();
+  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
+
+  bokeh->time_start = AiCameraGetShutterStart();
+  bokeh->time_end = AiCameraGetShutterEnd();
+
+
+  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
+    bokeh->enabled = false;
+    AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
+  }
+
+  if (AiNodeGetBool(cameranode, "bidir_debug")) {
+    bokeh->enabled = false;
+    AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
+  }
+
+  // prepare framebuffers for all AOVS
+  bokeh->aov_list_name.clear();
+  bokeh->aov_list_type.clear();
+  bokeh->aov_duplicates.clear();
+  bokeh->crypto_hash_map.clear();
+  bokeh->crypto_total_weight.clear();
+  bokeh->image_data_types.clear();
+  bokeh->image_col_types.clear();
+  bokeh->image_ptr_types.clear();
+  
+
+  AtNode* options = AiUniverseGetOptions();
+  AtArray* outputs = AiNodeGetArray(options, "outputs");
+  for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
+    std::string output_string = AiArrayGetStr(outputs, i).c_str();
+    std::string lentil_str = "lentil_replaced_filter";
+
+    if (output_string.find(lentil_str) != std::string::npos){
+     
+      std::string name = split_str(output_string, std::string(" ")).begin()[0];
+      std::string type = split_str(output_string, std::string(" ")).begin()[1];
+      AtString name_as = AtString(name.c_str());
+
+      bokeh->aov_list_name.push_back(name_as);
+      bokeh->aov_list_type.push_back(string_to_arnold_type(type));
+
+      ++bokeh->aov_duplicates[name_as];
+
+      bokeh->image_data_types[name_as].clear();
+      bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_col_types[name_as].clear();
+      bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
+      bokeh->image_ptr_types[name_as].clear();
+      bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
+
+      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
+    }
+  }
+
+
+  // crypto setup, still hardcoded
+  bokeh->cryptomatte_aov_names.clear();
+  bokeh->crypto_hash_map.clear();
+  bokeh->crypto_total_weight.clear();
+  if (AiNodeGetBool(cameranode, "cryptomatte")) {
+    std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
+    std::vector<std::string> crypto_ranks{"00", "01", "02"};
+    for (const auto& crypto_type: crypto_types) {
+      for (const auto& crypto_rank : crypto_ranks) {
+        std::string name_as_s = crypto_type+crypto_rank;
+        AtString name_as = AtString(name_as_s.c_str());
+
+        bokeh->aov_list_name.push_back(name_as);
+        bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
+        bokeh->crypto_hash_map[name_as].clear();
+        bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
+        bokeh->crypto_total_weight[name_as].clear();
+        bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
+
+        bokeh->cryptomatte_aov_names.push_back(name_as);
+        AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+      }
+    }
+  }
+  
+
+  bokeh->pixel_already_visited.clear();
+  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
+  for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
+  
+  bokeh->current_inv_density = 0.0;
+
+  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed, starting bidirectional sampling.");
+
+  // crypto_crit_sec_leave();
 }
  
 driver_supports_pixel_type 
@@ -81,15 +209,15 @@ driver_process_bucket {
   AiOutputIteratorReset(iterator);
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  // don't run if lentil_replaced_filter node is not present
-  if (bokeh_filter_node == nullptr) {
-    AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
-    return;
-  }
+  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
+  // // don't run if lentil_replaced_filter node is not present
+  // if (bokeh_filter_node == nullptr) {
+  //   AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
+  //   return;
+  // }
 
-  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-
+  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
+  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(node);
   if (!filter_data->enabled) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
     return;
@@ -240,13 +368,14 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
-  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
-  // delete imager_data;
-  crypto_crit_sec_enter();
-  const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
+  // crypto_crit_sec_enter();
+  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
+  // LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
+  // delete bokeh;
+  // crypto_crit_sec_leave();
+
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   delete bokeh;
-  crypto_crit_sec_leave();
 }
 
 
