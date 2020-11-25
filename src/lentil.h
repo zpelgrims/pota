@@ -83,6 +83,7 @@ struct Camera
     float circle_to_square;
     float bokeh_anamorphic;
 
+    bool cryptomatte;
 
     // data TL
     float fov;

@@ -42,5 +42,6 @@ STRINGTABLE aitag_lentil_camera
    
    C4DAIP_LENTIL_CAMERA_VIGNETTING_RETRIES "Vignetting retries";
    C4DAIP_LENTIL_CAMERA_ABB_COMA "Coma abberation";
+   C4DAIP_LENTIL_CAMERA_CRYPTOMATTE "Enable Cryptomatte";
 }
 

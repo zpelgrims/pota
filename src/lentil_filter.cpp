@@ -6,6 +6,45 @@
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
 
+struct InternalFilterData {
+  AtNode *imager_node;
+};
+
+
+
+AtNode* get_lentil_imager() {
+  AtNode* options = AiUniverseGetOptions();
+  AtArray* outputs = AiNodeGetArray(options, "outputs");
+  // for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
+  std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
+  
+  std::string driver = split_str(output_string, std::string(" ")).begin()[3];
+  AtString driver_as = AtString(driver.c_str());
+  AtNode *driver_node = AiNodeLookUpByName(driver_as);
+  AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
+  
+  
+  if (imager_node == nullptr){
+    AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
+    return nullptr;
+  }
+  
+  for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
+    const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
+    if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("lentil_imager")) {
+      return imager_node;
+    } else {
+      imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
+    }
+  }
+
+  AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
+  AiRenderAbort();
+  return nullptr;
+}
+
+
+ 
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
   AtMatrix world_to_camera_matrix_motionblurred;
@@ -60,6 +99,9 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
   return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
 }
 
+
+
+
 node_parameters 
 {
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
@@ -67,110 +109,17 @@ node_parameters
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
-  AiFilterInitialize(node, false, required_aovs);
-  AiNodeSetLocalData(node, new LentilFilterData());
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
+  AiFilterInitialize(node, true, required_aovs);
+  AiNodeSetLocalData(node, new InternalFilterData());
 }
- 
+
+
 node_update 
 {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-  
-  bokeh->enabled = true;
-
-  AtNode *cameranode = AiUniverseGetCamera();
-  // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-    AiRenderAbort();
-    return;
-  }
-
-  // will only work for the node called lentil_replaced_filter
-  if (AtString(AiNodeGetName(node)) != AtString("lentil_replaced_filter")){
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] node is not named correctly: %s (should be: lentil_replaced_filter).", AiNodeGetName(node));
-    AiRenderAbort();
-    return;
-  }
-
-  // if progressive rendering is on, don't redistribute
-  if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
-    AiRenderAbort();
-    return;
-  }
-
-  if (!AiNodeGetBool(cameranode, "enable_dof")) {
-    AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
-    bokeh->enabled = false;
-  }
-  
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->filter_width = 2.0;
-  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
-
-  bokeh->zbuffer.clear();
-  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
-
-  bokeh->time_start = AiCameraGetShutterStart();
-  bokeh->time_end = AiCameraGetShutterEnd();
-
-
-  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
-  }
-
-  if (AiNodeGetBool(cameranode, "bidir_debug")) {
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
-  }
-
-  // prepare framebuffers for all AOVS
-  bokeh->aov_list_name.clear();
-  bokeh->aov_list_type.clear();
-  bokeh->aov_duplicates.clear();
-
-  AtNode* options = AiUniverseGetOptions();
-  AtArray* outputs = AiNodeGetArray(options, "outputs");
-  for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
-    std::string output_string = AiArrayGetStr(outputs, i).c_str();
-    std::string lentil_str = "lentil_replaced_filter";
-
-    if (output_string.find(lentil_str) != std::string::npos){
-     
-      std::string name = split_str(output_string, std::string(" ")).begin()[0];
-      std::string type = split_str(output_string, std::string(" ")).begin()[1];
-
-      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
-
-      bokeh->aov_list_name.push_back(AtString(name.c_str()));
-      bokeh->aov_list_type.push_back(string_to_arnold_type(type));
-
-      ++bokeh->aov_duplicates[AtString(name.c_str())];
-
-      bokeh->image_data_types[AtString(name.c_str())].clear();
-      bokeh->image_data_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_col_types[AtString(name.c_str())].clear();
-      bokeh->image_col_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_ptr_types[AtString(name.c_str())].clear();
-      bokeh->image_ptr_types[AtString(name.c_str())].resize(bokeh->xres * bokeh->yres);
-    }
-  }
-
-  bokeh->pixel_already_visited.clear();
-  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
-  for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
-  
-  bokeh->current_inv_density = 0.0;
-
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed, starting bidirectional sampling.");
-
-  AiFilterUpdate(node, bokeh->filter_width);
+  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+  ifd->imager_node = get_lentil_imager();
+  AiFilterUpdate(node, 2.0);
 }
  
 filter_output_type
@@ -183,8 +132,10 @@ filter_output_type
          return AI_TYPE_RGB;
       case AI_TYPE_VECTOR:
         return AI_TYPE_VECTOR;
+      // case AI_TYPE_FLOAT:
+      //   return AI_TYPE_FLOAT; // ORIG
       case AI_TYPE_FLOAT:
-        return AI_TYPE_FLOAT;
+        return AI_TYPE_RGBA; // CRYPTO TEST
       // case AI_TYPE_INT:
       //   return AI_TYPE_INT;
       // case AI_TYPE_UINT:
@@ -199,7 +150,8 @@ filter_output_type
 
 filter_pixel
 {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
   if (!AiNodeIs(AiUniverseGetCamera(), AtString("lentil_camera"))) {
     bokeh->enabled = false;
@@ -224,9 +176,8 @@ filter_pixel
         goto just_filter;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
-
-    while (AiAOVSampleIteratorGetNext(iterator)) {
-      
+    
+    for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
@@ -237,7 +188,7 @@ filter_pixel
     
       if (inv_density <= 0.f) continue; // does this every happen? test
       if (inv_density > 0.2){
-        continue; // skip when aa samples are below 3
+        goto just_filter; // skip when aa samples are below 3
       }
       
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
@@ -256,7 +207,6 @@ filter_pixel
       if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
       if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
       if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
-      
 
 
       switch (po->cameraType){
@@ -267,22 +217,10 @@ filter_pixel
           AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
           AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
-            case mm:
-            {
-              camera_space_sample_position_static *= 0.1;
-            } break;
-            case cm:
-            { 
-              camera_space_sample_position_static *= 1.0;
-            } break;
-            case dm:
-            {
-              camera_space_sample_position_static *= 10.0;
-            } break;
-            case m:
-            {
-              camera_space_sample_position_static *= 100.0;
-            }
+            case mm: { camera_space_sample_position_static *= 0.1; } break;
+            case cm: { camera_space_sample_position_static *= 1.0; } break;
+            case dm: { camera_space_sample_position_static *= 10.0;} break;
+            case m:  { camera_space_sample_position_static *= 100.0;}
           }
 
           if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
@@ -291,7 +229,7 @@ filter_pixel
           bool transmission_dump_already_happened = false;
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
@@ -320,22 +258,10 @@ filter_pixel
 
             Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
             switch (po->unitModel){
-              case mm:
-              {
-                camera_space_sample_position_mb_eigen *= 0.1;
-              } break;
-              case cm:
-              { 
-                camera_space_sample_position_mb_eigen *= 1.0;
-              } break;
-              case dm:
-              {
-                camera_space_sample_position_mb_eigen *= 10.0;
-              } break;
-              case m:
-              {
-                camera_space_sample_position_mb_eigen *= 100.0;
-              }
+              case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
+              case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
+              case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
+              case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
             }
           
             if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
@@ -378,11 +304,15 @@ filter_pixel
           if (redistribute == false){
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
                                       iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
           }
+
+
+          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
 
 
           unsigned int total_samples_taken = 0;
@@ -399,22 +329,10 @@ filter_pixel
 
               Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
               switch (po->unitModel){
-                case mm:
-                {
-                  camera_space_sample_position_mb_eigen *= 0.1;
-                } break;
-                case cm:
-                { 
-                  camera_space_sample_position_mb_eigen *= 1.0;
-                } break;
-                case dm:
-                {
-                  camera_space_sample_position_mb_eigen *= 10.0;
-                } break;
-                case m:
-                {
-                  camera_space_sample_position_mb_eigen *= 100.0;
-                }
+                case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
+                case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
+                case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
+                case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
               }
 
               if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
@@ -439,9 +357,14 @@ filter_pixel
             unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              if (aov_name_str.find("crypto_") != std::string::npos) {
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+              } else {
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                             transmitted_energy_in_sample, 1, iterator, bokeh);
+              }
             }
           }
         
@@ -453,7 +376,7 @@ filter_pixel
           bool transmission_dump_already_happened = false;
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
@@ -477,12 +400,16 @@ filter_pixel
           if (redistribute == false){
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0,
+                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                       iterator, bokeh);
             }
             if (!transmitted_energy_in_sample) continue;
           }
-        
+
+
+          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
+          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
+
         
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
@@ -497,23 +424,12 @@ filter_pixel
             AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
             AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             switch (po->unitModel){
-              case mm:
-              {
-                camera_space_sample_position_mb *= 0.1;
-              } break;
-              case cm:
-              { 
-                camera_space_sample_position_mb *= 1.0;
-              } break;
-              case dm:
-              {
-                camera_space_sample_position_mb *= 10.0;
-              } break;
-              case m:
-              {
-                camera_space_sample_position_mb *= 100.0;
-              }
+              case mm: { camera_space_sample_position_mb *= 0.1; } break;
+              case cm: { camera_space_sample_position_mb *= 1.0; } break;
+              case dm: { camera_space_sample_position_mb *= 10.0;} break;
+              case m:  { camera_space_sample_position_mb *= 100.0;}
             }
+            
             float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
@@ -597,16 +513,21 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              if (aov_name_str.find("crypto_") != std::string::npos) {
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+              } else {
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                             transmitted_energy_in_sample, 1, iterator, bokeh);
-            
+              }
             }
           }
 
           break;
         }
       }
+
     }
   } 
   
@@ -668,7 +589,10 @@ filter_pixel
 }
 
  
-node_finish {}
+node_finish {
+   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
+   delete ifd;
+}
 
 
 void registerLentilFilterPO(AtNodeLib* node) {
