@@ -41,11 +41,6 @@ AtNode* get_lentil_imager() {
   AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
   AiRenderAbort();
   return nullptr;
-    // get driver
-    // find if imager is connected
-    // if lentil_imager, stop
-    // else if imager has input, recurse
-  // }
 }
 
 
