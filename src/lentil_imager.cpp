@@ -2,8 +2,6 @@
 #include <algorithm>
 #include "global.h"
 
-// currently this works by searching for a node with specific name "lentil_replaced_filter", not ideal.
-
 #define AI_DRIVER_SCHEDULE_FULL 0x02
 
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
@@ -17,14 +15,6 @@ public:
     }
 };
 
-
-
-// struct LentilImagerData {
-//     AtString camera_node_type;
-//     AtString lentil_thinlens_string;
-//     AtString lentil_po_string;
-//     AtNode *camera_node;
-// };
 
 node_parameters 
 {
@@ -45,8 +35,6 @@ node_update
   AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
   AiRenderSetHintInt(AtString("imager_padding"), 0);
 
-  // crypto_crit_sec_enter();
-
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   
   bokeh->enabled = true;
@@ -59,14 +47,6 @@ node_update
     AiRenderAbort();
     return;
   }
-
-  // // will only work for the node called lentil_replaced_filter
-  // if (AtString(AiNodeGetName(node)) != AtString("/c4d_display/Arnold_lentil_imager")){
-  //   bokeh->enabled = false;
-  //   AiMsgError("[LENTIL FILTER] node is not named correctly: %s (should be:  /c4d_display/Arnold_lentil_imager).", AiNodeGetName(node));
-  //   AiRenderAbort();
-  //   return;
-  // }
 
   // if progressive rendering is on, don't redistribute
   if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
@@ -368,12 +348,6 @@ driver_write_bucket {}
 driver_close {}
  
 node_finish {
-  // crypto_crit_sec_enter();
-  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  // LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
-  // delete bokeh;
-  // crypto_crit_sec_leave();
-
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   delete bokeh;
 }

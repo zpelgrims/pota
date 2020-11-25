@@ -6,10 +6,49 @@
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
  
 
-
 struct InternalFilterData {
   AtNode *imager_node;
 };
+
+
+
+AtNode* get_lentil_imager() {
+  AtNode* options = AiUniverseGetOptions();
+  AtArray* outputs = AiNodeGetArray(options, "outputs");
+  // for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
+  std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
+  
+  std::string driver = split_str(output_string, std::string(" ")).begin()[3];
+  AtString driver_as = AtString(driver.c_str());
+  AtNode *driver_node = AiNodeLookUpByName(driver_as);
+  AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
+  
+  
+  if (imager_node == nullptr){
+    AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
+    return nullptr;
+  }
+  
+  for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
+    const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
+    if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("lentil_imager")) {
+      return imager_node;
+    } else {
+      imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
+    }
+  }
+
+  AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
+  AiRenderAbort();
+  return nullptr;
+    // get driver
+    // find if imager is connected
+    // if lentil_imager, stop
+    // else if imager has input, recurse
+  // }
+}
+
+
  
 // world to camera space transform, motion blurred
 inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
@@ -79,11 +118,12 @@ node_initialize
   AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new InternalFilterData());
 }
- 
+
+
 node_update 
 {
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-  ifd->imager_node = AiNodeLookUpByName("/c4d_display/Arnold_lentil_imager");
+  ifd->imager_node = get_lentil_imager();
   AiFilterUpdate(node, 2.0);
 }
  
@@ -116,7 +156,6 @@ filter_output_type
 filter_pixel
 {
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("/c4d_display/Arnold_lentil_imager");
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
   if (!AiNodeIs(AiUniverseGetCamera(), AtString("lentil_camera"))) {
