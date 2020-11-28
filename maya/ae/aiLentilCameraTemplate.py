@@ -63,7 +63,6 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.beginLayout("Experimental", collapse=True)
         self.addControl("abbComa", label="Aberration (coma)")
         self.endLayout()
-        self.endLayout()
 
         # bidir
         self.beginLayout("Bidirectional")
@@ -84,6 +83,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.beginLayout("Advanced options")
         self.addControl("vignettingRetries", label="Vignetting retries")
         self.addControl("units", label="Units")
+        self.addControl("cryptomatte", label="Enable Cryptomatte")
         self.endLayout()
 
 

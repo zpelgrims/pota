@@ -15,7 +15,6 @@ struct InternalFilterData {
 AtNode* get_lentil_imager() {
   AtNode* options = AiUniverseGetOptions();
   AtArray* outputs = AiNodeGetArray(options, "outputs");
-  // for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
   std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
   
   std::string driver = split_str(output_string, std::string(" ")).begin()[3];

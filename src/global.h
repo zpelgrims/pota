@@ -7,7 +7,8 @@
 struct LentilFilterData {
   unsigned xres;
   unsigned yres;
-  int framenumber;
+  int region_min_x;
+  int region_min_y;
   int samples;
   bool enabled;
   float current_inv_density;
@@ -22,11 +23,9 @@ struct LentilFilterData {
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
   std::vector<bool> pixel_already_visited;
-  AtString rgba_string;
 
   std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
   std::map<AtString, std::vector<float>> crypto_total_weight;
-
   std::vector<AtString> cryptomatte_aov_names;
 
   const AtString atstring_rgba = AtString("RGBA");

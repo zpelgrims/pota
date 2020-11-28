@@ -60,11 +60,15 @@ node_update
     AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
   }
+
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  // bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "region_max_x") - AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
+  // bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "region_max_y") - AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
+  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
+  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
   bokeh->filter_width = 2.0;
-  bokeh->framenumber = static_cast<int>(AiNodeGetFlt(AiUniverseGetOptions(), "frame"));
 
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
