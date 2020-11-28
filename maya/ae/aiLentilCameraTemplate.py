@@ -63,6 +63,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.beginLayout("Experimental", collapse=True)
         self.addControl("abbComa", label="Aberration (coma)")
         self.endLayout()
+        self.endLayout()
 
         # bidir
         self.beginLayout("Bidirectional")
