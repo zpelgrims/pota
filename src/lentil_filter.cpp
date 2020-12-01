@@ -295,7 +295,7 @@ filter_pixel
           if (bbox_area < 20.0) redistribute = false; //might have to increase this?
           int samples = std::floor(bbox_area * std::pow(po->bidir_sample_mult,2) * 0.001);
           samples = std::ceil((double)(samples) * inv_density);
-          samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
+          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
           float inv_samples = 1.0 / static_cast<double>(samples);
 
 
@@ -391,7 +391,7 @@ filter_pixel
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
           if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
           int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
-          samples = std::clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
           float inv_samples = 1.0/static_cast<double>(samples);
 
 
