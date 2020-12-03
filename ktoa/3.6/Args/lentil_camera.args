@@ -117,7 +117,7 @@
 </page>
 <page name="Bidirectional" open="True"> 
 	<param int="1" name="bidir_sample_mult" label="Samples" slider="True" slidermin="0.0" min="0" slidercenter = "20" slidermax="1000"  max="1000"/>
-	<param name="bidir_min_luminance" label="Minimum Luminance Treshold" slider="True" slidermin="0.0" min="0.0" slidercenter = "1.0" slidermax="10000.0"  max="10000.0"/>
+	<param name="bidir_min_luminance" label="Minimum Luminance Threshold" slider="True" slidermin="0.0" min="0.0" slidercenter = "1.0" slidermax="10000.0"  max="10000.0"/>
 	<param name="bidir_add_luminance" label="Additional Luminance" slider="True"/>	
 	<param name="bidir_add_luminance_transition" label="Add Luminance transition width" slider="True"/>
 	<param widget="checkBox" name="bidir_debug" label="Debug"/>	
