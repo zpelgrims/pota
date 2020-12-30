@@ -127,11 +127,25 @@ node_update
   }
 
 
+  // check if a cryptomatte aovshader is present
+  bool cryptomatte_automatic_detection = false;
+  AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
+  for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
+    AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
+    if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
+      cryptomatte_automatic_detection = true;
+    }
+  }
+  
+  if (AiNodeGetBool(cameranode, "cryptomatte") && cryptomatte_automatic_detection == false) {
+    AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, therefore disabling cryptomatte altogether.");
+  }
+
   // crypto setup, still hardcoded
   bokeh->cryptomatte_aov_names.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
-  if (AiNodeGetBool(cameranode, "cryptomatte")) {
+  if (AiNodeGetBool(cameranode, "cryptomatte") && cryptomatte_automatic_detection == true) {
     std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
     std::vector<std::string> crypto_ranks{"00", "01", "02"};
     for (const auto& crypto_type: crypto_types) {
@@ -190,6 +204,7 @@ driver_prepare_bucket {} // called before a bucket is rendered
 
  
 driver_process_bucket {
+ 
   AiOutputIteratorReset(iterator);
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
@@ -212,6 +227,7 @@ driver_process_bucket {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3");
     return;
   }
+
 
 
   const AtString crypto_material00 = AtString("crypto_material00");

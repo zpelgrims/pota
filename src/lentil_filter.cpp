@@ -175,7 +175,7 @@ filter_pixel
         goto just_filter;
     } else bokeh->pixel_already_visited[linear_pixel] = true;
 
-    
+
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
 
@@ -201,12 +201,21 @@ filter_pixel
         sample.b -= sample_transmission.b;
       }
 
-      const float sample_luminance = sample.r*0.21 + sample.g*0.71 + sample.b*0.072;
-      if (sample_luminance < po->bidir_min_luminance) redistribute = false;
-      if (depth == AI_INFINITE) redistribute = false; // not sure if this works.. Z AOV has inf values at skydome hits
-      if (AiV3IsSmall(sample_pos_ws)) redistribute = false; // not sure if this works .. position is 0,0,0 at skydome hits
-      if (AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) redistribute = false;
+      const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
+      if (depth == AI_INFINITE ||  AiV3IsSmall(sample_pos_ws) || 
+          sample_luminance < po->bidir_min_luminance || AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) {
+        redistribute = false;
+      }
 
+      // cryptomatte cache
+      std::map<AtString, std::map<float, float>> crypto_cache;
+      if (po->cryptomatte) cryptomatte_construct_cache(crypto_cache, bokeh->cryptomatte_aov_names, iterator, sampleid, bokeh);
+
+
+      // additional luminance with soft transition
+      float fitted_bidir_add_luminance = 0.0;
+      if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
+    
 
       switch (po->cameraType){
         case PolynomialOptics:
@@ -229,74 +238,18 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh);
+                                    iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
           
           
-          
-          // additional luminance with soft transition
-          float fitted_bidir_add_luminance = 0.0;
-          if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-
-          Eigen::Vector2d sensor_position(0, 0);
-
-
-          // PROBE RAYS samples to determine size of bokeh & subsequent sample count
-          AtVector2 bbox_min (0, 0);
-          AtVector2 bbox_max (0, 0);
-          int proberays_total_samples = 0;
-          int proberays_base_rays = 32;
-          int proberays_max_rays = proberays_base_rays * 2;
-          std::vector<AtVector2> pixelcache;
-
-          for(int count=0; count<proberays_base_rays; count++) {
-            ++proberays_total_samples;
-            if (proberays_total_samples >= proberays_max_rays) continue;
-
-            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end); //could check if motionblur is enabled
-            switch (po->unitModel){
-              case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
-              case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
-              case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
-              case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
-            }
-          
-            if(!trace_backwards(-camera_space_sample_position_mb_eigen * 10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, proberays_total_samples)) {
-              --count;
-              continue;
-            }
-
-            const Eigen::Vector2d pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
-
-            //figure out why sometimes pixel is nan, can't just skip it
-            if ((pixel(0) > xres) || (pixel(0) < 0) || (pixel(1) > yres) || (pixel(1) < 0) || 
-                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-            {
-              --count;
-              continue;
-            }
-
-            // expand bbox
-            if (count == 0) {
-              bbox_min = {(float)pixel(0), (float)pixel(1)};
-              bbox_max = {(float)pixel(0), (float)pixel(1)};
-            } else {
-              bbox_min = {std::min(bbox_min.x, (float)pixel(0)), std::min(bbox_min.y, (float)pixel(1))};
-              bbox_max = {std::max(bbox_max.x, (float)pixel(0)), std::max(bbox_max.y, (float)pixel(1))};
-            }
-
-            pixelcache.push_back(AtVector2(pixel(0), pixel(1))); // store for re-use later
-          }
-
-
-          double bbox_area = (bbox_max.x - bbox_min.x) * (bbox_max.y - bbox_min.y);
-          if (bbox_area < 20.0) redistribute = false; //might have to increase this?
-          int samples = std::floor(bbox_area * std::pow(po->bidir_sample_mult,2) * 0.001);
-          samples = std::ceil((double)(samples) * inv_density);
-          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit.. 75 seems high but is needed to remove stochastic noise
-          float inv_samples = 1.0 / static_cast<double>(samples);
+          float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
+          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
+          if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
+          int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+          float inv_samples = 1.0/static_cast<double>(samples);
 
 
           // early out, after coc
@@ -304,14 +257,10 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
-                                      iterator, bokeh);
+                                      iterator, bokeh, crypto_cache);
             }
             if (!transmitted_energy_in_sample) continue;
           }
-
-
-          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
-          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
 
 
           unsigned int total_samples_taken = 0;
@@ -321,33 +270,29 @@ filter_pixel
           for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
             Eigen::Vector2d pixel;
+            Eigen::Vector2d sensor_position(0, 0);
             
-            if (count < pixelcache.size()){ // redist already taken samples from probe rays
-              pixel(0) = pixelcache[count].x; pixel(1) = pixelcache[count].y;
-            } else {
+            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
+            switch (po->unitModel){
+              case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
+              case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
+              case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
+              case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
+            }
 
-              Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
-              switch (po->unitModel){
-                case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
-                case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
-                case dm: { camera_space_sample_position_mb_eigen *= 10.0;} break;
-                case m:  { camera_space_sample_position_mb_eigen *= 100.0;}
-              }
+            if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
+              --count;
+              continue;
+            }
 
-              if(!trace_backwards(-camera_space_sample_position_mb_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
-                --count;
-                continue;
-              }
+            pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
 
-              pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
-
-              // if outside of image
-              if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
-                  (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-              {
-                --count; // much room for improvement here, potentially many samples are wasted outside of frame
-                continue;
-              }
+            // if outside of image
+            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+            {
+              --count; // much room for improvement here, potentially many samples are wasted outside of frame
+              continue;
             }
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
@@ -358,7 +303,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
@@ -376,17 +321,12 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh);
+                                    iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
             else transmission_dump_already_happened = true;
           }
           
           
-          // additional luminance with soft transition
-          float fitted_bidir_add_luminance = 0.0;
-          if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-          
-
           float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
           const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
           if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
@@ -400,16 +340,11 @@ filter_pixel
             if (!transmission_dump_already_happened){
               filter_and_add_to_buffer(px, py, filter_width_half, 
                                       1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                      iterator, bokeh);
+                                      iterator, bokeh, crypto_cache);
             }
             if (!transmitted_energy_in_sample) continue;
           }
 
-
-          // cryptomatte requires to loop through the depth samples, which involves resetting the sample iterator. Caching this for re-use.
-          std::map<AtString, std::map<float, float>> cryptomatte_cache_redistribution = cryptomatte_construct_cache(bokeh->cryptomatte_aov_names, (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples, iterator, sampleid);
-
-        
           unsigned int total_samples_taken = 0;
           unsigned int max_total_samples = samples*5;
 
@@ -514,7 +449,7 @@ filter_pixel
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, cryptomatte_cache_redistribution[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
                             inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
@@ -541,8 +476,10 @@ filter_pixel
         while (AiAOVSampleIteratorGetNext(iterator))
         {
           AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-          const float sample_luminance = sample_energy.r*0.21 + sample_energy.g*0.71 + sample_energy.b*0.072;
-          if (sample_luminance > po->bidir_min_luminance) {
+          AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
+          float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z);
+          const float sample_luminance = (sample_energy.r + sample_energy.g + sample_energy.b)/3.0;
+          if (sample_luminance > po->bidir_min_luminance || depth != AI_INFINITE ||  !AiV3IsSmall(sample_pos_ws)) {
               value_out = AtRGBA(1.0, 1.0, 1.0, 1.0);
           }
         }

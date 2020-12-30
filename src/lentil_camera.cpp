@@ -32,7 +32,7 @@ node_parameters {
   AiParameterFlt("extra_sensor_shift", 0.0);
 
   // tl specifics
-  AiParameterFlt("focal_length", 35.0); // in mm
+  AiParameterFlt("focal_length_lentil", 35.0); // in mm
   AiParameterFlt("optical_vignetting_distance", 0.0);
   AiParameterFlt("optical_vignetting_radius", 2.0);
   AiParameterFlt("abb_spherical", 0.5);
@@ -99,7 +99,7 @@ node_update {
   po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shift");
 
   // tl specific params
-  po->focal_length = clamp_min(AiNodeGetFlt(node, "focal_length"), 0.01);
+  po->focal_length = clamp_min(AiNodeGetFlt(node, "focal_length_lentil"), 0.01);
   po->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distance");
   po->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radius");
   po->abb_spherical = AiNodeGetFlt(node, "abb_spherical");

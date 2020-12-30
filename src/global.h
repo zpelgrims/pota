@@ -32,7 +32,9 @@ struct LentilFilterData {
   const AtString atstring_p = AtString("P");
   const AtString atstring_z = AtString("Z");
   const AtString atstring_transmission = AtString("transmission");
+  const AtString atstring_opacity = AtString("opacity");
   const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
+
 }; extern struct LentilFilterData bokeh;
 
 
@@ -357,50 +359,48 @@ inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
 
 
 // get all depth samples so i can re-use them
-inline std::map<AtString, std::map<float, float>> cryptomatte_construct_cache(std::vector<AtString> &cryptomatte_aov_names, float sample_weight,
-                                                                             struct AtAOVSampleIterator* sample_iterator, const int sampleid) {
-  std::map<AtString, std::map<float, float>> crypto_hashmap;
-  
+inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
+                                        std::vector<AtString> &cryptomatte_aov_names,
+                                        struct AtAOVSampleIterator* sample_iterator, 
+                                        const int sampleid, LentilFilterData *filter_data) {
 
   for (auto &aov : cryptomatte_aov_names) {
 
     float iterative_transparency_weight = 1.0f;
-    float quota = sample_weight;
+    float quota = 1.0;
     float sample_value = 0.0f;
 
     while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
-        const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, AtString("opacity")));
+        const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, filter_data->atstring_opacity));
         sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov);
-        const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight * sample_weight;
+        const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight;
 
         // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
         iterative_transparency_weight *= (1.0f - sub_sample_opacity);
 
         quota -= sub_sample_weight;
 
-        // filter_data->crypto_hash_map[aov_name][px][sample_value] += sub_sample_weight; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
-        crypto_hashmap[aov][sample_value] += sub_sample_weight;
+        crypto_hashmap_cache[aov][sample_value] += sub_sample_weight;
     }
 
-    if (quota > 0.0) {
-        // the remaining values gets allocated to the last sample
-        // filter_data->crypto_hash_map[aov_name][px][sample_value] += quota; // write_to_samples_map(&vals, sample_value, quota);
-        crypto_hashmap[aov][sample_value] += quota;
+    if (quota > 0.0) { // the remaining values gets allocated to the last sample
+        crypto_hashmap_cache[aov][sample_value] += quota;
     }
 
+    // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
+    // still need to use the iterator afterwards, so need to do a reset to the current sample
     reset_iterator_to_id(sample_iterator, sampleid);
   }
-
-  return crypto_hashmap;
 }
 
 
 inline void add_to_buffer_cryptomatte(int px, LentilFilterData *filter_data, std::map<float, float> &cryptomatte_cache, const AtString aov_name, const float sample_weight) {
   filter_data->crypto_total_weight[aov_name][px] += sample_weight;
   for (auto const& sample : cryptomatte_cache) {
-    filter_data->crypto_hash_map[aov_name][px][sample.first] += sample.second; //filter_data->crypto_hash_map[aov_name][px][sample_value] += cryptomatte_cache[aov_name]; // write_to_samples_map(&vals, sample_value, sub_sample_weight);
+    filter_data->crypto_hash_map[aov_name][px][sample.first] += sample.second * sample_weight;
   }
 }
+
 
 inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
@@ -491,7 +491,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                      float inv_samples, float inv_density, float depth, 
                                      bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
-                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data){
+                                     struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data,
+                                     std::map<AtString, std::map<float, float>> &cryptomatte_cache){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -510,13 +511,12 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
 
-        std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(filter_data->cryptomatte_aov_names, filter_weight * inv_samples * inv_filter_samples * inv_density, iterator, sampleid);
-
+        // std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(filter_data->cryptomatte_aov_names, 1.0, iterator, sampleid);
 
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           std::string aov_name_str = filter_data->aov_list_name[i].c_str();
           if (aov_name_str.find("crypto_") != std::string::npos) {
-            add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache_no_redistribution[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
+            add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
           } else {
             add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
                           inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,

@@ -53,7 +53,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
 
         # tl specific
         self.beginLayout("Thin Lens", collapse=False)
-        self.addControl("focalLength", label="Focal Length (mm)")
+        self.addControl("focalLengthLentil", label="Focal Length (mm)")
         self.addControl("opticalVignettingDistance", label="Optical Vignetting Distance")
         self.addControl("opticalVignettingRadius", label="Optical Vignetting Radius")
         self.addControl("abbSpherical", label="Aberration (spherical)")
