@@ -38,8 +38,8 @@ node_update
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   
   bokeh->enabled = true;
-
   AtNode *cameranode = AiUniverseGetCamera();
+
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
     bokeh->enabled = false;
@@ -61,22 +61,6 @@ node_update
     bokeh->enabled = false;
   }
 
-  
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  // bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "region_max_x") - AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
-  // bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "region_max_y") - AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
-  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
-  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
-  bokeh->filter_width = 2.0;
-
-  bokeh->zbuffer.clear();
-  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
-
-  bokeh->time_start = AiCameraGetShutterStart();
-  bokeh->time_end = AiCameraGetShutterEnd();
-
-
   if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
@@ -86,6 +70,20 @@ node_update
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
   }
+
+  
+  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
+  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
+  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
+  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
+  bokeh->filter_width = 2.0;
+  bokeh->time_start = AiCameraGetShutterStart();
+  bokeh->time_end = AiCameraGetShutterEnd();
+
+  bokeh->zbuffer.clear();
+  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
+
+
 
   // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
@@ -168,8 +166,11 @@ node_update
   
 
   bokeh->pixel_already_visited.clear();
-  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres);
-  for (size_t i=0;i<bokeh->pixel_already_visited.size(); ++i) bokeh->pixel_already_visited[i] = false; // not sure if i have to
+  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres); // n amount of unique_ptrs, they point to nothing
+  // init the vector with unique_ptrs that actually point to atomics
+  for (auto& p : bokeh->pixel_already_visited) {
+      p = std::make_unique<std::atomic<bool>>(false);   // init atomic bools to false
+  }
   
   bokeh->current_inv_density = 0.0;
 

@@ -169,11 +169,11 @@ filter_pixel
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
 
-    // hack to try avoid running over same pixel twice
+    // hack to try avoid running over same pixel twice, using a pointer to an atomic
     int linear_pixel = px + (py * (double)bokeh->xres);
-    if (bokeh->pixel_already_visited[linear_pixel]) {
+    if (*bokeh->pixel_already_visited[linear_pixel]) {
         goto just_filter;
-    } else bokeh->pixel_already_visited[linear_pixel] = true;
+    } else *bokeh->pixel_already_visited[linear_pixel] = true;
 
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
@@ -215,7 +215,17 @@ filter_pixel
       // additional luminance with soft transition
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-    
+      
+      float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
+      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
+      if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
+      int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+      samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+      float inv_samples = 1.0/static_cast<double>(samples);
+
+
+      unsigned int total_samples_taken = 0;
+      unsigned int max_total_samples = samples*5;
 
       switch (po->cameraType){
         case PolynomialOptics:
@@ -233,38 +243,13 @@ filter_pixel
 
           if (std::abs(camera_space_sample_position_static.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
-          // early out, before coc
-          bool transmission_dump_already_happened = false;
+          // early out
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
-            else transmission_dump_already_happened = true;
           }
-          
-          
-          float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
-          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
-          if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
-          int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
-          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
-          float inv_samples = 1.0/static_cast<double>(samples);
-
-
-          // early out, after coc
-          if (redistribute == false){
-            if (!transmission_dump_already_happened){
-              filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid, 
-                                      iterator, bokeh, crypto_cache);
-            }
-            if (!transmitted_energy_in_sample) continue;
-          }
-
-
-          unsigned int total_samples_taken = 0;
-          unsigned int max_total_samples = samples*5;
             
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
@@ -317,36 +302,13 @@ filter_pixel
         case ThinLens:
         {
           // early out, before coc
-          bool transmission_dump_already_happened = false;
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
-            else transmission_dump_already_happened = true;
           }
           
-          
-          float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
-          const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
-          if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
-          int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
-          samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
-          float inv_samples = 1.0/static_cast<double>(samples);
-
-
-          // early out, after coc
-          if (redistribute == false){
-            if (!transmission_dump_already_happened){
-              filter_and_add_to_buffer(px, py, filter_width_half, 
-                                      1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                      iterator, bokeh, crypto_cache);
-            }
-            if (!transmitted_energy_in_sample) continue;
-          }
-
-          unsigned int total_samples_taken = 0;
-          unsigned int max_total_samples = samples*5;
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             

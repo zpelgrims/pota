@@ -2,6 +2,8 @@
 
 #include <map>
 #include <vector>
+#include <atomic>
+#include <memory>
 
 
 struct LentilFilterData {
@@ -22,7 +24,7 @@ struct LentilFilterData {
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
-  std::vector<bool> pixel_already_visited;
+  std::vector<std::unique_ptr<std::atomic<bool>>> pixel_already_visited; // not possible to have vector of atomics, so wrapping in a unique_ptr
 
   std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
   std::map<AtString, std::vector<float>> crypto_total_weight;
