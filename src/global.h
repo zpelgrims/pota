@@ -35,7 +35,7 @@ struct LentilFilterData {
   const AtString atstring_z = AtString("Z");
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_opacity = AtString("opacity");
-  const AtString atstring_lentil_bidir_ignore = AtString("lentil_bidir_ignore");
+  const AtString atstring_lentil_ignore = AtString("lentil_ignore");
 
 }; extern struct LentilFilterData bokeh;
 

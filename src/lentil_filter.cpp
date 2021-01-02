@@ -108,7 +108,7 @@ node_parameters
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "RGBA lentil_bidir_ignore", NULL};
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new InternalFilterData());
 }
@@ -203,7 +203,7 @@ filter_pixel
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
       if (depth == AI_INFINITE ||  AiV3IsSmall(sample_pos_ws) || 
-          sample_luminance < po->bidir_min_luminance || AiAOVSampleIteratorHasAOVValue(iterator, bokeh->atstring_lentil_bidir_ignore, AI_TYPE_RGBA)) {
+          sample_luminance < po->bidir_min_luminance || AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
       }
 
