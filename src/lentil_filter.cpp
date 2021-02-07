@@ -170,10 +170,13 @@ filter_pixel
     AiAOVSampleIteratorGetPixel(iterator, px, py);
 
     // hack to try avoid running over same pixel twice, using a pointer to an atomic
+    // will be able to use AiAOVSampleIteratorGetAOVName() instead soon
     int linear_pixel = px + (py * (double)bokeh->xres);
     if (*bokeh->pixel_already_visited[linear_pixel]) {
         goto just_filter;
     } else *bokeh->pixel_already_visited[linear_pixel] = true;
+    AtString primary_aov_atstring = AiAOVSampleIteratorGetAOVName(iterator);
+    // if (primary_aov_atstring !=)
 
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
