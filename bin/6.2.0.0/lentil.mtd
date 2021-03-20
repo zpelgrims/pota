@@ -316,8 +316,8 @@
         maya.hide               BOOL     TRUE
 
 
-[node lentil_imager]
-    maya.name               STRING "lentil_imager"
+[node imager_lentil]
+    maya.name               STRING "imager_lentil"
     maya.classification     STRING  "imager"
     maya.attr_prefix        STRING ""
     maya.output_name        STRING  "out"

@@ -30,7 +30,7 @@ AtNode* get_lentil_imager() {
   
   for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
     const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
-    if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("lentil_imager")) {
+    if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("imager_lentil")) {
       return imager_node;
     } else {
       imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");

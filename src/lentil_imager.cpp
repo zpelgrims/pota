@@ -378,7 +378,7 @@ node_finish {
  void registerLentilImager(AtNodeLib* node) {
     node->methods = (AtNodeMethods*) LentilImagerMtd;
     node->output_type = AI_TYPE_NONE;
-    node->name = "lentil_imager";
+    node->name = "imager_lentil";
     node->node_type = AI_NODE_DRIVER;
     strcpy(node->version, AI_VERSION);
 }
