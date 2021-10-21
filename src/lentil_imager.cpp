@@ -243,17 +243,16 @@ driver_process_bucket {
 
 
 
-  const char *aov_name_cstr = 0;
+  AtString aov_name;
   int aov_type = 0;
   const void *bucket_data;
 
-  while (AiOutputIteratorGetNext(iterator, &aov_name_cstr, &aov_type, &bucket_data)){
-    AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %d", aov_name_cstr, aov_type);
-    if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), AtString(aov_name_cstr)) != filter_data->aov_list_name.end()){
-      if (AtString(aov_name_cstr) == AtString("transmission")) continue;
-      if (AtString(aov_name_cstr) == AtString("lentil_ignore")) continue;
-      AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name_cstr);
-      const AtString aov_name = AtString(aov_name_cstr);
+  while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
+    AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %d", aov_name.c_str(), aov_type);
+    if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), aov_name) != filter_data->aov_list_name.end()){
+      if (aov_name == AtString("transmission")) continue;
+      if (aov_name == AtString("lentil_ignore")) continue;
+      AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {
@@ -266,7 +265,7 @@ driver_process_bucket {
             case AI_TYPE_RGBA: {
 
 
-              std::string aov_name_string = aov_name_cstr;
+              std::string aov_name_string = aov_name.c_str();
 
               // CRYPTOMATTE
               if (aov_name_string.find("crypto") != std::string::npos) {
