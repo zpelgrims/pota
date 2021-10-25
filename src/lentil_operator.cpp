@@ -31,10 +31,11 @@ operator_init
     LentilOperatorData* operator_data = (LentilOperatorData*)AiMalloc(sizeof(LentilOperatorData));
 
 
-    operator_data->camera_node = AiUniverseGetCamera();
+    AtUniverse *uni = AiNodeGetUniverse(op);
+    operator_data->camera_node = AiUniverseGetCamera(uni);
     const AtNodeEntry *nentry = AiNodeGetNodeEntry(operator_data->camera_node);
     operator_data->camera_node_type = AtString(AiNodeEntryGetName(nentry));
-    
+
     operator_data->cook = false;
 
     if (operator_data->camera_node_type == AtString("lentil_camera")){

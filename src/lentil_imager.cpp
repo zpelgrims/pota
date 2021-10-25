@@ -38,7 +38,8 @@ node_update
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   
   bokeh->enabled = true;
-  AtNode *cameranode = AiUniverseGetCamera();
+  AtUniverse *uni = AiNodeGetUniverse(node);
+  AtNode *cameranode = AiUniverseGetCamera(uni);
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
