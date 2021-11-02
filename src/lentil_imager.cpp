@@ -50,7 +50,7 @@ node_update
   }
 
   // if progressive rendering is on, don't redistribute
-  if (AiNodeGetBool(AiUniverseGetOptions(), "enable_progressive_render")) {
+  if (AiNodeGetBool(AiUniverseGetOptions(uni), "enable_progressive_render")) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
     AiRenderAbort();
@@ -73,10 +73,10 @@ node_update
   }
 
   
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(), "yres");
-  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(), "region_min_x");
-  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(), "region_min_y");
+  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(uni), "xres");
+  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(uni), "yres");
+  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(uni), "region_min_x");
+  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(uni), "region_min_y");
   bokeh->filter_width = 2.0;
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
@@ -97,7 +97,7 @@ node_update
   bokeh->image_ptr_types.clear();
   
 
-  AtNode* options = AiUniverseGetOptions();
+  AtNode* options = AiUniverseGetOptions(uni);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
@@ -108,6 +108,8 @@ node_update
       std::string name = split_str(output_string, std::string(" ")).begin()[0];
       std::string type = split_str(output_string, std::string(" ")).begin()[1];
       AtString name_as = AtString(name.c_str());
+
+      AiMsgInfo("output string: %s", output_string.c_str());
 
       bokeh->aov_list_name.push_back(name_as);
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
@@ -121,7 +123,7 @@ node_update
       bokeh->image_ptr_types[name_as].clear();
       bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
 
-      AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name.c_str(), type.c_str());
+      AiMsgInfo("[LENTIL IMAGER] Adding aov %s of type %s", name.c_str(), type.c_str());
     }
   }
 
@@ -160,7 +162,7 @@ node_update
         bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
 
         bokeh->cryptomatte_aov_names.push_back(name_as);
-        AiMsgInfo("[LENTIL FILTER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+        AiMsgInfo("[LENTIL IMAGER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
       }
     }
   }
@@ -175,7 +177,8 @@ node_update
   
   bokeh->current_inv_density = 0.0;
 
-  if (bokeh->enabled) AiMsgInfo("[LENTIL FILTER] Setup completed, starting bidirectional sampling.");
+  if (bokeh->enabled) AiMsgInfo("[LENTIL IMAGER] Setup completed, starting bidirectional sampling.");
+
 
   // crypto_crit_sec_leave();
 }
@@ -226,7 +229,7 @@ driver_process_bucket {
 
   // BUG: this could potentially fail when using adaptive sampling?
   if (filter_data->current_inv_density > 0.2) {
-    AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3");
+    AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3, current inv density: %f", filter_data->current_inv_density);
     return;
   }
 
@@ -249,7 +252,7 @@ driver_process_bucket {
   const void *bucket_data;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
-    AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %d", aov_name.c_str(), aov_type);
+    AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), aov_name) != filter_data->aov_list_name.end()){
       if (aov_name == AtString("transmission")) continue;
       if (aov_name == AtString("lentil_ignore")) continue;

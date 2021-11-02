@@ -8,18 +8,19 @@ AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
 
 struct InternalFilterData {
   AtNode *imager_node;
+  AtString rgba_atstring;
 };
 
 
 
-AtNode* get_lentil_imager() {
-  AtNode* options = AiUniverseGetOptions();
+AtNode* get_lentil_imager(AtUniverse *uni) {
+  AtNode* options = AiUniverseGetOptions(uni);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
-  
+  AiMsgInfo("TEST get lentil imager: %s", output_string.c_str());
   std::string driver = split_str(output_string, std::string(" ")).begin()[3];
   AtString driver_as = AtString(driver.c_str());
-  AtNode *driver_node = AiNodeLookUpByName(driver_as);
+  AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
   AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
   
   
@@ -117,7 +118,10 @@ node_initialize
 node_update 
 {
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-  ifd->imager_node = get_lentil_imager();
+  AiMsgInfo("test in node update");
+  AtUniverse *uni = AiNodeGetUniverse(node);
+  ifd->imager_node = get_lentil_imager(uni);
+  ifd->rgba_atstring = AtString("RGBA");
   AiFilterUpdate(node, 2.0);
 }
  
@@ -152,14 +156,16 @@ filter_pixel
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
-  if (!AiNodeIs(AiUniverseGetCamera(), AtString("lentil_camera"))) {
+  AtUniverse *uni = AiNodeGetUniverse(node);
+
+  if (!AiNodeIs(AiUniverseGetCamera(uni), AtString("lentil_camera"))) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
     AiRenderAbort();
     return;
   }
 
-  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera());
+  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera(uni));
 
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
@@ -176,7 +182,7 @@ filter_pixel
         goto just_filter;
     } else *bokeh->pixel_already_visited[linear_pixel] = true;
     AtString primary_aov_atstring = AiAOVSampleIteratorGetAOVName(iterator);
-    // if (primary_aov_atstring !=)
+    // if (primary_aov_atstring != ifd->rgba_atstring) goto just_filter;
 
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
@@ -184,6 +190,8 @@ filter_pixel
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+// BUG
+AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? happening since 7.0.0.0
       bokeh->current_inv_density = inv_density;
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
@@ -235,7 +243,7 @@ filter_pixel
         { 
           AtMatrix world_to_camera_matrix_static;
           float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-          AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
+          AiWorldToCameraMatrix(AiUniverseGetCamera(uni), time_middle, world_to_camera_matrix_static);
           AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
             case mm: { camera_space_sample_position_static *= 0.1; } break;
@@ -314,13 +322,13 @@ filter_pixel
           
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
-            
+            AiMsgInfo("doing something in filter");
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
 
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
             float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
-            AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+            AiWorldToCameraMatrix(AiUniverseGetCamera(uni), currenttime, world_to_camera_matrix_motionblurred);
             AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             switch (po->unitModel){
               case mm: { camera_space_sample_position_mb *= 0.1; } break;

@@ -57,7 +57,8 @@ operator_cook
         return false;
     }
 
-    AtNode* options = AiUniverseGetOptions();
+    AtUniverse *uni = AiNodeGetUniverse(op);
+    AtNode* options = AiUniverseGetOptions(uni);
     AtArray* outputs = AiNodeGetArray(options, "outputs");
 
     const int elements = AiArrayGetNumElements(outputs);
