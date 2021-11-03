@@ -23,7 +23,9 @@ node_initialize
 }
 
 
-node_update {}
+node_update {
+  AiFilterUpdate(node, 2.0);
+}
  
 filter_output_type
 {
@@ -53,6 +55,9 @@ filter_output_type
 
 filter_pixel
 {
+  int px, py;
+  AiAOVSampleIteratorGetPixel(iterator, px, py);
+  
   for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
     AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
     const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
