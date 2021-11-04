@@ -32,13 +32,15 @@ node_initialize
  
 node_update 
 {
-  AiRenderSetHintInt(AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
-  AiRenderSetHintInt(AtString("imager_padding"), 0);
+  AtUniverse *uni = AiNodeGetUniverse(node);
+  AtRenderSession *render_session = AiUniverseGetRenderSession(uni);
+  AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
+  AiRenderSetHintInt(render_session, AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
+
 
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   
   bokeh->enabled = true;
-  AtUniverse *uni = AiNodeGetUniverse(node);
   AtNode *cameranode = AiUniverseGetCamera(uni);
 
   // disable for non-lentil cameras

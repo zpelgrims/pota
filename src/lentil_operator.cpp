@@ -39,7 +39,7 @@ operator_init
     operator_data->cook = false;
 
     if (operator_data->camera_node_type == AtString("lentil_camera")){
-        operator_data->filter = AiNode("lentil_filter", AtString("lentil_replaced_filter"));
+        operator_data->filter = AiNode(uni, "lentil_filter", AtString("lentil_replaced_filter"));
         operator_data->cook = true;
     }
     
