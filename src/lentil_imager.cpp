@@ -2,8 +2,6 @@
 #include <algorithm>
 #include "global.h"
 
-#define AI_DRIVER_SCHEDULE_FULL 0x02
-
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
 
@@ -33,12 +31,15 @@ node_initialize
 node_update 
 {
   AtUniverse *uni = AiNodeGetUniverse(node);
+
+  // imager setup
   AtRenderSession *render_session = AiUniverseGetRenderSession(uni);
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-  AiRenderSetHintInt(render_session, AtString("imager_schedule"), AI_DRIVER_SCHEDULE_FULL);
+  AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02);
 
 
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+
   
   bokeh->enabled = true;
   AtNode *cameranode = AiUniverseGetCamera(uni);
@@ -110,8 +111,6 @@ node_update
       std::string name = split_str(output_string, std::string(" ")).begin()[0];
       std::string type = split_str(output_string, std::string(" ")).begin()[1];
       AtString name_as = AtString(name.c_str());
-
-      AiMsgInfo("output string: %s", output_string.c_str());
 
       bokeh->aov_list_name.push_back(name_as);
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
@@ -236,7 +235,6 @@ driver_process_bucket {
   }
 
 
-
   const AtString crypto_material00 = AtString("crypto_material00");
   const AtString crypto_material01 = AtString("crypto_material01");
   const AtString crypto_material02 = AtString("crypto_material02");
@@ -320,7 +318,7 @@ driver_process_bucket {
               else {
                 AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
                 if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
-                
+
                 ((AtRGBA*)bucket_data)[in_idx] = image;
               }
               break;
