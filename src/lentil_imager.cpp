@@ -30,18 +30,18 @@ node_initialize
  
 node_update 
 {
-  AtUniverse *uni = AiNodeGetUniverse(node);
-
+  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
+  bokeh->arnold_universe = AiNodeGetUniverse(node);
+ 
   // imager setup
-  AtRenderSession *render_session = AiUniverseGetRenderSession(uni);
+  AtRenderSession *render_session = AiUniverseGetRenderSession(bokeh->arnold_universe);
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
   AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02);
 
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
 
   
   bokeh->enabled = true;
-  AtNode *cameranode = AiUniverseGetCamera(uni);
+  AtNode *cameranode = AiUniverseGetCamera(bokeh->arnold_universe);
 
   // disable for non-lentil cameras
   if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
@@ -52,7 +52,7 @@ node_update
   }
 
   // if progressive rendering is on, don't redistribute
-  if (AiNodeGetBool(AiUniverseGetOptions(uni), "enable_progressive_render")) {
+  if (AiNodeGetBool(AiUniverseGetOptions(bokeh->arnold_universe), "enable_progressive_render")) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
     AiRenderAbort();
@@ -75,10 +75,10 @@ node_update
   }
 
   
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(uni), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(uni), "yres");
-  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(uni), "region_min_x");
-  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(uni), "region_min_y");
+  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
+  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
+  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
+  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
   bokeh->filter_width = 2.0;
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
@@ -99,13 +99,11 @@ node_update
   bokeh->image_ptr_types.clear();
   
 
-  AtNode* options = AiUniverseGetOptions(uni);
+  AtNode* options = AiUniverseGetOptions(bokeh->arnold_universe);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
     std::string lentil_str = "lentil_replaced_filter";
-
-    AiMsgInfo("OUTPUT STRING: %s", output_string.c_str());
 
     if (output_string.find(lentil_str) != std::string::npos){
      

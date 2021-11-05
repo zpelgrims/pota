@@ -37,6 +37,8 @@ struct LentilFilterData {
   const AtString atstring_opacity = AtString("opacity");
   const AtString atstring_lentil_ignore = AtString("lentil_ignore");
 
+  AtUniverse *arnold_universe;
+
 }; extern struct LentilFilterData bokeh;
 
 

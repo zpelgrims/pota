@@ -8,7 +8,6 @@ AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
 
 struct InternalFilterData {
   AtNode *imager_node;
-  AtString rgba_atstring;
 };
 
 
@@ -45,10 +44,10 @@ AtNode* get_lentil_imager(AtUniverse *uni) {
 
  
 // world to camera space transform, motion blurred
-inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end){
+inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end, AtNode *camera){
   AtMatrix world_to_camera_matrix_motionblurred;
   float currenttime = linear_interpolate(xor128() / 4294967296.0, time_start, time_end); // should I create new random sample, or can I re-use another one?
-  AiWorldToCameraMatrix(AiUniverseGetCamera(), currenttime, world_to_camera_matrix_motionblurred);
+  AiWorldToCameraMatrix(camera, currenttime, world_to_camera_matrix_motionblurred);
   const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
   Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
   return camera_space_sample_position_mb_eigen;
@@ -71,7 +70,7 @@ inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, C
   // world to camera space transform, static just for CoC
   AtMatrix world_to_camera_matrix_static;
   float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-  AiWorldToCameraMatrix(AiUniverseGetCamera(), time_middle, world_to_camera_matrix_static);
+  AiWorldToCameraMatrix(AiUniverseGetCamera(bokeh->arnold_universe), time_middle, world_to_camera_matrix_static);
   AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
   
   switch (po->unitModel){
@@ -119,7 +118,6 @@ node_update
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
   AtUniverse *uni = AiNodeGetUniverse(node);
   ifd->imager_node = get_lentil_imager(uni);
-  ifd->rgba_atstring = AtString("RGBA");
   AiFilterUpdate(node, 2.0);
 }
  
@@ -154,16 +152,15 @@ filter_pixel
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
-  AtUniverse *uni = AiNodeGetUniverse(node);
 
-  if (!AiNodeIs(AiUniverseGetCamera(uni), AtString("lentil_camera"))) {
+  if (!AiNodeIs(AiUniverseGetCamera(bokeh->arnold_universe), AtString("lentil_camera"))) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
     AiRenderAbort();
     return;
   }
 
-  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera(uni));
+  Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera(bokeh->arnold_universe));
 
 
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
@@ -172,8 +169,8 @@ filter_pixel
     ++samples_counter;
   }
   bokeh->current_inv_density = 1.0/(double)samples_counter;
-  if (bokeh->current_inv_density > 0.2){
-    goto just_filter; // skip when aa samples are below 3
+  if (bokeh->current_inv_density > 0.12){
+    goto just_filter; // skip when aa samples are below (3 = 0.11)
   }
 
   AiAOVSampleIteratorReset(iterator);
@@ -245,7 +242,7 @@ filter_pixel
         { 
           AtMatrix world_to_camera_matrix_static;
           float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-          AiWorldToCameraMatrix(AiUniverseGetCamera(uni), time_middle, world_to_camera_matrix_static);
+          AiWorldToCameraMatrix(AiUniverseGetCamera(bokeh->arnold_universe), time_middle, world_to_camera_matrix_static);
           AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
             case mm: { camera_space_sample_position_static *= 0.1; } break;
@@ -270,7 +267,7 @@ filter_pixel
             Eigen::Vector2d pixel;
             Eigen::Vector2d sensor_position(0, 0);
             
-            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end);  //could check if motionblur is enabled
+            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end, AiUniverseGetCamera(bokeh->arnold_universe));  //could check if motionblur is enabled
             switch (po->unitModel){
               case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
               case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
@@ -329,7 +326,7 @@ filter_pixel
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
             float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
-            AiWorldToCameraMatrix(AiUniverseGetCamera(uni), currenttime, world_to_camera_matrix_motionblurred);
+            AiWorldToCameraMatrix(AiUniverseGetCamera(bokeh->arnold_universe), currenttime, world_to_camera_matrix_motionblurred);
             AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
             switch (po->unitModel){
               case mm: { camera_space_sample_position_mb *= 0.1; } break;
