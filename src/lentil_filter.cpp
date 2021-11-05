@@ -152,8 +152,6 @@ filter_pixel
   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
 
-  
-
   if (!AiNodeIs(bokeh->camera, AtString("lentil_camera"))) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
@@ -169,12 +167,16 @@ filter_pixel
   while (AiAOVSampleIteratorGetNext(iterator)){
     ++samples_counter;
   }
-  bokeh->current_inv_density = 1.0/(double)samples_counter;
-  if (bokeh->current_inv_density > 0.12){
-    goto just_filter; // skip when aa samples are below (3 = 0.11)
+  float AA_samples = std::sqrt(samples_counter) / 2.0;
+  bokeh->current_inv_density = 1.0/(AA_samples*AA_samples);
+  // AiMsgInfo("current inv density: %d", samples_counter);
+  if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "AA_samples")){
+    bokeh->enabled = false; // skip when aa samples are below final AA samples
   }
 
   AiAOVSampleIteratorReset(iterator);
+
+  AtString primary_aov_atstring = AiAOVSampleIteratorGetAOVName(iterator);
 
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
@@ -184,18 +186,10 @@ filter_pixel
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
 
-    // hack to try avoid running over same pixel twice, using a pointer to an atomic
-    // will be able to use AiAOVSampleIteratorGetAOVName() instead soon
-    int linear_pixel = px + (py * (double)bokeh->xres);
-    if (*bokeh->pixel_already_visited[linear_pixel]) {
-        goto just_filter;
-    } else *bokeh->pixel_already_visited[linear_pixel] = true;
-    AtString primary_aov_atstring = AiAOVSampleIteratorGetAOVName(iterator);
-    // if (primary_aov_atstring != ifd->rgba_atstring) goto just_filter;
-
-
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
+
+      if (primary_aov_atstring != bokeh->atstring_rgba) redistribute = false;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);

@@ -167,12 +167,12 @@ node_update
   }
   
 
-  bokeh->pixel_already_visited.clear();
-  bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres); // n amount of unique_ptrs, they point to nothing
-  // init the vector with unique_ptrs that actually point to atomics
-  for (auto& p : bokeh->pixel_already_visited) {
-      p = std::make_unique<std::atomic<bool>>(false);   // init atomic bools to false
-  }
+  // bokeh->pixel_already_visited.clear();
+  // bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres); // n amount of unique_ptrs, they point to nothing
+  // // init the vector with unique_ptrs that actually point to atomics
+  // for (auto& p : bokeh->pixel_already_visited) {
+  //     p = std::make_unique<std::atomic<bool>>(false);   // init atomic bools to false
+  // }
   
   bokeh->current_inv_density = 0.0;
 
