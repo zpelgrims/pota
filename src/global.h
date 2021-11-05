@@ -38,6 +38,7 @@ struct LentilFilterData {
   const AtString atstring_lentil_ignore = AtString("lentil_ignore");
 
   AtUniverse *arnold_universe;
+  AtNode *camera;
 
 }; extern struct LentilFilterData bokeh;
 

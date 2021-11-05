@@ -32,19 +32,18 @@ node_update
 {
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
   bokeh->arnold_universe = AiNodeGetUniverse(node);
- 
+  bokeh->camera = AiUniverseGetCamera(bokeh->arnold_universe);
+  bokeh->enabled = true;
+
+
   // imager setup
   AtRenderSession *render_session = AiUniverseGetRenderSession(bokeh->arnold_universe);
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
   AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02);
 
 
-  
-  bokeh->enabled = true;
-  AtNode *cameranode = AiUniverseGetCamera(bokeh->arnold_universe);
-
   // disable for non-lentil cameras
-  if (!AiNodeIs(cameranode, AtString("lentil_camera"))) {
+  if (!AiNodeIs(bokeh->camera, AtString("lentil_camera"))) {
     bokeh->enabled = false;
     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
     AiRenderAbort();
@@ -59,17 +58,17 @@ node_update
     return;
   }
 
-  if (!AiNodeGetBool(cameranode, "enable_dof")) {
+  if (!AiNodeGetBool(bokeh->camera, "enable_dof")) {
     AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
     bokeh->enabled = false;
   }
 
-  if (AiNodeGetInt(cameranode, "bidir_sample_mult") == 0){
+  if (AiNodeGetInt(bokeh->camera, "bidir_sample_mult") == 0){
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
   }
 
-  if (AiNodeGetBool(cameranode, "bidir_debug")) {
+  if (AiNodeGetBool(bokeh->camera, "bidir_debug")) {
     bokeh->enabled = false;
     AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
   }
@@ -138,7 +137,7 @@ node_update
     }
   }
   
-  if (AiNodeGetBool(cameranode, "cryptomatte") && cryptomatte_automatic_detection == false) {
+  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_automatic_detection == false) {
     AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, therefore disabling cryptomatte altogether.");
   }
 
@@ -146,7 +145,7 @@ node_update
   bokeh->cryptomatte_aov_names.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
-  if (AiNodeGetBool(cameranode, "cryptomatte") && cryptomatte_automatic_detection == true) {
+  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_automatic_detection == true) {
     std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
     std::vector<std::string> crypto_ranks{"00", "01", "02"};
     for (const auto& crypto_type: crypto_types) {
