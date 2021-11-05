@@ -165,6 +165,19 @@ filter_pixel
 
   Camera *po = (Camera*)AiNodeGetLocalData(AiUniverseGetCamera(uni));
 
+
+  // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
+  int samples_counter = 0;
+  while (AiAOVSampleIteratorGetNext(iterator)){
+    ++samples_counter;
+  }
+  bokeh->current_inv_density = 1.0/(double)samples_counter;
+  if (bokeh->current_inv_density > 0.2){
+    goto just_filter; // skip when aa samples are below 3
+  }
+
+  AiAOVSampleIteratorReset(iterator);
+
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -187,17 +200,8 @@ filter_pixel
       bool redistribute = true;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-      const float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-// BUG
-AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? happening since 7.0.0.0
-      bokeh->current_inv_density = inv_density;
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
-    
-      if (inv_density <= 0.f) continue; // does this every happen? test
-      if (inv_density > 0.2){
-        goto just_filter; // skip when aa samples are below 3
-      }
       
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
@@ -228,7 +232,7 @@ AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? hap
       float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
-      int samples = std::ceil(coc_squared_pixels * inv_density); // aa_sample independence
+      int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
       samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
       float inv_samples = 1.0/static_cast<double>(samples);
 
@@ -255,7 +259,7 @@ AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? hap
           // early out
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -297,10 +301,10 @@ AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? hap
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                            inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                             transmitted_energy_in_sample, 1, iterator, bokeh);
               }
             }
@@ -313,14 +317,13 @@ AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? hap
           // early out, before coc
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
           }
           
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
-            AiMsgInfo("doing something in filter");
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
 
             // world to camera space transform, motion blurred
@@ -420,10 +423,10 @@ AiMsgInfo("inv_density: %f", inv_density); // why does this always return 1? hap
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
               if (aov_name_str.find("crypto_") != std::string::npos) {
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            inv_samples, inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                            inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                             transmitted_energy_in_sample, 1, iterator, bokeh);
               }
             }

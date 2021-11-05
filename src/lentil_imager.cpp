@@ -37,7 +37,6 @@ node_update
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
   AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02);
 
-
   LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
 
   
@@ -105,6 +104,8 @@ node_update
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
     std::string lentil_str = "lentil_replaced_filter";
+
+    AiMsgInfo("OUTPUT STRING: %s", output_string.c_str());
 
     if (output_string.find(lentil_str) != std::string::npos){
      
