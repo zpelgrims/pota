@@ -97,14 +97,14 @@ inline float filter_weight_gaussian(AtVector2 p, float width) {
   return AiFastExp(2 * -r);
 }
 
-inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const float width, const uint8_t aov_type){
+inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const float width, const uint8_t aov_type, float inv_density){
   float aweight = 0.0f;
   AtRGBA avalue = AI_RGBA_ZERO;
 
   while (AiAOVSampleIteratorGetNext(iterator))
   {
       // take into account adaptive sampling
-      float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+      // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
       if (inv_density <= 0.f) continue;
 
       // determine distance to filter center

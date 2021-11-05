@@ -437,7 +437,7 @@ filter_pixel
     }
   } 
   
-  
+
   // do regular filtering (passthrough) for display purposes
   just_filter:
   AiAOVSampleIteratorReset(iterator);
@@ -452,18 +452,26 @@ filter_pixel
           float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z);
           const float sample_luminance = (sample_energy.r + sample_energy.g + sample_energy.b)/3.0;
           if (sample_luminance > po->bidir_min_luminance || depth != AI_INFINITE ||  !AiV3IsSmall(sample_pos_ws)) {
+              // const AtRGB red = AtRGB(1.0, 0.0, 0.0);
+              // const AtRGB green = AtRGB(0.0, 1.0, 0.0);
+              // const AtRGB heatmap_colors[2] = {red, green};
+              // const float heatmap_positions[2] = {0.0f, 1.0f};
+
+              // AtRGB heatmap = AiColorHeatMap(heatmap_colors, heatmap_positions, 2, sample_luminance);
+              // value_out = AtRGBA(heatmap.r, heatmap.g, heatmap.b, 1.0);
               value_out = AtRGBA(1.0, 1.0, 1.0, 1.0);
+              
           }
         }
       } else {
-        value_out = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+        value_out = filter_gaussian_complete(iterator, bokeh->filter_width, data_type, bokeh->current_inv_density);
       }
 
       *((AtRGBA*)data_out) = value_out;
       break;
     }
     case AI_TYPE_RGB: {
-      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type);
+      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type, bokeh->current_inv_density);
       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtRGB*)data_out) = rgb_energy;
       break;
