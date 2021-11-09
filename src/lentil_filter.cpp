@@ -275,10 +275,10 @@ filter_pixel
               continue;
             }
 
-            pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, xres, yres);
+            pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, bokeh->xres_without_region, bokeh->yres_without_region);
 
             // if outside of image
-            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+            if ((pixel(0) >= xres) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= yres) || (pixel(1) < bokeh->region_min_y) ||
                 (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
             {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame
@@ -288,7 +288,7 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             // write sample to image
-            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel(1)) + floor(pixel(0)));
+            unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
               std::string aov_name_str = bokeh->aov_list_name[i].c_str();
