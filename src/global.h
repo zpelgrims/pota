@@ -9,8 +9,14 @@
 struct LentilFilterData {
   unsigned xres;
   unsigned yres;
+  unsigned xres_without_region;
+  unsigned yres_without_region;
   int region_min_x;
   int region_min_y;
+  int region_max_x;
+  int region_max_y;
+  int shift_x;
+  int shift_y;
   int samples;
   bool enabled;
   float current_inv_density;
@@ -82,6 +88,25 @@ inline void crypto_crit_sec_leave() {
         AiCritSecLeave(&g_critsec);
 }
 
+
+
+inline int coords_to_linear_pixel(const int x, const int y, const int xres) {
+  return x + (y * xres);
+}
+
+inline int coords_to_linear_pixel_region(const int x, const int y, const int xres, const int region_min_x, const int region_min_y) {
+  return (x-region_min_x) + ((y-region_min_y) * xres);
+}
+
+inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
+  x = linear_pixel % xres;
+  y = (int)(linear_pixel / xres);
+}
+
+inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
+  x = (linear_pixel % xres) + region_min_x;
+  y = (int)(linear_pixel / xres) + region_min_y;
+}
 
 
 

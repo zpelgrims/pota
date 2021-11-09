@@ -39,7 +39,7 @@ node_update
   // imager setup
   AtRenderSession *render_session = AiUniverseGetRenderSession(bokeh->arnold_universe);
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-  AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02);
+  // AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
 
 
   // disable for non-lentil cameras
@@ -76,8 +76,17 @@ node_update
   
   bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
   bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
+  bokeh->xres_without_region = bokeh->xres;
+  bokeh->yres_without_region = bokeh->yres;
   bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
   bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
+  bokeh->region_max_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_x");
+  bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
+
+  bokeh->xres = bokeh->region_max_x - bokeh->region_min_x;
+  bokeh->yres = bokeh->region_max_y - bokeh->region_min_y;
+
+
   bokeh->filter_width = 2.0;
   bokeh->time_start = AiCameraGetShutterStart();
   bokeh->time_end = AiCameraGetShutterEnd();
@@ -261,7 +270,8 @@ driver_process_bucket {
           int y = j + bucket_yo;
           int x = i + bucket_xo;
           int in_idx = j * bucket_size_x + i;
-          int linear_pixel = x + (y * (double)filter_data->xres);
+          // int linear_pixel = x + (y * (double)filter_data->xres);
+          int linear_pixel = coords_to_linear_pixel_region(x, y, filter_data->xres, filter_data->region_min_x, filter_data->region_min_y);
 
           switch (aov_type){
             case AI_TYPE_RGBA: {
@@ -316,7 +326,7 @@ driver_process_bucket {
               else {
                 AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
                 if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
-
+                
                 ((AtRGBA*)bucket_data)[in_idx] = image;
               }
               break;

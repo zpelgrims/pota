@@ -169,7 +169,6 @@ filter_pixel
   }
   float AA_samples = std::sqrt(samples_counter) / 2.0;
   bokeh->current_inv_density = 1.0/(AA_samples*AA_samples);
-  // AiMsgInfo("current inv density: %d", samples_counter);
   if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "AA_samples")){
     bokeh->enabled = false; // skip when aa samples are below final AA samples
   }
@@ -181,10 +180,12 @@ filter_pixel
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
-    const double frame_aspect_ratio = xres/yres;
+    const double frame_aspect_ratio = (double)bokeh->xres_without_region/(double)bokeh->yres_without_region;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
+    px -= bokeh->region_min_x;
+    py -= bokeh->region_min_y;
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
@@ -255,7 +256,6 @@ filter_pixel
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
           }
-            
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
@@ -397,18 +397,18 @@ filter_pixel
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * yres;
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres_without_region;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres_without_region;
 
             // if outside of image
-            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
+            if ((pixel_x >= xres) || (pixel_x < bokeh->region_min_x) || (pixel_y >= yres) || (pixel_y < bokeh->region_min_y)) {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
               continue;
             }
 
             // write sample to image
-            unsigned pixelnumber = static_cast<int>(bokeh->xres * floor(pixel_y) + floor(pixel_x));
-            if (!redistribute) pixelnumber = static_cast<int>(bokeh->xres * py + px);
+            unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+            if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
