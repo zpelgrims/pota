@@ -65,12 +65,28 @@ operator_cook
     for (int i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
         
-        std::string type = split_str(output_string, std::string(" ")).begin()[1];
-        if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") continue;
-    
-        std::string filter = split_str(output_string, std::string(" ")).begin()[2];
-        std::string name = split_str(output_string, std::string(" ")).front();
-        
+        // first find which element is the filter (if *filter* in type_name)
+        // then assuming that aov type comes before the filter, and the aov name comes before the type
+        // should avoid cases where the camera name is placed in front of the output string
+        int filter_index = 0;
+        std::vector<std::string> output_string_split = split_str(output_string, std::string(" "));
+        for (int s=0; s<output_string_split.size(); s++) {
+
+            AtString substring_as = AtString(output_string_split[s].c_str());
+            AtNode *substring_node = AiNodeLookUpByName(substring_as);
+            const AtNodeEntry *substring_ne = AiNodeGetNodeEntry(substring_node);
+            std::string substring_ne_name = AiNodeEntryGetNameAtString(substring_ne).c_str();
+
+            if (substring_ne_name.find("filter") != std::string::npos) {
+                filter_index = s;
+            }
+        }
+
+        std::string filter = output_string_split[filter_index];
+        std::string type = output_string_split[filter_index-1];
+        std::string name = output_string_split[filter_index-2];
+
+        if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") continue;        
         if (name.find("crypto") != std::string::npos) continue;
 
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));

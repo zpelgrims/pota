@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 project(lentilArnold)
 
 set(CM_MAJOR_VERSION 1)
-set(CM_MINOR_VERSION 7)
+set(CM_MINOR_VERSION 9)
 set(CM_PATCH_VERSION 0)
 set(CM_VERSION "${CM_MAJOR_VERSION}.${CM_MINOR_VERSION}.${CM_PATCH_VERSION}")
 
@@ -28,7 +28,7 @@ else()
     # Statically link stdc++ to avoid GLILBC version clashes
     set(CMAKE_SHARED_LINKER_FLAGS "-static-libstdc++")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fvisibility=hidden -DNDEBUG")
-    # set(CMAKE_CXX_FLAGS_DEBUG "-fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g")
 endif()
 
 # check if we have a local cmake include file and include it if we do
