@@ -39,7 +39,7 @@ node_update
   // imager setup
   AtRenderSession *render_session = AiUniverseGetRenderSession(bokeh->arnold_universe);
   AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-  // AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
+  AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
 
 
   // disable for non-lentil cameras
@@ -74,15 +74,13 @@ node_update
   }
 
   
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
-  bokeh->xres_without_region = bokeh->xres;
-  bokeh->yres_without_region = bokeh->yres;
+
+  bokeh->xres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
+  bokeh->yres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
   bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
   bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
   bokeh->region_max_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_x");
   bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
-
   bokeh->xres = bokeh->region_max_x - bokeh->region_min_x;
   bokeh->yres = bokeh->region_max_y - bokeh->region_min_y;
 
