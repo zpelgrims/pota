@@ -73,7 +73,10 @@ operator_cook
         for (int s=0; s<output_string_split.size(); s++) {
 
             AtString substring_as = AtString(output_string_split[s].c_str());
-            AtNode *substring_node = AiNodeLookUpByName(substring_as);
+            AtNode *substring_node = AiNodeLookUpByName(uni, substring_as);
+            
+            if (substring_node == nullptr) continue;
+
             const AtNodeEntry *substring_ne = AiNodeGetNodeEntry(substring_node);
             std::string substring_ne_name = AiNodeEntryGetNameAtString(substring_ne).c_str();
 
@@ -81,6 +84,8 @@ operator_cook
                 filter_index = s;
             }
         }
+
+        if (filter_index == 0) AiMsgError("[LENTIL OPERATOR] Can't find a filter to replace in AOV string.");
 
         std::string filter = output_string_split[filter_index];
         std::string type = output_string_split[filter_index-1];
