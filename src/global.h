@@ -45,6 +45,8 @@ struct LentilFilterData {
   AtUniverse *arnold_universe;
   AtNode *camera;
 
+  bool imager_print_once_only;
+
 }; extern struct LentilFilterData bokeh;
 
 
