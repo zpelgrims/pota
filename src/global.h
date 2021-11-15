@@ -25,12 +25,11 @@ struct LentilFilterData {
   float time_end;
   std::map<AtString, std::vector<AtRGBA> > image_data_types;
   std::map<AtString, std::vector<AtRGBA> > image_col_types;
-  std::map<AtString, std::vector<const void *> > image_ptr_types;
+  // std::map<AtString, std::vector<const void *> > image_ptr_types;
   std::map<AtString, unsigned int> aov_duplicates;
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
-  std::vector<std::unique_ptr<std::atomic<bool>>> pixel_already_visited; // not possible to have vector of atomics, so wrapping in a unique_ptr
 
   std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
   std::map<AtString, std::vector<float>> crypto_total_weight;

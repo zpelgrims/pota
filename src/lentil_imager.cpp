@@ -102,7 +102,7 @@ node_update
   bokeh->crypto_total_weight.clear();
   bokeh->image_data_types.clear();
   bokeh->image_col_types.clear();
-  bokeh->image_ptr_types.clear();
+  // bokeh->image_ptr_types.clear();
   
 
   AtNode* options = AiUniverseGetOptions(bokeh->arnold_universe);
@@ -126,8 +126,8 @@ node_update
       bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
       bokeh->image_col_types[name_as].clear();
       bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_ptr_types[name_as].clear();
-      bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
+      // bokeh->image_ptr_types[name_as].clear();
+      // bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
 
       AiMsgInfo("[LENTIL IMAGER] Adding aov %s of type %s", name.c_str(), type.c_str());
     }
@@ -173,18 +173,10 @@ node_update
     }
   }
   
-
-  // bokeh->pixel_already_visited.clear();
-  // bokeh->pixel_already_visited.resize(bokeh->xres*bokeh->yres); // n amount of unique_ptrs, they point to nothing
-  // // init the vector with unique_ptrs that actually point to atomics
-  // for (auto& p : bokeh->pixel_already_visited) {
-  //     p = std::make_unique<std::atomic<bool>>(false);   // init atomic bools to false
-  // }
   
   bokeh->current_inv_density = 0.0;
 
   if (bokeh->enabled) AiMsgInfo("[LENTIL IMAGER] Setup completed, starting bidirectional sampling.");
-
 
   // crypto_crit_sec_leave();
 }
@@ -219,14 +211,6 @@ driver_process_bucket {
   AiOutputIteratorReset(iterator);
   // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
-  // const AtNode *bokeh_filter_node = AiNodeLookUpByName("lentil_replaced_filter");
-  // // don't run if lentil_replaced_filter node is not present
-  // if (bokeh_filter_node == nullptr) {
-  //   AiMsgInfo("[LENTIL IMAGER] Skipping imager, could not find lentil_filter");
-  //   return;
-  // }
-
-  // LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(bokeh_filter_node);
   LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(node);
   if (!filter_data->enabled) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
