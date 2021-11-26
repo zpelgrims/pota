@@ -101,13 +101,13 @@ operator_cook
 
         if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") continue;        
         if (name.find("crypto") != std::string::npos) continue;
-        if (filter == "lentil_replaced_filter") continue;
-
-        output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
-        AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
         
-        AiArraySetStr(outputs, i, AtString(output_string.c_str()));
+        if (filter != "lentil_replaced_filter") {
+            output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));        
+            AiArraySetStr(outputs, i, AtString(output_string.c_str()));
+            AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
 
+        }
 
         // Adds lentil_time aov
         // little mechanism to pick up the first aov to modify, but only add the modified version after iterating over all the aovs

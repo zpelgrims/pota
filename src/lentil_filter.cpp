@@ -192,7 +192,7 @@ filter_pixel
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
-
+      
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
 
