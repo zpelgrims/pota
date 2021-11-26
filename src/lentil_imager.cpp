@@ -258,7 +258,7 @@ driver_process_bucket {
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
     if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), aov_name) != filter_data->aov_list_name.end()){
-      if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore")) continue;
+      if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
       if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] %s writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
