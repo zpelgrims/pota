@@ -107,7 +107,7 @@ node_parameters
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "VECTOR lentil_object_motion_vector", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new InternalFilterData());
 }
@@ -175,7 +175,7 @@ filter_pixel
 
   AiAOVSampleIteratorReset(iterator);
 
-  AtString primary_aov_atstring = AiAOVSampleIteratorGetAOVName(iterator);
+  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) goto just_filter; // early out for non-primary AOV samples
 
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
@@ -190,12 +190,11 @@ filter_pixel
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
 
-      if (primary_aov_atstring != bokeh->atstring_rgba) redistribute = false;
-
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
-      
+      AtVector object_motion_vector = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_motionvector);
+
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
 

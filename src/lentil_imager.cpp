@@ -150,24 +150,24 @@ node_update
 
 
   // check if a cryptomatte aovshader is present
-  bool cryptomatte_automatic_detection = false;
+  bool cryptomatte_auto_detected = false;
   AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
   for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
     AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
     if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
-      cryptomatte_automatic_detection = true;
+      cryptomatte_auto_detected = true;
     }
   }
   
-  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_automatic_detection == false) {
-    AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, therefore disabling cryptomatte altogether.");
+  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_auto_detected == false) {
+    AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
   }
 
   // crypto setup, still hardcoded
   bokeh->cryptomatte_aov_names.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
-  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_automatic_detection == true) {
+  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_auto_detected == true) {
     std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
     std::vector<std::string> crypto_ranks{"00", "01", "02"};
     for (const auto& crypto_type: crypto_types) {
@@ -183,7 +183,7 @@ node_update
         bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
 
         bokeh->cryptomatte_aov_names.push_back(name_as);
-        AiMsgInfo("[LENTIL IMAGER] Adding aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+        AiMsgInfo("[LENTIL IMAGER] Adding CRYPTO aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
       }
     }
   }
@@ -270,7 +270,6 @@ driver_process_bucket {
 
           switch (aov_type){
             case AI_TYPE_RGBA: {
-
 
               std::string aov_name_string = aov_name.c_str();
 

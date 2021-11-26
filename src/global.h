@@ -41,6 +41,7 @@ struct LentilFilterData {
   const AtString atstring_transmission = AtString("transmission");
   const AtString atstring_opacity = AtString("opacity");
   const AtString atstring_lentil_ignore = AtString("lentil_ignore");
+  const AtString atstring_motionvector = AtString("lentil_object_motion_vector");
 
   AtUniverse *arnold_universe;
   AtNode *camera;
