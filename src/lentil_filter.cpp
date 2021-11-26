@@ -44,10 +44,9 @@ AtNode* get_lentil_imager(AtUniverse *uni) {
 
  
 // world to camera space transform, motion blurred
-inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time_start, const float time_end, AtNode *camera){
+inline Eigen::Vector3d world_to_camera_space_motionblur(const AtVector sample_pos_ws, const float time, AtNode *camera){
   AtMatrix world_to_camera_matrix_motionblurred;
-  float currenttime = linear_interpolate(xor128() / 4294967296.0, time_start, time_end); // should I create new random sample, or can I re-use another one?
-  AiWorldToCameraMatrix(camera, currenttime, world_to_camera_matrix_motionblurred);
+  AiWorldToCameraMatrix(camera, time, world_to_camera_matrix_motionblurred);
   const AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
   Eigen::Vector3d camera_space_sample_position_mb_eigen (camera_space_sample_position_mb.x, camera_space_sample_position_mb.y, camera_space_sample_position_mb.z);
   return camera_space_sample_position_mb_eigen;
@@ -66,11 +65,10 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 }
 
 
-inline float thinlens_get_coc(AtVector sample_pos_ws, LentilFilterData *bokeh, Camera *po){
+inline float thinlens_get_coc(AtVector sample_pos_ws, float time, LentilFilterData *bokeh, Camera *po){
   // world to camera space transform, static just for CoC
   AtMatrix world_to_camera_matrix_static;
-  float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-  AiWorldToCameraMatrix(bokeh->camera, time_middle, world_to_camera_matrix_static);
+  AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix_static);
   AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
   
   switch (po->unitModel){
@@ -107,7 +105,7 @@ node_parameters
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "VECTOR lentil_object_motion_vector", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "FLOAT lentil_time", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
   AiNodeSetLocalData(node, new InternalFilterData());
 }
@@ -193,7 +191,7 @@ filter_pixel
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
-      AtVector object_motion_vector = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_motionvector);
+      float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
 
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
@@ -221,7 +219,7 @@ filter_pixel
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
       
-      float circle_of_confusion = thinlens_get_coc(sample_pos_ws, bokeh, po);
+      float circle_of_confusion = thinlens_get_coc(sample_pos_ws, time, bokeh, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
@@ -236,8 +234,7 @@ filter_pixel
         case PolynomialOptics:
         { 
           AtMatrix world_to_camera_matrix_static;
-          float time_middle = linear_interpolate(0.5, bokeh->time_start, bokeh->time_end);
-          AiWorldToCameraMatrix(bokeh->camera, time_middle, world_to_camera_matrix_static);
+          AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix_static);
           AtVector camera_space_sample_position_static = AiM4PointByMatrixMult(world_to_camera_matrix_static, sample_pos_ws); // just for CoC size calculation
           switch (po->unitModel){
             case mm: { camera_space_sample_position_static *= 0.1; } break;
@@ -261,7 +258,7 @@ filter_pixel
             Eigen::Vector2d pixel;
             Eigen::Vector2d sensor_position(0, 0);
             
-            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, bokeh->time_start, bokeh->time_end, bokeh->camera);  //could check if motionblur is enabled
+            Eigen::Vector3d camera_space_sample_position_mb_eigen = world_to_camera_space_motionblur(sample_pos_ws, time, bokeh->camera);  //could check if motionblur is enabled
             switch (po->unitModel){
               case mm: { camera_space_sample_position_mb_eigen *= 0.1; } break;
               case cm: { camera_space_sample_position_mb_eigen *= 1.0; } break;
@@ -319,9 +316,10 @@ filter_pixel
 
             // world to camera space transform, motion blurred
             AtMatrix world_to_camera_matrix_motionblurred;
-            float currenttime = linear_interpolate(rng(seed), bokeh->time_start, bokeh->time_end); // should I create new random sample, or can I re-use another one?
-            AiWorldToCameraMatrix(bokeh->camera, currenttime, world_to_camera_matrix_motionblurred);
+            AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix_motionblurred);
             AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
+
+
             switch (po->unitModel){
               case mm: { camera_space_sample_position_mb *= 0.1; } break;
               case cm: { camera_space_sample_position_mb *= 1.0; } break;

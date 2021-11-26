@@ -16,6 +16,8 @@ struct LentilOperatorData
     AtNode *filter;
     AtNode *camera_node;
     AtString camera_node_type;
+    AtNode *time_write;
+    AtNode *time_read;
     bool cook;
     bool debug;
 };
@@ -40,6 +42,9 @@ operator_init
 
     if (operator_data->camera_node_type == AtString("lentil_camera")){
         operator_data->filter = AiNode(uni, "lentil_filter", AtString("lentil_replaced_filter"));
+        operator_data->time_write = AiNode(uni, "aov_write_float", AtString("lentil_time_write"));
+        operator_data->time_read = AiNode(uni, "state_float", AtString("lentil_time_read"));
+        
         operator_data->cook = true;
     }
     
@@ -60,7 +65,9 @@ operator_cook
     AtUniverse *uni = AiNodeGetUniverse(op);
     AtNode* options = AiUniverseGetOptions(uni);
     AtArray* outputs = AiNodeGetArray(options, "outputs");
-
+    
+    std::string lentil_time_string;
+    
     const int elements = AiArrayGetNumElements(outputs);
     for (int i=0; i<elements; ++i) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
@@ -94,14 +101,44 @@ operator_cook
 
         if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") continue;        
         if (name.find("crypto") != std::string::npos) continue;
+        if (filter == "lentil_replaced_filter") continue;
 
         output_string.replace(output_string.find(filter), filter.length(), AiNodeGetStr(operator_data->filter, "name"));
         AiMsgInfo("[LENTIL OPERATOR] Added lentil_filter automatically to cloned AOV: %s", output_string.c_str());
         
         AiArraySetStr(outputs, i, AtString(output_string.c_str()));
+
+
+        // Adds lentil_time aov
+        // little mechanism to pick up the first aov to modify, but only add the modified version after iterating over all the aovs
+        // this is safer than trying to construct a string myself, because it can come in various formats (camera included, etc)
+        if (i == 0) {
+            lentil_time_string = output_string;
+            lentil_time_string.replace(lentil_time_string.find(name), name.length(), "lentil_time");
+            lentil_time_string.replace(lentil_time_string.find(type), type.length(), "FLOAT");
+        }
+        if (i == elements-1) {
+            AiArrayResize(outputs, AiArrayGetNumElements(outputs)+1, 1);
+            AiArraySetStr(outputs, i+1, AtString(lentil_time_string.c_str()));
+        }
     }
+
+    // set time node params/linking
+    AiNodeSetStr(operator_data->time_read, AtString("variable"), AtString("time"));
+    AiNodeSetStr(operator_data->time_write, AtString("aov_name"), AtString("lentil_time"));
+    AiNodeLink(operator_data->time_read, "aov_input", operator_data->time_write);
+
+    // need to add an entry to the aov_shaders (NODE)
+    AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
+    int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
+    AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
+    AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)operator_data->time_write);
+    AiNodeSetArray(options, "aov_shaders", aov_shaders_array);
     
-    
+
+    // to debug what the operator did
+    // AiASSWrite(uni, "/home/cactus/lentil/pota/tests/ilyas_motion_blur_bug/everything.ass", AI_NODE_ALL, 1, 0); 
+
     return true;
 }
 
