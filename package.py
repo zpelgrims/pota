@@ -18,10 +18,10 @@ def mkdir_p(path):
         else: raise
 
 MAJOR_VERSION = '1'
-MINOR_VERSION = '6'
+MINOR_VERSION = '9'
 PATCH_VERSION = '0'
 CM_VERSION = "%s.%s.%s" % (MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
-ARNOLD_VERSION = '6.2.0.0'
+ARNOLD_VERSION = '7.0.0.0'
 
 subdirs = [] 
 
