@@ -55,7 +55,7 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 }
 
 
-inline float thinlens_get_coc(AtVector camera_space_sample_position, float time, LentilFilterData *bokeh, Camera *po){
+inline float thinlens_get_coc(AtVector camera_space_sample_position, Camera *po){
   const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
   const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
   return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
@@ -138,7 +138,7 @@ filter_pixel
 
   AiAOVSampleIteratorReset(iterator);
 
-  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) bokeh->enabled = false; // early out for non-primary AOV samples
+  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) goto just_filter; // early out for non-primary AOV samples
 
 
   if (bokeh->enabled){
@@ -197,7 +197,7 @@ filter_pixel
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
       
-      float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, 0.0, bokeh, po);
+      float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
@@ -273,12 +273,8 @@ filter_pixel
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
-
-
-            AtVector camera_space_sample_position_mb = camera_space_sample_position;
-
             
-            float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
+            float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
@@ -295,15 +291,15 @@ filter_pixel
 
 
             // ray through center of lens
-            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
-            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
+            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
             // perturb ray direction to simulate coma aberration
             // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
             // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
             float abb_coma = po->abb_coma * abb_coma_multipliers(po->sensor_width, po->focal_length, dir_from_center, unit_disk);
             dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
-            camera_space_sample_position_mb = AiV3Length(camera_space_sample_position_mb) * dir_lens_to_P;
-            dir_from_center = AiV3Normalize(camera_space_sample_position_mb);
+            AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
+            dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
             float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
             AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
@@ -340,7 +336,7 @@ filter_pixel
 
 
             // optical vignetting
-            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_mb - lens);
+            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
             if (po->optical_vignetting_distance > 0.0){
               // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
               if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, po->aperture_radius, po->optical_vignetting_radius, po->optical_vignetting_distance, lerp_squircle_mapping(po->circle_to_square))){
