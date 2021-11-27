@@ -119,6 +119,7 @@ inline std::string replace_first_occurence(std::string& s, const std::string& to
     return s.replace(pos, toReplace.length(), replaceWith);
 }
 
+
 inline float filter_weight_gaussian(AtVector2 p, float width) {
   const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
   if (r > 1.0f) return 0.0;
@@ -560,6 +561,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
     }
   }
 
+
 inline unsigned int string_to_arnold_type(std::string str){
   if (str == "float" || str == "FLOAT" || str == "flt" || str == "FLT") return AI_TYPE_FLOAT;
   else if (str == "rgba" || str == "RGBA") return AI_TYPE_RGBA;
@@ -578,4 +580,39 @@ inline std::string erase_string(std::string str, std::string pattern) {
   }
 
   return str;
+}
+
+
+// using c++17 functionality here to return multiple values
+inline auto find_filter_index_in_aov_string (std::string output_string, AtUniverse *uni) {
+  
+  struct returnValues {
+    int filter_index;
+    std::vector<std::string> output_string_split;
+  };
+
+  // first find which element is the filter (if *filter* in type_name)
+  // then assuming that aov type comes before the filter, and the aov name comes before the type
+  // should avoid cases where the camera name is placed in front of the output string
+  int filter_index = 0;
+  std::vector<std::string> output_string_split = split_str(output_string, std::string(" "));
+  for (int s=0; s<output_string_split.size(); s++) {
+
+    AtString substring_as = AtString(output_string_split[s].c_str());
+    AtNode *substring_node = AiNodeLookUpByName(uni, substring_as);
+    
+    if (substring_node == nullptr) continue;
+
+    const AtNodeEntry *substring_ne = AiNodeGetNodeEntry(substring_node);
+    std::string substring_ne_name = AiNodeEntryGetNameAtString(substring_ne).c_str();
+
+    if (substring_ne_name.find("filter") != std::string::npos) {
+        filter_index = s;
+    }
+  }
+
+  // filter index can never be 0
+  if (filter_index == 0) AiMsgError("[LENTIL OPERATOR] Can't find a filter to replace in AOV string.");
+
+  return returnValues {filter_index, output_string_split};
 }

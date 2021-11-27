@@ -120,18 +120,22 @@ node_update
   // bokeh->image_ptr_types.clear();
   
 
+
+
   AtNode* options = AiUniverseGetOptions(bokeh->arnold_universe);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
     std::string lentil_str = "lentil_replaced_filter";
 
-    if (output_string.find(lentil_str) != std::string::npos){
-     
-      std::string name = split_str(output_string, std::string(" ")).begin()[0];
-      std::string type = split_str(output_string, std::string(" ")).begin()[1];
-      AtString name_as = AtString(name.c_str());
+    auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, bokeh->arnold_universe);
+    std::string filter = output_string_split[filter_index];
+    std::string name = output_string_split[filter_index-2];
+    std::string type = output_string_split[filter_index-1];
+    std::string driver = output_string_split[filter_index+1];
+    AtString name_as = AtString(name.c_str());
 
+    if (filter == lentil_str){
       bokeh->aov_list_name.push_back(name_as);
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
 
@@ -144,7 +148,7 @@ node_update
       // bokeh->image_ptr_types[name_as].clear();
       // bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
 
-      AiMsgInfo("[LENTIL IMAGER] Adding aov %s of type %s", name.c_str(), type.c_str());
+      AiMsgInfo("[LENTIL IMAGER] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
     }
   }
 
