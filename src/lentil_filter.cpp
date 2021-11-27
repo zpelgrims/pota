@@ -159,7 +159,6 @@ filter_pixel
 
   Camera *po = (Camera*)AiNodeGetLocalData(bokeh->camera);
 
-
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
   int samples_counter = 0;
   while (AiAOVSampleIteratorGetNext(iterator)){
@@ -175,6 +174,8 @@ filter_pixel
 
   if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) goto just_filter; // early out for non-primary AOV samples
 
+
+
   if (bokeh->enabled){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
@@ -185,6 +186,8 @@ filter_pixel
     px -= bokeh->region_min_x;
     py -= bokeh->region_min_y;
 
+    AtShaderGlobals *sg = AiShaderGlobals();
+
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
 
@@ -192,6 +195,8 @@ filter_pixel
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
+      AtMatrix cam_to_world;
+      AiCameraToWorldMatrix(bokeh->camera, time, cam_to_world);
       
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
@@ -309,7 +314,6 @@ filter_pixel
                                     iterator, bokeh, crypto_cache);
             if (!transmitted_energy_in_sample) continue;
           }
-          
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
@@ -363,13 +367,26 @@ filter_pixel
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
 
-
-
-
-
             float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(po)/dir_from_lens_to_image_sample.z);
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
-            
+
+
+            // raytrace for scene/geometrical occlusions along the ray
+            AtVector lens_correct_scaled = lens;
+            switch (po->unitModel){
+              case mm: { lens_correct_scaled /= 0.1; } break;
+              case cm: { lens_correct_scaled /= 1.0; } break;
+              case dm: { lens_correct_scaled /= 10.0;} break;
+              case m:  { lens_correct_scaled /= 100.0;}
+            }
+            AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
+            AtVector ws_direction = cam_pos_ws - sample_pos_ws;
+            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
+            if (AiTraceProbe(ray, sg)){
+              --count;
+              continue;
+            }
+
             // bring back to (x, y, 1)
             AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
                                       focusdist_image_point.y / focusdist_image_point.z);
