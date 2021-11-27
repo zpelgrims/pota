@@ -55,29 +55,7 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 }
 
 
-inline float thinlens_get_coc(AtVector sample_pos_ws, float time, LentilFilterData *bokeh, Camera *po){
-  AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix);
-  AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws); // just for CoC size calculation
-  
-  switch (po->unitModel){
-    case mm:
-    {
-      camera_space_sample_position *= 0.1;
-    } break;
-    case cm:
-    { 
-      camera_space_sample_position *= 1.0;
-    } break;
-    case dm:
-    {
-      camera_space_sample_position *= 10.0;
-    } break;
-    case m:
-    {
-      camera_space_sample_position *= 100.0;
-    }
-  }
-  
+inline float thinlens_get_coc(AtVector camera_space_sample_position, float time, LentilFilterData *bokeh, Camera *po){
   const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
   const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
   return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
@@ -183,6 +161,15 @@ filter_pixel
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(bokeh->camera, time, cam_to_world);
+      AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix);
+      AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
+
+      switch (po->unitModel){
+        case mm: { camera_space_sample_position *= 0.1; } break;
+        case cm: { camera_space_sample_position *= 1.0; } break;
+        case dm: { camera_space_sample_position *= 10.0;} break;
+        case m:  { camera_space_sample_position *= 100.0;}
+      }
       
       const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
 
@@ -210,7 +197,7 @@ filter_pixel
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
       
-      float circle_of_confusion = thinlens_get_coc(sample_pos_ws, time, bokeh, po);
+      float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, 0.0, bokeh, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
@@ -224,16 +211,6 @@ filter_pixel
       switch (po->cameraType){
         case PolynomialOptics:
         { 
-          AtMatrix world_to_camera_matrix;
-          AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix);
-          AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws); // just for CoC size calculation
-          switch (po->unitModel){
-            case mm: { camera_space_sample_position *= 0.1; } break;
-            case cm: { camera_space_sample_position *= 1.0; } break;
-            case dm: { camera_space_sample_position *= 10.0;} break;
-            case m:  { camera_space_sample_position *= 100.0;}
-          }
-
           if (std::abs(camera_space_sample_position.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
           // early out
@@ -297,16 +274,9 @@ filter_pixel
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
 
-            // world to camera space transform, motion blurred
-            AtMatrix world_to_camera_matrix_motionblurred;
-            AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix_motionblurred);
-            AtVector camera_space_sample_position_mb = AiM4PointByMatrixMult(world_to_camera_matrix_motionblurred, sample_pos_ws);
-            switch (po->unitModel){
-              case mm: { camera_space_sample_position_mb *= 0.1; } break;
-              case cm: { camera_space_sample_position_mb *= 1.0; } break;
-              case dm: { camera_space_sample_position_mb *= 10.0;} break;
-              case m:  { camera_space_sample_position_mb *= 100.0;}
-            }
+
+            AtVector camera_space_sample_position_mb = camera_space_sample_position;
+
             
             float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position_mb.z) / (-po->focal_length + camera_space_sample_position_mb.z);
 

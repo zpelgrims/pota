@@ -612,7 +612,7 @@ inline auto find_filter_index_in_aov_string (std::string output_string, AtUniver
   }
 
   // filter index can never be 0
-  if (filter_index == 0) AiMsgError("[LENTIL OPERATOR] Can't find a filter to replace in AOV string.");
+  if (filter_index == 0) AiMsgError("[LENTIL] Can't find a filter to replace in AOV string: %s", output_string.c_str());
 
   return returnValues {filter_index, output_string_split};
 }

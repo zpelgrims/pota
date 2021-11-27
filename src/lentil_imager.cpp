@@ -127,15 +127,14 @@ node_update
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
     std::string output_string = AiArrayGetStr(outputs, i).c_str();
     std::string lentil_str = "lentil_replaced_filter";
-
     auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, bokeh->arnold_universe);
-    std::string filter = output_string_split[filter_index];
-    std::string name = output_string_split[filter_index-2];
-    std::string type = output_string_split[filter_index-1];
-    std::string driver = output_string_split[filter_index+1];
-    AtString name_as = AtString(name.c_str());
 
-    if (filter == lentil_str){
+    if (output_string_split[filter_index] == lentil_str){
+      std::string name = output_string_split[filter_index-2];
+      std::string type = output_string_split[filter_index-1];
+      std::string driver = output_string_split[filter_index+1];
+      AtString name_as = AtString(name.c_str());
+
       bokeh->aov_list_name.push_back(name_as);
       bokeh->aov_list_type.push_back(string_to_arnold_type(type));
 
