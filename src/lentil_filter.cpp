@@ -56,9 +56,24 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 
 
 inline float thinlens_get_coc(AtVector camera_space_sample_position, Camera *po){
+
+  // need to account for the differences in setup between the two methods, since the inputs are scaled differently.
+  float focus_dist = po->focus_distance;
+  float aperture_radius = po->aperture_radius;
+  switch (po->cameraType){
+      case PolynomialOptics:
+      { 
+        focus_dist /= 10.0;
+      } break;
+      case ThinLens:
+      {
+        aperture_radius *= 10.0;
+      } break;
+  }
+  
   const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
-  const float image_dist_focusdist = thinlens_get_image_dist_focusdist(po);
-  return std::abs((po->aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
+  const float image_dist_focusdist = (-po->focal_length * -focus_dist) / (-po->focal_length + -focus_dist);
+  return std::abs((aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
 }
 
 
@@ -159,11 +174,11 @@ filter_pixel
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
+
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(bokeh->camera, time, cam_to_world);
       AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix);
       AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
-
       switch (po->unitModel){
         case mm: { camera_space_sample_position *= 0.1; } break;
         case cm: { camera_space_sample_position *= 1.0; } break;
@@ -183,8 +198,10 @@ filter_pixel
       }
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
-      if (depth == AI_INFINITE ||  AiV3IsSmall(sample_pos_ws) || 
-          sample_luminance < po->bidir_min_luminance || AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_lentil_ignore) > 0.0) {
+      if (depth == AI_INFINITE ||  
+          AiV3IsSmall(sample_pos_ws) || 
+          sample_luminance < po->bidir_min_luminance || 
+          AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
       }
 
@@ -197,8 +214,10 @@ filter_pixel
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
       
+
+
       float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, po);
-      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.001; // pixel area as baseline for sample count
+      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
       samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
