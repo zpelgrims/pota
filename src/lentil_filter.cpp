@@ -16,7 +16,7 @@ AtNode* get_lentil_imager(AtUniverse *uni) {
   AtNode* options = AiUniverseGetOptions(uni);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
-  std::string driver = split_str(output_string, std::string(" ")).begin()[3];
+  std::string driver = split_str(output_string, std::string(" ")).back();
   AtString driver_as = AtString(driver.c_str());
   AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
   AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
