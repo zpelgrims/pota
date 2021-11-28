@@ -56,7 +56,6 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 
 
 inline float thinlens_get_coc(AtVector camera_space_sample_position, Camera *po){
-
   // need to account for the differences in setup between the two methods, since the inputs are scaled differently.
   float focus_dist = po->focus_distance;
   float aperture_radius = po->aperture_radius;
@@ -213,14 +212,13 @@ filter_pixel
       // additional luminance with soft transition
       float fitted_bidir_add_luminance = 0.0;
       if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
-      
 
 
       float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
       if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
-      samples = clamp(samples, 5, 10000); // not sure if a million is actually ever hit..
+      samples = clamp(samples, 5, 10000);
       float inv_samples = 1.0/static_cast<double>(samples);
 
 
@@ -246,7 +244,7 @@ filter_pixel
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen (camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            if(!trace_backwards(-camera_space_sample_position_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken)) {
+            if(!trace_backwards(-camera_space_sample_position_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
               --count;
               continue;
             }

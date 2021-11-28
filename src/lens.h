@@ -869,7 +869,10 @@ inline bool trace_backwards(Eigen::Vector3d target,
                             Camera *camera, 
                             const int px, 
                             const int py,
-                            const int total_samples_taken)
+                            const int total_samples_taken,
+                            AtMatrix cam_to_world,
+                            AtVector sample_pos_ws,
+                            AtShaderGlobals *sg)
 {
   int tries = 0;
   bool ray_succes = false;
@@ -896,6 +899,23 @@ inline bool trace_backwards(Eigen::Vector3d target,
 	  else if (camera->enable_dof && camera->bokeh_aperture_blades > 2) {
       unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
       lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), camera->aperture_radius, camera->bokeh_aperture_blades);
+    }
+
+
+    // raytrace for scene/geometrical occlusions along the ray
+    AtVector lens_correct_scaled = AtVector(-aperture(0)*0.1, -aperture(1)*0.1, 0.0);
+    switch (camera->unitModel){
+      case mm: { lens_correct_scaled /= 0.1; } break;
+      case cm: { lens_correct_scaled /= 1.0; } break;
+      case dm: { lens_correct_scaled /= 10.0;} break;
+      case m:  { lens_correct_scaled /= 100.0;}
+    }
+    AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
+    AtVector ws_direction = cam_pos_ws - sample_pos_ws;
+    AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
+    if (AiTraceProbe(ray, sg)){
+      ++tries;
+      continue;
     }
 
     sensor(0) = sensor(1) = 0.0;
