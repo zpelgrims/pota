@@ -190,7 +190,7 @@ filter_pixel
 
       const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
-      if (transmitted_energy_in_sample){ // is this still  necessary?
+      if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
         sample.g -= sample_transmission.g;
         sample.b -= sample_transmission.b;
