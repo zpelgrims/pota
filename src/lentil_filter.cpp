@@ -190,7 +190,7 @@ filter_pixel
 
       const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
-      if (transmitted_energy_in_sample){
+      if (transmitted_energy_in_sample){ // is this still  necessary?
         sample.r -= sample_transmission.r;
         sample.g -= sample_transmission.g;
         sample.b -= sample_transmission.b;
@@ -216,7 +216,7 @@ filter_pixel
 
       float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, po);
       const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
-      if (std::pow(circle_of_confusion * bokeh->yres, 2) < std::pow(20, 2)) redistribute = false; // 20^2 px minimum coc
+      if (circle_of_confusion < 0.5) redistribute = false; // don't redistribute under certain CoC size
       int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
       samples = clamp(samples, 5, 10000);
       float inv_samples = 1.0/static_cast<double>(samples);
