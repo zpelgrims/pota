@@ -437,7 +437,7 @@ inline void add_to_buffer_cryptomatte(int px, LentilFilterData *filter_data, std
 }
 
 
-inline void add_to_buffer(int px, int aov_type, AtString aov_name, 
+inline void add_to_buffer(int px, int aov_type, AtString aov_name, AtRGBA aov_value,
                           float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                           bool transmitted_energy_in_sample, int transmission_layer,
                           struct AtAOVSampleIterator* sample_iterator, LentilFilterData *filter_data) {
@@ -449,7 +449,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_RGBA: {
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
-          AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
+          AtRGBA rgba_energy = aov_value;
           if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, filter_data->atstring_transmission);
           else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, filter_data->atstring_transmission);
 
@@ -458,10 +458,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
           break;
         }
 
-        case AI_TYPE_RGB: {
-          const AtRGB rgb_energy = AiAOVSampleIteratorGetAOVRGB(sample_iterator, aov_name);
-          const AtRGBA rgba_energy = AtRGBA(rgb_energy.r, rgb_energy.g, rgb_energy.b, 1.0);
-
+        case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
+          const AtRGBA rgba_energy = aov_value;
           filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
           
           break;
@@ -469,9 +467,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_VECTOR: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const AtVector vec_energy = AiAOVSampleIteratorGetAOVVec(sample_iterator, aov_name);
-            const AtRGBA rgba_energy = AtRGBA(vec_energy.x, vec_energy.y, vec_energy.z, 1.0);
-            filter_data->image_data_types[aov_name][px] = rgba_energy;
+            filter_data->image_data_types[aov_name][px] = aov_value;
             filter_data->zbuffer[px] = std::abs(depth);
           }
 
@@ -480,9 +476,7 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
 
         case AI_TYPE_FLOAT: {
           if ((std::abs(depth) <= filter_data->zbuffer[px]) || filter_data->zbuffer[px] == 0.0){
-            const float flt_energy = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov_name);
-            const AtRGBA rgba_energy = AtRGBA(flt_energy, flt_energy, flt_energy, 1.0);
-            filter_data->image_data_types[aov_name][px] = rgba_energy;
+            filter_data->image_data_types[aov_name][px] = aov_value;
             filter_data->zbuffer[px] = std::abs(depth);
           }
       
@@ -527,7 +521,7 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
                                      float inv_samples, float inv_density, float depth, 
                                      bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
                                      struct AtAOVSampleIterator* iterator, LentilFilterData *filter_data,
-                                     std::map<AtString, std::map<float, float>> &cryptomatte_cache){
+                                     std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -549,11 +543,10 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         // std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(filter_data->cryptomatte_aov_names, 1.0, iterator, sampleid);
 
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
-          std::string aov_name_str = filter_data->aov_list_name[i].c_str();
-          if (aov_name_str.find("crypto_") != std::string::npos) {
+          if (filter_data->aov_crypto[i]){
             add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
           } else {
-            add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], 
+            add_to_buffer(pixelnumber, filter_data->aov_list_type[i], filter_data->aov_list_name[i], aov_values[i],
                           inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator,
                           filter_data);
           }

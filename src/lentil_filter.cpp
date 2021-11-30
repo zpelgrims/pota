@@ -139,13 +139,11 @@ filter_pixel
 
   Camera *po = (Camera*)AiNodeGetLocalData(bokeh->camera);
 
-  bool skip_redistribution = false; // bokeh->enabled is a global switch, this is local.
+  bool skip_redistribution = false; // bokeh->enabled is a global switch, which also turns of the imager - this is local.
 
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
   int samples_counter = 0;
-  while (AiAOVSampleIteratorGetNext(iterator)){
-    ++samples_counter;
-  }
+  while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
   float AA_samples = std::sqrt(samples_counter) / 2.0;
   bokeh->current_inv_density = 1.0/(AA_samples*AA_samples);
   if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "AA_samples")){
@@ -227,6 +225,34 @@ filter_pixel
       unsigned int total_samples_taken = 0;
       unsigned int max_total_samples = samples*5;
 
+
+      // store all aov values, order same as aov_list_name list.
+      std::vector<AtRGBA> aov_values;
+      aov_values.reserve(bokeh->aov_list_name.size());
+      for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+        switch(bokeh->aov_list_type[i]){
+          case AI_TYPE_RGBA: {
+            aov_values[i] = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->aov_list_name[i]);
+          } break;
+
+          case AI_TYPE_RGB: {
+            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, bokeh->aov_list_name[i]);
+            aov_values[i] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
+          } break;
+
+          case AI_TYPE_FLOAT: {
+            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->aov_list_name[i]);
+            aov_values[i] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
+          } break;
+
+          case AI_TYPE_VECTOR: {
+            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->aov_list_name[i]);
+            aov_values[i] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
+          } break;
+        }
+      }
+
+
       switch (po->cameraType){
         case PolynomialOptics:
         { 
@@ -236,7 +262,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, crypto_cache);
+                                    iterator, bokeh, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
 
@@ -267,12 +293,10 @@ filter_pixel
             unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              // std::string aov_name_str = bokeh->aov_list_name[i].c_str();
-              // if (aov_name_str.find("crypto_") != std::string::npos) {
               if (bokeh->aov_crypto[i]){
                 add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
-                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
                             inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
                             transmitted_energy_in_sample, 1, iterator, bokeh);
               }
@@ -287,7 +311,7 @@ filter_pixel
           if (redistribute == false){
             filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, crypto_cache);
+                                    iterator, bokeh, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
 
@@ -388,14 +412,12 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              // std::string aov_name_str = bokeh->aov_list_name[i].c_str();
-              // if (aov_name_str.find("crypto_") != std::string::npos) {
               if (bokeh->aov_crypto[i]){
                 add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
-                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
-                            inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh);
+                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
+                              inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                              transmitted_energy_in_sample, 1, iterator, bokeh);
               }
             }
           }
