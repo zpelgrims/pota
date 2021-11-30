@@ -155,8 +155,8 @@ filter_pixel
   if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "AA_samples")){
     bokeh->enabled = false; // skip when aa samples are below final AA samples
   }
-
   AiAOVSampleIteratorReset(iterator);
+
 
   if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) skip_redistribution = true; // early out for non-primary AOV samples
   
@@ -299,18 +299,14 @@ filter_pixel
             unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              if (bokeh->aov_crypto[i]){
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
-              } else {
-                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
-                            inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                            transmitted_energy_in_sample, 1, iterator, bokeh);
-              }
+              if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+              else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
+                                 inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                                 transmitted_energy_in_sample, 1, iterator, bokeh);
             }
           }
-        
-          break;
-        }
+        } break;
+
         case ThinLens:
         {
           // early out, before coc
@@ -418,20 +414,14 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              if (bokeh->aov_crypto[i]){
-                add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
-              } else {
-                add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
-                              inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                              transmitted_energy_in_sample, 1, iterator, bokeh);
-              }
+              if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+              else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
+                                inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+                                transmitted_energy_in_sample, 1, iterator, bokeh);
             }
           }
-
-          break;
-        }
+        } break;
       }
-
     }
   } 
   
@@ -485,18 +475,6 @@ filter_pixel
       *((float*)data_out) = rgb_energy;
       break;
     }
-    // case AI_TYPE_INT: {
-    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-    //   int rgb_energy = filtered_value.r;
-    //   *((int*)data_out) = rgb_energy;
-    //   break;
-    // }
-    // case AI_TYPE_UINT: {
-    //   AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
-    //   unsigned rgb_energy = std::abs(filtered_value.r);
-    //   *((unsigned*)data_out) = rgb_energy;
-    //   break;
-    // }
   }
   
 }
