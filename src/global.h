@@ -102,15 +102,15 @@ inline int coords_to_linear_pixel_region(const int x, const int y, const int xre
   return (x-region_min_x) + ((y-region_min_y) * xres);
 }
 
-inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-  x = linear_pixel % xres;
-  y = (int)(linear_pixel / xres);
-}
+// inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
+//   x = linear_pixel % xres;
+//   y = (int)(linear_pixel / xres);
+// }
 
-inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
-  x = (linear_pixel % xres) + region_min_x;
-  y = (int)(linear_pixel / xres) + region_min_y;
-}
+// inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
+//   x = (linear_pixel % xres) + region_min_x;
+//   y = (int)(linear_pixel / xres) + region_min_y;
+// }
 
 
 
@@ -405,9 +405,8 @@ inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float
         crypto_hashmap_cache[aov][sample_value] += sub_sample_weight;
     }
 
-    if (quota > 0.0) { // the remaining values gets allocated to the last sample
-        crypto_hashmap_cache[aov][sample_value] += quota;
-    }
+    // the remaining values gets allocated to the last sample
+    if (quota > 0.0) crypto_hashmap_cache[aov][sample_value] += quota;
 
     // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
     // still need to use the iterator afterwards, so need to do a reset to the current sample id

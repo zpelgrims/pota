@@ -68,7 +68,7 @@ inline float thinlens_get_image_dist_focusdist(Camera *po){
 
 
 inline float thinlens_get_coc(AtVector camera_space_sample_position, Camera *po){
-  // need to account for the differences in setup between the two methods, since the inputs are scaled differently.
+  // need to account for the differences in setup between the two methods, since the inputs are scaled differently in the camera shader
   float focus_dist = po->focus_distance;
   float aperture_radius = po->aperture_radius;
   switch (po->cameraType){
@@ -121,16 +121,10 @@ filter_output_type
          return AI_TYPE_RGB;
       case AI_TYPE_VECTOR:
         return AI_TYPE_VECTOR;
-      // case AI_TYPE_FLOAT:
-      //   return AI_TYPE_FLOAT; // ORIG
       case AI_TYPE_FLOAT:
-        return AI_TYPE_RGBA; // CRYPTO TEST
-      // case AI_TYPE_INT:
-      //   return AI_TYPE_INT;
-      // case AI_TYPE_UINT:
-      //   return AI_TYPE_UINT;
-      // case AI_TYPE_POINTER:
-      //   return AI_TYPE_POINTER;
+        // for some reason float->rgba is required by cryptomatte to output the suffixed aov's (correct). if float->float it only does "display" layers (incorrect)
+        // does this affect any of my own work? not sure. I should test e.g depth aov.
+        return AI_TYPE_RGBA; 
       default:
          return AI_TYPE_NONE;
    }
