@@ -112,6 +112,7 @@ node_update
   // prepare framebuffers for all AOVS
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
+  bokeh->aov_crypto.clear();
   bokeh->aov_duplicates.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
@@ -140,12 +141,17 @@ node_update
 
       ++bokeh->aov_duplicates[name_as];
 
-      bokeh->image_data_types[name_as].clear();
-      bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
-      bokeh->image_col_types[name_as].clear();
-      bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
+      if (type == "RGBA" || type == "RGB"){
+        bokeh->image_col_types[name_as].clear();
+        bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
+      } else {
+        bokeh->image_data_types[name_as].clear();
+        bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
+      }
       // bokeh->image_ptr_types[name_as].clear();
       // bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
+
+      bokeh->aov_crypto.push_back(false);
 
       AiMsgInfo("[LENTIL IMAGER] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
     }
@@ -186,6 +192,7 @@ node_update
         bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
 
         bokeh->cryptomatte_aov_names.push_back(name_as);
+        bokeh->aov_crypto.push_back(true);
         AiMsgInfo("[LENTIL IMAGER] Adding CRYPTO aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
       }
     }

@@ -30,6 +30,7 @@ struct LentilFilterData {
   std::vector<float> zbuffer;
   std::vector<AtString> aov_list_name;
   std::vector<unsigned int> aov_list_type;
+  std::vector<bool> aov_crypto;
 
   std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
   std::map<AtString, std::vector<float>> crypto_total_weight;
@@ -449,8 +450,8 @@ inline void add_to_buffer(int px, int aov_type, AtString aov_name,
         case AI_TYPE_RGBA: {
           // RGBA is the only aov with transmission component in, account for that (prob skip something)
           AtRGBA rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, aov_name);
-          if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
-          else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, AtString("transmission"));
+          if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, filter_data->atstring_transmission);
+          else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, filter_data->atstring_transmission);
 
           filter_data->image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 

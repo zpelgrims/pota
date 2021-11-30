@@ -139,6 +139,8 @@ filter_pixel
 
   Camera *po = (Camera*)AiNodeGetLocalData(bokeh->camera);
 
+  bool skip_redistribution = false; // bokeh->enabled is a global switch, this is local.
+
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
   int samples_counter = 0;
   while (AiAOVSampleIteratorGetNext(iterator)){
@@ -152,10 +154,10 @@ filter_pixel
 
   AiAOVSampleIteratorReset(iterator);
 
-  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) goto just_filter; // early out for non-primary AOV samples
+  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) skip_redistribution = true; // early out for non-primary AOV samples
+  
 
-
-  if (bokeh->enabled){
+  if (bokeh->enabled && !skip_redistribution){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
     const double frame_aspect_ratio = (double)bokeh->xres_without_region/(double)bokeh->yres_without_region;
@@ -265,8 +267,9 @@ filter_pixel
             unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
-              if (aov_name_str.find("crypto_") != std::string::npos) {
+              // std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              // if (aov_name_str.find("crypto_") != std::string::npos) {
+              if (bokeh->aov_crypto[i]){
                 add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
@@ -385,8 +388,9 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              std::string aov_name_str = bokeh->aov_list_name[i].c_str();
-              if (aov_name_str.find("crypto_") != std::string::npos) {
+              // std::string aov_name_str = bokeh->aov_list_name[i].c_str();
+              // if (aov_name_str.find("crypto_") != std::string::npos) {
+              if (bokeh->aov_crypto[i]){
                 add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
               } else {
                 add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], 
@@ -405,7 +409,6 @@ filter_pixel
   
 
   // do regular filtering (passthrough) for display purposes
-  just_filter:
   AiAOVSampleIteratorReset(iterator);
   switch(data_type){
     case AI_TYPE_RGBA: {
