@@ -369,6 +369,16 @@ inline std::vector<std::string> split_str(std::string str, std::string token)
 // }
 
 
+inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
+  AiAOVSampleIteratorReset(iterator);
+  
+  for (int i = 0; AiAOVSampleIteratorGetNext(iterator) == true; i++){
+    if (i == id) return;
+  }
+
+  return;
+}
+
 
 // get all depth samples so i can re-use them
 inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
@@ -401,10 +411,7 @@ inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float
 
     // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
     // still need to use the iterator afterwards, so need to do a reset to the current sample id
-    AiAOVSampleIteratorReset(sample_iterator);
-    for (int i = 0; AiAOVSampleIteratorGetNext(sample_iterator) == true; i++){
-      if (i == sampleid) return;
-    }
+    reset_iterator_to_id(sample_iterator, sampleid);
   }
 }
 
