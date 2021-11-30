@@ -41,6 +41,18 @@ AtNode* get_lentil_imager(AtUniverse *uni) {
   return nullptr;
 }
 
+inline float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
+  // additional luminance with soft transition
+  if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
+    float perc = (sample_luminance - minimum_luminance) / transition_width;
+    return additional_luminance * perc;          
+  } else if (sample_luminance > minimum_luminance+transition_width) {
+    return additional_luminance;
+  }
+
+  return 0.0;
+}
+
 
 inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float sensor_width, const float frame_aspect_ratio, const double xres, const double yres){
   // convert sensor position to pixel position

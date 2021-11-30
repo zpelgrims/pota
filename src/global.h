@@ -318,19 +318,6 @@ static inline void lens_sample_triangular_aperture(double &x, double &y, double 
 }
 
 
-inline float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
-  // additional luminance with soft transition
-  if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
-    float perc = (sample_luminance - minimum_luminance) / transition_width;
-    return additional_luminance * perc;          
-  } else if (sample_luminance > minimum_luminance+transition_width) {
-    return additional_luminance;
-  }
-
-  return 0.0;
-}
-
-
 
 inline std::vector<std::string> split_str(std::string str, std::string token)
 {
@@ -382,16 +369,6 @@ inline std::vector<std::string> split_str(std::string str, std::string token)
 // }
 
 
-inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
-  AiAOVSampleIteratorReset(iterator);
-  
-  for (int i = 0; AiAOVSampleIteratorGetNext(iterator) == true; i++){
-    if (i == id) return;
-  }
-
-  return;
-}
-
 
 // get all depth samples so i can re-use them
 inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
@@ -423,8 +400,11 @@ inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float
     }
 
     // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
-    // still need to use the iterator afterwards, so need to do a reset to the current sample
-    reset_iterator_to_id(sample_iterator, sampleid);
+    // still need to use the iterator afterwards, so need to do a reset to the current sample id
+    AiAOVSampleIteratorReset(sample_iterator);
+    for (int i = 0; AiAOVSampleIteratorGetNext(sample_iterator) == true; i++){
+      if (i == sampleid) return;
+    }
   }
 }
 
@@ -540,8 +520,6 @@ inline void filter_and_add_to_buffer(int px, int py, float filter_width_half,
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
 
-        // std::map<AtString, std::map<float, float>> cryptomatte_cache_no_redistribution = cryptomatte_construct_cache(filter_data->cryptomatte_aov_names, 1.0, iterator, sampleid);
-
         for (unsigned i=0; i<filter_data->aov_list_name.size(); i++){
           if (filter_data->aov_crypto[i]){
             add_to_buffer_cryptomatte(pixelnumber, filter_data, cryptomatte_cache[filter_data->aov_list_name[i]], filter_data->aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
@@ -563,17 +541,6 @@ inline unsigned int string_to_arnold_type(std::string str){
   else if (str == "vector" || str == "vec" || str == "VECTOR" || str == "VEC") return AI_TYPE_VECTOR;
 
   return 0;
-}
-
-
-inline std::string erase_string(std::string str, std::string pattern) {
-  std::string::size_type i = str.find(pattern);
-  while (i != std::string::npos) {
-    str.erase(i, pattern.length());
-    i = str.find(pattern, i);
-  }
-
-  return str;
 }
 
 
