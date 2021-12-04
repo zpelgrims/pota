@@ -9,6 +9,7 @@
 
 #include "imagebokeh.h"
 #include "global.h"
+#include "lentil_setup.h"
 
 // enum to switch between lens models in interface dropdown
 enum LensModel{
@@ -36,6 +37,7 @@ struct Camera
     UnitModel unitModel;
     CameraType cameraType;
     imageData image;
+    LentilSetup *lentil_setup_data;
 
     // lens constants PO
     const char* lens_name;

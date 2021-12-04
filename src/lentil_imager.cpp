@@ -21,6 +21,8 @@ node_parameters
   AiParameterBool(AtString("enable"), true);
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
+
+
  
 node_initialize
 {

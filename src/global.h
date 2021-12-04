@@ -54,45 +54,6 @@ struct LentilFilterData {
 
 
 
-extern AtCritSec g_critsec;
-extern bool g_critsec_active;
-
-
-
-///////////////////////////////////////////////
-//
-//      Crit sec utilities
-//
-///////////////////////////////////////////////
-
-inline bool crypto_crit_sec_init() {
-    // Called in node_plugin_initialize. Returns true as a convenience.
-    g_critsec_active = true;
-    AiCritSecInit(&g_critsec);
-    return true;
-}
-
-inline void crypto_crit_sec_close() {
-    // Called in node_plugin_cleanup
-    g_critsec_active = false;
-    AiCritSecClose(&g_critsec);
-}
-
-inline void crypto_crit_sec_enter() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (g_critsec_active)
-        AiCritSecEnter(&g_critsec);
-}
-
-inline void crypto_crit_sec_leave() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (g_critsec_active)
-        AiCritSecLeave(&g_critsec);
-}
-
-
 
 inline int coords_to_linear_pixel(const int x, const int y, const int xres) {
   return x + (y * xres);
