@@ -164,12 +164,13 @@ filter_pixel
   if (bokeh->enabled && !skip_redistribution){
     const double xres = (double)bokeh->xres;
     const double yres = (double)bokeh->yres;
-    const double frame_aspect_ratio = (double)bokeh->xres_without_region/(double)bokeh->yres_without_region;
+    // const double frame_aspect_ratio = (double)bokeh->xres_without_region/(double)bokeh->yres_without_region;
+    const double frame_aspect_ratio = (double)bokeh->xres/(double)bokeh->yres;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
-    px -= bokeh->region_min_x;
-    py -= bokeh->region_min_y;
+    // px -= bokeh->region_min_x;
+    // py -= bokeh->region_min_y;
 
     AtShaderGlobals *sg = AiShaderGlobals();
 
@@ -260,52 +261,52 @@ filter_pixel
 
 
       switch (po->cameraType){
-        case PolynomialOptics:
-        { 
-          if (std::abs(camera_space_sample_position.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
+        // case PolynomialOptics:
+        // { 
+        //   if (std::abs(camera_space_sample_position.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
-          // early out
-          if (redistribute == false){
-            filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, crypto_cache, aov_values);
-            if (!transmitted_energy_in_sample) continue;
-          }
+        //   // early out
+        //   if (redistribute == false){
+        //     filter_and_add_to_buffer(px, py, filter_width_half, 
+        //                             1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+        //                             iterator, bokeh, crypto_cache, aov_values);
+        //     if (!transmitted_energy_in_sample) continue;
+        //   }
 
-          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+        //   for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
-            Eigen::Vector2d pixel;
-            Eigen::Vector2d sensor_position(0, 0);            
-            Eigen::Vector3d camera_space_sample_position_eigen (camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
+        //     Eigen::Vector2d pixel;
+        //     Eigen::Vector2d sensor_position(0, 0);            
+        //     Eigen::Vector3d camera_space_sample_position_eigen (camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            if(!trace_backwards(-camera_space_sample_position_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
-              --count;
-              continue;
-            }
+        //     if(!trace_backwards(-camera_space_sample_position_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
+        //       --count;
+        //       continue;
+        //     }
 
-            pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, bokeh->xres_without_region, bokeh->yres_without_region);
+        //     pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, bokeh->xres_without_region, bokeh->yres_without_region);
 
-            // if outside of image
-            if ((pixel(0) >= bokeh->xres_without_region) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= bokeh->yres_without_region) || (pixel(1) < bokeh->region_min_y) ||
-                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-            {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame
-              continue;
-            }
+        //     // if outside of image
+        //     if ((pixel(0) >= bokeh->xres_without_region) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= bokeh->yres_without_region) || (pixel(1) < bokeh->region_min_y) ||
+        //         (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+        //     {
+        //       --count; // much room for improvement here, potentially many samples are wasted outside of frame
+        //       continue;
+        //     }
 
-            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+        //     // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            // write sample to image
-            unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+        //     // write sample to image
+        //     unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
 
-            for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
-              else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
-                                 inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                                 transmitted_energy_in_sample, 1, iterator, bokeh);
-            }
-          }
-        } break;
+        //     for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
+        //       if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
+        //       else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
+        //                          inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
+        //                          transmitted_energy_in_sample, 1, iterator, bokeh);
+        //     }
+        //   }
+        // } break;
 
         case ThinLens:
         {
@@ -398,18 +399,23 @@ filter_pixel
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres_without_region;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres_without_region;
+            // const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres_without_region;
+            // const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres_without_region;
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres;
 
             // if outside of image
-            if ((pixel_x >= xres) || (pixel_x < bokeh->region_min_x) || (pixel_y >= yres) || (pixel_y < bokeh->region_min_y)) {
+            // if ((pixel_x >= xres) || (pixel_x < bokeh->region_min_x) || (pixel_y >= yres) || (pixel_y < bokeh->region_min_y)) {
+            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
               continue;
             }
 
             // write sample to image
-            unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
-            if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+            // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+            // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+            unsigned pixelnumber = coords_to_linear_pixel(floor(pixel_x), floor(pixel_y), bokeh->xres);
+            if (!redistribute) pixelnumber = coords_to_linear_pixel(px, py, bokeh->xres);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 

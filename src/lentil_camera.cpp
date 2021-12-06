@@ -69,7 +69,7 @@ node_initialize {
   AiCameraInitialize(node);
 
   Camera* po = new Camera();
-  po->lentil_setup_data = new LentilSetup();
+  // po->lentil_setup_data = new LentilSetup();
   
   AiNodeSetLocalData(node, po);
 }
@@ -80,12 +80,6 @@ node_update {
   Camera* po = (Camera*)AiNodeGetLocalData(node);
 
   AtUniverse *uni = AiNodeGetUniverse(node);
-
-  // lentil aov setup
-  const AtNodeEntry *crypto_ne = AiNodeEntryLookUp(AtString("cryptomatte"));
-  if (AiNodeEntryGetCount(crypto_ne) == 0) {
-    po->lentil_setup_data->setup_all(uni);
-  }
 
 
   // global params

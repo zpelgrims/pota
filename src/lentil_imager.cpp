@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "global.h"
 
+
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
 
 
@@ -75,29 +76,29 @@ node_update
     AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
   }
 
-  
 
-  bokeh->xres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
-  bokeh->yres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
-  bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
-  bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
-  bokeh->region_max_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_x");
-  bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
+  // bokeh->xres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
+  // bokeh->yres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
+  // bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
+  // bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
+  // bokeh->region_max_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_x");
+  // bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
 
   // need to check if the render region option is used, if not, set it to default
-  if (bokeh->region_min_x == INT32_MIN || bokeh->region_min_x == INT32_MAX ||
-      bokeh->region_max_x == INT32_MIN || bokeh->region_max_x == INT32_MAX ||
-      bokeh->region_min_y == INT32_MIN || bokeh->region_min_y == INT32_MAX ||
-      bokeh->region_max_y == INT32_MIN || bokeh->region_max_y == INT32_MAX ) {
-        bokeh->region_min_x = 0;
-        bokeh->region_min_y = 0;
-        bokeh->region_max_x = bokeh->xres_without_region;
-        bokeh->region_max_y = bokeh->yres_without_region;
-  }
+  // if (bokeh->region_min_x == INT32_MIN || bokeh->region_min_x == INT32_MAX ||
+  //     bokeh->region_max_x == INT32_MIN || bokeh->region_max_x == INT32_MAX ||
+  //     bokeh->region_min_y == INT32_MIN || bokeh->region_min_y == INT32_MAX ||
+  //     bokeh->region_max_y == INT32_MIN || bokeh->region_max_y == INT32_MAX ) {
+  //       bokeh->region_min_x = 0;
+  //       bokeh->region_min_y = 0;
+  //       bokeh->region_max_x = bokeh->xres_without_region;
+  //       bokeh->region_max_y = bokeh->yres_without_region;
+  // }
 
-  bokeh->xres = bokeh->region_max_x - bokeh->region_min_x;
-  bokeh->yres = bokeh->region_max_y - bokeh->region_min_y;
-
+  // bokeh->xres = bokeh->region_max_x - bokeh->region_min_x;
+  // bokeh->yres = bokeh->region_max_y - bokeh->region_min_y;
+  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
+  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
 
 
   bokeh->filter_width = 2.0;
@@ -280,10 +281,10 @@ driver_process_bucket {
   const void *bucket_data;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
-    if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
+    // if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
     if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), aov_name) != filter_data->aov_list_name.end()){
       if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
-      if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
+      // if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {
