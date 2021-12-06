@@ -1,4 +1,4 @@
-  AiMsgInfo("");
+  AiMsgInfo(" ");
 
   load_lens_constants(po);
   AiMsgInfo("[LENTIL CAMERA PO] ----------  LENS CONSTANTS  -----------");
@@ -84,4 +84,4 @@
 
   AiMsgInfo("[LENTIL CAMERA PO] --------------------------------------");
   
-  AiMsgInfo("");
+  AiMsgInfo(" ");

@@ -292,14 +292,6 @@
         houdini.help        STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
 
 
-    [attr cryptomatte]
-        default             BOOL   false
-        desc                STRING  "Make sure you are using cryptomatte-lentil instead of default cryptomatte."
-        animatable          BOOL    true
-        
-        houdini.label       STRING  "Enable Cryptomatte"
-        houdini.help        STRING "Make sure you are using cryptomatte-lentil instead of default cryptomatte."
-
 
 [node lentil_operator]
     maya.name               STRING "lentil_operator"

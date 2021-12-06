@@ -85,7 +85,6 @@ node_update
   bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
 
   // need to check if the render region option is used, if not, set it to default
-  bool render_region_used = true;
   if (bokeh->region_min_x == INT32_MIN || bokeh->region_min_x == INT32_MAX ||
       bokeh->region_max_x == INT32_MIN || bokeh->region_max_x == INT32_MAX ||
       bokeh->region_min_y == INT32_MIN || bokeh->region_min_y == INT32_MAX ||
@@ -106,25 +105,27 @@ node_update
   bokeh->time_end = AiCameraGetShutterEnd();
   bokeh->imager_print_once_only = false;
 
+
   bokeh->zbuffer.clear();
   bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
 
 
-
-  // prepare framebuffers for all AOVS
+  // prepare framebuffers for all AOVS, these are of variable size.
   bokeh->aov_list_name.clear();
   bokeh->aov_list_type.clear();
   bokeh->aov_crypto.clear();
   bokeh->aov_duplicates.clear();
   bokeh->crypto_hash_map.clear();
   bokeh->crypto_total_weight.clear();
+  bokeh->cryptomatte_aov_names.clear();
   bokeh->image_data_types.clear();
   bokeh->image_col_types.clear();
   // bokeh->image_ptr_types.clear();
   
 
 
-
+  // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
+  std::string driver_first_aov;
   AtNode* options = AiUniverseGetOptions(bokeh->arnold_universe);
   AtArray* outputs = AiNodeGetArray(options, "outputs");
   for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
@@ -136,6 +137,9 @@ node_update
       std::string name = output_string_split[filter_index-2];
       std::string type = output_string_split[filter_index-1];
       std::string driver = output_string_split[filter_index+1];
+
+      if (i == 0) driver_first_aov = driver;
+
       AtString name_as = AtString(name.c_str());
 
       bokeh->aov_list_name.push_back(name_as);
@@ -160,6 +164,7 @@ node_update
   }
 
 
+
   // check if a cryptomatte aovshader is present
   bool cryptomatte_auto_detected = false;
   AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
@@ -170,15 +175,21 @@ node_update
     }
   }
   
-  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_auto_detected == false) {
+  if (cryptomatte_auto_detected == false) {
     AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
   }
 
-  // crypto setup, still hardcoded
-  bokeh->cryptomatte_aov_names.clear();
-  bokeh->crypto_hash_map.clear();
-  bokeh->crypto_total_weight.clear();
-  if (AiNodeGetBool(bokeh->camera, "cryptomatte") && cryptomatte_auto_detected == true) {
+
+  // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
+  // this speeds up the IPR sessions.
+  bool driver_is_exr = false;
+  AtNode *driver_node = AiNodeLookUpByName(bokeh->arnold_universe, driver_first_aov.c_str());
+  if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
+    driver_is_exr = true;
+  }
+
+  // setup ranked crypto aov's
+  if (driver_is_exr && cryptomatte_auto_detected) {
     std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
     std::vector<std::string> crypto_ranks{"00", "01", "02"};
     for (const auto& crypto_type: crypto_types) {
@@ -195,10 +206,11 @@ node_update
 
         bokeh->cryptomatte_aov_names.push_back(name_as);
         bokeh->aov_crypto.push_back(true);
-        AiMsgInfo("[LENTIL IMAGER] Adding CRYPTO aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+        AiMsgInfo("[LENTIL IMAGER] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
       }
     }
   }
+
   
   
   bokeh->current_inv_density = 0.0;
@@ -331,8 +343,8 @@ driver_process_bucket {
               // usualz
               else {
                 AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
-                if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a;
-                
+                if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
+
                 ((AtRGBA*)bucket_data)[in_idx] = image;
               }
               break;

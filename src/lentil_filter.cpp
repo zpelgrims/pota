@@ -286,7 +286,7 @@ filter_pixel
             pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, bokeh->xres_without_region, bokeh->yres_without_region);
 
             // if outside of image
-            if ((pixel(0) >= xres) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= yres) || (pixel(1) < bokeh->region_min_y) ||
+            if ((pixel(0) >= bokeh->xres_without_region) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= bokeh->yres_without_region) || (pixel(1) < bokeh->region_min_y) ||
                 (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
             {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame

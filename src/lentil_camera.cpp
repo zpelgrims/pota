@@ -27,7 +27,7 @@ node_parameters {
 
 
   // po specifics
-  AiParameterEnum("lens_model", angenieux__double_gauss__1953__49mm, LensModelNames);
+  AiParameterEnum("lens_model", cooke__speed_panchro__1920__40mm, LensModelNames);
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
   AiParameterFlt("extra_sensor_shift", 0.0);
 
@@ -57,7 +57,7 @@ node_parameters {
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);
-  AiParameterBool("cryptomatte", true);
+  // AiParameterBool("cryptomatte", true);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -81,7 +81,7 @@ node_update {
 
   AtUniverse *uni = AiNodeGetUniverse(node);
 
-  // lentil setup
+  // lentil aov setup
   const AtNodeEntry *crypto_ne = AiNodeEntryLookUp(AtString("cryptomatte"));
   if (AiNodeEntryGetCount(crypto_ne) == 0) {
     po->lentil_setup_data->setup_all(uni);
