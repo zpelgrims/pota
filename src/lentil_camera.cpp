@@ -56,29 +56,24 @@ node_parameters {
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);
-  // AiParameterBool("cryptomatte", true);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
+
 node_plugin_initialize {return lentil_crit_sec_init();}
 node_plugin_cleanup {lentil_crit_sec_close();}
-
 node_initialize {
   AiCameraInitialize(node);
   AiNodeSetLocalData(node, new Camera());
 }
 
-
 node_update { 
-  AiCameraUpdate(node, false);
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
-
   AtUniverse *universe = AiNodeGetUniverse(node);
   camera_data->setup_all(universe);
-
+  AiCameraUpdate(node, false);
 }
-
 
 node_finish {
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
@@ -296,7 +291,7 @@ camera_reverse_ray
 
 // approximation using pinhole camera FOV
 camera_reverse_ray {
-  const Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
+  Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
 
   double coeff = 1.0 / std::max(std::abs(Po.z * camera_data->tan_fov), 1e-3);
   Ps.x = Po.x * coeff;

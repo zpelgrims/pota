@@ -21,7 +21,7 @@ node_parameters
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   // AiParameterStr(AtString("layer_selection"), AtString("*")); // if enabled, mtoa/c4dtoa will only run over rgba (hardcoded for now)
   AiParameterBool(AtString("enable"), true);
-  // AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
 
@@ -31,7 +31,12 @@ node_initialize
   AiDriverInitialize(node, false);
 }
  
-node_update {}
+node_update {
+    AtUniverse *universe = AiNodeGetUniverse(node);
+    AtRenderSession *render_session = AiUniverseGetRenderSession(universe);
+    AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
+    AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
+}
  
 driver_supports_pixel_type 
 {
@@ -96,17 +101,18 @@ driver_process_bucket {
   const void *bucket_data;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
-    // if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
+    if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
     if (std::find(camera_data->aov_list_name.begin(), camera_data->aov_list_name.end(), aov_name) != camera_data->aov_list_name.end()){
       if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
-      // if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
+      if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {
           int y = j + bucket_yo;
           int x = i + bucket_xo;
           int in_idx = j * bucket_size_x + i;
-          int linear_pixel = coords_to_linear_pixel_region(x, y, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+          // int linear_pixel = coords_to_linear_pixel_region(x, y, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+          int linear_pixel = camera_data->coords_to_linear_pixel(x, y);
 
           switch (aov_type){
             case AI_TYPE_RGBA: {

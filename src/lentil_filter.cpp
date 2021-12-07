@@ -22,14 +22,6 @@ inline float additional_luminance_soft_trans(float sample_luminance, float addit
 }
 
 
-inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float sensor_width, const float frame_aspect_ratio, const double xres, const double yres){
-  // convert sensor position to pixel position
-  const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
-  const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
-                              ((-s(1) + 1.0) / 2.0) * yres);
-  return pixel;
-}
-
 
 
 
@@ -78,12 +70,12 @@ filter_pixel
   AtNode *camera_node = AiUniverseGetCamera(universe);
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
-  if (!AiNodeIs(camera_data->camera_node, AtString("lentil_camera"))) {
-    camera_data->redistribution = false;
-    AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
-    AiRenderAbort();
-    return;
-  }
+  // if (!AiNodeIs(camera_data->camera_node, AtString("lentil_camera"))) {
+  //   camera_data->redistribution = false;
+  //   AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
+  //   AiRenderAbort();
+  //   return;
+  // }
 
 
   bool skip_redistribution = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local.
@@ -145,8 +137,7 @@ filter_pixel
       }
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
-      if (depth == AI_INFINITE ||  
-          AiV3IsSmall(sample_pos_ws) || 
+      if (depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws) || 
           sample_luminance < camera_data->bidir_min_luminance || 
           AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
@@ -218,14 +209,14 @@ filter_pixel
             
             Eigen::Vector2d pixel;
             Eigen::Vector2d sensor_position(0, 0);            
-            Eigen::Vector3d camera_space_sample_position_eigen (camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
+            Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
             if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
               --count;
               continue;
             }
 
-            pixel = sensor_to_pixel_position(sensor_position, camera_data->sensor_width, frame_aspect_ratio, camera_data->xres, camera_data->yres);
+            pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
 
             // if outside of image
             if ((pixel(0) >= camera_data->xres) || (pixel(0) < 0) || (pixel(1) >= camera_data->yres) || (pixel(1) < 0) ||
@@ -238,7 +229,7 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             // write sample to image
-            unsigned pixelnumber = coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)), camera_data->xres);
+            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
             for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
               if (camera_data->aov_crypto[i]) camera_data->add_to_buffer_cryptomatte(pixelnumber, crypto_cache[camera_data->aov_list_name[i]], camera_data->aov_list_name[i], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
@@ -251,7 +242,7 @@ filter_pixel
 
         case ThinLens:
         {
-          // early out, before coc
+          // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
                                     1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
@@ -262,7 +253,7 @@ filter_pixel
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
             
-            float image_dist_samplepos_mb = (-camera_data->focal_length * camera_space_sample_position.z) / (-camera_data->focal_length + camera_space_sample_position.z);
+            float image_dist_samplepos = (-camera_data->focal_length * camera_space_sample_position.z) / (-camera_data->focal_length + camera_space_sample_position.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
@@ -289,7 +280,7 @@ filter_pixel
             AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
             dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
-            float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
+            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
             AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
 
 
@@ -355,8 +346,8 @@ filter_pixel
             // write sample to image
             // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
             // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-            unsigned pixelnumber = coords_to_linear_pixel(floor(pixel_x), floor(pixel_y), camera_data->xres);
-            if (!redistribute) pixelnumber = coords_to_linear_pixel(px, py, camera_data->xres);
+            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y));
+            if (!redistribute) pixelnumber = camera_data->coords_to_linear_pixel(px, py);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
@@ -402,26 +393,25 @@ filter_pixel
       }
 
       *((AtRGBA*)data_out) = value_out;
-      break;
-    }
+    } break;
+
     case AI_TYPE_RGB: {
       AtRGBA filtered_value = camera_data->filter_gaussian_complete(iterator, data_type);
       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtRGB*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
+
     case AI_TYPE_VECTOR: {
       AtRGBA filtered_value = camera_data->filter_closest_complete(iterator, data_type);
       AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtVector*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
+
     case AI_TYPE_FLOAT: {
       AtRGBA filtered_value = camera_data->filter_closest_complete(iterator, data_type);
       float rgb_energy = filtered_value.r;
       *((float*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
   }
   
 }

@@ -7,26 +7,6 @@
 
 
 
-inline int coords_to_linear_pixel(const int x, const int y, const int xres) {
-  return x + (y * xres);
-}
-
-inline int coords_to_linear_pixel_region(const int x, const int y, const int xres, const int region_min_x, const int region_min_y) {
-  return (x-region_min_x) + ((y-region_min_y) * xres);
-}
-
-// inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-//   x = linear_pixel % xres;
-//   y = (int)(linear_pixel / xres);
-// }
-
-// inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
-//   x = (linear_pixel % xres) + region_min_x;
-//   y = (int)(linear_pixel / xres) + region_min_y;
-// }
-
-
-
 inline std::string replace_first_occurence(std::string& s, const std::string& toReplace, const std::string& replaceWith) {
     std::size_t pos = s.find(toReplace);
     if (pos == std::string::npos) return s;
@@ -39,8 +19,6 @@ inline float filter_weight_gaussian(AtVector2 p, float width) {
   if (r > 1.0f) return 0.0;
   return AiFastExp(2 * -r);
 }
-
-
 
 
 inline float linear_interpolate(float perc, float a, float b){

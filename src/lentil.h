@@ -184,7 +184,7 @@ struct Camera
     const AtString atstring_time = AtString("lentil_time");
 
     bool cryptomatte;
-    
+
     bool imager_print_once_only;
 
 
@@ -198,15 +198,24 @@ public:
 
     ~Camera() {
         image.invalidate();
+        destroy_buffers();
     }
 
     void setup_all (AtUniverse *universe) {
 
         lentil_crit_sec_enter();
 
-        camera_node = AiUniverseGetCamera(universe);
+        destroy_buffers();
 
+        camera_node = AiUniverseGetCamera(universe);
         get_lentil_camera_params();
+        
+        get_bidirectional_status(universe);
+        if (redistribution) {
+            setup_aovs(universe);
+            setup_filter(universe);
+        }
+
         camera_model_specific_setup();
 
         // make probability functions of the bokeh image
@@ -217,18 +226,7 @@ public:
             AiRenderAbort();
         }
 
-
-        imager_node = get_lentil_imager(universe);
-        
-
-        setup_imager_render_hints(universe);
-        setup_filter(universe);
-
-        
         lentil_crit_sec_leave();
-
-
-        
     }
 
 
@@ -634,27 +632,27 @@ public:
 
     inline float get_coc_thinlens(AtVector camera_space_sample_position){
         // need to account for the differences in setup between the two methods, since the inputs are scaled differently in the camera shader
-        float focus_dist = focus_distance;
-        float aperture_radius = aperture_radius;
+        float _focus_distance = focus_distance;
+        float _aperture_radius = aperture_radius;
         switch (cameraType){
             case PolynomialOptics:
             { 
-                focus_dist /= 10.0;
+                _focus_distance /= 10.0;
             } break;
             case ThinLens:
             {
-                aperture_radius *= 10.0;
+                _aperture_radius *= 10.0;
             } break;
         }
         
         const float image_dist_samplepos = (-focal_length * camera_space_sample_position.z) / (-focal_length + camera_space_sample_position.z);
-        const float image_dist_focusdist = (-focal_length * -focus_dist) / (-focal_length + -focus_dist);
-        return std::abs((aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
+        const float image_dist_focusdist = (-focal_length * -_focus_distance) / (-focal_length + -_focus_distance);
+        return std::abs((_aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
     }
 
 
 
-    inline AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+    AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
         AtRGBA pixel_energy = AI_RGBA_ZERO;
         float z = 0.0;
 
@@ -694,8 +692,7 @@ public:
     }
 
 
-
-    inline AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
         float aweight = 0.0f;
         AtRGBA avalue = AI_RGBA_ZERO;
 
@@ -708,8 +705,7 @@ public:
             // determine distance to filter center
             const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
             const float r = AiSqr(2 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
-            if (r > 1.0f)
-                continue;
+            if (r > 1.0f) continue;
 
             // gaussian filter weight
             const float weight = AiFastExp(2 * -r) * current_inv_density;
@@ -718,14 +714,12 @@ public:
             AtRGBA sample_energy = AI_RGBA_ZERO;
             switch (aov_type){
                 case AI_TYPE_RGBA: {
-                sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-                break;
-                }
+                    sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+                } break;
                 case AI_TYPE_RGB: {
-                AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
-                sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
-                break;
-                }
+                    AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
+                    sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
+                } break;
             }
             
             avalue += weight * sample_energy;
@@ -899,7 +893,150 @@ public:
     }
 
 
+    inline int coords_to_linear_pixel(const int x, const int y) {
+        return x + (y * xres);
+    }
+
+    inline int coords_to_linear_pixel_region(const int x, const int y) {
+        return (x-region_min_x) + ((y-region_min_y) * xres);
+    }
+
+    // inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
+    //   x = linear_pixel % xres;
+    //   y = (int)(linear_pixel / xres);
+    // }
+
+    // inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
+    //   x = (linear_pixel % xres) + region_min_x;
+    //   y = (int)(linear_pixel / xres) + region_min_y;
+    // }
+
+    inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float frame_aspect_ratio){
+        // convert sensor position to pixel position
+        const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
+        const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
+                                    ((-s(1) + 1.0) / 2.0) * yres);
+        return pixel;
+    }
+
+
+
 private:
+
+    // currently destroying ALL data just to be sure, probably only have to do the vectors
+    void destroy_buffers() {
+        zbuffer.clear();
+        aov_list_name.clear();
+        aov_list_type.clear();
+        aov_crypto.clear();
+        aov_duplicates.clear();
+        crypto_hash_map.clear();
+        crypto_total_weight.clear();
+        cryptomatte_aov_names.clear();
+        image_data_types.clear();
+        image_col_types.clear();
+        // image_ptr_types.clear();
+    }
+
+    void setup_aovs(AtUniverse *universe) {
+        // operator_data->cook = false;
+
+        // // lentil aov setup
+        // const AtNodeEntry *crypto_ne = AiNodeEntryLookUp(AtString("cryptomatte"));
+        // if (AiNodeEntryGetCount(crypto_ne) == 0) {
+        //     operator_data->cook = true;
+        // }
+
+        // AtUniverse *universe = AiNodeGetUniverse(op);
+
+        bool lentil_filter_found = false;
+        if (AiNodeEntryGetCount(AiNodeEntryLookUp("lentil_filter")) == 0){
+            filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
+        } else {
+            lentil_filter_found = true;
+        }
+
+        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), "outputs");
+        std::vector<std::string> output_strings;
+        bool lentil_time_found = false;
+
+        const int elements = AiArrayGetNumElements(outputs);
+        for (int i=0; i<elements; i++) {
+            
+            std::string output_string = AiArrayGetStr(outputs, i).c_str();
+            
+            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
+            std::string filter = output_string_split[filter_index];
+            std::string type = output_string_split[filter_index-1];
+            std::string name = output_string_split[filter_index-2];
+
+            if (name == "lentil_time"){
+                lentil_time_found = true;
+                output_strings.push_back(output_string);
+                continue;
+            }
+
+            // lentil unsupported
+            if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") {
+                output_strings.push_back(output_string);
+                continue;
+            }
+
+            if (name.find("crypto_") != std::string::npos){
+                output_strings.push_back(output_string);
+                continue;
+            }
+            
+            if (filter != "lentil_replaced_filter") {
+                output_string.replace(output_string.find(filter), filter.length(), "lentil_replaced_filter");        
+            }
+            
+            output_strings.push_back(output_string);
+        }
+        
+
+        if (!lentil_time_found) {
+            std::string tmp_first_aov = output_strings[0];
+            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(tmp_first_aov, universe);
+            std::string type = output_string_split[filter_index-1];
+            std::string name = output_string_split[filter_index-2];
+            tmp_first_aov.replace(tmp_first_aov.find(name), name.length(), "lentil_time");
+            tmp_first_aov.replace(tmp_first_aov.find(type), type.length(), "FLOAT");
+            output_strings.push_back(tmp_first_aov);
+        }
+
+        AtArray *final_outputs = AiArrayAllocate(output_strings.size(), 1, AI_TYPE_STRING);
+        uint32_t i = 0;
+        for (auto &output : output_strings){
+            AiArraySetStr(final_outputs, i++, output.c_str());
+            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output, universe);
+            std::string type = output_string_split[filter_index-1];
+            AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); // watch out for type here!!
+        }
+        AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
+
+
+
+        // need to add an entry to the aov_shaders (NODE)
+        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
+        int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
+
+        if (!lentil_filter_found){
+            AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
+            AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
+
+            // set time node params/linking
+            AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
+            AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
+            AiNodeLink(time_read, "aov_input", time_write);
+
+            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
+            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
+            AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
+        }
+    }
+
+
 
     void get_lentil_camera_params() {
         cameraType = (CameraType) AiNodeGetInt(camera_node, "cameratype");
@@ -1370,81 +1507,76 @@ private:
     // }
 
 
-    AtNode* get_lentil_imager(AtUniverse *uni) {
-        AtNode* options = AiUniverseGetOptions(uni);
-        AtArray* outputs = AiNodeGetArray(options, "outputs");
-        std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
-        std::string driver = split_str(output_string, std::string(" ")).back();
-        AtString driver_as = AtString(driver.c_str());
-        AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
-        AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
+    // AtNode* get_lentil_imager(AtUniverse *uni) {
+    //     AtNode* options = AiUniverseGetOptions(uni);
+    //     AtArray* outputs = AiNodeGetArray(options, "outputs");
+    //     std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
+    //     std::string driver = split_str(output_string, std::string(" ")).back();
+    //     AtString driver_as = AtString(driver.c_str());
+    //     AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
+    //     AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
         
         
-        if (imager_node == nullptr){
-            AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
-            return nullptr;
-        }
+    //     if (imager_node == nullptr){
+    //         AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
+    //         return nullptr;
+    //     }
         
-        for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
-            const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
-            if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("imager_lentil")) {
-                return imager_node;
-            } else {
-                imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
-            }
-        }
+    //     for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
+    //         const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
+    //         if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("imager_lentil")) {
+    //             return imager_node;
+    //         } else {
+    //             imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
+    //         }
+    //     }
 
-        AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
-        AiRenderAbort();
-        return nullptr;
-    }
-
-
+    //     AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
+    //     AiRenderAbort();
+    //     return nullptr;
+    // }
 
 
 
 
-    void setup_imager_render_hints(AtUniverse *universe) {
-        AtRenderSession *render_session = AiUniverseGetRenderSession(universe);
-        AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-        AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
+    
+    void get_bidirectional_status(AtUniverse *universe) {
 
-    }
-
-    void setup_filter(AtUniverse *universe) {
         redistribution = true;
 
-        // disable for non-lentil cameras
-        if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
-            redistribution = false;
-            AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-            AiRenderAbort();
-            return;
-        }
+        // // disable for non-lentil cameras
+        // if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
+        //     redistribution = false;
+        //     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
+        //     AiRenderAbort();
+        //     return;
+        // }
 
         // if progressive rendering is on, don't redistribute
         if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
             redistribution = false;
-            AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
+            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported.");
             AiRenderAbort();
             return;
         }
 
         if (!enable_dof) {
-            AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
+            AiMsgWarning("[LENTIL BIDIRECTIONAL] Depth of field is disabled, therefore disabling bidirectional sampling.");
             redistribution = false;
         }
 
         if (bidir_sample_mult == 0){
             redistribution = false;
-            AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
+            AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional samples are set to 0, filter will not execute.");
         }
 
         if (bidir_debug) {
             redistribution = false;
-            AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
+            AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional Debug mode is on, no redistribution.");
         }
+    }
 
+    void setup_filter(AtUniverse *universe) {
 
         // xres_without_region = AiNodeGetInt(AiUniverseGetOptions(universe), "xres");
         // yres_without_region = AiNodeGetInt(AiUniverseGetOptions(universe), "yres");
@@ -1476,22 +1608,8 @@ private:
         imager_print_once_only = false;
 
 
-        zbuffer.clear();
+       
         zbuffer.resize(xres * yres);
-
-
-        // prepare framebuffers for all AOVS, these are of variable size.
-        aov_list_name.clear();
-        aov_list_type.clear();
-        aov_crypto.clear();
-        aov_duplicates.clear();
-        crypto_hash_map.clear();
-        crypto_total_weight.clear();
-        cryptomatte_aov_names.clear();
-        image_data_types.clear();
-        image_col_types.clear();
-        // image_ptr_types.clear();
-        
 
 
         // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
@@ -1590,49 +1708,7 @@ private:
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    inline int coords_to_linear_pixel(const int x, const int y, const int xres) {
-        return x + (y * xres);
-    }
-
-    inline int coords_to_linear_pixel_region(const int x, const int y, const int xres, const int region_min_x, const int region_min_y) {
-        return (x-region_min_x) + ((y-region_min_y) * xres);
-    }
-
-    // inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-    //   x = linear_pixel % xres;
-    //   y = (int)(linear_pixel / xres);
-    // }
-
-    // inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
-    //   x = (linear_pixel % xres) + region_min_x;
-    //   y = (int)(linear_pixel / xres) + region_min_y;
-    // }
-
-
 };
-
-extern struct Camera camera;
 
 
 
