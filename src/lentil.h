@@ -229,8 +229,7 @@ public:
 
 
     inline void trace_ray_fw_po(bool original_ray, int &tries, 
-                                const double input_sx, const double input_sy, 
-                                const double input_lensx, const double input_lensy, 
+                                const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
                                 Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction)
     {
@@ -257,24 +256,19 @@ public:
             if (!enable_dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
             
             Eigen::Vector2d unit_disk(0.0, 0.0);
-            if (tries == 0 && enable_dof) {
-                if (bokeh_enable_image) {
-                    image.bokehSample(input_lensx, input_lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-                } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample(input_lensx, input_lensy, unit_disk, false);
-                } else {
-                    lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), input_lensx, input_lensy, 1.0, bokeh_aperture_blades);
+            
+            if (enable_dof) {
+                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                    r1 = xor128() / 4294967296.0;
+                    r2 = xor128() / 4294967296.0;
                 }
-            } else if (tries > 0 && enable_dof){
-                r1 = xor128() / 4294967296.0;
-                r2 = xor128() / 4294967296.0;
                 
                 if (bokeh_enable_image) {
-                image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
+                    image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                concentric_disk_sample(r1, r2, unit_disk, true);
+                    concentric_disk_sample(r1, r2, unit_disk, true);
                 } else {
-                lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
+                    lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
             }
 
@@ -385,9 +379,9 @@ public:
 
 
     inline void trace_ray_fw_thinlens(bool original_ray, int &tries, 
-                                    float sx, float sy, float lensx, float lensy, 
+                                    float sx, float sy,
                                     AtVector &origin, AtVector &dir, AtRGB &weight,
-                                    float &r1, float &r2){
+                                    double &r1, double &r2){
         tries = 0;
         bool ray_succes = false;
 
@@ -403,7 +397,7 @@ public:
 
             // create point on sensor (camera space)
             const AtVector p(s.x * (sensor_width*0.5), 
-                            s.y * (sensor_width*0.5), 
+                             s.y * (sensor_width*0.5), 
                             -focal_length);
                 
 
@@ -412,18 +406,13 @@ public:
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
-            if (tries == 0 && enable_dof) { // make use of blue noise sampler in arnold
-                if (bokeh_enable_image) {
-                    image.bokehSample(lensx, lensy, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
-                } else if (bokeh_aperture_blades < 2) {
-                    concentricDiskSample(lensx, lensy, unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
-                } else {
-                    lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), lensx, lensy, 1.0, bokeh_aperture_blades);
+            
+            if (enable_dof) {
+                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                    r1 = xor128() / 4294967296.0;
+                    r2 = xor128() / 4294967296.0;
                 }
-            } else if (tries > 0 && enable_dof){
-                r1 = xor128() / 4294967296.0;
-                r2 = xor128() / 4294967296.0;
-
+                
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
@@ -432,6 +421,7 @@ public:
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
             }
+
 
             unit_disk(0) *= bokeh_anamorphic;
 

@@ -71,6 +71,7 @@ driver_process_bucket {
   AtNode *camera_node = AiUniverseGetCamera(universe);
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
+  // return; //tmp remove
 
   if (!camera_data->imager_print_once_only && !camera_data->redistribution) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
