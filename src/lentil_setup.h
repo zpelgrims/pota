@@ -6,38 +6,7 @@ extern AtCritSec l_critsec;
 extern bool l_critsec_active;
 
 
-///////////////////////////////////////////////
-//
-//      Crit sec utilities
-//
-///////////////////////////////////////////////
 
-inline bool lentil_crit_sec_init() {
-    // Called in node_plugin_initialize. Returns true as a convenience.
-    l_critsec_active = true;
-    AiCritSecInit(&l_critsec);
-    return true;
-}
-
-inline void lentil_crit_sec_close() {
-    // Called in node_plugin_cleanup
-    l_critsec_active = false;
-    AiCritSecClose(&l_critsec);
-}
-
-inline void lentil_crit_sec_enter() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (l_critsec_active)
-        AiCritSecEnter(&l_critsec);
-}
-
-inline void lentil_crit_sec_leave() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (l_critsec_active)
-        AiCritSecLeave(&l_critsec);
-}
 
 
 

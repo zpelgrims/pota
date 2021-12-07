@@ -1,6 +1,7 @@
 #include <ai.h>
 #include <algorithm>
 #include "global.h"
+#include "lentil.h"
 
 
 AI_DRIVER_NODE_EXPORT_METHODS(LentilImagerMtd);
@@ -20,206 +21,17 @@ node_parameters
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   // AiParameterStr(AtString("layer_selection"), AtString("*")); // if enabled, mtoa/c4dtoa will only run over rgba (hardcoded for now)
   AiParameterBool(AtString("enable"), true);
-  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+  // AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
 
  
 node_initialize
 {
-  AiNodeSetLocalData(node, new LentilFilterData());
   AiDriverInitialize(node, false);
 }
  
-node_update 
-{
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-  bokeh->arnold_universe = AiNodeGetUniverse(node);
-  bokeh->camera = AiUniverseGetCamera(bokeh->arnold_universe);
-  bokeh->enabled = true;
-
-
-  // imager setup
-  AtRenderSession *render_session = AiUniverseGetRenderSession(bokeh->arnold_universe);
-  AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-  AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
-
-
-  // disable for non-lentil cameras
-  if (!AiNodeIs(bokeh->camera, AtString("lentil_camera"))) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-    AiRenderAbort();
-    return;
-  }
-
-  // if progressive rendering is on, don't redistribute
-  if (AiNodeGetBool(AiUniverseGetOptions(bokeh->arnold_universe), "enable_progressive_render")) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Progressive rendering is not supported.");
-    AiRenderAbort();
-    return;
-  }
-
-  if (!AiNodeGetBool(bokeh->camera, "enable_dof")) {
-    AiMsgWarning("[LENTIL FILTER] Depth of field is disabled, therefore disabling bidirectional sampling.");
-    bokeh->enabled = false;
-  }
-
-  if (AiNodeGetInt(bokeh->camera, "bidir_sample_mult") == 0){
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional samples are set to 0, filter will not execute.");
-  }
-
-  if (AiNodeGetBool(bokeh->camera, "bidir_debug")) {
-    bokeh->enabled = false;
-    AiMsgWarning("[LENTIL FILTER] Bidirectional Debug mode is on, no redistribution.");
-  }
-
-
-  // bokeh->xres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
-  // bokeh->yres_without_region = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
-  // bokeh->region_min_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_x");
-  // bokeh->region_min_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_min_y");
-  // bokeh->region_max_x = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_x");
-  // bokeh->region_max_y = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "region_max_y");
-
-  // need to check if the render region option is used, if not, set it to default
-  // if (bokeh->region_min_x == INT32_MIN || bokeh->region_min_x == INT32_MAX ||
-  //     bokeh->region_max_x == INT32_MIN || bokeh->region_max_x == INT32_MAX ||
-  //     bokeh->region_min_y == INT32_MIN || bokeh->region_min_y == INT32_MAX ||
-  //     bokeh->region_max_y == INT32_MIN || bokeh->region_max_y == INT32_MAX ) {
-  //       bokeh->region_min_x = 0;
-  //       bokeh->region_min_y = 0;
-  //       bokeh->region_max_x = bokeh->xres_without_region;
-  //       bokeh->region_max_y = bokeh->yres_without_region;
-  // }
-
-  // bokeh->xres = bokeh->region_max_x - bokeh->region_min_x;
-  // bokeh->yres = bokeh->region_max_y - bokeh->region_min_y;
-  bokeh->xres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "xres");
-  bokeh->yres = AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "yres");
-
-
-  bokeh->filter_width = 2.0;
-  bokeh->time_start = AiCameraGetShutterStart();
-  bokeh->time_end = AiCameraGetShutterEnd();
-  bokeh->imager_print_once_only = false;
-
-
-  bokeh->zbuffer.clear();
-  bokeh->zbuffer.resize(bokeh->xres * bokeh->yres);
-
-
-  // prepare framebuffers for all AOVS, these are of variable size.
-  bokeh->aov_list_name.clear();
-  bokeh->aov_list_type.clear();
-  bokeh->aov_crypto.clear();
-  bokeh->aov_duplicates.clear();
-  bokeh->crypto_hash_map.clear();
-  bokeh->crypto_total_weight.clear();
-  bokeh->cryptomatte_aov_names.clear();
-  bokeh->image_data_types.clear();
-  bokeh->image_col_types.clear();
-  // bokeh->image_ptr_types.clear();
-  
-
-
-  // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
-  std::string driver_first_aov;
-  AtNode* options = AiUniverseGetOptions(bokeh->arnold_universe);
-  AtArray* outputs = AiNodeGetArray(options, "outputs");
-  for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
-    std::string output_string = AiArrayGetStr(outputs, i).c_str();
-    std::string lentil_str = "lentil_replaced_filter";
-    auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, bokeh->arnold_universe);
-
-    if (output_string_split[filter_index] == lentil_str){
-      std::string name = output_string_split[filter_index-2];
-      std::string type = output_string_split[filter_index-1];
-      std::string driver = output_string_split[filter_index+1];
-
-      if (i == 0) driver_first_aov = driver;
-
-      AtString name_as = AtString(name.c_str());
-
-      bokeh->aov_list_name.push_back(name_as);
-      bokeh->aov_list_type.push_back(string_to_arnold_type(type));
-
-      ++bokeh->aov_duplicates[name_as];
-
-      if (type == "RGBA" || type == "RGB"){
-        bokeh->image_col_types[name_as].clear();
-        bokeh->image_col_types[name_as].resize(bokeh->xres * bokeh->yres);
-      } else {
-        bokeh->image_data_types[name_as].clear();
-        bokeh->image_data_types[name_as].resize(bokeh->xres * bokeh->yres);
-      }
-      // bokeh->image_ptr_types[name_as].clear();
-      // bokeh->image_ptr_types[name_as].resize(bokeh->xres * bokeh->yres);
-
-      bokeh->aov_crypto.push_back(false);
-
-      AiMsgInfo("[LENTIL IMAGER] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
-    }
-  }
-
-
-
-  // check if a cryptomatte aovshader is present
-  bool cryptomatte_auto_detected = false;
-  AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
-  for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
-    AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
-    if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
-      cryptomatte_auto_detected = true;
-    }
-  }
-  
-  if (cryptomatte_auto_detected == false) {
-    AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
-  }
-
-
-  // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
-  // this speeds up the IPR sessions.
-  bool driver_is_exr = false;
-  AtNode *driver_node = AiNodeLookUpByName(bokeh->arnold_universe, driver_first_aov.c_str());
-  if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
-    driver_is_exr = true;
-  }
-
-  // setup ranked crypto aov's
-  if (driver_is_exr && cryptomatte_auto_detected) {
-    std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
-    std::vector<std::string> crypto_ranks{"00", "01", "02"};
-    for (const auto& crypto_type: crypto_types) {
-      for (const auto& crypto_rank : crypto_ranks) {
-        std::string name_as_s = crypto_type+crypto_rank;
-        AtString name_as = AtString(name_as_s.c_str());
-
-        bokeh->aov_list_name.push_back(name_as);
-        bokeh->aov_list_type.push_back(AI_TYPE_FLOAT);
-        bokeh->crypto_hash_map[name_as].clear();
-        bokeh->crypto_hash_map[name_as].resize(bokeh->xres * bokeh->yres);
-        bokeh->crypto_total_weight[name_as].clear();
-        bokeh->crypto_total_weight[name_as].resize(bokeh->xres * bokeh->yres);
-
-        bokeh->cryptomatte_aov_names.push_back(name_as);
-        bokeh->aov_crypto.push_back(true);
-        AiMsgInfo("[LENTIL IMAGER] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
-      }
-    }
-  }
-
-  
-  
-  bokeh->current_inv_density = 0.0;
-
-  if (bokeh->enabled) AiMsgInfo("[LENTIL IMAGER] Setup completed, starting bidirectional sampling.");
-
-  // crypto_crit_sec_leave();
-}
+node_update {}
  
 driver_supports_pixel_type 
 {
@@ -249,17 +61,20 @@ driver_prepare_bucket {} // called before a bucket is rendered
 driver_process_bucket {
  
   AiOutputIteratorReset(iterator);
-  // LentilImagerData* imager_data = (LentilImagerData*)AiNodeGetLocalData(node);
 
-  LentilFilterData *filter_data = (LentilFilterData*)AiNodeGetLocalData(node);
-  if (!filter_data->enabled) {
+  AtUniverse *universe = AiNodeGetUniverse(node);
+  AtNode *camera_node = AiUniverseGetCamera(universe);
+  Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
+
+
+  if (!camera_data->redistribution) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
     return;
   }
 
   // BUG: this could potentially fail when using adaptive sampling?
-  if (filter_data->current_inv_density > 0.2) {
-    AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3, current inv density: %f", filter_data->current_inv_density);
+  if (camera_data->current_inv_density > 0.2) {
+    AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3, current inv density: %f", camera_data->current_inv_density);
     return;
   }
 
@@ -281,17 +96,17 @@ driver_process_bucket {
   const void *bucket_data;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
-    // if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
-    if (std::find(filter_data->aov_list_name.begin(), filter_data->aov_list_name.end(), aov_name) != filter_data->aov_list_name.end()){
+    // if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
+    if (std::find(camera_data->aov_list_name.begin(), camera_data->aov_list_name.end(), aov_name) != camera_data->aov_list_name.end()){
       if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
-      // if (!filter_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
+      // if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
       for (int j = 0; j < bucket_size_y; ++j) {
         for (int i = 0; i < bucket_size_x; ++i) {
           int y = j + bucket_yo;
           int x = i + bucket_xo;
           int in_idx = j * bucket_size_x + i;
-          int linear_pixel = coords_to_linear_pixel_region(x, y, filter_data->xres, filter_data->region_min_x, filter_data->region_min_y);
+          int linear_pixel = coords_to_linear_pixel_region(x, y, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
 
           switch (aov_type){
             case AI_TYPE_RGBA: {
@@ -310,7 +125,7 @@ driver_process_bucket {
                 AtRGBA out = AI_RGBA_ZERO;
                 // rank 0 means if vals.size() does not contain 0, we can stop
                 // rank 2 means if vals.size() does not contain 2, we can stop
-                if (filter_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
+                if (camera_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
                   break;
                 }
 
@@ -318,8 +133,8 @@ driver_process_bucket {
                 std::vector<std::pair<float, float>> all_vals;
                 std::vector<std::pair<float, float>>::iterator all_vals_iter;
 
-                all_vals.reserve(filter_data->crypto_hash_map[aov_name][linear_pixel].size());
-                for (vals_iter = filter_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != filter_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter){
+                all_vals.reserve(camera_data->crypto_hash_map[aov_name][linear_pixel].size());
+                for (vals_iter = camera_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != camera_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter){
                    all_vals.push_back(*vals_iter);
                 }
 
@@ -330,10 +145,10 @@ driver_process_bucket {
                 for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
                     if (iter == rank) {
                         out.r = all_vals_iter->first;
-                        out.g = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
+                        out.g = (all_vals_iter->second / camera_data->crypto_total_weight[aov_name][linear_pixel]);
                     } else if (iter == rank + 1) {
                         out.b = all_vals_iter->first;
-                        out.a = (all_vals_iter->second / filter_data->crypto_total_weight[aov_name][linear_pixel]);
+                        out.a = (all_vals_iter->second / camera_data->crypto_total_weight[aov_name][linear_pixel]);
                     }
                     iter++;
                 }
@@ -343,7 +158,7 @@ driver_process_bucket {
 
               // usualz
               else {
-                AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+                AtRGBA image = camera_data->image_col_types[aov_name][linear_pixel];
                 if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
 
                 ((AtRGBA*)bucket_data)[in_idx] = image;
@@ -352,7 +167,7 @@ driver_process_bucket {
             }
 
             case AI_TYPE_RGB: {
-              AtRGBA image = filter_data->image_col_types[aov_name][linear_pixel];
+              AtRGBA image = camera_data->image_col_types[aov_name][linear_pixel];
               image /= (image.a == 0.0) ? 1.0 : image.a;
 
               AtRGB final_value = AtRGB(image.r, image.g, image.b);
@@ -361,30 +176,30 @@ driver_process_bucket {
             }
 
             case AI_TYPE_FLOAT: {
-              ((float*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+              ((float*)bucket_data)[in_idx] = camera_data->image_data_types[aov_name][linear_pixel].r;
               break;
             }
 
             case AI_TYPE_VECTOR: {
-              AtVector final_value (filter_data->image_data_types[aov_name][linear_pixel].r, 
-                                    filter_data->image_data_types[aov_name][linear_pixel].g,
-                                    filter_data->image_data_types[aov_name][linear_pixel].b);
+              AtVector final_value (camera_data->image_data_types[aov_name][linear_pixel].r, 
+                                    camera_data->image_data_types[aov_name][linear_pixel].g,
+                                    camera_data->image_data_types[aov_name][linear_pixel].b);
               ((AtVector*)bucket_data)[in_idx] = final_value;
               break;
             }
 
             // case AI_TYPE_INT: {
-            //   ((int*)bucket_data)[in_idx] = filter_data->image_data_types[aov_name][linear_pixel].r;
+            //   ((int*)bucket_data)[in_idx] = camera_data->image_data_types[aov_name][linear_pixel].r;
             //   break;
             // }
 
             // case AI_TYPE_UINT: {
-            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(filter_data->image_data_types[aov_name][linear_pixel].r);
+            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(camera_data->image_data_types[aov_name][linear_pixel].r);
             //   break;
             // }
 
             // case AI_TYPE_POINTER: {
-            //   ((const void**)bucket_data)[in_idx] = filter_data->image_ptr_types[aov_name][linear_pixel];
+            //   ((const void**)bucket_data)[in_idx] = camera_data->image_ptr_types[aov_name][linear_pixel];
             //   break;
             // }
           }
@@ -393,7 +208,7 @@ driver_process_bucket {
     }
   }
 
-  filter_data->imager_print_once_only = true;
+  camera_data->imager_print_once_only = true;
 }
 
 
@@ -401,10 +216,7 @@ driver_write_bucket {}
  
 driver_close {}
  
-node_finish {
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(node);
-  delete bokeh;
-}
+node_finish {}
 
 
  void registerLentilImager(AtNodeLib* node) {
