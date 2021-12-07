@@ -36,6 +36,12 @@ node_update {
     AtRenderSession *render_session = AiUniverseGetRenderSession(universe);
     AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
     AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
+
+
+    // auto callback = []( void *voidStatus, AtRenderUpdateType updateType, const AtRenderUpdateInfo *updateInfo ){
+    //   AiMsgWarning("update level: %d", updateInfo->current_AA_samples);
+    // };
+    
 }
  
 driver_supports_pixel_type 
@@ -71,11 +77,12 @@ driver_process_bucket {
   AtNode *camera_node = AiUniverseGetCamera(universe);
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
-  // return; //tmp remove
-
-  if (!camera_data->imager_print_once_only && !camera_data->redistribution) {
-    AiMsgInfo("[LENTIL IMAGER] Skipping imager");
-    camera_data->imager_print_once_only = true;
+  if (!camera_data->redistribution) {
+    if (!camera_data->imager_print_once_only){
+      AiMsgInfo("[LENTIL IMAGER] Skipping imager");
+      camera_data->imager_print_once_only = true;
+    }
+    
     return;
   }
 
