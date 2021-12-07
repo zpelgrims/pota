@@ -78,27 +78,28 @@ filter_pixel
   // }
 
 
-  bool skip_redistribution = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local.
+  bool skip_redistribution_local = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local to the filter.
 
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
   int samples_counter = 0;
   while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
+  AiAOVSampleIteratorReset(iterator);
   float AA_samples = std::sqrt(samples_counter) / 2.0;
   camera_data->current_inv_density = 1.0/(AA_samples*AA_samples);
   if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
     camera_data->redistribution = false; // skip when aa samples are below final AA samples
   }
-  AiAOVSampleIteratorReset(iterator);
-
-
-  if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution = true; // early out for non-primary AOV samples
   
 
-  if (camera_data->redistribution && !skip_redistribution){
+  if (camera_data->bidir_debug) skip_redistribution_local = true;
+  if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
+  
+
+  if (camera_data->redistribution && !skip_redistribution_local){
     const double xres = (double)camera_data->xres;
     const double yres = (double)camera_data->yres;
     // const double frame_aspect_ratio = (double)camera_data->xres_without_region/(double)camera_data->yres_without_region;
-    const double frame_aspect_ratio = (double)camera_data->xres/(double)camera_data->yres;
+    const double frame_aspect_ratio = xres/yres;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
@@ -211,7 +212,7 @@ filter_pixel
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, camera_data->aperture_radius, camera_data->lambda, sensor_position, camera_data->sensor_shift, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
+            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
               --count;
               continue;
             }
@@ -219,7 +220,7 @@ filter_pixel
             pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
 
             // if outside of image
-            if ((pixel(0) >= camera_data->xres) || (pixel(0) < 0) || (pixel(1) >= camera_data->yres) || (pixel(1) < 0) ||
+            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
                 (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
             {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame

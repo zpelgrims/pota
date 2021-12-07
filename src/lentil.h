@@ -161,9 +161,7 @@ struct Camera
     float filter_width;
     float time_start;
     float time_end;
-    std::map<AtString, std::vector<AtRGBA> > image_data_types;
-    std::map<AtString, std::vector<AtRGBA> > image_col_types;
-    // std::map<AtString, std::vector<const void *> > image_ptr_types;
+    std::map<AtString, std::vector<AtRGBA> > aov_buffers;
     std::map<AtString, unsigned int> aov_duplicates;
     std::vector<float> zbuffer;
     std::vector<AtString> aov_list_name;
@@ -210,7 +208,7 @@ public:
         camera_node = AiUniverseGetCamera(universe);
         get_lentil_camera_params();
         
-        get_bidirectional_status(universe);
+        redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
             setup_aovs(universe);
             setup_filter(universe);
@@ -535,11 +533,8 @@ public:
 
 
     // given camera space scene point, return point on sensor
-    inline bool trace_ray_bw_po(Eigen::Vector3d target, 
-                                const double aperture_radius, 
-                                const double lambda,
-                                Eigen::Vector2d &sensor_position, 
-                                const double sensor_shift,
+    inline bool trace_ray_bw_po(Eigen::Vector3d target,
+                                Eigen::Vector2d &sensor_position,
                                 const int px, 
                                 const int py,
                                 const int total_samples_taken,
@@ -793,21 +788,21 @@ public:
             if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
             else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-            image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
+            aov_buffers[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
             break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
             const AtRGBA rgba_energy = aov_value;
-            image_col_types[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+            aov_buffers[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
             
             break;
             }
 
             case AI_TYPE_VECTOR: {
             if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                image_data_types[aov_name][px] = aov_value;
+                aov_buffers[aov_name][px] = aov_value;
                 zbuffer[px] = std::abs(depth);
             }
 
@@ -816,7 +811,7 @@ public:
 
             case AI_TYPE_FLOAT: {
             if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                image_data_types[aov_name][px] = aov_value;
+                aov_buffers[aov_name][px] = aov_value;
                 zbuffer[px] = std::abs(depth);
             }
         
@@ -827,7 +822,7 @@ public:
             //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
             //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
             //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            //     image_data_types[aov_name][px] = rgba_energy;
+            //     aov_buffers[aov_name][px] = rgba_energy;
             //     zbuffer[px] = std::abs(depth);
             //   }
 
@@ -838,7 +833,7 @@ public:
             //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
             //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
             //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
-            //     image_data_types[aov_name][px] = rgba_energy;
+            //     aov_buffers[aov_name][px] = rgba_energy;
             //     zbuffer[px] = std::abs(depth);
             //   }
 
@@ -933,13 +928,11 @@ private:
         crypto_hash_map.clear();
         crypto_total_weight.clear();
         cryptomatte_aov_names.clear();
-        image_data_types.clear();
-        image_col_types.clear();
+        aov_buffers.clear();
         // image_ptr_types.clear();
     }
 
     void setup_aovs(AtUniverse *universe) {
-        // operator_data->cook = false;
 
         // // lentil aov setup
         // const AtNodeEntry *crypto_ne = AiNodeEntryLookUp(AtString("cryptomatte"));
@@ -947,7 +940,6 @@ private:
         //     operator_data->cook = true;
         // }
 
-        // AtUniverse *universe = AiNodeGetUniverse(op);
 
         bool lentil_filter_found = false;
         if (AiNodeEntryGetCount(AiNodeEntryLookUp("lentil_filter")) == 0){
@@ -1540,40 +1532,35 @@ private:
 
 
     
-    void get_bidirectional_status(AtUniverse *universe) {
-
-        redistribution = true;
+    bool get_bidirectional_status(AtUniverse *universe) {
 
         // // disable for non-lentil cameras
         // if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
-        //     redistribution = false;
         //     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
         //     AiRenderAbort();
-        //     return;
+        //     return false;
         // }
 
         // if progressive rendering is on, don't redistribute
         if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
-            redistribution = false;
             AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported.");
             AiRenderAbort();
-            return;
+            return false;
         }
 
         if (!enable_dof) {
             AiMsgWarning("[LENTIL BIDIRECTIONAL] Depth of field is disabled, therefore disabling bidirectional sampling.");
-            redistribution = false;
+            return false;
         }
 
         if (bidir_sample_mult == 0){
-            redistribution = false;
             AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional samples are set to 0, filter will not execute.");
+            return false;
         }
 
-        if (bidir_debug) {
-            redistribution = false;
-            AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional Debug mode is on, no redistribution.");
-        }
+        // should include an AA sample level test, if not final sample level, skip!
+
+        return true;
     }
 
     void setup_filter(AtUniverse *universe) {
@@ -1606,9 +1593,9 @@ private:
         time_start = AiCameraGetShutterStart();
         time_end = AiCameraGetShutterEnd();
         imager_print_once_only = false;
+        current_inv_density = 0.0;
 
 
-       
         zbuffer.resize(xres * yres);
 
 
@@ -1635,16 +1622,9 @@ private:
 
             ++aov_duplicates[name_as];
 
-            if (type == "RGBA" || type == "RGB"){
-                image_col_types[name_as].clear();
-                image_col_types[name_as].resize(xres * yres);
-            } else {
-                image_data_types[name_as].clear();
-                image_data_types[name_as].resize(xres * yres);
-            }
-            // image_ptr_types[name_as].clear();
-            // image_ptr_types[name_as].resize(xres * yres);
-
+            aov_buffers[name_as].clear();
+            aov_buffers[name_as].resize(xres * yres);
+            
             aov_crypto.push_back(false);
 
             AiMsgInfo("[LENTIL IMAGER] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
@@ -1681,30 +1661,26 @@ private:
             std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
             std::vector<std::string> crypto_ranks{"00", "01", "02"};
             for (const auto& crypto_type: crypto_types) {
-            for (const auto& crypto_rank : crypto_ranks) {
-                std::string name_as_s = crypto_type+crypto_rank;
-                AtString name_as = AtString(name_as_s.c_str());
+                for (const auto& crypto_rank : crypto_ranks) {
+                    std::string name_as_s = crypto_type+crypto_rank;
+                    AtString name_as = AtString(name_as_s.c_str());
 
-                aov_list_name.push_back(name_as);
-                aov_list_type.push_back(AI_TYPE_FLOAT);
-                crypto_hash_map[name_as].clear();
-                crypto_hash_map[name_as].resize(xres * yres);
-                crypto_total_weight[name_as].clear();
-                crypto_total_weight[name_as].resize(xres * yres);
+                    aov_list_name.push_back(name_as);
+                    aov_list_type.push_back(AI_TYPE_FLOAT);
+                    crypto_hash_map[name_as].clear();
+                    crypto_hash_map[name_as].resize(xres * yres);
+                    crypto_total_weight[name_as].clear();
+                    crypto_total_weight[name_as].resize(xres * yres);
 
-                cryptomatte_aov_names.push_back(name_as);
-                aov_crypto.push_back(true);
-                AiMsgInfo("[LENTIL IMAGER] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
-            }
+                    cryptomatte_aov_names.push_back(name_as);
+                    aov_crypto.push_back(true);
+                    AiMsgInfo("[LENTIL IMAGER] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+                }
             }
         }
 
         
         
-        current_inv_density = 0.0;
-
-        if (redistribution) AiMsgInfo("[LENTIL IMAGER] Setup completed, starting bidirectional sampling.");
-
     }
 
 

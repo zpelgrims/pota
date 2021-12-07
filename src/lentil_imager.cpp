@@ -72,14 +72,9 @@ driver_process_bucket {
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
 
-  if (!camera_data->redistribution) {
+  if (!camera_data->imager_print_once_only && !camera_data->redistribution) {
     AiMsgInfo("[LENTIL IMAGER] Skipping imager");
-    return;
-  }
-
-  // BUG: this could potentially fail when using adaptive sampling?
-  if (camera_data->current_inv_density > 0.2) {
-    AiMsgInfo("[LENTIL IMAGER] Skipping imager, AA samples < 3, current inv density: %f", camera_data->current_inv_density);
+    camera_data->imager_print_once_only = true;
     return;
   }
 
@@ -164,7 +159,7 @@ driver_process_bucket {
 
               // usualz
               else {
-                AtRGBA image = camera_data->image_col_types[aov_name][linear_pixel];
+                AtRGBA image = camera_data->aov_buffers[aov_name][linear_pixel];
                 if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
 
                 ((AtRGBA*)bucket_data)[in_idx] = image;
@@ -173,7 +168,7 @@ driver_process_bucket {
             }
 
             case AI_TYPE_RGB: {
-              AtRGBA image = camera_data->image_col_types[aov_name][linear_pixel];
+              AtRGBA image = camera_data->aov_buffers[aov_name][linear_pixel];
               image /= (image.a == 0.0) ? 1.0 : image.a;
 
               AtRGB final_value = AtRGB(image.r, image.g, image.b);
@@ -182,30 +177,25 @@ driver_process_bucket {
             }
 
             case AI_TYPE_FLOAT: {
-              ((float*)bucket_data)[in_idx] = camera_data->image_data_types[aov_name][linear_pixel].r;
+              ((float*)bucket_data)[in_idx] = camera_data->aov_buffers[aov_name][linear_pixel].r;
               break;
             }
 
             case AI_TYPE_VECTOR: {
-              AtVector final_value (camera_data->image_data_types[aov_name][linear_pixel].r, 
-                                    camera_data->image_data_types[aov_name][linear_pixel].g,
-                                    camera_data->image_data_types[aov_name][linear_pixel].b);
+              AtVector final_value (camera_data->aov_buffers[aov_name][linear_pixel].r, 
+                                    camera_data->aov_buffers[aov_name][linear_pixel].g,
+                                    camera_data->aov_buffers[aov_name][linear_pixel].b);
               ((AtVector*)bucket_data)[in_idx] = final_value;
               break;
             }
 
             // case AI_TYPE_INT: {
-            //   ((int*)bucket_data)[in_idx] = camera_data->image_data_types[aov_name][linear_pixel].r;
+            //   ((int*)bucket_data)[in_idx] = camera_data->aov_buffers[aov_name][linear_pixel].r;
             //   break;
             // }
 
             // case AI_TYPE_UINT: {
-            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(camera_data->image_data_types[aov_name][linear_pixel].r);
-            //   break;
-            // }
-
-            // case AI_TYPE_POINTER: {
-            //   ((const void**)bucket_data)[in_idx] = camera_data->image_ptr_types[aov_name][linear_pixel];
+            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(camera_data->aov_buffers[aov_name][linear_pixel].r);
             //   break;
             // }
           }
