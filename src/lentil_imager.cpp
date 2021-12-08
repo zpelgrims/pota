@@ -37,7 +37,6 @@ node_update {
     AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
     AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS
 
-
     // auto callback = []( void *voidStatus, AtRenderUpdateType updateType, const AtRenderUpdateInfo *updateInfo ){
     //   AiMsgWarning("update level: %d", updateInfo->current_AA_samples);
     // };

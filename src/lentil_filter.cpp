@@ -116,6 +116,7 @@ filter_pixel
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
+      // AiMsgInfo ("time: %f", time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
       AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(camera_data->camera_node, time, world_to_camera_matrix);
       AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);

@@ -952,11 +952,11 @@ private:
             std::string type = output_string_split[filter_index-1];
             std::string name = output_string_split[filter_index-2];
 
-            if (name == "lentil_time"){
-                lentil_time_found = true;
-                output_strings.push_back(output_string);
-                continue;
-            }
+            // if (name == "lentil_time"){
+            //     lentil_time_found = true;
+            //     output_strings.push_back(output_string);
+            //     continue;
+            // }
 
             // lentil unsupported
             if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") {
@@ -977,15 +977,15 @@ private:
         }
         
 
-        if (!lentil_time_found) {
-            std::string tmp_first_aov = output_strings[0];
-            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(tmp_first_aov, universe);
-            std::string type = output_string_split[filter_index-1];
-            std::string name = output_string_split[filter_index-2];
-            tmp_first_aov.replace(tmp_first_aov.find(name), name.length(), "lentil_time");
-            tmp_first_aov.replace(tmp_first_aov.find(type), type.length(), "FLOAT");
-            output_strings.push_back(tmp_first_aov);
-        }
+        // if (!lentil_time_found) {
+        //     std::string tmp_first_aov = output_strings[0];
+        //     auto [filter_index, output_string_split] = find_filter_index_in_aov_string(tmp_first_aov, universe);
+        //     std::string type = output_string_split[filter_index-1];
+        //     std::string name = output_string_split[filter_index-2];
+        //     tmp_first_aov.replace(tmp_first_aov.find(name), name.length(), "lentil_time");
+        //     tmp_first_aov.replace(tmp_first_aov.find(type), type.length(), "FLOAT");
+        //     output_strings.push_back(tmp_first_aov);
+        // }
 
         AtArray *final_outputs = AiArrayAllocate(output_strings.size(), 1, AI_TYPE_STRING);
         uint32_t i = 0;
@@ -999,23 +999,23 @@ private:
 
 
 
-        // need to add an entry to the aov_shaders (NODE)
-        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
-        int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
+        // // need to add an entry to the aov_shaders (NODE)
+        // AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
+        // int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
 
-        if (!lentil_filter_found){
-            AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
-            AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
+        // if (!lentil_filter_found){
+        //     AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
+        //     AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
 
-            // set time node params/linking
-            AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
-            AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
-            AiNodeLink(time_read, "aov_input", time_write);
+        //     // set time node params/linking
+        //     AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
+        //     AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
+        //     AiNodeLink(time_read, "aov_input", time_write);
 
-            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
-            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
-            AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
-        }
+        //     AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
+        //     AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
+        //     AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
+        // }
     }
 
 
@@ -1617,7 +1617,7 @@ private:
             
             aov_crypto.push_back(false);
 
-            AiMsgInfo("[LENTIL IMAGER] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
+            AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
             }
         }
 
@@ -1634,7 +1634,7 @@ private:
         }
         
         if (cryptomatte_auto_detected == false) {
-            AiMsgInfo("[LENTIL IMAGER] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
+            AiMsgInfo("[LENTIL BIDIRECTIONAL] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
         }
 
 
@@ -1664,7 +1664,7 @@ private:
 
                     cryptomatte_aov_names.push_back(name_as);
                     aov_crypto.push_back(true);
-                    AiMsgInfo("[LENTIL IMAGER] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+                    AiMsgInfo("[LENTIL BIDIRECTIONAL] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
                 }
             }
         }
