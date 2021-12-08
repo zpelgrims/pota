@@ -11,6 +11,9 @@
 #include "lens.h"
 #include "global.h"
 
+#include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
+#include <chrono>
+#include <thread>
 
 extern AtCritSec l_critsec;
 extern bool l_critsec_active;
@@ -141,6 +144,7 @@ struct Camera
     AtNode *filter_node;
     AtNode *camera_node;
     AtNode *imager_node;
+    AtNode *options_node;
 
 
 
@@ -205,13 +209,36 @@ public:
 
         destroy_buffers();
 
+        options_node = AiUniverseGetOptions(universe);
         camera_node = AiUniverseGetCamera(universe);
         get_lentil_camera_params();
         
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
+
+
+
+            // cryptomatte
+            AtNode *crypto_node = nullptr;
+            AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
+            for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
+                AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
+                if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
+                    crypto_node = aov_node;
+                }
+            }
+
+            if (crypto_node){
+                CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
+                while (!crypto_data->is_setup_completed) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));  
+                }
+            }
+
+
             setup_aovs(universe);
             setup_filter(universe);
+
         }
 
         camera_model_specific_setup();
@@ -922,6 +949,11 @@ private:
         // image_ptr_types.clear();
     }
 
+
+    // NOTE: I commented out some code that would add the lentil_time aov shader automatically
+    // for unknown reason (I think it's related to the Arnold 7.0 bug of the duplicate options node),
+    // this only was picked up in the IPR. when doing a -dp render, it didn't. This would be too annoying.
+    // try enabling this workflow again when this options node bug is solved!
     void setup_aovs(AtUniverse *universe) {
 
         // // lentil aov setup
@@ -931,52 +963,54 @@ private:
         // }
 
 
-        bool lentil_filter_found = false;
-        if (AiNodeEntryGetCount(AiNodeEntryLookUp("lentil_filter")) == 0){
-            filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
-        } else {
-            lentil_filter_found = true;
-        }
+        filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
+        if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
 
         AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), "outputs");
         std::vector<std::string> output_strings;
-        bool lentil_time_found = false;
+        // bool lentil_time_found = false;
 
         const int elements = AiArrayGetNumElements(outputs);
         for (int i=0; i<elements; i++) {
             
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
-            
+
             auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
             std::string filter = output_string_split[filter_index];
             std::string type = output_string_split[filter_index-1];
             std::string name = output_string_split[filter_index-2];
-
+            
+            
+            // see comment above function ^
             // if (name == "lentil_time"){
             //     lentil_time_found = true;
             //     output_strings.push_back(output_string);
             //     continue;
             // }
 
+
+            bool replace_filter = true;
+
             // lentil unsupported
             if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") {
-                output_strings.push_back(output_string);
-                continue;
+                replace_filter = false;
             }
 
-            if (name.find("crypto_") != std::string::npos){
-                output_strings.push_back(output_string);
-                continue;
+            // never attach filter to the unranked crypto AOVs, they're just for display purposes.
+            // ranked aov's are e.g: crypto_material00, crypto_material01, ...
+            if (name == "crypto_material" || name == "crypto_asset" || name == "crypto_object"){
+                replace_filter = false;
             }
             
-            if (filter != "lentil_replaced_filter") {
-                output_string.replace(output_string.find(filter), filter.length(), "lentil_replaced_filter");        
+            if (replace_filter && filter != "lentil_replaced_filter"){
+                output_string.replace(output_string.find(filter), filter.length(), "lentil_replaced_filter");  
             }
-            
-            output_strings.push_back(output_string);
+
+            output_strings.push_back(output_string);      
         }
         
 
+        // see comment above function ^
         // if (!lentil_time_found) {
         //     std::string tmp_first_aov = output_strings[0];
         //     auto [filter_index, output_string_split] = find_filter_index_in_aov_string(tmp_first_aov, universe);
@@ -993,12 +1027,12 @@ private:
             AiArraySetStr(final_outputs, i++, output.c_str());
             auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output, universe);
             std::string type = output_string_split[filter_index-1];
-            AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); // watch out for type here!!
+            AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
         }
         AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
 
 
-
+        // see comment above function ^
         // // need to add an entry to the aov_shaders (NODE)
         // AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
         // int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
@@ -1555,12 +1589,14 @@ private:
 
     void setup_filter(AtUniverse *universe) {
 
-        // xres_without_region = AiNodeGetInt(AiUniverseGetOptions(universe), "xres");
-        // yres_without_region = AiNodeGetInt(AiUniverseGetOptions(universe), "yres");
-        // region_min_x = AiNodeGetInt(AiUniverseGetOptions(universe), "region_min_x");
-        // region_min_y = AiNodeGetInt(AiUniverseGetOptions(universe), "region_min_y");
-        // region_max_x = AiNodeGetInt(AiUniverseGetOptions(universe), "region_max_x");
-        // region_max_y = AiNodeGetInt(AiUniverseGetOptions(universe), "region_max_y");
+        AtArray* outputs = AiNodeGetArray(options_node, "outputs");
+
+        // xres_without_region = AiNodeGetInt(options_node, "xres");
+        // yres_without_region = AiNodeGetInt(options_node, "yres");
+        // region_min_x = AiNodeGetInt(options_node, "region_min_x");
+        // region_min_y = AiNodeGetInt(options_node, "region_min_y");
+        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
+        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
 
         // need to check if the render region option is used, if not, set it to default
         // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
@@ -1575,8 +1611,8 @@ private:
 
         // xres = region_max_x - region_min_x;
         // yres = region_max_y - region_min_y;
-        xres = AiNodeGetInt(AiUniverseGetOptions(universe), "xres");
-        yres = AiNodeGetInt(AiUniverseGetOptions(universe), "yres");
+        xres = AiNodeGetInt(options_node, "xres");
+        yres = AiNodeGetInt(options_node, "yres");
 
 
         filter_width = 2.0;
@@ -1589,74 +1625,51 @@ private:
         zbuffer.resize(xres * yres);
 
 
-        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
+
+
+        // check if a cryptomatte aovshader is present
+        // bool cryptomatte_auto_detected = false;
+        // AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
+        // for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
+        //     AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
+        //     if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
+        //     cryptomatte_auto_detected = true;
+        //     }
+        // }
+        
+        // if (cryptomatte_auto_detected == false) {
+        //     AiMsgInfo("[LENTIL BIDIRECTIONAL] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
+        // }
+
+
+        // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
+        // this speeds up the IPR sessions.
+        bool driver_is_exr = false;
         std::string driver_first_aov;
-        AtNode* options = AiUniverseGetOptions(universe);
-        AtArray* outputs = AiNodeGetArray(options, "outputs");
+        std::string output_string = AiArrayGetStr(outputs, 0).c_str();
+        auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
+        driver_first_aov = output_string_split[filter_index+1];
+        AtNode *driver_node = AiNodeLookUpByName(universe, driver_first_aov.c_str());
+        if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
+            driver_is_exr = true;
+        }
+
+
+        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
         for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
             std::string lentil_str = "lentil_replaced_filter";
             auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
 
             if (output_string_split[filter_index] == lentil_str){
-            std::string name = output_string_split[filter_index-2];
-            std::string type = output_string_split[filter_index-1];
-            std::string driver = output_string_split[filter_index+1];
+                std::string name = output_string_split[filter_index-2];
+                std::string type = output_string_split[filter_index-1];
+                std::string driver = output_string_split[filter_index+1];
+                AtString name_as = AtString(name.c_str());
 
-            if (i == 0) driver_first_aov = driver;
-
-            AtString name_as = AtString(name.c_str());
-
-            aov_list_name.push_back(name_as);
-            aov_list_type.push_back(string_to_arnold_type(type));
-
-            ++aov_duplicates[name_as];
-
-            aov_buffers[name_as].clear();
-            aov_buffers[name_as].resize(xres * yres);
-            
-            aov_crypto.push_back(false);
-
-            AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
-            }
-        }
-
-
-
-        // check if a cryptomatte aovshader is present
-        bool cryptomatte_auto_detected = false;
-        AtArray* aov_shaders_array = AiNodeGetArray(options, "aov_shaders");
-        for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
-            AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
-            if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
-            cryptomatte_auto_detected = true;
-            }
-        }
-        
-        if (cryptomatte_auto_detected == false) {
-            AiMsgInfo("[LENTIL BIDIRECTIONAL] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
-        }
-
-
-        // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
-        // this speeds up the IPR sessions.
-        bool driver_is_exr = false;
-        AtNode *driver_node = AiNodeLookUpByName(universe, driver_first_aov.c_str());
-        if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
-            driver_is_exr = true;
-        }
-
-        // setup ranked crypto aov's
-        if (driver_is_exr && cryptomatte_auto_detected) {
-            std::vector<std::string> crypto_types{"crypto_asset", "crypto_material", "crypto_object"};
-            std::vector<std::string> crypto_ranks{"00", "01", "02"};
-            for (const auto& crypto_type: crypto_types) {
-                for (const auto& crypto_rank : crypto_ranks) {
-                    std::string name_as_s = crypto_type+crypto_rank;
-                    AtString name_as = AtString(name_as_s.c_str());
-
+                if (name.find("crypto_") != std::string::npos && driver_is_exr){
                     aov_list_name.push_back(name_as);
-                    aov_list_type.push_back(AI_TYPE_FLOAT);
+                    aov_list_type.push_back(string_to_arnold_type(type));
                     crypto_hash_map[name_as].clear();
                     crypto_hash_map[name_as].resize(xres * yres);
                     crypto_total_weight[name_as].clear();
@@ -1664,13 +1677,21 @@ private:
 
                     cryptomatte_aov_names.push_back(name_as);
                     aov_crypto.push_back(true);
-                    AiMsgInfo("[LENTIL BIDIRECTIONAL] Adding cryptomatte aov %s of type %s", name_as.c_str(), "AI_TYPE_FLOAT");
+                } else {
+                    aov_list_name.push_back(name_as);
+                    aov_list_type.push_back(string_to_arnold_type(type));
+                    aov_buffers[name_as].clear();
+                    aov_buffers[name_as].resize(xres * yres);
+                    aov_crypto.push_back(false);
                 }
+
+                ++aov_duplicates[name_as];
+
+
+                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
             }
         }
 
-        
-        
     }
 
 

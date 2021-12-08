@@ -171,6 +171,8 @@ filter_pixel
       std::vector<AtRGBA> aov_values;
       aov_values.reserve(camera_data->aov_list_name.size());
       for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+        if (camera_data->aov_crypto[i]) continue;
+
         switch(camera_data->aov_list_type[i]){
           case AI_TYPE_RGBA: {
             aov_values[i] = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->aov_list_name[i]);
