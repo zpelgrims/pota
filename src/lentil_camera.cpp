@@ -1,6 +1,5 @@
 #include <ai.h>
 #include "lentil.h"
-#include "lens.h"
 #include <vector>
 
 AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
@@ -57,121 +56,45 @@ node_parameters {
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);
-  // AiParameterBool("cryptomatte", true);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
+
 node_plugin_initialize {return lentil_crit_sec_init();}
 node_plugin_cleanup {lentil_crit_sec_close();}
-
 node_initialize {
   AiCameraInitialize(node);
-
-  Camera* po = new Camera();
-  // po->lentil_setup_data = new LentilSetup();
-  
-  AiNodeSetLocalData(node, po);
+  AiNodeSetLocalData(node, new Camera());
 }
-
 
 node_update { 
+  Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
+  AtUniverse *universe = AiNodeGetUniverse(node);
+  camera_data->setup_all(universe);
   AiCameraUpdate(node, false);
-  Camera* po = (Camera*)AiNodeGetLocalData(node);
-
-  AtUniverse *uni = AiNodeGetUniverse(node);
-
-
-  // global params
-  po->cameraType = (CameraType) AiNodeGetInt(node, "cameratype");
-  po->unitModel = (UnitModel) AiNodeGetInt(node, "units");
-  po->sensor_width = AiNodeGetFlt(node, "sensor_width");
-  po->enable_dof = AiNodeGetBool(node, "enable_dof");
-  po->input_fstop = clamp_min(AiNodeGetFlt(node, "fstop"), 0.01);
-  po->focus_distance = AiNodeGetFlt(node, "focus_dist"); //converting to mm
-  po->bokeh_aperture_blades = AiNodeGetInt(node, "bokeh_aperture_blades");
-
-  // po-specific params
-  po->lensModel = (LensModel) AiNodeGetInt(node, "lens_model");
-  po->lambda = AiNodeGetFlt(node, "wavelength") * 0.001;
-  po->extra_sensor_shift = AiNodeGetFlt(node, "extra_sensor_shift");
-
-  // tl specific params
-  po->focal_length = clamp_min(AiNodeGetFlt(node, "focal_length_lentil"), 0.01);
-  po->optical_vignetting_distance = AiNodeGetFlt(node, "optical_vignetting_distance");
-  po->optical_vignetting_radius = AiNodeGetFlt(node, "optical_vignetting_radius");
-  po->abb_spherical = AiNodeGetFlt(node, "abb_spherical");
-  po->abb_spherical = clamp(po->abb_spherical, 0.001, 0.999);
-  po->abb_distortion = AiNodeGetFlt(node, "abb_distortion");
-  po->abb_coma = AiNodeGetFlt(node, "abb_coma");
-  po->circle_to_square = AiNodeGetFlt(node, "bokeh_circle_to_square");
-  po->circle_to_square = clamp(po->circle_to_square, 0.01, 0.99);
-  po->bokeh_anamorphic = AiNodeGetFlt(node, "bokeh_anamorphic");
-  po->bokeh_anamorphic = clamp(po->bokeh_anamorphic, 0.01, 99999.0);
-
-  // bidir params
-  po->bidir_min_luminance = AiNodeGetFlt(node, "bidir_min_luminance");
-  po->bokeh_enable_image = AiNodeGetBool(node, "bokeh_enable_image");
-  po->bokeh_image_path = AiNodeGetStr(node, "bokeh_image_path");
-  po->bidir_sample_mult = AiNodeGetInt(node, "bidir_sample_mult");
-  po->bidir_add_luminance = AiNodeGetFlt(node, "bidir_add_luminance");
-  po->bidir_add_luminance_transition = AiNodeGetFlt(node, "bidir_add_luminance_transition");
-  po->bidir_debug = AiNodeGetBool(node, "bidir_debug");
-  po->vignetting_retries = AiNodeGetInt(node, "vignetting_retries");
-  po->cryptomatte = AiNodeGetBool(node, "cryptomatte");
-
-
-  switch (po->cameraType){
-    case PolynomialOptics:
-    {
-      po->focus_distance *= 10.0;
-      #include "node_update_po.h"
-
-      break;
-    }
-    case ThinLens:
-    {
-      po->fov = 2.0 * std::atan(po->sensor_width / (2.0*po->focal_length));
-      po->tan_fov = std::tan(po->fov/2.0);
-      po->aperture_radius = (po->focal_length / (2.0 * po->input_fstop)) / 10.0;
-      
-      break;
-    }
-  }
-
-
-  // make probability functions of the bokeh image
-  // if (!(po->stored_useImage == AiNodeGetBool(node, "bokeh_enable_imagePO") && po->stored_path == AiNodeGetStr(node, "bokeh_image_pathPO")) {
-  po->image.invalidate();
-  if (po->bokeh_enable_image && !po->image.read(po->bokeh_image_path.c_str())){
-    AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
-    AiRenderAbort();
-  }
-
 }
 
-
 node_finish {
-  Camera* po = (Camera*)AiNodeGetLocalData(node);
-  delete po;
+  Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
+  delete camera_data;
 }
 
 
 camera_create_ray {
-  Camera* po = (Camera*)AiNodeGetLocalData(node);
+  Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
 
+  int tries = 0;
+  double r1 = input.lensx, r2 = input.lensy; 
 
-  switch (po->cameraType){
+  switch (camera_data->cameraType){
     case PolynomialOptics:
     { 
-      int tries = 0;
-      double random1 = 0.0, random2 = 0.0; 
       Eigen::Vector3d origin(0, 0, 0);
       Eigen::Vector3d direction(0, 0, 0);
       Eigen::Vector3d weight(1, 1, 1);
 
-      trace_ray(true, tries, input.sx, input.sy, input.lensx, input.lensy, random1, random2, weight, origin, direction, po);
-
+      camera_data->trace_ray_fw_po(true, tries, input.sx, input.sy, r1, r2, weight, origin, direction);
 
       // calculate new ray derivatives
       if (tries > 0){
@@ -187,12 +110,12 @@ camera_create_ray {
         Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
         Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
         Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-        trace_ray(false, tries, input_dx.sx, input_dx.sy, random1, random2, random1, random2, out_dx_weight, out_dx_origin, out_dx_dir, po);
+        camera_data->trace_ray_fw_po(false, tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir);
 
         Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
         Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
         Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-        trace_ray(false, tries, input_dy.sx, input_dy.sy, random1, random2, random1, random2, out_dy_weight, out_dy_origin, out_dy_dir, po);
+        camera_data->trace_ray_fw_po(false, tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir);
 
         Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
         Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
@@ -212,19 +135,15 @@ camera_create_ray {
         output.dir[i] = direction(i);
         output.weight[i] = weight(i);
       }
-
-      break;
-    }
+    } break;
 
     case ThinLens:
     {
-      int tries = 0;
-      float r1 = 0.0, r2 = 0.0;
       AtVector origin (0, 0, 0);
       AtVector dir (0, 0, 0);
       AtRGB weight (1, 1, 1);
       
-      trace_ray_fw_thinlens(true, tries, input.sx, input.sy, input.lensx, input.lensy, origin, dir, weight, r1, r2, po);
+      camera_data->trace_ray_fw_thinlens(true, tries, input.sx, input.sy, origin, dir, weight, r1, r2);
 
       if (tries > 0){
         
@@ -236,9 +155,9 @@ camera_create_ray {
 
           input_dx.sx += input.dsx * step;
           input_dy.sy += input.dsy * step;
-
-          trace_ray_fw_thinlens(false, tries, input_dx.sx, input_dx.sy, r1, r2, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2, po);
-          trace_ray_fw_thinlens(false, tries, input_dy.sx, input_dy.sy, r1, r2, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2, po);
+          
+          camera_data->trace_ray_fw_thinlens(false, tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2);
+          camera_data->trace_ray_fw_thinlens(false, tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2);
 
           output.dOdx = (output_dx.origin - origin) / step;
           output.dOdy = (output_dy.origin - origin) / step;
@@ -248,11 +167,9 @@ camera_create_ray {
 
 
       output.origin = origin;
-      output.dir = AiV3Normalize(dir);
+      output.dir = dir;
       output.weight = weight;
-      
-      break;
-    }
+    } break;
   }
   
   
@@ -367,9 +284,9 @@ camera_reverse_ray
 
 // approximation using pinhole camera FOV
 camera_reverse_ray {
-  const Camera* po = (Camera*)AiNodeGetLocalData(node);
+  Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
 
-  double coeff = 1.0 / std::max(std::abs(Po.z * po->tan_fov), 1e-3);
+  double coeff = 1.0 / std::max(std::abs(Po.z * camera_data->tan_fov), 1e-3);
   Ps.x = Po.x * coeff;
   Ps.y = Po.y * coeff;
 
@@ -378,7 +295,7 @@ camera_reverse_ray {
 
 
 
-void registerLentilCameraPO(AtNodeLib* node) {
+void registerLentilCamera(AtNodeLib* node) {
     node->methods = (AtNodeMethods*) lentilMethods;
     node->output_type = AI_TYPE_UNDEFINED;
     node->name = "lentil_camera";

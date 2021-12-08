@@ -4,42 +4,10 @@
 
 
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
- 
-
-struct InternalFilterData {
-  AtNode *imager_node;
-};
 
 
 
-AtNode* get_lentil_imager(AtUniverse *uni) {
-  AtNode* options = AiUniverseGetOptions(uni);
-  AtArray* outputs = AiNodeGetArray(options, "outputs");
-  std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
-  std::string driver = split_str(output_string, std::string(" ")).back();
-  AtString driver_as = AtString(driver.c_str());
-  AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
-  AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
-  
-  
-  if (imager_node == nullptr){
-    AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
-    return nullptr;
-  }
-  
-  for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
-    const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
-    if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("imager_lentil")) {
-      return imager_node;
-    } else {
-      imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
-    }
-  }
 
-  AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
-  AiRenderAbort();
-  return nullptr;
-}
 
 inline float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
   // additional luminance with soft transition
@@ -54,38 +22,7 @@ inline float additional_luminance_soft_trans(float sample_luminance, float addit
 }
 
 
-inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float sensor_width, const float frame_aspect_ratio, const double xres, const double yres){
-  // convert sensor position to pixel position
-  const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
-  const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
-                              ((-s(1) + 1.0) / 2.0) * yres);
-  return pixel;
-}
 
-inline float thinlens_get_image_dist_focusdist(Camera *po){
-    return (-po->focal_length * -po->focus_distance) / (-po->focal_length + -po->focus_distance);
-}
-
-
-inline float thinlens_get_coc(AtVector camera_space_sample_position, Camera *po){
-  // need to account for the differences in setup between the two methods, since the inputs are scaled differently in the camera shader
-  float focus_dist = po->focus_distance;
-  float aperture_radius = po->aperture_radius;
-  switch (po->cameraType){
-      case PolynomialOptics:
-      { 
-        focus_dist /= 10.0;
-      } break;
-      case ThinLens:
-      {
-        aperture_radius *= 10.0;
-      } break;
-  }
-  
-  const float image_dist_samplepos = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
-  const float image_dist_focusdist = (-po->focal_length * -focus_dist) / (-po->focal_length + -focus_dist);
-  return std::abs((aperture_radius * (image_dist_samplepos - image_dist_focusdist))/image_dist_samplepos); // coc diameter
-}
 
 
 
@@ -99,15 +36,11 @@ node_initialize
 {
   static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "FLOAT lentil_time", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
   AiFilterInitialize(node, true, required_aovs);
-  AiNodeSetLocalData(node, new InternalFilterData());
 }
 
 
 node_update 
 {
-  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-  AtUniverse *uni = AiNodeGetUniverse(node);
-  ifd->imager_node = get_lentil_imager(uni);
   AiFilterUpdate(node, 2.0);
 }
  
@@ -133,44 +66,45 @@ filter_output_type
 
 filter_pixel
 {
-  InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-  LentilFilterData *bokeh = (LentilFilterData*)AiNodeGetLocalData(ifd->imager_node);
+  AtUniverse *universe = AiNodeGetUniverse(node);
+  AtNode *camera_node = AiUniverseGetCamera(universe);
+  Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
-  if (!AiNodeIs(bokeh->camera, AtString("lentil_camera"))) {
-    bokeh->enabled = false;
-    AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
-    AiRenderAbort();
-    return;
-  }
+  // if (!AiNodeIs(camera_data->camera_node, AtString("lentil_camera"))) {
+  //   camera_data->redistribution = false;
+  //   AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
+  //   AiRenderAbort();
+  //   return;
+  // }
 
-  Camera *po = (Camera*)AiNodeGetLocalData(bokeh->camera);
 
-  bool skip_redistribution = false; // bokeh->enabled is a global switch, which also turns of the imager - this is local.
+  bool skip_redistribution_local = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local to the filter.
 
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
   int samples_counter = 0;
   while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
-  float AA_samples = std::sqrt(samples_counter) / 2.0;
-  bokeh->current_inv_density = 1.0/(AA_samples*AA_samples);
-  if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(bokeh->arnold_universe), "AA_samples")){
-    bokeh->enabled = false; // skip when aa samples are below final AA samples
-  }
   AiAOVSampleIteratorReset(iterator);
-
-
-  if (AiAOVSampleIteratorGetAOVName(iterator) != bokeh->atstring_rgba) skip_redistribution = true; // early out for non-primary AOV samples
+  float AA_samples = std::sqrt(samples_counter) / 2.0;
+  camera_data->current_inv_density = 1.0/(AA_samples*AA_samples);
+  if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
+    camera_data->redistribution = false; // skip when aa samples are below final AA samples
+  }
   
 
-  if (bokeh->enabled && !skip_redistribution){
-    const double xres = (double)bokeh->xres;
-    const double yres = (double)bokeh->yres;
-    // const double frame_aspect_ratio = (double)bokeh->xres_without_region/(double)bokeh->yres_without_region;
-    const double frame_aspect_ratio = (double)bokeh->xres/(double)bokeh->yres;
+  if (camera_data->bidir_debug) skip_redistribution_local = true;
+  if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
+  
+
+  if (camera_data->redistribution && !skip_redistribution_local){
+    const double xres = (double)camera_data->xres;
+    const double yres = (double)camera_data->yres;
+    // const double frame_aspect_ratio = (double)camera_data->xres_without_region/(double)camera_data->yres_without_region;
+    const double frame_aspect_ratio = xres/yres;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
-    // px -= bokeh->region_min_x;
-    // py -= bokeh->region_min_y;
+    // px -= camera_data->region_min_x;
+    // py -= camera_data->region_min_y;
 
     AtShaderGlobals *sg = AiShaderGlobals();
 
@@ -178,24 +112,25 @@ filter_pixel
       bool redistribute = true;
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
-      AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
-      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z); // what to do when values are INF?
+      AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
+      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
 
-      float time = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_time);
-      AtMatrix cam_to_world; AiCameraToWorldMatrix(bokeh->camera, time, cam_to_world);
-      AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(bokeh->camera, time, world_to_camera_matrix);
+      float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
+      // AiMsgInfo ("time: %f", time);
+      AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
+      AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(camera_data->camera_node, time, world_to_camera_matrix);
       AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
-      switch (po->unitModel){
+      switch (camera_data->unitModel){
         case mm: { camera_space_sample_position *= 0.1; } break;
         case cm: { camera_space_sample_position *= 1.0; } break;
         case dm: { camera_space_sample_position *= 10.0;} break;
         case m:  { camera_space_sample_position *= 100.0;}
       }
       
-      const float filter_width_half = std::ceil(bokeh->filter_width * 0.5);
+      const float filter_width_half = std::ceil(camera_data->filter_width * 0.5);
 
 
-      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->atstring_transmission);
+      const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
@@ -204,27 +139,26 @@ filter_pixel
       }
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
-      if (depth == AI_INFINITE ||  
-          AiV3IsSmall(sample_pos_ws) || 
-          sample_luminance < po->bidir_min_luminance || 
-          AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_lentil_ignore) > 0.0) {
+      if (depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws) || 
+          sample_luminance < camera_data->bidir_min_luminance || 
+          AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
       }
 
       // cryptomatte cache
       std::map<AtString, std::map<float, float>> crypto_cache;
-      if (po->cryptomatte) cryptomatte_construct_cache(crypto_cache, bokeh->cryptomatte_aov_names, iterator, sampleid, bokeh);
+      if (camera_data->cryptomatte) camera_data->cryptomatte_construct_cache(crypto_cache, camera_data->cryptomatte_aov_names, iterator, sampleid);
 
 
       // additional luminance with soft transition
       float fitted_bidir_add_luminance = 0.0;
-      if (po->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, po->bidir_add_luminance, po->bidir_add_luminance_transition, po->bidir_min_luminance);
+      if (camera_data->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, camera_data->bidir_add_luminance, camera_data->bidir_add_luminance_transition, camera_data->bidir_min_luminance);
 
 
-      float circle_of_confusion = thinlens_get_coc(camera_space_sample_position, po);
-      const float coc_squared_pixels = std::pow(circle_of_confusion * bokeh->yres, 2) * std::pow(po->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
+      float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
+      const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(camera_data->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
       if (circle_of_confusion < 0.5) redistribute = false; // don't redistribute under certain CoC size
-      int samples = std::ceil(coc_squared_pixels * bokeh->current_inv_density); // aa_sample independence
+      int samples = std::ceil(coc_squared_pixels * camera_data->current_inv_density); // aa_sample independence
       samples = clamp(samples, 5, 10000);
       float inv_samples = 1.0/static_cast<double>(samples);
 
@@ -235,102 +169,102 @@ filter_pixel
 
       // store all aov values, order same as aov_list_name list.
       std::vector<AtRGBA> aov_values;
-      aov_values.reserve(bokeh->aov_list_name.size());
-      for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-        switch(bokeh->aov_list_type[i]){
+      aov_values.reserve(camera_data->aov_list_name.size());
+      for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+        switch(camera_data->aov_list_type[i]){
           case AI_TYPE_RGBA: {
-            aov_values[i] = AiAOVSampleIteratorGetAOVRGBA(iterator, bokeh->aov_list_name[i]);
+            aov_values[i] = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->aov_list_name[i]);
           } break;
 
           case AI_TYPE_RGB: {
-            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, bokeh->aov_list_name[i]);
+            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, camera_data->aov_list_name[i]);
             aov_values[i] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
           } break;
 
           case AI_TYPE_FLOAT: {
-            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->aov_list_name[i]);
+            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->aov_list_name[i]);
             aov_values[i] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
           } break;
 
           case AI_TYPE_VECTOR: {
-            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->aov_list_name[i]);
+            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->aov_list_name[i]);
             aov_values[i] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
           } break;
         }
       }
 
 
-      switch (po->cameraType){
-        // case PolynomialOptics:
-        // { 
-        //   if (std::abs(camera_space_sample_position.z) < (po->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
+      switch (camera_data->cameraType){
+        case PolynomialOptics:
+        { 
+          if (std::abs(camera_space_sample_position.z) < (camera_data->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
-        //   // early out
-        //   if (redistribute == false){
-        //     filter_and_add_to_buffer(px, py, filter_width_half, 
-        //                             1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-        //                             iterator, bokeh, crypto_cache, aov_values);
-        //     if (!transmitted_energy_in_sample) continue;
-        //   }
+          // early out
+          if (redistribute == false){
+            camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
+                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    iterator, crypto_cache, aov_values);
+            if (!transmitted_energy_in_sample) continue;
+          }
 
-        //   for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
-        //     Eigen::Vector2d pixel;
-        //     Eigen::Vector2d sensor_position(0, 0);            
-        //     Eigen::Vector3d camera_space_sample_position_eigen (camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
+            Eigen::Vector2d pixel;
+            Eigen::Vector2d sensor_position(0, 0);            
+            Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-        //     if(!trace_backwards(-camera_space_sample_position_eigen*10.0, po->aperture_radius, po->lambda, sensor_position, po->sensor_shift, po, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
-        //       --count;
-        //       continue;
-        //     }
+            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
+              --count;
+              continue;
+            }
 
-        //     pixel = sensor_to_pixel_position(sensor_position, po->sensor_width, frame_aspect_ratio, bokeh->xres_without_region, bokeh->yres_without_region);
+            pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
 
-        //     // if outside of image
-        //     if ((pixel(0) >= bokeh->xres_without_region) || (pixel(0) < bokeh->region_min_x) || (pixel(1) >= bokeh->yres_without_region) || (pixel(1) < bokeh->region_min_y) ||
-        //         (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-        //     {
-        //       --count; // much room for improvement here, potentially many samples are wasted outside of frame
-        //       continue;
-        //     }
+            // if outside of image
+            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+            {
+              --count; // much room for improvement here, potentially many samples are wasted outside of frame
+              continue;
+            }
 
-        //     // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-        //     // write sample to image
-        //     unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel(0)), floor(pixel(1)), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
+            // write sample to image
+            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
-        //     for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-        //       if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
-        //       else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
-        //                          inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-        //                          transmitted_energy_in_sample, 1, iterator, bokeh);
-        //     }
-        //   }
-        // } break;
+            for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+              if (camera_data->aov_crypto[i]) camera_data->add_to_buffer_cryptomatte(pixelnumber, crypto_cache[camera_data->aov_list_name[i]], camera_data->aov_list_name[i], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(pixelnumber, camera_data->aov_list_type[i], camera_data->aov_list_name[i], aov_values[i],
+                                 inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+                                 transmitted_energy_in_sample, 1, iterator);
+            }
+          }
+        } break;
 
         case ThinLens:
         {
-          // early out, before coc
+          // early out
           if (redistribute == false){
-            filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, bokeh->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
-                                    iterator, bokeh, crypto_cache, aov_values);
+            camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
+                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
             unsigned int seed = tea<8>((px*py+px), total_samples_taken);
             
-            float image_dist_samplepos_mb = (-po->focal_length * camera_space_sample_position.z) / (-po->focal_length + camera_space_sample_position.z);
+            float image_dist_samplepos = (-camera_data->focal_length * camera_space_sample_position.z) / (-camera_data->focal_length + camera_space_sample_position.z);
 
             // either get uniformly distributed points on the unit disk or bokeh image
             Eigen::Vector2d unit_disk(0, 0);
-            if (po->bokeh_enable_image) po->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
-            else if (po->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, po->abb_spherical, po->circle_to_square, po->bokeh_anamorphic);
-            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, po->bokeh_aperture_blades);
+            if (camera_data->bokeh_enable_image) camera_data->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
+            else if (camera_data->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, camera_data->abb_spherical, camera_data->circle_to_square, camera_data->bokeh_anamorphic);
+            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, camera_data->bokeh_aperture_blades);
 
-            unit_disk(0) *= po->bokeh_anamorphic;
-            AtVector lens(unit_disk(0) * po->aperture_radius, unit_disk(1) * po->aperture_radius, 0.0);
+            unit_disk(0) *= camera_data->bokeh_anamorphic;
+            AtVector lens(unit_disk(0) * camera_data->aperture_radius, unit_disk(1) * camera_data->aperture_radius, 0.0);
 
 
             // aberration inputs
@@ -343,25 +277,25 @@ filter_pixel
             // perturb ray direction to simulate coma aberration
             // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
             // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-            float abb_coma = po->abb_coma * abb_coma_multipliers(po->sensor_width, po->focal_length, dir_from_center, unit_disk);
+            float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
             dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
             AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
             dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
-            float samplepos_image_intersection = std::abs(image_dist_samplepos_mb/dir_from_center.z);
+            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
             AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
 
 
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
 
-            float focusdist_intersection = std::abs(thinlens_get_image_dist_focusdist(po)/dir_from_lens_to_image_sample.z);
+            float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
 
             // raytrace for scene/geometrical occlusions along the ray
             AtVector lens_correct_scaled = lens;
-            switch (po->unitModel){
+            switch (camera_data->unitModel){
               case mm: { lens_correct_scaled /= 0.1; } break;
               case cm: { lens_correct_scaled /= 1.0; } break;
               case dm: { lens_correct_scaled /= 10.0;} break;
@@ -379,14 +313,14 @@ filter_pixel
             AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
                                       focusdist_image_point.y / focusdist_image_point.z);
             // transform to screenspace coordinate mapping
-            sensor_position /= (po->sensor_width*0.5)/-po->focal_length;
+            sensor_position /= (camera_data->sensor_width*0.5)/-camera_data->focal_length;
 
 
             // optical vignetting
             dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
-            if (po->optical_vignetting_distance > 0.0){
+            if (camera_data->optical_vignetting_distance > 0.0){
               // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, po->aperture_radius, po->optical_vignetting_radius, po->optical_vignetting_distance, lerp_squircle_mapping(po->circle_to_square))){
+              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, camera_data->aperture_radius, camera_data->optical_vignetting_radius, camera_data->optical_vignetting_distance, lerp_squircle_mapping(camera_data->circle_to_square))){
                   --count;
                   continue;
               }
@@ -394,36 +328,36 @@ filter_pixel
 
 
             // barrel distortion (inverse)
-            if (po->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), po->abb_distortion);
+            if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
             
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            // const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres_without_region;
-            // const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres_without_region;
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * bokeh->xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * bokeh->yres;
+            // const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres_without_region;
+            // const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region;
+            const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres;
+            const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres;
 
             // if outside of image
-            // if ((pixel_x >= xres) || (pixel_x < bokeh->region_min_x) || (pixel_y >= yres) || (pixel_y < bokeh->region_min_y)) {
+            // if ((pixel_x >= xres) || (pixel_x < camera_data->region_min_x) || (pixel_y >= yres) || (pixel_y < camera_data->region_min_y)) {
             if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
               continue;
             }
 
             // write sample to image
-            // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
-            // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, bokeh->xres, bokeh->region_min_x, bokeh->region_min_y);
-            unsigned pixelnumber = coords_to_linear_pixel(floor(pixel_x), floor(pixel_y), bokeh->xres);
-            if (!redistribute) pixelnumber = coords_to_linear_pixel(px, py, bokeh->xres);
+            // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+            // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y));
+            if (!redistribute) pixelnumber = camera_data->coords_to_linear_pixel(px, py);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            for (unsigned i=0; i<bokeh->aov_list_name.size(); i++){
-              if (bokeh->aov_crypto[i]) add_to_buffer_cryptomatte(pixelnumber, bokeh, crypto_cache[bokeh->aov_list_name[i]], bokeh->aov_list_name[i], (bokeh->current_inv_density/std::pow(bokeh->filter_width,2)) * inv_samples);
-              else add_to_buffer(pixelnumber, bokeh->aov_list_type[i], bokeh->aov_list_name[i], aov_values[i],
-                                inv_samples, bokeh->current_inv_density / std::pow(bokeh->filter_width,2), fitted_bidir_add_luminance, depth,
-                                transmitted_energy_in_sample, 1, iterator, bokeh);
+            for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+              if (camera_data->aov_crypto[i]) camera_data->add_to_buffer_cryptomatte(pixelnumber, crypto_cache[camera_data->aov_list_name[i]], camera_data->aov_list_name[i], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(pixelnumber, camera_data->aov_list_type[i], camera_data->aov_list_name[i], aov_values[i],
+                                inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+                                transmitted_energy_in_sample, 1, iterator);
             }
           }
         } break;
@@ -437,14 +371,14 @@ filter_pixel
   switch(data_type){
     case AI_TYPE_RGBA: {
       AtRGBA value_out = AI_RGBA_ZERO;
-      if (po->bidir_debug){
+      if (camera_data->bidir_debug){
         while (AiAOVSampleIteratorGetNext(iterator))
         {
           AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-          AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, bokeh->atstring_p);
-          float depth = AiAOVSampleIteratorGetAOVFlt(iterator, bokeh->atstring_z);
+          AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
+          float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z);
           const float sample_luminance = (sample_energy.r + sample_energy.g + sample_energy.b)/3.0;
-          if (sample_luminance > po->bidir_min_luminance || depth != AI_INFINITE ||  !AiV3IsSmall(sample_pos_ws)) {
+          if (sample_luminance > camera_data->bidir_min_luminance || depth != AI_INFINITE ||  !AiV3IsSmall(sample_pos_ws)) {
               // const AtRGB red = AtRGB(1.0, 0.0, 0.0);
               // const AtRGB green = AtRGB(0.0, 1.0, 0.0);
               // const AtRGB heatmap_colors[2] = {red, green};
@@ -457,42 +391,38 @@ filter_pixel
           }
         }
       } else {
-        value_out = filter_gaussian_complete(iterator, bokeh->filter_width, data_type, bokeh->current_inv_density);
+        value_out = camera_data->filter_gaussian_complete(iterator, data_type);
       }
 
       *((AtRGBA*)data_out) = value_out;
-      break;
-    }
+    } break;
+
     case AI_TYPE_RGB: {
-      AtRGBA filtered_value = filter_gaussian_complete(iterator, bokeh->filter_width, data_type, bokeh->current_inv_density);
+      AtRGBA filtered_value = camera_data->filter_gaussian_complete(iterator, data_type);
       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtRGB*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
+
     case AI_TYPE_VECTOR: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      AtRGBA filtered_value = camera_data->filter_closest_complete(iterator, data_type);
       AtVector rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtVector*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
+
     case AI_TYPE_FLOAT: {
-      AtRGBA filtered_value = filter_closest_complete(iterator, data_type, bokeh);
+      AtRGBA filtered_value = camera_data->filter_closest_complete(iterator, data_type);
       float rgb_energy = filtered_value.r;
       *((float*)data_out) = rgb_energy;
-      break;
-    }
+    } break;
   }
   
 }
 
  
-node_finish {
-   InternalFilterData *ifd = (InternalFilterData*)AiNodeGetLocalData(node);
-   delete ifd;
-}
+node_finish {}
 
 
-void registerLentilFilterPO(AtNodeLib* node) {
+void registerLentilFilter(AtNodeLib* node) {
     node->methods = (AtNodeMethods*) LentilFilterDataMtd;
     node->output_type = AI_TYPE_NONE;
     node->name = "lentil_filter";
