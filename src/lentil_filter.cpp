@@ -147,7 +147,7 @@ filter_pixel
 
       // cryptomatte cache
       std::map<AtString, std::map<float, float>> crypto_cache;
-      if (camera_data->cryptomatte) camera_data->cryptomatte_construct_cache(crypto_cache, camera_data->cryptomatte_aov_names, iterator, sampleid);
+      if (camera_data->cryptomatte_lentil) camera_data->cryptomatte_construct_cache(crypto_cache, iterator, sampleid);
 
 
       // additional luminance with soft transition

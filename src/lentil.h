@@ -185,7 +185,7 @@ struct Camera
     const AtString atstring_motionvector = AtString("lentil_object_motion_vector");
     const AtString atstring_time = AtString("lentil_time");
 
-    bool cryptomatte;
+    bool cryptomatte_lentil;
 
     bool imager_print_once_only;
 
@@ -233,6 +233,7 @@ public:
                 while (!crypto_data->is_setup_completed) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));  
                 }
+                cryptomatte_lentil = true;
             }
 
 
@@ -747,8 +748,7 @@ public:
 
 
     // get all depth samples so i can re-use them
-    inline void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
-                                            std::vector<AtString> &cryptomatte_aov_names,
+    void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
                                             struct AtAOVSampleIterator* sample_iterator, 
                                             const int sampleid) {
 
