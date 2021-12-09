@@ -83,9 +83,10 @@ node_finish {
 
 camera_create_ray {
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
-
+  
   int tries = 0;
-  double r1 = input.lensx, r2 = input.lensy; 
+  double r1 = input.lensx;
+  double r2 = input.lensy; 
 
   switch (camera_data->cameraType){
     case PolynomialOptics:
@@ -94,7 +95,7 @@ camera_create_ray {
       Eigen::Vector3d direction(0, 0, 0);
       Eigen::Vector3d weight(1, 1, 1);
 
-      camera_data->trace_ray_fw_po(true, tries, input.sx, input.sy, r1, r2, weight, origin, direction);
+      camera_data->trace_ray_fw_po(tries, input.sx, input.sy, r1, r2, weight, origin, direction);
 
       // calculate new ray derivatives
       if (tries > 0){
@@ -110,12 +111,12 @@ camera_create_ray {
         Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
         Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
         Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-        camera_data->trace_ray_fw_po(false, tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir);
+        camera_data->trace_ray_fw_po(tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir);
 
         Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
         Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
         Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-        camera_data->trace_ray_fw_po(false, tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir);
+        camera_data->trace_ray_fw_po(tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir);
 
         Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
         Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
@@ -143,7 +144,7 @@ camera_create_ray {
       AtVector dir (0, 0, 0);
       AtRGB weight (1, 1, 1);
       
-      camera_data->trace_ray_fw_thinlens(true, tries, input.sx, input.sy, origin, dir, weight, r1, r2);
+      camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, dir, weight, r1, r2);
 
       if (tries > 0){
         
@@ -156,8 +157,8 @@ camera_create_ray {
           input_dx.sx += input.dsx * step;
           input_dy.sy += input.dsy * step;
           
-          camera_data->trace_ray_fw_thinlens(false, tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2);
-          camera_data->trace_ray_fw_thinlens(false, tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2);
+          camera_data->trace_ray_fw_thinlens(tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2);
+          camera_data->trace_ray_fw_thinlens(tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2);
 
           output.dOdx = (output_dx.origin - origin) / step;
           output.dOdy = (output_dy.origin - origin) / step;

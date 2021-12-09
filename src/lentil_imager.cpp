@@ -21,7 +21,7 @@ node_parameters
   AiMetaDataSetStr(nentry, nullptr, AtString("subtype"), AtString("imager"));
   // AiParameterStr(AtString("layer_selection"), AtString("*")); // if enabled, mtoa/c4dtoa will only run over rgba (hardcoded for now)
   AiParameterBool(AtString("enable"), true);
-  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+  // AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
 
 
@@ -104,108 +104,113 @@ driver_process_bucket {
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
     if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));
-    if (std::find(camera_data->aov_list_name.begin(), camera_data->aov_list_name.end(), aov_name) != camera_data->aov_list_name.end()){
-      if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
-      if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
-      for (int j = 0; j < bucket_size_y; ++j) {
-        for (int i = 0; i < bucket_size_x; ++i) {
-          int y = j + bucket_yo;
-          int x = i + bucket_xo;
-          int in_idx = j * bucket_size_x + i;
-          // int linear_pixel = coords_to_linear_pixel_region(x, y, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-          int linear_pixel = camera_data->coords_to_linear_pixel(x, y);
+    AOVData *aov_current = nullptr;
+    for (auto &aov : camera_data->aovs) {
+      if (aov.name_as == aov_name) aov_current = &aov;
+    }
+    if (!aov_current) continue;
 
-          switch (aov_type){
-            case AI_TYPE_RGBA: {
+    if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
+    if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
-              std::string aov_name_string = aov_name.c_str();
+    for (int j = 0; j < bucket_size_y; ++j) {
+      for (int i = 0; i < bucket_size_x; ++i) {
+        int y = j + bucket_yo;
+        int x = i + bucket_xo;
+        int in_idx = j * bucket_size_x + i;
+        // int linear_pixel = camera_data->coords_to_linear_pixel_region(x, y);
+        int linear_pixel = camera_data->coords_to_linear_pixel(x, y);
 
-              // CRYPTOMATTE
-              if (aov_name_string.find("crypto") != std::string::npos) {
+        switch (aov_type){
+          case AI_TYPE_RGBA: {
 
-                int rank = 0;
-                // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
-                if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
-                else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
-                
-                // crypto ranking
-                AtRGBA out = AI_RGBA_ZERO;
-                // rank 0 means if vals.size() does not contain 0, we can stop
-                // rank 2 means if vals.size() does not contain 2, we can stop
-                if (camera_data->crypto_hash_map[aov_name][linear_pixel].size() <= rank) {
-                  break;
-                }
+            std::string aov_name_string = aov_name.c_str();
 
-                std::map<float, float>::iterator vals_iter;
-                std::vector<std::pair<float, float>> all_vals;
-                std::vector<std::pair<float, float>>::iterator all_vals_iter;
+            // CRYPTOMATTE
+            if (aov_name_string.find("crypto") != std::string::npos) {
 
-                all_vals.reserve(camera_data->crypto_hash_map[aov_name][linear_pixel].size());
-                for (vals_iter = camera_data->crypto_hash_map[aov_name][linear_pixel].begin(); vals_iter != camera_data->crypto_hash_map[aov_name][linear_pixel].end(); ++vals_iter){
-                   all_vals.push_back(*vals_iter);
-                }
-
-                std::sort(all_vals.begin(), all_vals.end(), compareTail());
-
-                int iter = 0;
-                
-                for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
-                    if (iter == rank) {
-                        out.r = all_vals_iter->first;
-                        out.g = (all_vals_iter->second / camera_data->crypto_total_weight[aov_name][linear_pixel]);
-                    } else if (iter == rank + 1) {
-                        out.b = all_vals_iter->first;
-                        out.a = (all_vals_iter->second / camera_data->crypto_total_weight[aov_name][linear_pixel]);
-                    }
-                    iter++;
-                }
-                
-                ((AtRGBA*)bucket_data)[in_idx] = out;
+              int rank = 0;
+              // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
+              if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
+              else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
+              
+              // crypto ranking
+              AtRGBA out = AI_RGBA_ZERO;
+              // rank 0 means if vals.size() does not contain 0, we can stop
+              // rank 2 means if vals.size() does not contain 2, we can stop
+              if (aov_current->crypto_hash_map[linear_pixel].size() <= rank) {
+                break;
               }
 
-              // usualz
-              else {
-                AtRGBA image = camera_data->aov_buffers[aov_name][linear_pixel];
-                if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
+              std::map<float, float>::iterator vals_iter;
+              std::vector<std::pair<float, float>> all_vals;
+              std::vector<std::pair<float, float>>::iterator all_vals_iter;
 
-                ((AtRGBA*)bucket_data)[in_idx] = image;
+              all_vals.reserve(aov_current->crypto_hash_map[linear_pixel].size());
+              for (vals_iter = aov_current->crypto_hash_map[linear_pixel].begin(); vals_iter != aov_current->crypto_hash_map[linear_pixel].end(); ++vals_iter){
+                  all_vals.push_back(*vals_iter);
               }
-              break;
+
+              std::sort(all_vals.begin(), all_vals.end(), compareTail());
+
+              int iter = 0;
+              
+              for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
+                  if (iter == rank) {
+                      out.r = all_vals_iter->first;
+                      out.g = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
+                  } else if (iter == rank + 1) {
+                      out.b = all_vals_iter->first;
+                      out.a = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
+                  }
+                  iter++;
+              }
+              
+              ((AtRGBA*)bucket_data)[in_idx] = out;
             }
 
-            case AI_TYPE_RGB: {
-              AtRGBA image = camera_data->aov_buffers[aov_name][linear_pixel];
-              image /= (image.a == 0.0) ? 1.0 : image.a;
+            // usualz
+            else {
+              AtRGBA image = aov_current->buffer[linear_pixel];
+              if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
 
-              AtRGB final_value = AtRGB(image.r, image.g, image.b);
-              ((AtRGB*)bucket_data)[in_idx] = final_value;
-              break;
+              ((AtRGBA*)bucket_data)[in_idx] = image;
             }
-
-            case AI_TYPE_FLOAT: {
-              ((float*)bucket_data)[in_idx] = camera_data->aov_buffers[aov_name][linear_pixel].r;
-              break;
-            }
-
-            case AI_TYPE_VECTOR: {
-              AtVector final_value (camera_data->aov_buffers[aov_name][linear_pixel].r, 
-                                    camera_data->aov_buffers[aov_name][linear_pixel].g,
-                                    camera_data->aov_buffers[aov_name][linear_pixel].b);
-              ((AtVector*)bucket_data)[in_idx] = final_value;
-              break;
-            }
-
-            // case AI_TYPE_INT: {
-            //   ((int*)bucket_data)[in_idx] = camera_data->aov_buffers[aov_name][linear_pixel].r;
-            //   break;
-            // }
-
-            // case AI_TYPE_UINT: {
-            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(camera_data->aov_buffers[aov_name][linear_pixel].r);
-            //   break;
-            // }
+            break;
           }
+
+          case AI_TYPE_RGB: {
+            AtRGBA image = aov_current->buffer[linear_pixel];
+            image /= (image.a == 0.0) ? 1.0 : image.a;
+
+            AtRGB final_value = AtRGB(image.r, image.g, image.b);
+            ((AtRGB*)bucket_data)[in_idx] = final_value;
+            break;
+          }
+
+          case AI_TYPE_FLOAT: {
+            ((float*)bucket_data)[in_idx] = aov_current->buffer[linear_pixel].r;
+            break;
+          }
+
+          case AI_TYPE_VECTOR: {
+            AtVector final_value (aov_current->buffer[linear_pixel].r, 
+                                  aov_current->buffer[linear_pixel].g,
+                                  aov_current->buffer[linear_pixel].b);
+            ((AtVector*)bucket_data)[in_idx] = final_value;
+            break;
+          }
+
+          // case AI_TYPE_INT: {
+          //   ((int*)bucket_data)[in_idx] = aov_current->buffer[linear_pixel].r;
+          //   break;
+          // }
+
+          // case AI_TYPE_UINT: {
+          //   ((unsigned int*)bucket_data)[in_idx] = std::abs(aov_current->buffer[linear_pixel].r);
+          //   break;
+          // }
         }
       }
     }

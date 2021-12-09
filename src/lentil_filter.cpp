@@ -29,7 +29,7 @@ inline float additional_luminance_soft_trans(float sample_luminance, float addit
 
 node_parameters 
 {
-  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+  // AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
 node_initialize
@@ -146,7 +146,7 @@ filter_pixel
       }
 
       // cryptomatte cache
-      std::map<AtString, std::map<float, float>> crypto_cache;
+      std::map<std::string, std::map<float, float>> crypto_cache;
       if (camera_data->cryptomatte_lentil) camera_data->cryptomatte_construct_cache(crypto_cache, iterator, sampleid);
 
 
@@ -168,29 +168,30 @@ filter_pixel
 
 
       // store all aov values, order same as aov_list_name list.
-      std::vector<AtRGBA> aov_values;
-      aov_values.reserve(camera_data->aov_list_name.size());
-      for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
-        if (camera_data->aov_crypto[i]) continue;
+      std::map<std::string, AtRGBA> aov_values;
+      // aov_values.resize(camera_data->aovs.size());
+      // for (unsigned i=0; i<camera_data->aovs.size(); i++){
+      for (auto &aov : camera_data->aovs){
+        if (aov.is_crypto) continue;
 
-        switch(camera_data->aov_list_type[i]){
+        switch(aov.type){
           case AI_TYPE_RGBA: {
-            aov_values[i] = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->aov_list_name[i]);
+            aov_values[aov.to.aov_name_tok] = AiAOVSampleIteratorGetAOVRGBA(iterator, aov.name_as);
           } break;
 
           case AI_TYPE_RGB: {
-            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, camera_data->aov_list_name[i]);
-            aov_values[i] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
+            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, aov.name_as);
+            aov_values[aov.to.aov_name_tok] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
           } break;
 
           case AI_TYPE_FLOAT: {
-            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->aov_list_name[i]);
-            aov_values[i] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
+            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, aov.name_as);
+            aov_values[aov.to.aov_name_tok] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
           } break;
 
           case AI_TYPE_VECTOR: {
-            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->aov_list_name[i]);
-            aov_values[i] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
+            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, aov.name_as);
+            aov_values[aov.to.aov_name_tok] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
           } break;
         }
       }
@@ -235,9 +236,10 @@ filter_pixel
             // write sample to image
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
-            for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
-              if (camera_data->aov_crypto[i]) camera_data->add_to_buffer_cryptomatte(pixelnumber, crypto_cache[camera_data->aov_list_name[i]], camera_data->aov_list_name[i], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(pixelnumber, camera_data->aov_list_type[i], camera_data->aov_list_name[i], aov_values[i],
+            // for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+            for (auto &aov : camera_data->aovs){
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
                                  inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                  transmitted_energy_in_sample, 1, iterator);
             }
@@ -279,8 +281,8 @@ filter_pixel
             // perturb ray direction to simulate coma aberration
             // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
             // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-            float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
-            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
+            // float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
+            // dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
             AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
             dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
@@ -355,9 +357,10 @@ filter_pixel
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
-              if (camera_data->aov_crypto[i]) camera_data->add_to_buffer_cryptomatte(pixelnumber, crypto_cache[camera_data->aov_list_name[i]], camera_data->aov_list_name[i], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(pixelnumber, camera_data->aov_list_type[i], camera_data->aov_list_name[i], aov_values[i],
+            // for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
+            for (auto &aov : camera_data->aovs){
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
                                 inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }

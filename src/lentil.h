@@ -74,6 +74,140 @@ enum CameraType{
 };
 
 
+
+// kindly borrowed from cryptomatte, thanks you honeyboo
+struct TokenizedOutput {
+    std::string camera_tok = "";
+    std::string aov_name_tok = "";
+    std::string aov_type_tok = "";
+    std::string filter_tok = "";
+    std::string driver_tok = "";
+    bool half_flag = false;
+    AtNode* raw_driver = nullptr;
+    AtUniverse *universe = nullptr;
+
+private:
+    AtNode* driver = nullptr;
+
+public:
+    TokenizedOutput() {}
+
+    TokenizedOutput(AtUniverse *universe_in, AtNode* raw_driver_in) { universe = universe_in; raw_driver = raw_driver_in; }
+
+    TokenizedOutput(AtUniverse *universe_in, AtString output_string) {
+        universe = universe_in;
+        char* temp_string = strdup(output_string.c_str());
+        const std::string c0 = to_string_safe(strtok(temp_string, " "));
+        const std::string c1 = to_string_safe(strtok(nullptr, " "));
+        const std::string c2 = to_string_safe(strtok(nullptr, " "));
+        const std::string c3 = to_string_safe(strtok(nullptr, " "));
+        const std::string c4 = to_string_safe(strtok(nullptr, " "));
+        const std::string c5 = to_string_safe(strtok(nullptr, " "));
+        free(temp_string);
+
+        const bool no_camera = c4.empty() || c4 == String("HALF");
+
+        half_flag = (no_camera ? c4 : c5) == String("HALF");
+
+        camera_tok = no_camera ? "" : c0;
+        aov_name_tok = no_camera ? c0 : c1;
+        aov_type_tok = no_camera ? c1 : c2;
+        filter_tok = no_camera ? c2 : c3;
+        driver_tok = no_camera ? c3 : c4;
+
+        driver = AiNodeLookUpByName(universe, driver_tok.c_str());
+    }
+
+    std::string rebuild_output() const {
+        if (raw_driver)
+            return String(AiNodeGetName(raw_driver));
+
+        String output_str("");
+        if (!camera_tok.empty()) {
+            output_str.append(camera_tok);
+            output_str.append(" ");
+        }
+        output_str.append(aov_name_tok);
+        output_str.append(" ");
+        output_str.append(aov_type_tok);
+        output_str.append(" ");
+        output_str.append(filter_tok);
+        output_str.append(" ");
+        output_str.append(driver_tok);
+        if (half_flag) // output was already flagged half
+            output_str.append(" HALF");
+        return output_str;
+    }
+
+    AtNode* get_driver() const {
+        if (driver && driver_tok == String(AiNodeGetName(driver)))
+            return driver;
+        else if (!driver_tok.empty())
+            return AiNodeLookUpByName(universe, driver_tok.c_str());
+        else
+            return nullptr;
+    }
+
+    bool aov_matches(const char* str) const { return aov_name_tok == String(str); }
+
+    std::string to_string_safe(const char* c_str) const { return c_str ? c_str : ""; }
+};
+
+
+
+struct AOVData {
+
+    public:
+        std::vector<AtRGBA> buffer;
+        TokenizedOutput to;
+
+        AtString name_as = AtString("");
+        unsigned int type = 0;
+
+        bool is_crypto = false;
+        std::vector<std::map<float, float>> crypto_hash_map;
+        std::vector<float> crypto_total_weight;
+
+        bool is_duplicate = false;
+
+
+        ~AOVData() {
+            destroy_buffers();
+        }
+
+        AOVData() {}
+
+        AOVData(AtUniverse *universe, std::string output_string) {
+            to = TokenizedOutput(universe, AtString(output_string.c_str()));
+            name_as = AtString(to.aov_name_tok.c_str());
+            type = string_to_arnold_type(to.aov_type_tok);
+        }
+
+
+        void allocate_regular_buffers(int xres, int yres) {
+            buffer.clear();
+            buffer.resize(xres*yres);
+        }
+
+        void allocate_cryptomatte_buffers(int xres, int yres) {
+            crypto_hash_map.clear();
+            crypto_hash_map.resize(xres*yres);
+            crypto_total_weight.clear();
+            crypto_total_weight.resize(xres*yres);
+        }
+
+    private:
+
+        void destroy_buffers() {
+            buffer.clear();
+            crypto_hash_map.clear();
+            crypto_total_weight.clear();
+        }
+
+        
+};
+
+
 struct Camera
 {
 	LensModel lensModel;
@@ -165,16 +299,19 @@ struct Camera
     float filter_width;
     float time_start;
     float time_end;
-    std::map<AtString, std::vector<AtRGBA> > aov_buffers;
-    std::map<AtString, unsigned int> aov_duplicates;
-    std::vector<float> zbuffer;
-    std::vector<AtString> aov_list_name;
-    std::vector<unsigned int> aov_list_type;
-    std::vector<bool> aov_crypto;
+    // std::map<AtString, std::vector<AtRGBA> > aov_buffers;
+    // std::map<AtString, unsigned int> aov_duplicates;
+    
+    // std::vector<AtString> aov_list_name;
+    // std::vector<unsigned int> aov_list_type;
+    // std::vector<bool> aov_crypto;
 
-    std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
-    std::map<AtString, std::vector<float>> crypto_total_weight;
-    std::vector<AtString> cryptomatte_aov_names;
+    // std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
+    // std::map<AtString, std::vector<float>> crypto_total_weight;
+    // std::vector<AtString> cryptomatte_aov_names;
+    
+    std::vector<float> zbuffer;
+    std::vector<AOVData> aovs;
 
     const AtString atstring_rgba = AtString("RGBA");
     const AtString atstring_p = AtString("P");
@@ -186,7 +323,6 @@ struct Camera
     const AtString atstring_time = AtString("lentil_time");
 
     bool cryptomatte_lentil;
-
     bool imager_print_once_only;
 
 
@@ -212,11 +348,10 @@ public:
         options_node = AiUniverseGetOptions(universe);
         camera_node = AiUniverseGetCamera(universe);
         get_lentil_camera_params();
+        get_arnold_options();
         
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
-
-
 
             // cryptomatte
             AtNode *crypto_node = nullptr;
@@ -228,6 +363,7 @@ public:
                 }
             }
 
+            // POTENTIAL BUG: what if lentil updates on the same thread as cryptomatte, and is in the queue before crypto? That would be a deadlock.
             if (crypto_node){
                 CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
                 while (!crypto_data->is_setup_completed) {
@@ -237,6 +373,7 @@ public:
             }
 
 
+            // once crypto has been setup I can do my own setup
             setup_aovs(universe);
             setup_filter(universe);
 
@@ -256,7 +393,7 @@ public:
     }
 
 
-    inline void trace_ray_fw_po(bool original_ray, int &tries, 
+    inline void trace_ray_fw_po(int &tries, 
                                 const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
                                 Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction)
@@ -406,7 +543,7 @@ public:
 
 
 
-    inline void trace_ray_fw_thinlens(bool original_ray, int &tries, 
+    inline void trace_ray_fw_thinlens(int &tries, 
                                     float sx, float sy,
                                     AtVector &origin, AtVector &dir, AtRGB &weight,
                                     double &r1, double &r2){
@@ -467,8 +604,8 @@ public:
             
 
             // perturb ray direction to simulate coma aberration
-            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
-            dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
+            // float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
+            // dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
 
 
             if (optical_vignetting_distance > 0.0){
@@ -748,56 +885,58 @@ public:
 
 
     // get all depth samples so i can re-use them
-    void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
+    void cryptomatte_construct_cache(std::map<std::string, std::map<float, float>> &crypto_hashmap_cache,
                                             struct AtAOVSampleIterator* sample_iterator, 
                                             const int sampleid) {
 
-        for (auto &aov : cryptomatte_aov_names) {
+        for (auto &aov : aovs) {
+            if (aov.is_crypto){
+                float iterative_transparency_weight = 1.0f;
+                float quota = 1.0;
+                float sample_value = 0.0f;
 
-            float iterative_transparency_weight = 1.0f;
-            float quota = 1.0;
-            float sample_value = 0.0f;
+                while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
+                    const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, atstring_opacity));
+                    sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov.name_as);
+                    const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight;
 
-            while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
-                const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, atstring_opacity));
-                sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov);
-                const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight;
+                    // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
+                    iterative_transparency_weight *= (1.0f - sub_sample_opacity);
 
-                // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
-                iterative_transparency_weight *= (1.0f - sub_sample_opacity);
+                    quota -= sub_sample_weight;
 
-                quota -= sub_sample_weight;
+                    crypto_hashmap_cache[aov.to.aov_name_tok][sample_value] += sub_sample_weight;
+                }
 
-                crypto_hashmap_cache[aov][sample_value] += sub_sample_weight;
+                // the remaining values gets allocated to the last sample
+                if (quota > 0.0) crypto_hashmap_cache[aov.to.aov_name_tok][sample_value] += quota;
+
+                // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
+                // still need to use the iterator afterwards, so need to do a reset to the current sample id
+                reset_iterator_to_id(sample_iterator, sampleid);
             }
-
-            // the remaining values gets allocated to the last sample
-            if (quota > 0.0) crypto_hashmap_cache[aov][sample_value] += quota;
-
-            // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
-            // still need to use the iterator afterwards, so need to do a reset to the current sample id
-            reset_iterator_to_id(sample_iterator, sampleid);
         }
     }
 
 
-    inline void add_to_buffer_cryptomatte(int px, std::map<float, float> &cryptomatte_cache, const AtString aov_name, const float sample_weight) {
-        crypto_total_weight[aov_name][px] += sample_weight;
+    inline void add_to_buffer_cryptomatte(AOVData aov, int px, std::map<float, float> &cryptomatte_cache, const float sample_weight) {
+        aov.crypto_total_weight[px] += sample_weight;
         for (auto const& sample : cryptomatte_cache) {
-            crypto_hash_map[aov_name][px][sample.first] += sample.second * sample_weight;
+            aov.crypto_hash_map[px][sample.first] += sample.second * sample_weight;
         }
     }
 
 
-    inline void add_to_buffer(int px, int aov_type, AtString aov_name, AtRGBA aov_value,
+    inline void add_to_buffer(AOVData &aov, int px, AtRGBA aov_value,
                             float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                             bool transmitted_energy_in_sample, int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator) {
 
 
-        const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
+        // const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
+        const float inv_aov_count = 1.0;
         
-        switch(aov_type){
+        switch(aov.type){
 
             case AI_TYPE_RGBA: {
             // RGBA is the only aov with transmission component in, account for that (prob skip something)
@@ -805,21 +944,21 @@ public:
             if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
             else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-            aov_buffers[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
+            aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
             break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
             const AtRGBA rgba_energy = aov_value;
-            aov_buffers[aov_name][px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+            aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
             
             break;
             }
 
             case AI_TYPE_VECTOR: {
             if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                aov_buffers[aov_name][px] = aov_value;
+                aov.buffer[px] = aov_value;
                 zbuffer[px] = std::abs(depth);
             }
 
@@ -828,7 +967,7 @@ public:
 
             case AI_TYPE_FLOAT: {
             if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                aov_buffers[aov_name][px] = aov_value;
+                aov.buffer[px] = aov_value;
                 zbuffer[px] = std::abs(depth);
             }
         
@@ -839,7 +978,7 @@ public:
             //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
             //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
             //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            //     aov_buffers[aov_name][px] = rgba_energy;
+            //     aov.buffer[px] = rgba_energy;
             //     zbuffer[px] = std::abs(depth);
             //   }
 
@@ -850,7 +989,7 @@ public:
             //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
             //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
             //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
-            //     aov_buffers[aov_name][px] = rgba_energy;
+            //     aov.buffer[px] = rgba_energy;
             //     zbuffer[px] = std::abs(depth);
             //   }
 
@@ -873,7 +1012,7 @@ public:
                                         float inv_samples, float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
                                         struct AtAOVSampleIterator* iterator,
-                                        std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
+                                        std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -892,11 +1031,12 @@ public:
                 float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
 
-                for (unsigned i=0; i<aov_list_name.size(); i++){
-                    if (aov_crypto[i]){
-                        add_to_buffer_cryptomatte(pixelnumber, cryptomatte_cache[aov_list_name[i]], aov_list_name[i], filter_weight * inv_samples * inv_filter_samples * inv_density);
+                // for (unsigned i=0; i<aovs.size(); i++){
+                for (auto &aov : aovs){
+                    if (aov.is_crypto){
+                        add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.to.aov_name_tok], filter_weight * inv_samples * inv_filter_samples * inv_density);
                     } else {
-                        add_to_buffer(pixelnumber, aov_list_type[i], aov_list_name[i], aov_values[i],
+                        add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
                                     inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator);
                     }
                 }
@@ -935,18 +1075,10 @@ public:
 
 private:
 
-    // currently destroying ALL data just to be sure, probably only have to do the vectors
+    
     void destroy_buffers() {
         zbuffer.clear();
-        aov_list_name.clear();
-        aov_list_type.clear();
-        aov_crypto.clear();
-        aov_duplicates.clear();
-        crypto_hash_map.clear();
-        crypto_total_weight.clear();
-        cryptomatte_aov_names.clear();
-        aov_buffers.clear();
-        // image_ptr_types.clear();
+        aovs.clear();
     }
 
 
@@ -961,54 +1093,76 @@ private:
         // if (AiNodeEntryGetCount(crypto_ne) == 0) {
         //     operator_data->cook = true;
         // }
-
+            
 
         filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
         if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
 
         AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), "outputs");
+        const int elements = AiArrayGetNumElements(outputs);
         std::vector<std::string> output_strings;
         // bool lentil_time_found = false;
 
-        const int elements = AiArrayGetNumElements(outputs);
+
         for (int i=0; i<elements; i++) {
-            
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
 
-            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
-            std::string filter = output_string_split[filter_index];
-            std::string type = output_string_split[filter_index-1];
-            std::string name = output_string_split[filter_index-2];
-            
-            
-            // see comment above function ^
-            // if (name == "lentil_time"){
-            //     lentil_time_found = true;
-            //     output_strings.push_back(output_string);
-            //     continue;
-            // }
-
+            AOVData aov(universe, output_string);
 
             bool replace_filter = true;
 
             // lentil unsupported
-            if (type != "RGBA" && type != "RGB" && type != "FLOAT" && type != "VECTOR") {
+            if (aov.to.aov_type_tok != "RGBA" && 
+                aov.to.aov_type_tok != "RGB" && 
+                aov.to.aov_type_tok != "FLOAT" && 
+                aov.to.aov_type_tok != "VECTOR") {
                 replace_filter = false;
             }
 
             // never attach filter to the unranked crypto AOVs, they're just for display purposes.
             // ranked aov's are e.g: crypto_material00, crypto_material01, ...
-            if (name == "crypto_material" || name == "crypto_asset" || name == "crypto_object"){
+            if (aov.to.aov_name_tok == "crypto_material" || 
+                aov.to.aov_name_tok == "crypto_asset" || 
+                aov.to.aov_name_tok == "crypto_object"){
                 replace_filter = false;
-            }
-            
-            if (replace_filter && filter != "lentil_replaced_filter"){
-                output_string.replace(output_string.find(filter), filter.length(), "lentil_replaced_filter");  
+            } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
+                aov.is_crypto = true;                
             }
 
-            output_strings.push_back(output_string);      
+
+            if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
+                aov.to.filter_tok = "lentil_replaced_filter";
+            }
+
+            
+            // identify as duplicate
+            for (auto &element : aovs) {
+                if (aov.to.aov_name_tok == element.to.aov_name_tok) {
+                    aov.is_duplicate = true;
+                }
+            }
+            
+            aovs.push_back(aov);
         }
         
+
+        AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
+        uint32_t i = 0;
+        for (auto &output : aovs){
+            AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
+            // AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
+        }
+        AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
+
+
+        // remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
+        std::vector<AOVData>::iterator it = aovs.begin();
+        while(it != aovs.end()) {
+            if(it->is_duplicate || it->to.filter_tok != "lentil_replaced_filter") {
+                it = aovs.erase(it);
+            }
+            else ++it;
+        }
 
         // see comment above function ^
         // if (!lentil_time_found) {
@@ -1021,15 +1175,6 @@ private:
         //     output_strings.push_back(tmp_first_aov);
         // }
 
-        AtArray *final_outputs = AiArrayAllocate(output_strings.size(), 1, AI_TYPE_STRING);
-        uint32_t i = 0;
-        for (auto &output : output_strings){
-            AiArraySetStr(final_outputs, i++, output.c_str());
-            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output, universe);
-            std::string type = output_string_split[filter_index-1];
-            AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
-        }
-        AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
 
 
         // see comment above function ^
@@ -1090,6 +1235,12 @@ private:
         bidir_add_luminance_transition = AiNodeGetFlt(camera_node, "bidir_add_luminance_transition");
         bidir_debug = AiNodeGetBool(camera_node, "bidir_debug");
         vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
+    }
+
+
+    void get_arnold_options() {
+        xres = AiNodeGetInt(options_node, "xres");
+        yres = AiNodeGetInt(options_node, "yres");
     }
 
 
@@ -1589,8 +1740,6 @@ private:
 
     void setup_filter(AtUniverse *universe) {
 
-        AtArray* outputs = AiNodeGetArray(options_node, "outputs");
-
         // xres_without_region = AiNodeGetInt(options_node, "xres");
         // yres_without_region = AiNodeGetInt(options_node, "yres");
         // region_min_x = AiNodeGetInt(options_node, "region_min_x");
@@ -1598,7 +1747,7 @@ private:
         // region_max_x = AiNodeGetInt(options_node, "region_max_x");
         // region_max_y = AiNodeGetInt(options_node, "region_max_y");
 
-        // need to check if the render region option is used, if not, set it to default
+        // // need to check if the render region option is used, if not, set it to default
         // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
         //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
         //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
@@ -1611,8 +1760,6 @@ private:
 
         // xres = region_max_x - region_min_x;
         // yres = region_max_y - region_min_y;
-        xres = AiNodeGetInt(options_node, "xres");
-        yres = AiNodeGetInt(options_node, "yres");
 
 
         filter_width = 2.0;
@@ -1625,70 +1772,26 @@ private:
         zbuffer.resize(xres * yres);
 
 
-
-
-        // check if a cryptomatte aovshader is present
-        // bool cryptomatte_auto_detected = false;
-        // AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
-        // for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
-        //     AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
-        //     if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
-        //     cryptomatte_auto_detected = true;
-        //     }
-        // }
-        
-        // if (cryptomatte_auto_detected == false) {
-        //     AiMsgInfo("[LENTIL BIDIRECTIONAL] Could not find a cryptomatte AOV shader, disabling cryptomatte.");
-        // }
-
-
         // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
         // this speeds up the IPR sessions.
         bool driver_is_exr = false;
-        std::string driver_first_aov;
-        std::string output_string = AiArrayGetStr(outputs, 0).c_str();
-        auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
-        driver_first_aov = output_string_split[filter_index+1];
-        AtNode *driver_node = AiNodeLookUpByName(universe, driver_first_aov.c_str());
+        AtNode *driver_node = aovs[0].to.get_driver();
         if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
             driver_is_exr = true;
         }
 
 
         // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
-        for (size_t i=0; i<AiArrayGetNumElements(outputs); ++i) {
-            std::string output_string = AiArrayGetStr(outputs, i).c_str();
-            std::string lentil_str = "lentil_replaced_filter";
-            auto [filter_index, output_string_split] = find_filter_index_in_aov_string(output_string, universe);
+        for (auto &output : aovs) {
+            if (output.to.filter_tok == "lentil_replaced_filter"){
 
-            if (output_string_split[filter_index] == lentil_str){
-                std::string name = output_string_split[filter_index-2];
-                std::string type = output_string_split[filter_index-1];
-                std::string driver = output_string_split[filter_index+1];
-                AtString name_as = AtString(name.c_str());
-
-                if (name.find("crypto_") != std::string::npos && driver_is_exr){
-                    aov_list_name.push_back(name_as);
-                    aov_list_type.push_back(string_to_arnold_type(type));
-                    crypto_hash_map[name_as].clear();
-                    crypto_hash_map[name_as].resize(xres * yres);
-                    crypto_total_weight[name_as].clear();
-                    crypto_total_weight[name_as].resize(xres * yres);
-
-                    cryptomatte_aov_names.push_back(name_as);
-                    aov_crypto.push_back(true);
+                if (output.to.aov_name_tok.find("crypto_") != std::string::npos && driver_is_exr){
+                    output.allocate_cryptomatte_buffers(xres, yres);
                 } else {
-                    aov_list_name.push_back(name_as);
-                    aov_list_type.push_back(string_to_arnold_type(type));
-                    aov_buffers[name_as].clear();
-                    aov_buffers[name_as].resize(xres * yres);
-                    aov_crypto.push_back(false);
+                    output.allocate_regular_buffers(xres, yres);
                 }
 
-                ++aov_duplicates[name_as];
-
-
-                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", driver.c_str(), name.c_str(), type.c_str());
+                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", output.to.driver_tok.c_str(), output.to.aov_name_tok.c_str(), output.to.aov_type_tok.c_str());
             }
         }
 
@@ -1696,12 +1799,3 @@ private:
 
 
 };
-
-
-
-
-
-
-
-
-
