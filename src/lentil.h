@@ -1247,8 +1247,8 @@ private:
 
         // xres_without_region = AiNodeGetInt(options_node, "xres");
         // yres_without_region = AiNodeGetInt(options_node, "yres");
-        // region_min_x = AiNodeGetInt(options_node, "region_min_x");
-        // region_min_y = AiNodeGetInt(options_node, "region_min_y");
+        region_min_x = AiNodeGetInt(options_node, "region_min_x");
+        region_min_y = AiNodeGetInt(options_node, "region_min_y");
         // region_max_x = AiNodeGetInt(options_node, "region_max_x");
         // region_max_y = AiNodeGetInt(options_node, "region_max_y");
 
@@ -1266,6 +1266,10 @@ private:
         // xres = region_max_x - region_min_x;
         // yres = region_max_y - region_min_y;
 
+        if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
+            (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
+                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set (ARNOLD-11835, 2021/11/16).");
+        }
 
         filter_width = 2.0;
         time_start = AiCameraGetShutterStart();
