@@ -169,8 +169,6 @@ filter_pixel
 
       // store all aov values, order same as aov_list_name list.
       std::map<std::string, AtRGBA> aov_values;
-      // aov_values.resize(camera_data->aovs.size());
-      // for (unsigned i=0; i<camera_data->aovs.size(); i++){
       for (auto &aov : camera_data->aovs){
         if (aov.is_crypto) continue;
 
@@ -236,7 +234,6 @@ filter_pixel
             // write sample to image
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
-            // for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
@@ -265,7 +262,7 @@ filter_pixel
             Eigen::Vector2d unit_disk(0, 0);
             if (camera_data->bokeh_enable_image) camera_data->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
             else if (camera_data->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, camera_data->abb_spherical, camera_data->circle_to_square, camera_data->bokeh_anamorphic);
-            else lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, camera_data->bokeh_aperture_blades);
+            else camera_data->lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, camera_data->bokeh_aperture_blades);
 
             unit_disk(0) *= camera_data->bokeh_anamorphic;
             AtVector lens(unit_disk(0) * camera_data->aperture_radius, unit_disk(1) * camera_data->aperture_radius, 0.0);
@@ -357,7 +354,6 @@ filter_pixel
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            // for (unsigned i=0; i<camera_data->aov_list_name.size(); i++){
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],

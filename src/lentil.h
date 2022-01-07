@@ -105,9 +105,9 @@ public:
         const std::string c5 = to_string_safe(strtok(nullptr, " "));
         free(temp_string);
 
-        const bool no_camera = c4.empty() || c4 == String("HALF");
+        const bool no_camera = c4.empty() || c4 == std::string("HALF");
 
-        half_flag = (no_camera ? c4 : c5) == String("HALF");
+        half_flag = (no_camera ? c4 : c5) == std::string("HALF");
 
         camera_tok = no_camera ? "" : c0;
         aov_name_tok = no_camera ? c0 : c1;
@@ -120,9 +120,9 @@ public:
 
     std::string rebuild_output() const {
         if (raw_driver)
-            return String(AiNodeGetName(raw_driver));
+            return std::string(AiNodeGetName(raw_driver));
 
-        String output_str("");
+        std::string output_str("");
         if (!camera_tok.empty()) {
             output_str.append(camera_tok);
             output_str.append(" ");
@@ -140,7 +140,7 @@ public:
     }
 
     AtNode* get_driver() const {
-        if (driver && driver_tok == String(AiNodeGetName(driver)))
+        if (driver && driver_tok == std::string(AiNodeGetName(driver)))
             return driver;
         else if (!driver_tok.empty())
             return AiNodeLookUpByName(universe, driver_tok.c_str());
@@ -148,7 +148,7 @@ public:
             return nullptr;
     }
 
-    bool aov_matches(const char* str) const { return aov_name_tok == String(str); }
+    bool aov_matches(const char* str) const { return aov_name_tok == std::string(str); }
 
     std::string to_string_safe(const char* c_str) const { return c_str ? c_str : ""; }
 };
@@ -171,12 +171,6 @@ struct AOVData {
         bool is_duplicate = false;
 
 
-        ~AOVData() {
-            destroy_buffers();
-        }
-
-        AOVData() {}
-
         AOVData(AtUniverse *universe, std::string output_string) {
             to = TokenizedOutput(universe, AtString(output_string.c_str()));
             name_as = AtString(to.aov_name_tok.c_str());
@@ -194,6 +188,10 @@ struct AOVData {
             crypto_hash_map.resize(xres*yres);
             crypto_total_weight.clear();
             crypto_total_weight.resize(xres*yres);
+        }
+
+        ~AOVData() {
+            destroy_buffers();
         }
 
     private:
@@ -299,16 +297,7 @@ struct Camera
     float filter_width;
     float time_start;
     float time_end;
-    // std::map<AtString, std::vector<AtRGBA> > aov_buffers;
-    // std::map<AtString, unsigned int> aov_duplicates;
-    
-    // std::vector<AtString> aov_list_name;
-    // std::vector<unsigned int> aov_list_type;
-    // std::vector<bool> aov_crypto;
 
-    // std::map<AtString, std::vector<std::map<float, float>>> crypto_hash_map;
-    // std::map<AtString, std::vector<float>> crypto_total_weight;
-    // std::vector<AtString> cryptomatte_aov_names;
     
     std::vector<float> zbuffer;
     std::vector<AOVData> aovs;
@@ -339,6 +328,8 @@ public:
         destroy_buffers();
     }
 
+
+
     void setup_all (AtUniverse *universe) {
 
         lentil_crit_sec_enter();
@@ -348,8 +339,20 @@ public:
         options_node = AiUniverseGetOptions(universe);
         camera_node = AiUniverseGetCamera(universe);
         get_lentil_camera_params();
+        camera_model_specific_setup();
+
+        // make probability functions of the bokeh image
+        // if (!(po->stored_useImage == AiNodeGetBool(node, "bokeh_enable_imagePO") && po->stored_path == AiNodeGetStr(node, "bokeh_image_pathPO")) {
+        image.invalidate();
+        if (bokeh_enable_image && !image.read(bokeh_image_path.c_str())){
+            AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
+            AiRenderAbort();
+        }
+
         get_arnold_options();
         
+
+
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
 
@@ -377,16 +380,6 @@ public:
             setup_aovs(universe);
             setup_filter(universe);
 
-        }
-
-        camera_model_specific_setup();
-
-        // make probability functions of the bokeh image
-        // if (!(po->stored_useImage == AiNodeGetBool(node, "bokeh_enable_imagePO") && po->stored_path == AiNodeGetStr(node, "bokeh_image_pathPO")) {
-        image.invalidate();
-        if (bokeh_enable_image && !image.read(bokeh_image_path.c_str())){
-            AiMsgError("[LENTIL CAMERA PO] Couldn't open bokeh image!");
-            AiRenderAbort();
         }
 
         lentil_crit_sec_leave();
@@ -919,7 +912,7 @@ public:
     }
 
 
-    inline void add_to_buffer_cryptomatte(AOVData aov, int px, std::map<float, float> &cryptomatte_cache, const float sample_weight) {
+    inline void add_to_buffer_cryptomatte(AOVData &aov, int px, std::map<float, float> &cryptomatte_cache, const float sample_weight) {
         aov.crypto_total_weight[px] += sample_weight;
         for (auto const& sample : cryptomatte_cache) {
             aov.crypto_hash_map[px][sample.first] += sample.second * sample_weight;
@@ -939,39 +932,39 @@ public:
         switch(aov.type){
 
             case AI_TYPE_RGBA: {
-            // RGBA is the only aov with transmission component in, account for that (prob skip something)
-            AtRGBA rgba_energy = aov_value;
-            if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
-            else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
+                // RGBA is the only aov with transmission component in, account for that (prob skip something)
+                AtRGBA rgba_energy = aov_value;
+                if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
+                else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-            aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
-            break;
+                break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
-            const AtRGBA rgba_energy = aov_value;
-            aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
-            
-            break;
+                const AtRGBA rgba_energy = aov_value;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+                
+                break;
             }
 
             case AI_TYPE_VECTOR: {
-            if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                aov.buffer[px] = aov_value;
-                zbuffer[px] = std::abs(depth);
-            }
+                if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+                    aov.buffer[px] = aov_value;
+                    zbuffer[px] = std::abs(depth);
+                }
 
-            break;
+                break;
             }
 
             case AI_TYPE_FLOAT: {
-            if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                aov.buffer[px] = aov_value;
-                zbuffer[px] = std::abs(depth);
-            }
+                if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+                    aov.buffer[px] = aov_value;
+                    zbuffer[px] = std::abs(depth);
+                }
         
-            break;
+                break;
             }
 
             // case AI_TYPE_INT: {
@@ -1031,7 +1024,6 @@ public:
                 float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
 
-                // for (unsigned i=0; i<aovs.size(); i++){
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
                         add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.to.aov_name_tok], filter_weight * inv_samples * inv_filter_samples * inv_density);
@@ -1069,6 +1061,28 @@ public:
         const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
                                     ((-s(1) + 1.0) / 2.0) * yres);
         return pixel;
+    }
+
+
+    inline void lens_sample_triangular_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades)
+    {
+        const int tri = (int)(r1*blades);
+
+        // rescale:
+        r1 = r1*blades - tri;
+
+        // sample triangle:
+        double a = std::sqrt(r1);
+        double b = (1.0f-r2)*a;
+        double c = r2*a;
+
+        double p1[2], p2[2];
+
+        common_sincosf(2.0f*AI_PI/blades * (tri+1), p1, p1+1);
+        common_sincosf(2.0f*AI_PI/blades * tri, p2, p2+1);
+
+        x = radius * (b * p1[1] + c * p2[1]);
+        y = radius * (b * p1[0] + c * p2[0]);
     }
 
 
@@ -1145,7 +1159,7 @@ private:
             aovs.push_back(aov);
         }
         
-
+        
         AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
         uint32_t i = 0;
         for (auto &output : aovs){
@@ -1197,6 +1211,106 @@ private:
         // }
     }
 
+
+     bool get_bidirectional_status(AtUniverse *universe) {
+
+        // // disable for non-lentil cameras
+        // if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
+        //     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
+        //     AiRenderAbort();
+        //     return false;
+        // }
+
+        // if progressive rendering is on, don't redistribute
+        if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
+            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported.");
+            AiRenderAbort();
+            return false;
+        }
+
+        if (!enable_dof) {
+            AiMsgWarning("[LENTIL BIDIRECTIONAL] Depth of field is disabled, therefore disabling bidirectional sampling.");
+            return false;
+        }
+
+        if (bidir_sample_mult == 0){
+            AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional samples are set to 0, filter will not execute.");
+            return false;
+        }
+
+        // should include an AA sample level test, if not final sample level, skip!
+
+        return true;
+    }
+
+    void setup_filter(AtUniverse *universe) {
+
+        // xres_without_region = AiNodeGetInt(options_node, "xres");
+        // yres_without_region = AiNodeGetInt(options_node, "yres");
+        // region_min_x = AiNodeGetInt(options_node, "region_min_x");
+        // region_min_y = AiNodeGetInt(options_node, "region_min_y");
+        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
+        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
+
+        // // need to check if the render region option is used, if not, set it to default
+        // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
+        //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
+        //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
+        //     region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
+        //       region_min_x = 0;
+        //       region_min_y = 0;
+        //       region_max_x = xres_without_region;
+        //       region_max_y = yres_without_region;
+        // }
+
+        // xres = region_max_x - region_min_x;
+        // yres = region_max_y - region_min_y;
+
+
+        filter_width = 2.0;
+        time_start = AiCameraGetShutterStart();
+        time_end = AiCameraGetShutterEnd();
+        imager_print_once_only = false;
+        current_inv_density = 0.0;
+
+
+        zbuffer.resize(xres * yres);
+
+
+        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
+        for (auto &aov : aovs) {
+            if (aov.to.filter_tok == "lentil_replaced_filter"){
+                
+                // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
+                // this speeds up the IPR sessions.
+                bool driver_is_exr = false;
+                AtNode *driver_node = aov.to.get_driver();
+                if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
+                    driver_is_exr = true;
+                }
+
+                if (aov.to.aov_name_tok.find("crypto_") != std::string::npos && driver_is_exr){
+                    aov.allocate_cryptomatte_buffers(xres, yres);
+                } else {
+                    aov.allocate_regular_buffers(xres, yres);
+                }
+
+                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", aov.to.driver_tok.c_str(), aov.to.aov_name_tok.c_str(), aov.to.aov_type_tok.c_str());
+            }
+        }
+
+    }
+
+
+    inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
+        AiAOVSampleIteratorReset(iterator);
+        
+        for (int i = 0; AiAOVSampleIteratorGetNext(iterator) == true; i++){
+            if (i == id) return;
+        }
+
+        return;
+    }
 
 
     void get_lentil_camera_params() {
@@ -1558,6 +1672,14 @@ private:
     }
 
 
+    inline float filter_weight_gaussian(AtVector2 p, float width) {
+        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+        if (r > 1.0f) return 0.0;
+        return AiFastExp(2 * -r);
+    }
+
+    
+
 
 
 
@@ -1702,100 +1824,6 @@ private:
     //     AiRenderAbort();
     //     return nullptr;
     // }
-
-
-
-
-    
-    bool get_bidirectional_status(AtUniverse *universe) {
-
-        // // disable for non-lentil cameras
-        // if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
-        //     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-        //     AiRenderAbort();
-        //     return false;
-        // }
-
-        // if progressive rendering is on, don't redistribute
-        if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
-            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported.");
-            AiRenderAbort();
-            return false;
-        }
-
-        if (!enable_dof) {
-            AiMsgWarning("[LENTIL BIDIRECTIONAL] Depth of field is disabled, therefore disabling bidirectional sampling.");
-            return false;
-        }
-
-        if (bidir_sample_mult == 0){
-            AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional samples are set to 0, filter will not execute.");
-            return false;
-        }
-
-        // should include an AA sample level test, if not final sample level, skip!
-
-        return true;
-    }
-
-    void setup_filter(AtUniverse *universe) {
-
-        // xres_without_region = AiNodeGetInt(options_node, "xres");
-        // yres_without_region = AiNodeGetInt(options_node, "yres");
-        // region_min_x = AiNodeGetInt(options_node, "region_min_x");
-        // region_min_y = AiNodeGetInt(options_node, "region_min_y");
-        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
-        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
-
-        // // need to check if the render region option is used, if not, set it to default
-        // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
-        //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
-        //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
-        //     region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
-        //       region_min_x = 0;
-        //       region_min_y = 0;
-        //       region_max_x = xres_without_region;
-        //       region_max_y = yres_without_region;
-        // }
-
-        // xres = region_max_x - region_min_x;
-        // yres = region_max_y - region_min_y;
-
-
-        filter_width = 2.0;
-        time_start = AiCameraGetShutterStart();
-        time_end = AiCameraGetShutterEnd();
-        imager_print_once_only = false;
-        current_inv_density = 0.0;
-
-
-        zbuffer.resize(xres * yres);
-
-
-        // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
-        // this speeds up the IPR sessions.
-        bool driver_is_exr = false;
-        AtNode *driver_node = aovs[0].to.get_driver();
-        if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
-            driver_is_exr = true;
-        }
-
-
-        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
-        for (auto &output : aovs) {
-            if (output.to.filter_tok == "lentil_replaced_filter"){
-
-                if (output.to.aov_name_tok.find("crypto_") != std::string::npos && driver_is_exr){
-                    output.allocate_cryptomatte_buffers(xres, yres);
-                } else {
-                    output.allocate_regular_buffers(xres, yres);
-                }
-
-                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", output.to.driver_tok.c_str(), output.to.aov_name_tok.c_str(), output.to.aov_type_tok.c_str());
-            }
-        }
-
-    }
 
 
 };

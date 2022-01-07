@@ -301,19 +301,19 @@
         houdini.help        STRING "Make sure you are using cryptomatte-lentil instead of default cryptomatte."
 
 
-[node lentil_operator]
-    maya.name               STRING "lentil_operator"
-    maya.attr_prefix        STRING ""
-    maya.classification     STRING  "operator"
-    maya.output_name        STRING  "out"
-    maya.output_shortname   STRING  "out"
-    maya.id                  INT      0x00070513
-    [attr call_me_dirty]
-        maya.hide               BOOL     TRUE
-    [attr enable]
-        maya.hide               BOOL     TRUE
-    [attr inputs]
-        maya.hide               BOOL     TRUE
+#[node lentil_operator]
+#    maya.name               STRING "lentil_operator"
+#    maya.attr_prefix        STRING ""
+#    maya.classification     STRING  "operator"
+#    maya.output_name        STRING  "out"
+#    maya.output_shortname   STRING  "out"
+#    maya.id                  INT      0x00070513
+#    [attr call_me_dirty]
+#        maya.hide               BOOL     TRUE
+#    [attr enable]
+#        maya.hide               BOOL     TRUE
+#    [attr inputs]
+#        maya.hide               BOOL     TRUE
 
 
 [node imager_lentil]

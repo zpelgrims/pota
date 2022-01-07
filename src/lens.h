@@ -11,6 +11,39 @@
 #  define M_PI 3.14159265358979323846
 #endif
 
+
+
+// sin approximation, not completely accurate but faster than std::sin
+inline float fast_sin(float x){
+    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
+    const float B = 4.0f / AI_PI;
+    const float C = -4.0f / (AI_PI*AI_PI);
+    float y = B * x + C * x * std::abs(x);
+    const float P = 0.225f;
+    return P * (y * std::abs(y) - y) + y;
+}
+
+
+inline float fast_cos(float x){
+    // conversion from sin to cos
+    x += AI_PI * 0.5;
+
+    x = fmod(x + AI_PI, AI_PI * 2) - AI_PI; // restrict x so that -AI_PI < x < AI_PI
+    const float B = 4.0f / AI_PI;
+    const float C = -4.0f / (AI_PI*AI_PI);
+    float y = B * x + C * x * std::abs(x);
+    const float P = 0.225f;
+    return P * (y * std::abs(y) - y) + y;
+}
+
+
+static inline void common_sincosf(double phi, double *sin, double *cos) {
+  *sin = std::sin(phi);
+  *cos = std::cos(phi);
+}
+
+
+
 static inline double raytrace_dot(Eigen::Vector3d u, Eigen::Vector3d v) {
   return u(0)*v(0) + u(1)*v(1) + u(2)*v(2);
 }
