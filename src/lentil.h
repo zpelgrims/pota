@@ -14,7 +14,6 @@
 #include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
 #include <chrono>
 #include <thread>
-
 #include <regex>
 
 extern AtCritSec l_critsec;
@@ -325,6 +324,7 @@ struct Camera
 
     
     std::vector<float> zbuffer;
+    std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
     std::vector<AOVData> aovs;
 
     const AtString atstring_rgba = AtString("RGBA");
@@ -335,6 +335,7 @@ struct Camera
     const AtString atstring_lentil_ignore = AtString("lentil_ignore");
     const AtString atstring_motionvector = AtString("lentil_object_motion_vector");
     const AtString atstring_time = AtString("lentil_time");
+    const AtString atstring_lentil_debug = AtString("lentil_debug");
 
     bool cryptomatte_lentil;
     bool imager_print_once_only;
@@ -403,7 +404,7 @@ public:
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     ++time_cnt;
 
-                    if (time_cnt == 100) { // guess that crypto is in the same queue, behind lentil
+                    if (time_cnt == 200) { // guess that crypto is in the same queue, behind lentil
                         crypto_in_same_queue = true;
                         break;
                     }
@@ -996,11 +997,20 @@ public:
             }
 
             case AI_TYPE_FLOAT: {
-                if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-                    aov.buffer[px] = aov_value;
-                    zbuffer[px] = std::abs(depth);
+                if (aov.name_as != atstring_lentil_debug) {
+                    if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+                        aov.buffer[px] = aov_value;
+                        zbuffer[px] = std::abs(depth);
+                    } 
+                } else {
+                    if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
+                        if (aov_value.r != 0.0){
+                            aov.buffer[px] = aov_value;
+                            zbuffer_debug[px] = std::abs(depth);
+                        }
+                    }
                 }
-        
+
                 break;
             }
 
@@ -1159,6 +1169,7 @@ public:
 
 
         zbuffer.resize(xres * yres);
+        zbuffer_debug.resize(xres * yres);
 
 
         // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
@@ -1318,6 +1329,7 @@ private:
     
     void destroy_buffers() {
         zbuffer.clear();
+        zbuffer_debug.clear();
         aovs.clear();
     }
 
