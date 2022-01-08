@@ -403,7 +403,7 @@ public:
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     ++time_cnt;
 
-                    if (time_cnt == 300) { // guess that crypto is in the same queue, behind lentil
+                    if (time_cnt == 100) { // guess that crypto is in the same queue, behind lentil
                         crypto_in_same_queue = true;
                         break;
                     }
@@ -1148,7 +1148,7 @@ public:
 
         if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
             (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
-                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set (ARNOLD-11835, 2021/11/16).");
+                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
         }
 
         filter_width = 2.0;
@@ -1229,7 +1229,7 @@ public:
                 aov.to.aov_name_tok == "crypto_object"){
                 replace_filter = false;
             } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
-                aov.is_crypto = true;                
+                aov.is_crypto = true;
             }
 
 
@@ -1247,6 +1247,18 @@ public:
             
             aovs.push_back(aov);
         }
+
+
+        // make a copy of RGBA aov and use it as the basis for the lentil_debug AOV
+        // doing this to make sure the whole AOV string is correct, including all the options
+        // because some stuff happens in the constructor and we're skipping that here, we need to set these manually
+        AOVData aov_lentil_debug = aovs[0];
+        aov_lentil_debug.to.aov_type_tok = "FLOAT";
+        aov_lentil_debug.to.aov_name_tok = "lentil_debug";
+        aov_lentil_debug.to = TokenizedOutputLentil(universe, AtString(aov_lentil_debug.to.rebuild_output().c_str()));
+        aov_lentil_debug.name_as = AtString("lentil_debug");
+        aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
+        aovs.push_back(aov_lentil_debug);
         
         
         AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);

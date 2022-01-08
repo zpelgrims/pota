@@ -49,7 +49,6 @@ node_parameters {
   AiParameterInt("bidir_sample_mult", 20);
   AiParameterFlt("bidir_add_luminance", 0.0);
   AiParameterFlt("bidir_add_luminance_transition", 1.0);
-  AiParameterBool("bidir_debug", false);
 
   // advanced
   AiParameterInt("vignetting_retries", 15);

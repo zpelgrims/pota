@@ -167,10 +167,14 @@ filter_pixel
       unsigned int max_total_samples = samples*5;
 
 
-      // store all aov values, order same as aov_list_name list.
+      // store all aov values
       std::map<std::string, AtRGBA> aov_values;
       for (auto &aov : camera_data->aovs){
         if (aov.is_crypto) continue;
+        if (aov.to.aov_name_tok == "lentil_debug"){
+          aov_values[aov.to.aov_name_tok] = static_cast<float>(samples) * redistribute;
+          continue;
+        }
 
         switch(aov.type){
           case AI_TYPE_RGBA: {
@@ -371,30 +375,7 @@ filter_pixel
   AiAOVSampleIteratorReset(iterator);
   switch(data_type){
     case AI_TYPE_RGBA: {
-      AtRGBA value_out = AI_RGBA_ZERO;
-      if (camera_data->bidir_debug){
-        while (AiAOVSampleIteratorGetNext(iterator))
-        {
-          AtRGBA sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-          AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
-          float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z);
-          const float sample_luminance = (sample_energy.r + sample_energy.g + sample_energy.b)/3.0;
-          if (sample_luminance > camera_data->bidir_min_luminance || depth != AI_INFINITE ||  !AiV3IsSmall(sample_pos_ws)) {
-              // const AtRGB red = AtRGB(1.0, 0.0, 0.0);
-              // const AtRGB green = AtRGB(0.0, 1.0, 0.0);
-              // const AtRGB heatmap_colors[2] = {red, green};
-              // const float heatmap_positions[2] = {0.0f, 1.0f};
-
-              // AtRGB heatmap = AiColorHeatMap(heatmap_colors, heatmap_positions, 2, sample_luminance);
-              // value_out = AtRGBA(heatmap.r, heatmap.g, heatmap.b, 1.0);
-              value_out = AtRGBA(1.0, 1.0, 1.0, 1.0);
-              
-          }
-        }
-      } else {
-        value_out = camera_data->filter_gaussian_complete(iterator, data_type);
-      }
-
+      AtRGBA value_out = camera_data->filter_gaussian_complete(iterator, data_type);
       *((AtRGBA*)data_out) = value_out;
     } break;
 

@@ -264,13 +264,6 @@
         houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
 
 
-    [attr bidir_debug]
-        desc                STRING  "Preview which samples will be redistributed."
-        default             BOOL    false
-        houdini.label       STRING  "Debug"
-        houdini.help        STRING "Preview which samples will be redistributed"
-
-
     [attr vignetting_retries]
         min                 INT    1
         max                 INT    50

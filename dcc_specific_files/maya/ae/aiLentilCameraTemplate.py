@@ -71,7 +71,6 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.addControl("bidirMinLuminance", label="Minimum luminance")
         self.addControl("bidirAddLuminance", label="Additional Luminance")
         self.addControl("bidirAddLuminanceTransition", label="Add lum trans width")
-        self.addControl("bidirDebug", label="Debug")
         self.endLayout()
 
         self.beginLayout("Bokeh Global")
@@ -84,7 +83,6 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.beginLayout("Advanced options")
         self.addControl("vignettingRetries", label="Vignetting retries")
         self.addControl("units", label="Units")
-        self.addControl("cryptomatte", label="Enable Cryptomatte")
         self.endLayout()
 
 
