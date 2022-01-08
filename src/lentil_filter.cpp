@@ -29,7 +29,7 @@ inline float additional_luminance_soft_trans(float sample_luminance, float addit
 
 node_parameters 
 {
-  // AiMetaDataSetBool(nentry, nullptr, "force_update", true);
+  AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
  
 node_initialize

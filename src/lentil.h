@@ -15,6 +15,8 @@
 #include <chrono>
 #include <thread>
 
+#include <regex>
+
 extern AtCritSec l_critsec;
 extern bool l_critsec_active;
 
@@ -76,7 +78,7 @@ enum CameraType{
 
 
 // kindly borrowed from cryptomatte, thanks you honeyboo
-struct TokenizedOutput {
+struct TokenizedOutputLentil {
     std::string camera_tok = "";
     std::string aov_name_tok = "";
     std::string aov_type_tok = "";
@@ -90,20 +92,37 @@ private:
     AtNode* driver = nullptr;
 
 public:
-    TokenizedOutput() {}
+    TokenizedOutputLentil() {}
 
-    TokenizedOutput(AtUniverse *universe_in, AtNode* raw_driver_in) { universe = universe_in; raw_driver = raw_driver_in; }
+    TokenizedOutputLentil(AtUniverse *universe_in, AtNode* raw_driver_in) { universe = universe_in; raw_driver = raw_driver_in; }
 
-    TokenizedOutput(AtUniverse *universe_in, AtString output_string) {
+    TokenizedOutputLentil(AtUniverse *universe_in, AtString output_string) {
         universe = universe_in;
-        char* temp_string = strdup(output_string.c_str());
-        const std::string c0 = to_string_safe(strtok(temp_string, " "));
-        const std::string c1 = to_string_safe(strtok(nullptr, " "));
-        const std::string c2 = to_string_safe(strtok(nullptr, " "));
-        const std::string c3 = to_string_safe(strtok(nullptr, " "));
-        const std::string c4 = to_string_safe(strtok(nullptr, " "));
-        const std::string c5 = to_string_safe(strtok(nullptr, " "));
-        free(temp_string);
+        std::string temp_string = output_string.c_str();
+        std::string regex_string = " ";
+        auto tokens = split(temp_string, regex_string);
+
+        std::string c0 = "";
+        std::string c1 = "";
+        std::string c2 = "";
+        std::string c3 = "";
+        std::string c4 = "";
+        std::string c5 = "";
+        
+        if (tokens.size() == 4) {
+            c0 = tokens[0];
+            c1 = tokens[1];
+            c2 = tokens[2];
+            c3 = tokens[3];
+        }
+        
+        if (tokens.size() == 5) {
+            c4 = tokens[4];
+        }
+
+        if (tokens.size() == 6) {
+            c5 = tokens[5];
+        }
 
         const bool no_camera = c4.empty() || c4 == std::string("HALF");
 
@@ -150,7 +169,13 @@ public:
 
     bool aov_matches(const char* str) const { return aov_name_tok == std::string(str); }
 
-    std::string to_string_safe(const char* c_str) const { return c_str ? c_str : ""; }
+    std::vector<std::string> split(const std::string str, const std::string regex_str)
+    {
+        std::regex regexz(regex_str);
+        std::vector<std::string> list(std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
+                                    std::sregex_token_iterator());
+        return list;
+    }
 };
 
 
@@ -159,7 +184,7 @@ struct AOVData {
 
     public:
         std::vector<AtRGBA> buffer;
-        TokenizedOutput to;
+        TokenizedOutputLentil to;
 
         AtString name_as = AtString("");
         unsigned int type = 0;
@@ -172,7 +197,7 @@ struct AOVData {
 
 
         AOVData(AtUniverse *universe, std::string output_string) {
-            to = TokenizedOutput(universe, AtString(output_string.c_str()));
+            to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
             name_as = AtString(to.aov_name_tok.c_str());
             type = string_to_arnold_type(to.aov_type_tok);
         }
@@ -314,6 +339,8 @@ struct Camera
     bool cryptomatte_lentil;
     bool imager_print_once_only;
 
+    bool crypto_in_same_queue = false;
+
 
 
 public:
@@ -355,6 +382,8 @@ public:
 
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
+            
+            crypto_in_same_queue = false;
 
             // cryptomatte
             AtNode *crypto_node = nullptr;
@@ -369,17 +398,25 @@ public:
             // POTENTIAL BUG: what if lentil updates on the same thread as cryptomatte, and is in the queue before crypto? That would be a deadlock.
             if (crypto_node){
                 CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
+                int time_cnt = 0;
                 while (!crypto_data->is_setup_completed) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));  
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    ++time_cnt;
+
+                    if (time_cnt == 300) { // guess that crypto is in the same queue, behind lentil
+                        crypto_in_same_queue = true;
+                        break;
+                    }
                 }
                 cryptomatte_lentil = true;
             }
 
 
             // once crypto has been setup I can do my own setup
-            setup_aovs(universe);
-            setup_filter(universe);
-
+            if (!crypto_in_same_queue){
+                setup_aovs(universe);
+                setup_filter(universe);
+            }
         }
 
         lentil_crit_sec_leave();
@@ -1085,14 +1122,66 @@ public:
         y = radius * (b * p1[0] + c * p2[0]);
     }
 
-
-
-private:
-
     
-    void destroy_buffers() {
-        zbuffer.clear();
-        aovs.clear();
+    void setup_filter(AtUniverse *universe) {
+
+        // xres_without_region = AiNodeGetInt(options_node, "xres");
+        // yres_without_region = AiNodeGetInt(options_node, "yres");
+        region_min_x = AiNodeGetInt(options_node, "region_min_x");
+        region_min_y = AiNodeGetInt(options_node, "region_min_y");
+        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
+        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
+
+        // // need to check if the render region option is used, if not, set it to default
+        // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
+        //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
+        //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
+        //     region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
+        //       region_min_x = 0;
+        //       region_min_y = 0;
+        //       region_max_x = xres_without_region;
+        //       region_max_y = yres_without_region;
+        // }
+
+        // xres = region_max_x - region_min_x;
+        // yres = region_max_y - region_min_y;
+
+        if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
+            (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
+                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set (ARNOLD-11835, 2021/11/16).");
+        }
+
+        filter_width = 2.0;
+        time_start = AiCameraGetShutterStart();
+        time_end = AiCameraGetShutterEnd();
+        imager_print_once_only = false;
+        current_inv_density = 0.0;
+
+
+        zbuffer.resize(xres * yres);
+
+
+        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
+        for (auto &aov : aovs) {
+            if (aov.to.filter_tok == "lentil_replaced_filter"){
+                
+                // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
+                // this speeds up the IPR sessions.
+                bool driver_is_exr = false;
+                AtNode *driver_node = aov.to.get_driver();
+                if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
+                    driver_is_exr = true;
+                }
+
+                if (aov.to.aov_name_tok.find("crypto_") != std::string::npos && driver_is_exr){
+                    aov.allocate_cryptomatte_buffers(xres, yres);
+                } else {
+                    aov.allocate_regular_buffers(xres, yres);
+                }
+
+                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", aov.to.driver_tok.c_str(), aov.to.aov_name_tok.c_str(), aov.to.aov_type_tok.c_str());
+            }
+        }
     }
 
 
@@ -1212,6 +1301,18 @@ private:
     }
 
 
+private:
+
+    
+    void destroy_buffers() {
+        zbuffer.clear();
+        aovs.clear();
+    }
+
+
+    
+
+
      bool get_bidirectional_status(AtUniverse *universe) {
 
         // // disable for non-lentil cameras
@@ -1243,67 +1344,7 @@ private:
         return true;
     }
 
-    void setup_filter(AtUniverse *universe) {
-
-        // xres_without_region = AiNodeGetInt(options_node, "xres");
-        // yres_without_region = AiNodeGetInt(options_node, "yres");
-        region_min_x = AiNodeGetInt(options_node, "region_min_x");
-        region_min_y = AiNodeGetInt(options_node, "region_min_y");
-        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
-        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
-
-        // // need to check if the render region option is used, if not, set it to default
-        // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
-        //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
-        //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
-        //     region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
-        //       region_min_x = 0;
-        //       region_min_y = 0;
-        //       region_max_x = xres_without_region;
-        //       region_max_y = yres_without_region;
-        // }
-
-        // xres = region_max_x - region_min_x;
-        // yres = region_max_y - region_min_y;
-
-        if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
-            (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
-                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set (ARNOLD-11835, 2021/11/16).");
-        }
-
-        filter_width = 2.0;
-        time_start = AiCameraGetShutterStart();
-        time_end = AiCameraGetShutterEnd();
-        imager_print_once_only = false;
-        current_inv_density = 0.0;
-
-
-        zbuffer.resize(xres * yres);
-
-
-        // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
-        for (auto &aov : aovs) {
-            if (aov.to.filter_tok == "lentil_replaced_filter"){
-                
-                // crypto does this check to avoid "actually" doing the work unless we're writing an exr to disk
-                // this speeds up the IPR sessions.
-                bool driver_is_exr = false;
-                AtNode *driver_node = aov.to.get_driver();
-                if (driver_node && AiNodeIs(driver_node, AtString("driver_exr"))){
-                    driver_is_exr = true;
-                }
-
-                if (aov.to.aov_name_tok.find("crypto_") != std::string::npos && driver_is_exr){
-                    aov.allocate_cryptomatte_buffers(xres, yres);
-                } else {
-                    aov.allocate_regular_buffers(xres, yres);
-                }
-
-                AiMsgInfo("[LENTIL BIDIRECTIONAL] Driver '%s' -- Adding aov %s of type %s", aov.to.driver_tok.c_str(), aov.to.aov_name_tok.c_str(), aov.to.aov_type_tok.c_str());
-            }
-        }
-
-    }
+    
 
 
     inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
