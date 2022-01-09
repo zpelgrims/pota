@@ -267,7 +267,6 @@ struct Camera
     int bidir_sample_mult;
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
-    bool bidir_debug;
 
     // parameters PO
     double lambda;
@@ -1416,7 +1415,6 @@ private:
         bidir_sample_mult = AiNodeGetInt(camera_node, "bidir_sample_mult");
         bidir_add_luminance = AiNodeGetFlt(camera_node, "bidir_add_luminance");
         bidir_add_luminance_transition = AiNodeGetFlt(camera_node, "bidir_add_luminance_transition");
-        bidir_debug = AiNodeGetBool(camera_node, "bidir_debug");
         vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
     }
 

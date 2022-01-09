@@ -91,7 +91,6 @@ filter_pixel
   }
   
 
-  if (camera_data->bidir_debug) skip_redistribution_local = true;
   if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
   
 

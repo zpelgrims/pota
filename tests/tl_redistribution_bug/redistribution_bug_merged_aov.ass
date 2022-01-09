@@ -47,7 +47,7 @@ driver_exr
 {
  name defaultArnoldDriver/driver_exr.RGBA
  input "aiImagerLentil2"
- filename "C:/Users/cactus/Documents/maya/projects/default/images/lentil_base_setup.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup.exr"
  color_space ""
 }
 
