@@ -86,6 +86,7 @@ camera_create_ray {
   int tries = 0;
   double r1 = input.lensx;
   double r2 = input.lensy; 
+  float step = 0.001;
 
   switch (camera_data->cameraType){
     case PolynomialOptics:
@@ -98,7 +99,6 @@ camera_create_ray {
 
       // calculate new ray derivatives
       if (tries > 0){
-        float step = 0.001;
         AtCameraInput input_dx = input;
         AtCameraInput input_dy = input;
         AtCameraOutput output_dx;
@@ -147,7 +147,6 @@ camera_create_ray {
 
       if (tries > 0){
         
-          float step = 0.001;
           AtCameraInput input_dx = input;
           AtCameraInput input_dy = input;
           AtCameraOutput output_dx;
