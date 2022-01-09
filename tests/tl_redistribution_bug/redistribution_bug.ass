@@ -1,0 +1,1891 @@
+### exported: Sun Jan  9 11:43:15 2022
+### from:     Arnold 7.0.0.1 [5e3b4fd3] windows clang-10.0.1 oiio-2.3.2 osl-1.12.0 vdb-7.1.1 clm-2.0.0.235 rlm-14.1.3 optix-6.6.0 2021/11/18 13:08:38
+### host app: MtoA 5.0.0.2 1c3d7bb2 (fix-5.0.0) Maya 2020
+### render_layer: defaultRenderLayer
+### scene: C:/Users/cactus/lentil/pota/dcc_specific_files/maya/lentil_base_setup_broken.ma
+### bounds: -32.54533 1.126185 -32.54533 32.54533 47.156258 32.54533
+### user: cactus
+### meters_per_unit: 0.010000
+
+
+
+options
+{
+ AA_samples 3
+ AA_seed 6
+ outputs 7 1 STRING
+  "RGBA RGBA defaultArnoldFilter/gaussian_filter defaultArnoldDriver/driver_exr.RGBA"
+  "N VECTOR aiAOVFilter1/closest_filter defaultArnoldDriver/driver_exr.N"
+  "P VECTOR aiAOVFilter2/closest_filter defaultArnoldDriver/driver_exr.P"
+  "crypto_asset RGB defaultArnoldFilter/gaussian_filter defaultArnoldDriver/driver_exr.crypto_asset"
+  "crypto_material RGB defaultArnoldFilter/gaussian_filter defaultArnoldDriver/driver_exr.crypto_material"
+  "crypto_object RGB defaultArnoldFilter/gaussian_filter defaultArnoldDriver/driver_exr.crypto_object"
+  "lentil_time FLOAT defaultArnoldFilter/gaussian_filter defaultArnoldDriver/driver_exr.lentil_time"
+ aov_shaders 2 1 NODE
+"_aov_cryptomatte" "defaultArnoldRenderOptions/aov_write_float_lentil_time"
+ xres 960
+ yres 540
+ bucket_size 16
+ texture_per_file_stats on
+ texture_searchpath "C:/Users/cactus/Documents/maya/projects/default/sourceimages"
+ texture_automip off
+ camera "/grp_rendercam/rendercam/rendercamShape"
+ color_manager "defaultColorMgtGlobals"
+ meters_per_unit 0.00999999978
+ frame 6
+ procedural_searchpath "C:/Users/cactus/Documents/maya/projects/default/"
+ GI_diffuse_depth 1
+ GI_specular_depth 1
+ GI_transmission_depth 8
+ declare render_layer constant STRING
+ render_layer "defaultRenderLayer"
+}
+
+gaussian_filter
+{
+ name defaultArnoldFilter/gaussian_filter
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.RGBA
+ input "aiImagerLentil2"
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/beauty/lentil_base_setup_broken.exr"
+ color_space ""
+}
+
+closest_filter
+{
+ name aiAOVFilter1/closest_filter
+}
+
+closest_filter
+{
+ name aiAOVFilter2/closest_filter
+}
+
+cryptomatte
+{
+ name _aov_cryptomatte
+}
+
+state_float
+{
+ name aiStateFloat1
+ variable "time"
+}
+
+imager_lentil
+{
+ name aiImagerLentil2
+}
+
+aov_write_float
+{
+ name defaultArnoldRenderOptions/aov_write_float_lentil_time
+ aov_input aiStateFloat1
+ aov_name "lentil_time"
+}
+
+color_manager_syncolor
+{
+ name defaultColorMgtGlobals
+ native_catalog_path "C:/Program Files/Autodesk/Maya2020/synColor"
+ custom_catalog_path "C:/Users/cactus/Documents/maya/synColor/Shared/"
+ rendering_color_space "scene-linear Rec 709/sRGB"
+}
+
+lentil_camera
+{
+ name /persp/perspShape
+ matrix
+ 0.9997015 1.08420217e-19 0.0244321786 0
+ 0.00116724928 0.998858094 -0.0477608182 0
+ -0.0244042799 0.0477750786 0.998559952 0
+ 0.10685052 24.9090004 303.459442 1
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ fstop 1.39999998
+ focus_dist 40
+ optical_vignetting_distance 4
+ optical_vignetting_radius 1
+ bidir_sample_mult 10
+ declare dcc_name constant STRING
+ dcc_name "perspShape"
+}
+
+lentil_camera
+{
+ name /grp_rendercam/rendercam/rendercamShape
+ matrix
+ 0.999950528 0 0.0099498881 0
+ 0.000475356705 0.998858094 -0.047772713 0
+ -0.0099385269 0.0477750786 0.998808682 0
+ 5.2796669 28.797039 226.806839 1
+ near_clip 0.100000001
+ far_clip 10000
+ shutter_start 0
+ shutter_end 0
+ shutter_type "box"
+ rolling_shutter "off"
+ rolling_shutter_duration 0
+ motion_start 0
+ motion_end 0
+ exposure 0
+ fstop 2
+ focus_dist 40
+ optical_vignetting_radius 1
+ bidir_sample_mult 5
+ declare dcc_name constant STRING
+ dcc_name "rendercamShape"
+}
+
+point_light
+{
+ name /grp_lights/pointLight8/pointLightShape8
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -6.57511187 -29.7118187 1.42108547e-14 1
+ color 1 0.844142914 0.743198514
+ intensity 30
+ exposure 1.83396161
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.696354389
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape8"
+}
+
+point_light
+{
+ name /grp_lights/pointLight7/pointLightShape7
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 24.5472298 -10.9184732 0 1
+ color 1 0.779911816 0.604050934
+ intensity 30
+ exposure 1.3242265
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.982197881
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape7"
+}
+
+point_light
+{
+ name /grp_lights/pointLight6/pointLightShape6
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 43.7612114 -9.57818031 -54.8848724 1
+ color 1 0.731254995 0.509612978
+ intensity 30
+ exposure 1.74619055
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.852586746
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape6"
+}
+
+point_light
+{
+ name /grp_lights/pointLight52/pointLightShape52
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 32.7633476 23.0626392 -126.553352 1
+ color 1 0.727130473 0.502025902
+ intensity 30
+ exposure 2.63467288
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.604277611
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape52"
+}
+
+point_light
+{
+ name /grp_lights/pointLight51/pointLightShape51
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 47.9023933 17.1510563 -126.553352 1
+ color 1 0.699853003 0.453451067
+ intensity 30
+ exposure 0.801864505
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.617711782
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape51"
+}
+
+point_light
+{
+ name /grp_lights/pointLight50/pointLightShape50
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 78.0343704 37.4944611 -126.553352 1
+ color 1 0.669688284 0.402919561
+ intensity 30
+ exposure 1.19639528
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.68580544
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape50"
+}
+
+point_light
+{
+ name /grp_lights/pointLight5/pointLightShape5
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 32.9601173 10.9605484 -103.087616 1
+ color 1 0.886328459 0.84406805
+ intensity 30
+ exposure 2.10615492
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.742120266
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape5"
+}
+
+point_light
+{
+ name /grp_lights/pointLight49/pointLightShape49
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 66.2082825 57.4606018 -126.553352 1
+ color 1 0.573692143 0.263425678
+ intensity 30
+ exposure 1.6165272
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.592432261
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape49"
+}
+
+point_light
+{
+ name /grp_lights/pointLight48/pointLightShape48
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 65.3613968 -20.5053158 -126.553352 1
+ color 1 0.873906136 0.813555956
+ intensity 30
+ exposure 1.99992764
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.639892101
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape48"
+}
+
+point_light
+{
+ name /grp_lights/pointLight47/pointLightShape47
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 95.4933701 -0.161910713 -126.553352 1
+ color 1 0.734535873 0.515694737
+ intensity 30
+ exposure 1.4509604
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.631338358
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape47"
+}
+
+point_light
+{
+ name /grp_lights/pointLight46/pointLightShape46
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 83.6672897 19.8042297 -126.553352 1
+ color 1 0.337231249 0.0457833707
+ intensity 30
+ exposure 1.81638467
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.658970475
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape46"
+}
+
+point_light
+{
+ name /grp_lights/pointLight45/pointLightShape45
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -3.11355042 28.5828896 -126.553352 1
+ color 1 0.632889092 0.345682085
+ intensity 30
+ exposure 1.39063346
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.570719481
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape45"
+}
+
+point_light
+{
+ name /grp_lights/pointLight44/pointLightShape44
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -21.4194412 -11.726655 -34.1978302 1
+ color 1 0.496147275 0.173188671
+ intensity 30
+ exposure 1.35864258
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.573820949
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape44"
+}
+
+point_light
+{
+ name /grp_lights/pointLight43/pointLightShape43
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 8.712533 8.61674881 -96.3650055 1
+ color 1 0.801353812 0.648625672
+ intensity 30
+ exposure 2.24815249
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.681650996
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape43"
+}
+
+point_light
+{
+ name /grp_lights/pointLight42/pointLightShape42
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -35.4771156 15.969306 -126.553352 1
+ color 1 0.78975296 0.624279797
+ intensity 30
+ exposure 1.05708861
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.955725431
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape42"
+}
+
+point_light
+{
+ name /grp_lights/pointLight41/pointLightShape41
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -65.6090927 -4.37409878 -126.553352 1
+ color 1 0.515873313 0.194315001
+ intensity 30
+ exposure 1.56408811
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.521111965
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape41"
+}
+
+point_light
+{
+ name /grp_lights/pointLight40/pointLightShape40
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -47.3031998 35.9354477 -126.553352 1
+ color 1 0.710068762 0.471318662
+ intensity 30
+ exposure 1.13033915
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.59506166
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape40"
+}
+
+point_light
+{
+ name /grp_lights/pointLight4/pointLightShape4
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 64.0824585 29.7538929 0 1
+ color 1 0.644774258 0.363646895
+ intensity 30
+ exposure 1.09859979
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.835983038
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape4"
+}
+
+point_light
+{
+ name /grp_lights/pointLight39/pointLightShape39
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -28.1815987 38.2458344 -62.3236504 1
+ color 1 0.61807996 0.323983878
+ intensity 30
+ exposure 1.99192345
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.548954844
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape39"
+}
+
+point_light
+{
+ name /grp_lights/pointLight38/pointLightShape38
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 44.5894279 3.09649801 -126.553352 1
+ color 1 0.738132715 0.522408545
+ intensity 30
+ exposure 2.32031751
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.562110662
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape38"
+}
+
+point_light
+{
+ name /grp_lights/pointLight37/pointLightShape37
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -9.87570953 78.5553818 -126.553352 1
+ color 1 0.775970578 0.596057534
+ intensity 30
+ exposure 2.14197063
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.529403687
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape37"
+}
+
+point_light
+{
+ name /grp_lights/pointLight36/pointLightShape36
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 14.4574556 -17.2469063 -126.553352 1
+ color 1 0.663601875 0.393121898
+ intensity 30
+ exposure 1.41787803
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.669180155
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape36"
+}
+
+point_light
+{
+ name /grp_lights/pointLight35/pointLightShape35
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ 1.9503746 58.5892372 -126.553352 1
+ color 1 0.509813368 0.187694326
+ intensity 30
+ exposure 0.844799995
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.531281948
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape35"
+}
+
+point_light
+{
+ name /grp_lights/pointLight34/pointLightShape34
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -96.5745239 -13.6114197 -126.553352 1
+ color 1 0.657089174 0.382784128
+ intensity 30
+ exposure 1.91970336
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.960025787
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape34"
+}
+
+point_light
+{
+ name /grp_lights/pointLight33/pointLightShape33
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -57.4966621 3.09631228 -126.553352 1
+ color 1 0.65564543 0.380512834
+ intensity 30
+ exposure 1.3699609
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.893474698
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape33"
+}
+
+point_light
+{
+ name /grp_lights/pointLight32/pointLightShape32
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -45.670578 -16.8698273 -126.553352 1
+ color 1 0.890552163 0.854598999
+ intensity 30
+ exposure 1.60806012
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.712557435
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape32"
+}
+
+point_light
+{
+ name /grp_lights/pointLight31/pointLightShape31
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -75.8025513 -37.2132339 -126.553352 1
+ color 1 0.505547702 0.183103487
+ intensity 30
+ exposure 1.40734744
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.705498815
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape31"
+}
+
+point_light
+{
+ name /grp_lights/pointLight30/pointLightShape30
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -74.9556656 40.7526817 -126.553352 1
+ color 0.982853174 0.935793817 1
+ intensity 30
+ exposure 1.12910533
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.959924102
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape30"
+}
+
+point_light
+{
+ name /grp_lights/pointLight3/pointLightShape3
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 20.3212471 39.3320732 0 1
+ color 1 0.562425315 0.249103442
+ intensity 30
+ exposure 1.73194063
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.602733612
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape3"
+}
+
+point_light
+{
+ name /grp_lights/pointLight29/pointLightShape29
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -63.1295815 20.7865429 -126.553352 1
+ color 1 0.787658453 0.619942486
+ intensity 30
+ exposure 1.29239023
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.798930049
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape29"
+}
+
+point_light
+{
+ name /grp_lights/pointLight28/pointLightShape28
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -93.2615585 0.443138152 -126.553352 1
+ color 1 0.359802604 0.0594406873
+ intensity 30
+ exposure 1.39890742
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.625005007
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape28"
+}
+
+point_light
+{
+ name /grp_lights/pointLight27/pointLightShape27
+ matrix
+ -0.998720109 -0.0505782366 0 0
+ 0.0505782366 -0.998720109 0 0
+ 0 0 1 0
+ -108.400604 6.35472107 -96.4426575 1
+ color 1 0.688595712 0.434206128
+ intensity 30
+ exposure 1.97858644
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.812091589
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape27"
+}
+
+point_light
+{
+ name /grp_lights/pointLight26/pointLightShape26
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 106.276558 16.874485 1.42108547e-14 1
+ color 1 0.669621468 0.402811587
+ intensity 30
+ exposure 1.88217092
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.783357143
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape26"
+}
+
+point_light
+{
+ name /grp_lights/pointLight25/pointLightShape25
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 91.4558868 23.5442085 0 1
+ color 1 0.56647402 0.254201978
+ intensity 30
+ exposure 1.38492596
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.78792417
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape25"
+}
+
+point_light
+{
+ name /grp_lights/pointLight24/pointLightShape24
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 60.3335419 4.75086355 1.42108547e-14 1
+ color 1 0.743643224 0.532790065
+ intensity 30
+ exposure 1.79751801
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.825598121
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape24"
+}
+
+point_light
+{
+ name /grp_lights/pointLight23/pointLightShape23
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 71.1346359 -15.7878647 1.42108547e-14 1
+ color 1 0.565127075 0.252499789
+ intensity 30
+ exposure 2.10411978
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.914990544
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape23"
+}
+
+point_light
+{
+ name /grp_lights/pointLight22/pointLightShape22
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 75.9238205 62.0354271 0 1
+ color 1 0.789547801 0.623854041
+ intensity 30
+ exposure 1.33958709
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.618653774
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape22"
+}
+
+point_light
+{
+ name /grp_lights/pointLight21/pointLightShape21
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 44.8014793 43.2420845 -54.4568825 1
+ color 1 0.811947525 0.671333969
+ intensity 30
+ exposure 0.943322837
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.994775772
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape21"
+}
+
+point_light
+{
+ name /grp_lights/pointLight20/pointLightShape20
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 55.6025734 22.7033558 1.42108547e-14 1
+ color 1 0.830871999 0.713050723
+ intensity 30
+ exposure 2.50667167
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.74003911
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape20"
+}
+
+point_light
+{
+ name /grp_lights/pointLight2/pointLightShape2
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -10.801096 20.5387287 1.42108547e-14 1
+ color 1 0.586042643 0.279609352
+ intensity 30
+ exposure 1.28538132
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.832790852
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape2"
+}
+
+point_light
+{
+ name /grp_lights/pointLight19/pointLightShape19
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 95.4754639 37.4132156 -62.7704353 1
+ color 1 0.745221496 0.535784781
+ intensity 30
+ exposure 1.03728604
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.759746671
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape19"
+}
+
+point_light
+{
+ name /grp_lights/pointLight18/pointLightShape18
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -86.2257614 13.1566458 1.42108547e-14 1
+ color 1 0.668599665 0.401157588
+ intensity 30
+ exposure 2.75092101
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.644148469
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape18"
+}
+
+point_light
+{
+ name /grp_lights/pointLight17/pointLightShape17
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -97.0268555 33.6953735 -32.4521065 1
+ color 1 0.363000631 0.061489705
+ intensity 30
+ exposure 1.27417278
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.735216975
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape17"
+}
+
+point_light
+{
+ name /grp_lights/pointLight16/pointLightShape16
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -65.9045105 52.4887199 -67.4923248 1
+ color 1 0.446391076 0.125265121
+ intensity 30
+ exposure 1.62691128
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.672618151
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape16"
+}
+
+point_light
+{
+ name /grp_lights/pointLight15/pointLightShape15
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -70.6936951 -25.3345737 1.42108547e-14 1
+ color 1 0.893618524 0.862295151
+ intensity 30
+ exposure 1.03982294
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.863932371
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape15"
+}
+
+point_light
+{
+ name /grp_lights/pointLight14/pointLightShape14
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -81.4947891 -4.79584599 -53.6023865 1
+ color 1 0.866275549 0.795150995
+ intensity 30
+ exposure 1.85564196
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.674237847
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape14"
+}
+
+point_light
+{
+ name /grp_lights/pointLight13/pointLightShape13
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -50.372448 13.9974995 0 1
+ color 1 0.922159433 0.935984433
+ intensity 30
+ exposure 1.65394557
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.839981437
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape13"
+}
+
+point_light
+{
+ name /grp_lights/pointLight12/pointLightShape12
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -35.5517731 7.32777596 -52.2884407 1
+ color 1 0.742687166 0.530980587
+ intensity 30
+ exposure 1.67249632
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.942675948
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape12"
+}
+
+point_light
+{
+ name /grp_lights/pointLight11/pointLightShape11
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -46.3528671 27.8665047 -84.1938782 1
+ color 1 0.666048706 0.397044688
+ intensity 30
+ exposure 1.96096003
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.801089644
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape11"
+}
+
+point_light
+{
+ name /grp_lights/pointLight10/pointLightShape10
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ -15.2305269 46.6598511 0 1
+ color 1 0.746937394 0.539051831
+ intensity 30
+ exposure 0.937141597
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.852039099
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape10"
+}
+
+point_light
+{
+ name /grp_lights/pointLight1/pointLightShape1
+ matrix
+ 1 0 0 0
+ 0 1 0 0
+ 0 0 1 0
+ 2.22044605e-16 -3.55271368e-15 -60.1196899 1
+ color 1 0.611873388 0.315114558
+ intensity 30
+ exposure 0.905887723
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ samples 1
+ normalize on
+ camera 1
+ transmission 0
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ radius 0.668203473
+ declare dcc_name constant STRING
+ dcc_name "pointLightShape1"
+}
+
+skydome_light
+{
+ name /aiSkyDomeLight1/aiSkyDomeLightShape1
+ color 0.170731708 0.170731708 0.170731708
+ exposure 0
+ cast_shadows on
+ cast_volumetric_shadows on
+ shadow_density 1
+ shadow_color 0 0 0
+ samples 1
+ normalize on
+ camera 1
+ transmission 1
+ diffuse 1
+ specular 1
+ sss 1
+ indirect 1
+ max_bounces 999
+ volume_samples 2
+ volume 1
+ aov "default"
+ resolution 1000
+ format "latlong"
+ portal_mode "interior_only"
+ aov_indirect off
+ declare dcc_name constant STRING
+ dcc_name "aiSkyDomeLightShape1"
+}
+
+polymesh
+{
+ name /pCube1/pCubeShape1
+ visibility 255
+ sidedness 255
+ matrix
+ 32.9759216 0 -32.1147346 0
+ 0 46.0300751 0 0
+ 32.1147346 0 32.9759216 0
+ 0 24.141222 0 1
+ shader "lambert1"
+ use_light_group off
+ id 528272281
+ nsides 6 1 UINT
+4 4 4 4 4 4
+ vidxs 24 1 b85UINT
+B$ZuK*%<ho2%s\>:$$-?2$vMr4%<MT0
+ nidxs 24 1 b85UINT
+B$v2N*&9nA:'RU4J(k<'Z*.woj+G^c%
+ uvidxs 24 1 b85UINT
+B$ZuK*%<ho2%s\>:&UObB$w/J=(3BP?
+ vlist 8 1 b85VECTOR
+aDq99aDq9989+]c89+]caDq9989+]caDq99!89+]c$$$$)aDq9989+]caDq9989+]c89+]c!aDq99$$$$(89+]caDq99aDq99
+ nlist 24 1 b85VECTOR
+zzyzzyzzyzzyzyzzyzzyzzy!$$$$$$$$$'aRT=dzzaRT=dzzaRT=dzzaRT=dzaRT=dzzaRT=dzzaRT=dzzaRT=dzyzzyzzyzzyzzaRT=dzzaRT=dzzaRT=dzzaRT=dzz
+ uvlist 14 1 b85VECTOR2
+82:0xz8<Nt.z82:0x8+HY88<Nt.8+HY882:0x89+]c8<Nt.89+]c82:0x8?r5N8<Nt.8?r5N82:0xy8<Nt.y8C@Knz8C@Kn8+HY87reTbz7reTb8+HY8
+ smoothing on
+ disp_padding 0
+ disp_height 1
+ disp_zero_value 0
+ disp_autobump off
+ autobump_visibility 1
+ step_size 0
+ volume_padding 0
+ declare dcc_name constant STRING
+ dcc_name "pCubeShape1"
+}
+
+lambert
+{
+ name lambert1
+ Kd 0.800000012
+ Kd_color 0.5 0.5 0.5
+ opacity 1 1 1
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.N
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/N/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.P
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/P/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.crypto_asset
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_asset/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.crypto_material
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_material/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.crypto_object
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_object/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+
+driver_exr
+{
+ name defaultArnoldDriver/driver_exr.lentil_time
+ filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/lentil_time/lentil_base_setup_broken.exr"
+ compression "zip"
+ half_precision off
+ tiled on
+ multipart off
+ color_space ""
+ preserve_layer_name off
+ autocrop off
+ append off
+}
+

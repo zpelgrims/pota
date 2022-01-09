@@ -24,17 +24,8 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
     def filenameReplaceBokehInput(self, nodeName):
         cmds.textFieldButtonGrp("filenameBokehGrpInput", edit=True, text=cmds.getAttr(nodeName) )
 
-    def launchgui_button_create(self, *args):
-        # userinterface.py needs to be in the PYTHONPATH envvar!
-        cmds.button(label="Launch Lentil UI", align="center", command="import userinterface as lentil_ui;reload(lentil_ui);lentil_ui.launch_maya()")
-
-    def launchgui_button_update(self, *args):
-        pass
-
 
     def setup(self):
-
-        #self.addCustom("launchgui_button", self.launchgui_button_create, self.launchgui_button_update)
 
         self.beginLayout("Global", collapse=False)
         self.addControl("cameratype", label="Camera Type")
