@@ -30,7 +30,6 @@ options
  texture_searchpath "C:/Users/cactus/Documents/maya/projects/default/sourceimages"
  texture_automip off
  camera "/grp_rendercam/rendercam/rendercamShape"
- color_manager "defaultColorMgtGlobals"
  meters_per_unit 0.00999999978
  frame 6
  procedural_searchpath "C:/Users/cactus/Documents/maya/projects/default/"
@@ -50,7 +49,7 @@ driver_exr
 {
  name defaultArnoldDriver/driver_exr.RGBA
  input "aiImagerLentil2"
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/beauty/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_beauty.exr"
  color_space ""
 }
 
@@ -87,13 +86,6 @@ aov_write_float
  aov_name "lentil_time"
 }
 
-color_manager_syncolor
-{
- name defaultColorMgtGlobals
- native_catalog_path "C:/Program Files/Autodesk/Maya2020/synColor"
- custom_catalog_path "C:/Users/cactus/Documents/maya/synColor/Shared/"
- rendering_color_space "scene-linear Rec 709/sRGB"
-}
 
 lentil_camera
 {
@@ -1808,7 +1800,7 @@ lambert
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.N
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/N/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_N.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -1822,7 +1814,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.P
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/P/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_P.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -1836,7 +1828,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.crypto_asset
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_asset/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_crypto_asset.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -1850,7 +1842,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.crypto_material
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_material/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_crypto_material.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -1864,7 +1856,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.crypto_object
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/crypto_object/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_crypto_object.exr"
  compression "zip"
  half_precision off
  tiled on
@@ -1878,7 +1870,7 @@ driver_exr
 driver_exr
 {
  name defaultArnoldDriver/driver_exr.lentil_time
- filename "C:/Users/cactus/Documents/maya/projects/default/images/rendercam/lentil_time/lentil_base_setup_broken.exr"
+ filename "/home/cactus/lentil/pota/tests/tl_redistribution_bug/lentil_base_setup_broken_lentil_time.exr"
  compression "zip"
  half_precision off
  tiled on
