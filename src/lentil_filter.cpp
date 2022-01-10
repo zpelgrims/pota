@@ -97,13 +97,10 @@ filter_pixel
   if (camera_data->redistribution && !skip_redistribution_local){
     const double xres = (double)camera_data->xres;
     const double yres = (double)camera_data->yres;
-    // const double frame_aspect_ratio = (double)camera_data->xres_without_region/(double)camera_data->yres_without_region;
     const double frame_aspect_ratio = xres/yres;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
-    // px -= camera_data->region_min_x;
-    // py -= camera_data->region_min_y;
 
     AtShaderGlobals *sg = AiShaderGlobals();
 
@@ -115,7 +112,6 @@ filter_pixel
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
-      // AiMsgInfo ("time: %f", time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
       AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(camera_data->camera_node, time, world_to_camera_matrix);
       AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
@@ -214,7 +210,7 @@ filter_pixel
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
-            Eigen::Vector2d pixel;
+            Eigen::Vector2d pixel(0,0);
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
@@ -257,7 +253,7 @@ filter_pixel
             if (!transmitted_energy_in_sample) continue;
           }
 
-          for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
+          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
             Eigen::Vector2d sensor_position(0,0);
             Eigen::Vector2d pixel(0,0);
