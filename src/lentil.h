@@ -388,7 +388,7 @@ public:
             // cryptomatte
             AtNode *crypto_node = nullptr;
             AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
-            for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
+            for (uint32_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
                 AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
                 if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
                     crypto_node = aov_node;
@@ -461,7 +461,7 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample(r1, r2, unit_disk, true);
+                    concentric_disk_sample_default(r1, r2, unit_disk, true);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
@@ -611,7 +611,7 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentricDiskSample(r1, r2, unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
+                    concentric_disk_sample_tl(r1, r2, unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
@@ -744,7 +744,7 @@ public:
                 unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
                 if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
-                else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true);
+                else concentric_disk_sample_default(rng(seed), rng(seed), unit_disk, true);
 
                 aperture(0) = unit_disk(0) * aperture_radius;
                 aperture(1) = unit_disk(1) * aperture_radius;
@@ -801,6 +801,118 @@ public:
         sensor_position(1) = sensor(1);
 
         return true;
+    }
+
+    
+    // given camera space scene point, return point on sensor
+    inline bool trace_ray_bw_tl(AtVector camera_space_sample_position,
+                                Eigen::Vector2d &sensor_position,
+                                const int px, 
+                                const int py,
+                                const int total_samples_taken,
+                                AtMatrix cam_to_world,
+                                AtVector sample_pos_ws,
+                                AtShaderGlobals *sg)
+    {
+        int tries = 0;
+        bool ray_succes = false;
+
+        Eigen::Vector2d aperture(0.0, 0.0);
+
+        float image_dist_samplepos = (-focal_length * camera_space_sample_position.z) / (-focal_length + camera_space_sample_position.z);
+
+
+        while(ray_succes == false && tries <= vignetting_retries){
+
+            Eigen::Vector2d unit_disk(0.0, 0.0);
+
+            if (!enable_dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
+            else if (enable_dof && bokeh_aperture_blades <= 2) {
+                unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
+
+                if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
+                else concentric_disk_sample_tl(rng(seed),rng(seed), unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
+
+                unit_disk(0) *= bokeh_anamorphic;
+
+                aperture(0) = unit_disk(0) * aperture_radius;
+                aperture(1) = unit_disk(1) * aperture_radius;
+            } 
+            else if (enable_dof && bokeh_aperture_blades > 2) {
+                unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
+                lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), aperture_radius, bokeh_aperture_blades);
+            }
+
+            AtVector lens(aperture(0), aperture(1), 0.0);
+
+            // raytrace for scene/geometrical occlusions along the ray
+            AtVector lens_correct_scaled = lens;
+            switch (unitModel){
+              case mm: { lens_correct_scaled /= 0.1; } break;
+              case cm: { lens_correct_scaled /= 1.0; } break;
+              case dm: { lens_correct_scaled /= 10.0;} break;
+              case m:  { lens_correct_scaled /= 100.0;}
+            }
+            AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
+            AtVector ws_direction = cam_pos_ws - sample_pos_ws;
+            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
+            if (AiTraceProbe(ray, sg)){
+              ++tries;
+              continue;
+            }
+
+            // ray through center of lens
+            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
+            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
+            // perturb ray direction to simulate coma aberration
+            // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
+            // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
+            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
+            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
+            AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
+            dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
+
+            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
+            AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
+
+
+            // depth of field
+            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+
+            float focusdist_intersection = std::abs(get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
+            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+
+
+
+
+            // bring back to (x, y, 1)
+            Eigen::Vector2d sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                            focusdist_image_point.y / focusdist_image_point.z);
+            // transform to screenspace coordinate mapping
+            sensor_position /= (sensor_width*0.5)/-focal_length;
+
+
+            // optical vignetting
+            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
+            if (optical_vignetting_distance > 0.0){
+              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
+              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, aperture_radius, optical_vignetting_radius, optical_vignetting_distance, lerp_squircle_mapping(circle_to_square))){
+                  ++tries;
+                  continue;
+              }
+            }
+
+
+            // barrel distortion (inverse)
+            if (abb_distortion > 0.0) {
+                AtVector2 sensor_pos_atvec =  inverseBarrelDistortion(AtVector2(sensor_position(0), sensor_position(1)), abb_distortion);
+                sensor_position = Eigen::Vector2d(sensor_pos_atvec.x, sensor_pos_atvec.y);
+            }
+
+            ray_succes = true;
+        }
+
+        return ray_succes;
     }
 
 
@@ -1092,7 +1204,7 @@ public:
     }
 
     // inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-    //   x = linear_pixel % xres;
+    //   x = linear_pixel % xres
     //   y = (int)(linear_pixel / xres);
     // }
 

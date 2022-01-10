@@ -306,7 +306,7 @@ static inline void lens_evaluate_aperture_jacobian(const float *in, float *J)
 
 
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample(const double ox, const double oy, Eigen::Vector2d &unit_disk, bool fast_trigo)
+inline void concentric_disk_sample_default(const double ox, const double oy, Eigen::Vector2d &unit_disk, bool fast_trigo)
 {
   double phi, r;
 
@@ -474,7 +474,7 @@ inline Eigen::Vector3d chromatic_abberration_empirical(Eigen::Vector2d pos, floa
 
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentricDiskSample(float ox, float oy, Eigen::Vector2d &lens, float bias, float squarelerp, float squeeze_x)
+inline void concentric_disk_sample_tl(float ox, float oy, Eigen::Vector2d &lens, float bias, float squarelerp, float squeeze_x)
 {
     if (ox == 0.0 && oy == 0.0){
         lens(0) = 0.0;

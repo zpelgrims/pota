@@ -28,7 +28,6 @@ options
  texture_searchpath "C:/Users/cactus/Documents/maya/projects/default/sourceimages"
  texture_automip off
  camera "/persp/perspShape"
- color_manager "defaultColorMgtGlobals"
  meters_per_unit 0.00999999978
  frame 1
  procedural_searchpath "C:/Users/cactus/Documents/maya/projects/default/"
@@ -90,13 +89,6 @@ imager_lentil
  name aiImagerLentil2
 }
 
-color_manager_syncolor
-{
- name defaultColorMgtGlobals
- native_catalog_path "C:/Program Files/Autodesk/Maya2020/synColor"
- custom_catalog_path "C:/Users/cactus/Documents/maya/synColor/Shared/"
- rendering_color_space "scene-linear Rec 709/sRGB"
-}
 
 lentil_camera
 {
@@ -118,10 +110,10 @@ lentil_camera
  exposure 0
  fstop 1.39999998
  focus_dist 40
+ optical_vignetting_distance 0
  optical_vignetting_radius 1
- bidir_sample_mult 10
- declare dcc_name constant STRING
- dcc_name "perspShape"
+ bidir_sample_mult 1
+ vignetting_retries 0
 }
 
 point_light
