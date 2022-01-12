@@ -206,7 +206,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -251,119 +251,119 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0, sampleid,
+                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
 
-          for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
-            unsigned int seed = tea<8>((px*py+px), total_samples_taken);
+          // for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
+          //   unsigned int seed = tea<8>((px*py+px), total_samples_taken);
             
-            float image_dist_samplepos = (-camera_data->focal_length * camera_space_sample_position.z) / (-camera_data->focal_length + camera_space_sample_position.z);
+          //   float image_dist_samplepos = (-camera_data->focal_length * camera_space_sample_position.z) / (-camera_data->focal_length + camera_space_sample_position.z);
 
-            // either get uniformly distributed points on the unit disk or bokeh image
-            Eigen::Vector2d unit_disk(0, 0);
-            if (camera_data->bokeh_enable_image) camera_data->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
-            else if (camera_data->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, camera_data->abb_spherical, camera_data->circle_to_square, camera_data->bokeh_anamorphic);
-            else camera_data->lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, camera_data->bokeh_aperture_blades);
+          //   // either get uniformly distributed points on the unit disk or bokeh image
+          //   Eigen::Vector2d unit_disk(0, 0);
+          //   if (camera_data->bokeh_enable_image) camera_data->image.bokehSample(rng(seed),rng(seed), unit_disk, rng(seed), rng(seed));
+          //   else if (camera_data->bokeh_aperture_blades < 2) concentricDiskSample(rng(seed),rng(seed), unit_disk, camera_data->abb_spherical, camera_data->circle_to_square, camera_data->bokeh_anamorphic);
+          //   else camera_data->lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), rng(seed),rng(seed), 1.0, camera_data->bokeh_aperture_blades);
 
-            unit_disk(0) *= camera_data->bokeh_anamorphic;
-            AtVector lens(unit_disk(0) * camera_data->aperture_radius, unit_disk(1) * camera_data->aperture_radius, 0.0);
-
-
-            // aberration inputs
-            // float abb_field_curvature = 0.0;
+          //   unit_disk(0) *= camera_data->bokeh_anamorphic;
+          //   AtVector lens(unit_disk(0) * camera_data->aperture_radius, unit_disk(1) * camera_data->aperture_radius, 0.0);
 
 
-            // ray through center of lens
-            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
-            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
-            // perturb ray direction to simulate coma aberration
-            // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
-            // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-            float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
-            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
-            AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
-            dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
-
-            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
-            AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
+          //   // aberration inputs
+          //   // float abb_field_curvature = 0.0;
 
 
-            // depth of field
-            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+          //   // ray through center of lens
+          //   AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
+          //   AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
+          //   // perturb ray direction to simulate coma aberration
+          //   // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
+          //   // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
+          //   float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
+          //   dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
+          //   AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
+          //   dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
-            float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
-
-
-            // raytrace for scene/geometrical occlusions along the ray
-            AtVector lens_correct_scaled = lens;
-            switch (camera_data->unitModel){
-              case mm: { lens_correct_scaled /= 0.1; } break;
-              case cm: { lens_correct_scaled /= 1.0; } break;
-              case dm: { lens_correct_scaled /= 10.0;} break;
-              case m:  { lens_correct_scaled /= 100.0;}
-            }
-            AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
-            AtVector ws_direction = cam_pos_ws - sample_pos_ws;
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
-            if (AiTraceProbe(ray, sg)){
-              --count;
-              continue;
-            }
-
-            // bring back to (x, y, 1)
-            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
-                                      focusdist_image_point.y / focusdist_image_point.z);
-            // transform to screenspace coordinate mapping
-            sensor_position /= (camera_data->sensor_width*0.5)/-camera_data->focal_length;
+          //   float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
+          //   AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
 
 
-            // optical vignetting
-            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
-            if (camera_data->optical_vignetting_distance > 0.0){
-              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, camera_data->aperture_radius, camera_data->optical_vignetting_radius, camera_data->optical_vignetting_distance, lerp_squircle_mapping(camera_data->circle_to_square))){
-                  --count;
-                  continue;
-              }
-            }
+          //   // depth of field
+          //   AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
+
+          //   float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
+          //   AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
 
-            // barrel distortion (inverse)
-            if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
+          //   // raytrace for scene/geometrical occlusions along the ray
+          //   AtVector lens_correct_scaled = lens;
+          //   switch (camera_data->unitModel){
+          //     case mm: { lens_correct_scaled /= 0.1; } break;
+          //     case cm: { lens_correct_scaled /= 1.0; } break;
+          //     case dm: { lens_correct_scaled /= 10.0;} break;
+          //     case m:  { lens_correct_scaled /= 100.0;}
+          //   }
+          //   AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
+          //   AtVector ws_direction = cam_pos_ws - sample_pos_ws;
+          //   AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
+          //   if (AiTraceProbe(ray, sg)){
+          //     --count;
+          //     continue;
+          //   }
+
+          //   // bring back to (x, y, 1)
+          //   AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+          //                             focusdist_image_point.y / focusdist_image_point.z);
+          //   // transform to screenspace coordinate mapping
+          //   sensor_position /= (camera_data->sensor_width*0.5)/-camera_data->focal_length;
+
+
+          //   // optical vignetting
+          //   dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
+          //   if (camera_data->optical_vignetting_distance > 0.0){
+          //     // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
+          //     if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, camera_data->aperture_radius, camera_data->optical_vignetting_radius, camera_data->optical_vignetting_distance, lerp_squircle_mapping(camera_data->circle_to_square))){
+          //         --count;
+          //         continue;
+          //     }
+          //   }
+
+
+          //   // barrel distortion (inverse)
+          //   if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
             
 
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            // const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres_without_region;
-            // const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region;
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres;
+          //   // convert sensor position to pixel position
+          //   Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
+          //   // const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres_without_region;
+          //   // const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region;
+          //   const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres;
+          //   const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres;
 
-            // if outside of image
-            // if ((pixel_x >= xres) || (pixel_x < camera_data->region_min_x) || (pixel_y >= yres) || (pixel_y < camera_data->region_min_y)) {
-            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
-              continue;
-            }
+          //   // if outside of image
+          //   // if ((pixel_x >= xres) || (pixel_x < camera_data->region_min_x) || (pixel_y >= yres) || (pixel_y < camera_data->region_min_y)) {
+          //   if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
+          //     --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
+          //     continue;
+          //   }
 
-            // write sample to image
-            // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-            // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y));
-            if (!redistribute) pixelnumber = camera_data->coords_to_linear_pixel(px, py);
+          //   // write sample to image
+          //   // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+          //   // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
+          //   unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y));
+          //   if (!redistribute) pixelnumber = camera_data->coords_to_linear_pixel(px, py);
 
-            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+          //   // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
-                                inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
-                                transmitted_energy_in_sample, 1, iterator);
-            }
-          }
+          //   for (auto &aov : camera_data->aovs){
+          //     if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+          //     else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
+          //                       inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+          //                       transmitted_energy_in_sample, 1, iterator);
+          //   }
+          // }
         } break;
       }
     }

@@ -1049,9 +1049,14 @@ public:
 
     inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                         float inv_samples, float inv_density, float depth, 
-                                        bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
+                                        bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
+        
+
+        float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
+        const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+       
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -1061,14 +1066,10 @@ public:
                 if (x < 0 || x >= xres) continue; // edge fix
 
                 const unsigned pixelnumber = static_cast<int>(xres * y + x);
-                
-                const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+
                 AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
-
-                float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
-
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
@@ -1742,7 +1743,7 @@ private:
     inline float filter_weight_gaussian(AtVector2 p, float width) {
         const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
         if (r > 1.0f) return 0.0;
-        return AiFastExp(2 * -r);
+        return std::exp(2 * -r);
     }
 
     
