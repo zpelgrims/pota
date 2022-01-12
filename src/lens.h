@@ -305,34 +305,6 @@ static inline void lens_evaluate_aperture_jacobian(const float *in, float *J)
 }*/
 
 
-// maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample_default(const double ox, const double oy, Eigen::Vector2d &unit_disk, bool fast_trigo)
-{
-  double phi, r;
-
-  // switch coordinate space from [0, 1] to [-1, 1]
-  double a = 2.0*ox - 1.0;
-  double b = 2.0*oy - 1.0;
-
-  if ((a*a) > (b*b)){
-    r = a;
-    phi = (0.78539816339) * (b/a);
-  }
-  else {
-    r = b;
-    phi = (M_PI/2.0) - (0.78539816339) * (a/b);
-  }
-
-  if (!fast_trigo){
-    unit_disk(0) = r * std::cos(phi);
-    unit_disk(1) = r * std::sin(phi);
-  } else {
-    unit_disk(0) = r * fast_cos(phi);
-    unit_disk(1) = r * fast_sin(phi);
-  }
-}
-
-
 
 /*
 static inline int lens_clip_aperture(const float x, const float y, const float radius, const int blades)
@@ -471,14 +443,13 @@ inline Eigen::Vector3d chromatic_abberration_empirical(Eigen::Vector2d pos, floa
 }
    
 
-
 // Improved concentric mapping code by Dave Cline [peter shirley´s blog]
 // maps points on the unit square onto the unit disk uniformly
-inline void concentric_disk_sample_tl(float ox, float oy, Eigen::Vector2d &lens, float bias, float squarelerp, float squeeze_x)
+inline void concentric_disk_sample(float ox, float oy, Eigen::Vector2d &unit_disk, float bias, float squarelerp)
 {
     if (ox == 0.0 && oy == 0.0){
-        lens(0) = 0.0;
-        lens(1) = 0.0;
+        unit_disk(0) = 0.0;
+        unit_disk(1) = 0.0;
         return;
     }
 
@@ -504,12 +475,12 @@ inline void concentric_disk_sample_tl(float ox, float oy, Eigen::Vector2d &lens,
 
     const float cos_phi = fast_trigo ? fast_cos(phi) : std::cos(phi);
     const float sin_phi = fast_trigo ? fast_sin(phi) : std::sin(phi);
-    lens(0) = r * cos_phi;
-    lens(1) = r * sin_phi;
+    unit_disk(0) = r * cos_phi;
+    unit_disk(1) = r * sin_phi;
 
     if (squarelerp > 0.0){
-        lens(0) = linear_interpolate(squarelerp, lens(0), a);
-        lens(1) = linear_interpolate(squarelerp, lens(1), b);
+        unit_disk(0) = linear_interpolate(squarelerp, unit_disk(0), a);
+        unit_disk(1) = linear_interpolate(squarelerp, unit_disk(1), b);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "../../Eigen/Eigen/Dense"
 
@@ -14,7 +15,7 @@
 #include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
 #include <chrono>
 #include <thread>
-#include <regex>
+
 
 extern AtCritSec l_critsec;
 extern bool l_critsec_active;
@@ -461,7 +462,7 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample_default(r1, r2, unit_disk, true);
+                    concentric_disk_sample(r1, r2, unit_disk, true, 0.0);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
@@ -611,7 +612,7 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample_tl(r1, r2, unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
+                    concentric_disk_sample(r1, r2, unit_disk, abb_spherical, circle_to_square);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
@@ -744,7 +745,7 @@ public:
                 unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
                 if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
-                else concentric_disk_sample_default(rng(seed), rng(seed), unit_disk, true);
+                else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true, 0.0);
 
                 aperture(0) = unit_disk(0) * aperture_radius;
                 aperture(1) = unit_disk(1) * aperture_radius;
@@ -831,7 +832,7 @@ public:
                 unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
                 if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
-                else concentric_disk_sample_tl(rng(seed),rng(seed), unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
+                else concentric_disk_sample(rng(seed),rng(seed), unit_disk, abb_spherical, circle_to_square);
 
                 unit_disk(0) *= bokeh_anamorphic;
 
@@ -944,85 +945,85 @@ public:
 
 
 
-    AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
-        AtRGBA pixel_energy = AI_RGBA_ZERO;
-        float z = 0.0;
+    // AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+    //     AtRGBA pixel_energy = AI_RGBA_ZERO;
+    //     float z = 0.0;
 
-        while (AiAOVSampleIteratorGetNext(iterator))
-        {
-            float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z);
-            if ((std::abs(depth) <= z) || z == 0.0){
+    //     while (AiAOVSampleIteratorGetNext(iterator))
+    //     {
+    //         float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z);
+    //         if ((std::abs(depth) <= z) || z == 0.0){
                 
-                z = std::abs(depth);
+    //             z = std::abs(depth);
 
-                switch (aov_type){
-                case AI_TYPE_VECTOR: {
-                    const AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
-                    pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
-                    break;
-                }
-                case AI_TYPE_FLOAT: {
-                    const float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
-                    pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-                    break;
-                }
-                // case AI_TYPE_INT: {
-                //   const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
-                //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-                //   break;
-                // }
-                // case AI_TYPE_UINT: {
-                //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
-                //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-                //   break;
-                // }
-                }
-            }
-        }
+    //             switch (aov_type){
+    //             case AI_TYPE_VECTOR: {
+    //                 const AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
+    //                 pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
+    //                 break;
+    //             }
+    //             case AI_TYPE_FLOAT: {
+    //                 const float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
+    //                 pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+    //                 break;
+    //             }
+    //             // case AI_TYPE_INT: {
+    //             //   const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
+    //             //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+    //             //   break;
+    //             // }
+    //             // case AI_TYPE_UINT: {
+    //             //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
+    //             //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+    //             //   break;
+    //             // }
+    //             }
+    //         }
+    //     }
 
-        return pixel_energy;
-    }
+    //     return pixel_energy;
+    // }
 
 
-    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
-        float aweight = 0.0f;
-        AtRGBA avalue = AI_RGBA_ZERO;
+    // AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+    //     float aweight = 0.0f;
+    //     AtRGBA avalue = AI_RGBA_ZERO;
 
-        while (AiAOVSampleIteratorGetNext(iterator))
-        {
-            // take into account adaptive sampling
-            // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-            if (current_inv_density <= 0.f) continue;
+    //     while (AiAOVSampleIteratorGetNext(iterator))
+    //     {
+    //         // take into account adaptive sampling
+    //         // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+    //         if (current_inv_density <= 0.f) continue;
 
-            // determine distance to filter center
-            const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
-            const float r = AiSqr(2 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
-            if (r > 1.0f) continue;
+    //         // determine distance to filter center
+    //         const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
+    //         const float r = AiSqr(2 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
+    //         if (r > 1.0f) continue;
 
-            // gaussian filter weight
-            const float weight = AiFastExp(2 * -r) * current_inv_density;
+    //         // gaussian filter weight
+    //         const float weight = AiFastExp(2 * -r) * current_inv_density;
 
-            // accumulate weights and colors
-            AtRGBA sample_energy = AI_RGBA_ZERO;
-            switch (aov_type){
-                case AI_TYPE_RGBA: {
-                    sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-                } break;
-                case AI_TYPE_RGB: {
-                    AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
-                    sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
-                } break;
-            }
+    //         // accumulate weights and colors
+    //         AtRGBA sample_energy = AI_RGBA_ZERO;
+    //         switch (aov_type){
+    //             case AI_TYPE_RGBA: {
+    //                 sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+    //             } break;
+    //             case AI_TYPE_RGB: {
+    //                 AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
+    //                 sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
+    //             } break;
+    //         }
             
-            avalue += weight * sample_energy;
-            aweight += weight;
-        }
+    //         avalue += weight * sample_energy;
+    //         aweight += weight;
+    //     }
         
-        // compute final filtered color
-        if (aweight != 0.0f) avalue /= aweight;
+    //     // compute final filtered color
+    //     if (aweight != 0.0f) avalue /= aweight;
 
-        return avalue;
-    }
+    //     return avalue;
+    // }
 
 
 
@@ -1073,10 +1074,6 @@ public:
                             float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                             bool transmitted_energy_in_sample, int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator) {
-
-
-        // const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
-        const float inv_aov_count = 1.0;
         
         switch(aov.type){
 
@@ -1086,7 +1083,7 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
 
                 break;
             }
@@ -1159,11 +1156,22 @@ public:
         }
     }
 
+
+    inline float filter_weight_gaussian(AtVector2 p, float width) {
+        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+        if (r > 1.0f) return 0.0;
+        return std::expf(2.0 * -r);
+    }
+
+
     inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                         float inv_samples, float inv_density, float depth, 
-                                        bool transmitted_energy_in_sample, int transmission_layer, int sampleid,
+                                        bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
+        
+
+        float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -1178,8 +1186,6 @@ public:
                 AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
-
-                float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
 
 
                 for (auto &aov : aovs){
@@ -1851,11 +1857,7 @@ private:
     }
 
 
-    inline float filter_weight_gaussian(AtVector2 p, float width) {
-        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
-        if (r > 1.0f) return 0.0;
-        return AiFastExp(2 * -r);
-    }
+
 
     
 
