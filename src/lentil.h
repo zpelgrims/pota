@@ -426,7 +426,8 @@ public:
     inline void trace_ray_fw_po(int &tries, 
                                 const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
-                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction)
+                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction,
+                                bool deriv_ray)
     {
 
         tries = 0;
@@ -453,7 +454,7 @@ public:
             Eigen::Vector2d unit_disk(0.0, 0.0);
             
             if (enable_dof) {
-                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                if (!deriv_ray && tries > 0){ // first iteration comes from arnold blue noise sampler
                     r1 = xor128() / 4294967296.0;
                     r2 = xor128() / 4294967296.0;
                 }
