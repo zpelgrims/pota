@@ -471,8 +471,6 @@ public:
             aperture(0) = unit_disk(0) * aperture_radius;
             aperture(1) = unit_disk(1) * aperture_radius;
             
-            
-
 
             // if (empirical_ca_dist > 0.0) {
             //   Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
