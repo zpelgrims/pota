@@ -285,7 +285,6 @@
         houdini.help        STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
 
 
-
 #[node lentil_operator]
 #    maya.name               STRING "lentil_operator"
 #    maya.attr_prefix        STRING ""

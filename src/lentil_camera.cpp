@@ -86,7 +86,7 @@ camera_create_ray {
   int tries = 0;
   double r1 = input.lensx;
   double r2 = input.lensy; 
-  float step = 0.001;
+  const float step = 0.001;
 
   switch (camera_data->cameraType){
     case PolynomialOptics:
@@ -95,14 +95,14 @@ camera_create_ray {
       Eigen::Vector3d direction(0, 0, 0);
       Eigen::Vector3d weight(1, 1, 1);
 
-      camera_data->trace_ray_fw_po(tries, input.sx, input.sy, r1, r2, weight, origin, direction);
+      camera_data->trace_ray_fw_po(tries, input.sx, input.sy, r1, r2, weight, origin, direction, false);
 
       // calculate new ray derivatives
       if (tries > 0){
         AtCameraInput input_dx = input;
         AtCameraInput input_dy = input;
-        AtCameraOutput output_dx;
-        AtCameraOutput output_dy;
+        AtCameraOutput output_dx = output;
+        AtCameraOutput output_dy = output;
 
         input_dx.sx += input.dsx * step;
         input_dy.sy += input.dsy * step;
@@ -110,18 +110,19 @@ camera_create_ray {
         Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
         Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
         Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
-        camera_data->trace_ray_fw_po(tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir);
+        camera_data->trace_ray_fw_po(tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir, true);
 
         Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
         Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
         Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
-        camera_data->trace_ray_fw_po(tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir);
+        camera_data->trace_ray_fw_po(tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir, true);
 
         Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
         Eigen::Vector3d out_dOdy = (out_dy_origin - origin) / step;
         Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
         Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
 
+      // WHY DOES THIS CAUSE ISSUES IN THINLENS?? WTF?? THIS CODE DOESN'T EVEN EXECUTE?
         for (int i = 0; i<3; i++){
           output.dOdx[i] = out_d0dx(i);
           output.dOdy[i] = out_dOdy(i);
@@ -129,13 +130,16 @@ camera_create_ray {
           output.dDdy[i] = out_dDdy(i);
         }
       }
+      
 
       for (int i = 0; i<3; i++){
         output.origin[i] = origin(i);
         output.dir[i] = direction(i);
         output.weight[i] = weight(i);
-      }
-    } break;
+      } 
+      
+      break;
+    } 
 
     case ThinLens:
     {
@@ -143,20 +147,19 @@ camera_create_ray {
       AtVector dir (0, 0, 0);
       AtRGB weight (1, 1, 1);
       
-      camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, dir, weight, r1, r2);
+      camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, dir, weight, r1, r2, false);
 
       if (tries > 0){
-        
           AtCameraInput input_dx = input;
           AtCameraInput input_dy = input;
-          AtCameraOutput output_dx;
-          AtCameraOutput output_dy;
+          AtCameraOutput output_dx = output;
+          AtCameraOutput output_dy = output;
 
           input_dx.sx += input.dsx * step;
           input_dy.sy += input.dsy * step;
           
-          camera_data->trace_ray_fw_thinlens(tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2);
-          camera_data->trace_ray_fw_thinlens(tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2);
+          camera_data->trace_ray_fw_thinlens(tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2, true);
+          camera_data->trace_ray_fw_thinlens(tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2, true);
 
           output.dOdx = (output_dx.origin - origin) / step;
           output.dOdy = (output_dy.origin - origin) / step;
@@ -168,11 +171,11 @@ camera_create_ray {
       output.origin = origin;
       output.dir = dir;
       output.weight = weight;
-    } break;
+
+      break;
+    }
   }
-  
-  
-  
+} 
 
   /* 
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
@@ -209,7 +212,6 @@ camera_create_ray {
   p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
   return 0.0f;
   */
-} 
 
 
 /*

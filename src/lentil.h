@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <regex>
 
 #include "../../Eigen/Eigen/Dense"
 
@@ -15,7 +14,7 @@
 #include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
 #include <chrono>
 #include <thread>
-
+#include <regex>
 
 extern AtCritSec l_critsec;
 extern bool l_critsec_active;
@@ -389,7 +388,7 @@ public:
             // cryptomatte
             AtNode *crypto_node = nullptr;
             AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
-            for (uint32_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
+            for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
                 AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
                 if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
                     crypto_node = aov_node;
@@ -427,7 +426,8 @@ public:
     inline void trace_ray_fw_po(int &tries, 
                                 const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
-                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction)
+                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction,
+                                bool deriv_ray)
     {
 
         tries = 0;
@@ -454,7 +454,7 @@ public:
             Eigen::Vector2d unit_disk(0.0, 0.0);
             
             if (enable_dof) {
-                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                if (!deriv_ray && tries > 0){ // first iteration comes from arnold blue noise sampler
                     r1 = xor128() / 4294967296.0;
                     r2 = xor128() / 4294967296.0;
                 }
@@ -462,7 +462,7 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample(r1, r2, unit_disk, true, 0.0);
+                    concentric_disk_sample(r1, r2, unit_disk, true);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
@@ -471,8 +471,6 @@ public:
             aperture(0) = unit_disk(0) * aperture_radius;
             aperture(1) = unit_disk(1) * aperture_radius;
             
-            
-
 
             // if (empirical_ca_dist > 0.0) {
             //   Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
@@ -577,7 +575,7 @@ public:
     inline void trace_ray_fw_thinlens(int &tries, 
                                     float sx, float sy,
                                     AtVector &origin, AtVector &dir, AtRGB &weight,
-                                    double &r1, double &r2){
+                                    double &r1, double &r2, bool deriv_ray){
         tries = 0;
         bool ray_succes = false;
 
@@ -604,7 +602,7 @@ public:
             Eigen::Vector2d unit_disk(0, 0);
             
             if (enable_dof) {
-                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                if (!deriv_ray && tries > 0){ // first iteration comes from arnold blue noise sampler
                     r1 = xor128() / 4294967296.0;
                     r2 = xor128() / 4294967296.0;
                 }
@@ -612,20 +610,17 @@ public:
                 if (bokeh_enable_image) {
                     image.bokehSample(r1, r2, unit_disk, xor128() / 4294967296.0, xor128() / 4294967296.0);
                 } else if (bokeh_aperture_blades < 2) {
-                    concentric_disk_sample(r1, r2, unit_disk, abb_spherical, circle_to_square);
+                    concentricDiskSample(r1, r2, unit_disk, abb_spherical, circle_to_square, bokeh_anamorphic);
                 } else {
                     lens_sample_triangular_aperture(unit_disk(0), unit_disk(1), r1, r2, 1.0, bokeh_aperture_blades);
                 }
             }
 
-
             unit_disk(0) *= bokeh_anamorphic;
-
 
 
             // aberration inputs
             float abb_field_curvature = 0.0;
-
 
 
             AtVector lens(unit_disk(0) * aperture_radius, unit_disk(1) * aperture_radius, 0.0);
@@ -685,27 +680,24 @@ public:
             origin = lens;
             dir = dir_from_lens;
 
+            // convert to cm 
             switch (unitModel){
-                case mm:
-                {
-                    origin *= 10.0; // reverse rays and convert to cm (from mm)
-                    dir *= 10.0; //reverse rays and convert to cm (from mm)
+                case mm: {
+                    origin *= 10.0;
+                    dir *= 10.0;
                 } break;
-                case cm:
-                { 
-                    origin *= 1.0; // reverse rays and convert to cm (from mm)
-                    dir *= 1.0; //reverse rays and convert to cm (from mm)
+                case cm: { 
+                    origin *= 1.0;
+                    dir *= 1.0;
                 } break;
-                case dm:
-                {
-                    origin *= 0.1; // reverse rays and convert to cm (from mm)
-                    dir *= 0.1; //reverse rays and convert to cm (from mm)
+                case dm: {
+                    origin *= 0.1;
+                    dir *= 0.1;
                 } break;
-                case m:
-                {
-                    origin *= 0.01; // reverse rays and convert to cm (from mm)
-                    dir *= 0.01; //reverse rays and convert to cm (from mm)
-                }
+                case m: {
+                    origin *= 0.01;
+                    dir *= 0.01;
+                } break;
             }
 
             dir = AiV3Normalize(dir);
@@ -745,7 +737,7 @@ public:
                 unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
 
                 if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
-                else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true, 0.0);
+                else concentric_disk_sample(rng(seed), rng(seed), unit_disk, true);
 
                 aperture(0) = unit_disk(0) * aperture_radius;
                 aperture(1) = unit_disk(1) * aperture_radius;
@@ -804,118 +796,6 @@ public:
         return true;
     }
 
-    
-    // given camera space scene point, return point on sensor
-    inline bool trace_ray_bw_tl(AtVector camera_space_sample_position,
-                                Eigen::Vector2d &sensor_position,
-                                const int px, 
-                                const int py,
-                                const int total_samples_taken,
-                                AtMatrix cam_to_world,
-                                AtVector sample_pos_ws,
-                                AtShaderGlobals *sg)
-    {
-        int tries = 0;
-        bool ray_succes = false;
-
-        Eigen::Vector2d aperture(0.0, 0.0);
-
-        float image_dist_samplepos = (-focal_length * camera_space_sample_position.z) / (-focal_length + camera_space_sample_position.z);
-
-
-        while(ray_succes == false && tries <= vignetting_retries){
-
-            Eigen::Vector2d unit_disk(0.0, 0.0);
-
-            if (!enable_dof) aperture(0) = aperture(1) = 0.0; // no dof, all rays through single aperture point
-            else if (enable_dof && bokeh_aperture_blades <= 2) {
-                unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
-
-                if (bokeh_enable_image) image.bokehSample(rng(seed), rng(seed), unit_disk, rng(seed), rng(seed));
-                else concentric_disk_sample(rng(seed),rng(seed), unit_disk, abb_spherical, circle_to_square);
-
-                unit_disk(0) *= bokeh_anamorphic;
-
-                aperture(0) = unit_disk(0) * aperture_radius;
-                aperture(1) = unit_disk(1) * aperture_radius;
-            } 
-            else if (enable_dof && bokeh_aperture_blades > 2) {
-                unsigned int seed = tea<8>(px*py+px, total_samples_taken+tries);
-                lens_sample_triangular_aperture(aperture(0), aperture(1), rng(seed), rng(seed), aperture_radius, bokeh_aperture_blades);
-            }
-
-            AtVector lens(aperture(0), aperture(1), 0.0);
-
-            // raytrace for scene/geometrical occlusions along the ray
-            AtVector lens_correct_scaled = lens;
-            switch (unitModel){
-              case mm: { lens_correct_scaled /= 0.1; } break;
-              case cm: { lens_correct_scaled /= 1.0; } break;
-              case dm: { lens_correct_scaled /= 10.0;} break;
-              case m:  { lens_correct_scaled /= 100.0;}
-            }
-            AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
-            AtVector ws_direction = cam_pos_ws - sample_pos_ws;
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
-            if (AiTraceProbe(ray, sg)){
-              ++tries;
-              continue;
-            }
-
-            // ray through center of lens
-            AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
-            AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
-            // perturb ray direction to simulate coma aberration
-            // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
-            // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
-            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
-            AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
-            dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
-
-            float samplepos_image_intersection = std::abs(image_dist_samplepos/dir_from_center.z);
-            AtVector samplepos_image_point = dir_from_center * samplepos_image_intersection;
-
-
-            // depth of field
-            AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-
-            float focusdist_intersection = std::abs(get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
-
-
-
-
-            // bring back to (x, y, 1)
-            Eigen::Vector2d sensor_position(focusdist_image_point.x / focusdist_image_point.z,
-                                            focusdist_image_point.y / focusdist_image_point.z);
-            // transform to screenspace coordinate mapping
-            sensor_position /= (sensor_width*0.5)/-focal_length;
-
-
-            // optical vignetting
-            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
-            if (optical_vignetting_distance > 0.0){
-              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, aperture_radius, optical_vignetting_radius, optical_vignetting_distance, lerp_squircle_mapping(circle_to_square))){
-                  ++tries;
-                  continue;
-              }
-            }
-
-
-            // barrel distortion (inverse)
-            if (abb_distortion > 0.0) {
-                AtVector2 sensor_pos_atvec =  inverseBarrelDistortion(AtVector2(sensor_position(0), sensor_position(1)), abb_distortion);
-                sensor_position = Eigen::Vector2d(sensor_pos_atvec.x, sensor_pos_atvec.y);
-            }
-
-            ray_succes = true;
-        }
-
-        return ray_succes;
-    }
-
 
 
     inline float get_image_dist_focusdist_thinlens(){
@@ -945,85 +825,85 @@ public:
 
 
 
-    // AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
-    //     AtRGBA pixel_energy = AI_RGBA_ZERO;
-    //     float z = 0.0;
+    AtRGBA filter_closest_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+        AtRGBA pixel_energy = AI_RGBA_ZERO;
+        float z = 0.0;
 
-    //     while (AiAOVSampleIteratorGetNext(iterator))
-    //     {
-    //         float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z);
-    //         if ((std::abs(depth) <= z) || z == 0.0){
+        while (AiAOVSampleIteratorGetNext(iterator))
+        {
+            float depth = AiAOVSampleIteratorGetAOVFlt(iterator, atstring_z);
+            if ((std::abs(depth) <= z) || z == 0.0){
                 
-    //             z = std::abs(depth);
+                z = std::abs(depth);
 
-    //             switch (aov_type){
-    //             case AI_TYPE_VECTOR: {
-    //                 const AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
-    //                 pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
-    //                 break;
-    //             }
-    //             case AI_TYPE_FLOAT: {
-    //                 const float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
-    //                 pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-    //                 break;
-    //             }
-    //             // case AI_TYPE_INT: {
-    //             //   const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
-    //             //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-    //             //   break;
-    //             // }
-    //             // case AI_TYPE_UINT: {
-    //             //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
-    //             //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
-    //             //   break;
-    //             // }
-    //             }
-    //         }
-    //     }
+                switch (aov_type){
+                case AI_TYPE_VECTOR: {
+                    const AtVector sample_energy = AiAOVSampleIteratorGetVec(iterator);
+                    pixel_energy = AtRGBA(sample_energy.x, sample_energy.y, sample_energy.z, 1.0);
+                    break;
+                }
+                case AI_TYPE_FLOAT: {
+                    const float sample_energy = AiAOVSampleIteratorGetFlt(iterator);
+                    pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+                    break;
+                }
+                // case AI_TYPE_INT: {
+                //   const int sample_energy = AiAOVSampleIteratorGetInt(iterator);
+                //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+                //   break;
+                // }
+                // case AI_TYPE_UINT: {
+                //   const unsigned sample_energy = AiAOVSampleIteratorGetUInt(iterator);
+                //   pixel_energy = AtRGBA(sample_energy, sample_energy, sample_energy, 1.0);
+                //   break;
+                // }
+                }
+            }
+        }
 
-    //     return pixel_energy;
-    // }
+        return pixel_energy;
+    }
 
 
-    // AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
-    //     float aweight = 0.0f;
-    //     AtRGBA avalue = AI_RGBA_ZERO;
+    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+        float aweight = 0.0f;
+        AtRGBA avalue = AI_RGBA_ZERO;
 
-    //     while (AiAOVSampleIteratorGetNext(iterator))
-    //     {
-    //         // take into account adaptive sampling
-    //         // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-    //         if (current_inv_density <= 0.f) continue;
+        while (AiAOVSampleIteratorGetNext(iterator))
+        {
+            // take into account adaptive sampling
+            // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+            if (current_inv_density <= 0.f) continue;
 
-    //         // determine distance to filter center
-    //         const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
-    //         const float r = AiSqr(2 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
-    //         if (r > 1.0f) continue;
+            // determine distance to filter center
+            const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
+            const float r = AiSqr(2 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
+            if (r > 1.0f) continue;
 
-    //         // gaussian filter weight
-    //         const float weight = AiFastExp(2 * -r) * current_inv_density;
+            // gaussian filter weight
+            const float weight = AiFastExp(2 * -r) * current_inv_density;
 
-    //         // accumulate weights and colors
-    //         AtRGBA sample_energy = AI_RGBA_ZERO;
-    //         switch (aov_type){
-    //             case AI_TYPE_RGBA: {
-    //                 sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
-    //             } break;
-    //             case AI_TYPE_RGB: {
-    //                 AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
-    //                 sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
-    //             } break;
-    //         }
+            // accumulate weights and colors
+            AtRGBA sample_energy = AI_RGBA_ZERO;
+            switch (aov_type){
+                case AI_TYPE_RGBA: {
+                    sample_energy = AiAOVSampleIteratorGetRGBA(iterator);
+                } break;
+                case AI_TYPE_RGB: {
+                    AtRGB sample_energy_rgb = AiAOVSampleIteratorGetRGB(iterator);
+                    sample_energy = AtRGB(sample_energy_rgb.r, sample_energy_rgb.g, sample_energy_rgb.b);
+                } break;
+            }
             
-    //         avalue += weight * sample_energy;
-    //         aweight += weight;
-    //     }
+            avalue += weight * sample_energy;
+            aweight += weight;
+        }
         
-    //     // compute final filtered color
-    //     if (aweight != 0.0f) avalue /= aweight;
+        // compute final filtered color
+        if (aweight != 0.0f) avalue /= aweight;
 
-    //     return avalue;
-    // }
+        return avalue;
+    }
 
 
 
@@ -1074,6 +954,10 @@ public:
                             float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
                             bool transmitted_energy_in_sample, int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator) {
+
+
+        // const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
+        const float inv_aov_count = 1.0;
         
         switch(aov.type){
 
@@ -1083,7 +967,7 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
 
                 break;
             }
@@ -1156,14 +1040,6 @@ public:
         }
     }
 
-
-    inline float filter_weight_gaussian(AtVector2 p, float width) {
-        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
-        if (r > 1.0f) return 0.0;
-        return std::expf(2.0 * -r);
-    }
-
-
     inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
                                         float inv_samples, float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
@@ -1172,6 +1048,8 @@ public:
         
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
+        const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+       
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -1181,12 +1059,10 @@ public:
                 if (x < 0 || x >= xres) continue; // edge fix
 
                 const unsigned pixelnumber = static_cast<int>(xres * y + x);
-                
-                const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+
                 AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
-
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
@@ -1210,7 +1086,7 @@ public:
     }
 
     // inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-    //   x = linear_pixel % xres
+    //   x = linear_pixel % xres;
     //   y = (int)(linear_pixel / xres);
     // }
 
@@ -1857,7 +1733,11 @@ private:
     }
 
 
-
+    inline float filter_weight_gaussian(AtVector2 p, float width) {
+        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+        if (r > 1.0f) return 0.0;
+        return std::exp(2 * -r);
+    }
 
     
 
