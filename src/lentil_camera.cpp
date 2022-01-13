@@ -122,7 +122,6 @@ camera_create_ray {
         Eigen::Vector3d out_dDdx = (out_dx_dir - direction) / step;
         Eigen::Vector3d out_dDdy = (out_dy_dir - direction) / step;
 
-      // WHY DOES THIS CAUSE ISSUES IN THINLENS?? WTF?? THIS CODE DOESN'T EVEN EXECUTE?
         for (int i = 0; i<3; i++){
           output.dOdx[i] = out_d0dx(i);
           output.dOdy[i] = out_dOdy(i);
@@ -130,16 +129,13 @@ camera_create_ray {
           output.dDdy[i] = out_dDdy(i);
         }
       }
-      
 
       for (int i = 0; i<3; i++){
         output.origin[i] = origin(i);
         output.dir[i] = direction(i);
         output.weight[i] = weight(i);
-      } 
-      
-      break;
-    } 
+      }
+    } break;
 
     case ThinLens:
     {
@@ -150,6 +146,7 @@ camera_create_ray {
       camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, dir, weight, r1, r2, false);
 
       if (tries > 0){
+        
           AtCameraInput input_dx = input;
           AtCameraInput input_dy = input;
           AtCameraOutput output_dx = output;
@@ -171,11 +168,11 @@ camera_create_ray {
       output.origin = origin;
       output.dir = dir;
       output.weight = weight;
-
-      break;
-    }
+    } break;
   }
-} 
+  
+  
+  
 
   /* 
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES
@@ -212,6 +209,7 @@ camera_create_ray {
   p->sensor.pixel_j < 0.0f || p->sensor.pixel_j >= view_height())
   return 0.0f;
   */
+} 
 
 
 /*

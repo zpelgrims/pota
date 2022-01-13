@@ -72,6 +72,31 @@ inline unsigned int string_to_arnold_type(std::string str){
 
 
 
+// inline std::vector<std::string> split_str(std::string str, std::string token)
+// {
+//     std::vector<std::string>result;
+//     while(str.size())
+//     {
+//         size_t index = static_cast<size_t>(str.find(token));
+        
+//         if(index != std::string::npos)
+//         {
+//             result.push_back(str.substr(0, index));
+//             str = str.substr(index+token.size());
+            
+//             if(str.size() == 0)
+//                 result.push_back(str);
+//         }
+//         else
+//         {
+//             result.push_back(str);
+//             str = "";
+//         }
+//     }
+//     return result;
+// }
+
+
 // inline float crypto_gaussian(AtVector2 p, float width) {
 //     /* matches Arnold's exactly. */
 //     /* Sharpness=2 is good for width 2, sigma=1/sqrt(8) for the width=4,sharpness=4 case */
@@ -94,4 +119,40 @@ inline unsigned int string_to_arnold_type(std::string str){
 //     } else {
 //         return 0.0f;
 //     }
+// }
+
+
+
+// // using c++17 functionality here to return multiple values
+// inline auto find_filter_index_in_aov_string (std::string output_string, AtUniverse *uni) {
+  
+//   struct returnValues {
+//     int filter_index;
+//     std::vector<std::string> output_string_split;
+//   };
+
+//   // first find which element is the filter (if *filter* in type_name)
+//   // then assuming that aov type comes before the filter, and the aov name comes before the type
+//   // should avoid cases where the camera name is placed in front of the output string
+//   int filter_index = 0;
+//   std::vector<std::string> output_string_split = split_str(output_string, std::string(" "));
+//   for (int s=0; s<output_string_split.size(); s++) {
+
+//     AtString substring_as = AtString(output_string_split[s].c_str());
+//     AtNode *substring_node = AiNodeLookUpByName(uni, substring_as);
+    
+//     if (substring_node == nullptr) continue;
+
+//     const AtNodeEntry *substring_ne = AiNodeGetNodeEntry(substring_node);
+//     std::string substring_ne_name = AiNodeEntryGetNameAtString(substring_ne).c_str();
+
+//     if (substring_ne_name.find("filter") != std::string::npos) {
+//         filter_index = s;
+//     }
+//   }
+
+//   // filter index can never be 0
+//   if (filter_index == 0) AiMsgError("[LENTIL] Can't find a filter to replace in AOV string: %s", output_string.c_str());
+
+//   return returnValues {filter_index, output_string_split};
 // }

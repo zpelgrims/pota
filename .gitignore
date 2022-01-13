@@ -19,7 +19,7 @@
 !/tests/po_bidir_debug
 !/tests/aperture_sampling_debug
 !/tests/cuda
-!/tests/tl_redistribution_bug/
+!/tests/tl_redistribution_bug
 
 /htoa/backup/*
 

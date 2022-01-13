@@ -426,8 +426,7 @@ public:
     inline void trace_ray_fw_po(int &tries, 
                                 const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
-                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction,
-                                bool deriv_ray)
+                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, bool deriv_ray)
     {
 
         tries = 0;
@@ -471,6 +470,8 @@ public:
             aperture(0) = unit_disk(0) * aperture_radius;
             aperture(1) = unit_disk(1) * aperture_radius;
             
+            
+
 
             // if (empirical_ca_dist > 0.0) {
             //   Eigen::Vector2d sensor_pos(sensor[0], sensor[1]);
@@ -616,11 +617,14 @@ public:
                 }
             }
 
+
             unit_disk(0) *= bokeh_anamorphic;
+
 
 
             // aberration inputs
             float abb_field_curvature = 0.0;
+
 
 
             AtVector lens(unit_disk(0) * aperture_radius, unit_disk(1) * aperture_radius, 0.0);
@@ -680,24 +684,27 @@ public:
             origin = lens;
             dir = dir_from_lens;
 
-            // convert to cm 
             switch (unitModel){
-                case mm: {
-                    origin *= 10.0;
-                    dir *= 10.0;
+                case mm:
+                {
+                    origin *= 10.0; // reverse rays and convert to cm (from mm)
+                    dir *= 10.0; //reverse rays and convert to cm (from mm)
                 } break;
-                case cm: { 
-                    origin *= 1.0;
-                    dir *= 1.0;
+                case cm:
+                { 
+                    origin *= 1.0; // reverse rays and convert to cm (from mm)
+                    dir *= 1.0; //reverse rays and convert to cm (from mm)
                 } break;
-                case dm: {
-                    origin *= 0.1;
-                    dir *= 0.1;
+                case dm:
+                {
+                    origin *= 0.1; // reverse rays and convert to cm (from mm)
+                    dir *= 0.1; //reverse rays and convert to cm (from mm)
                 } break;
-                case m: {
-                    origin *= 0.01;
-                    dir *= 0.01;
-                } break;
+                case m:
+                {
+                    origin *= 0.01; // reverse rays and convert to cm (from mm)
+                    dir *= 0.01; //reverse rays and convert to cm (from mm)
+                }
             }
 
             dir = AiV3Normalize(dir);
@@ -1045,11 +1052,9 @@ public:
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
-        
 
         float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-       
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -1059,10 +1064,14 @@ public:
                 if (x < 0 || x >= xres) continue; // edge fix
 
                 const unsigned pixelnumber = static_cast<int>(xres * y + x);
-
+                
+               
                 AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
+
+                
+
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
@@ -1736,7 +1745,7 @@ private:
     inline float filter_weight_gaussian(AtVector2 p, float width) {
         const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
         if (r > 1.0f) return 0.0;
-        return std::exp(2 * -r);
+        return AiFastExp(2 * -r);
     }
 
     
