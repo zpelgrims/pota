@@ -576,7 +576,7 @@ public:
     inline void trace_ray_fw_thinlens(int &tries, 
                                     float sx, float sy,
                                     AtVector &origin, AtVector &dir, AtRGB &weight,
-                                    double &r1, double &r2){
+                                    double &r1, double &r2, bool deriv_ray){
         tries = 0;
         bool ray_succes = false;
 
@@ -603,7 +603,7 @@ public:
             Eigen::Vector2d unit_disk(0, 0);
             
             if (enable_dof) {
-                if (tries > 0){ // first iteration comes from arnold blue noise sampler
+                if (!deriv_ray && tries > 0){ // first iteration comes from arnold blue noise sampler
                     r1 = xor128() / 4294967296.0;
                     r2 = xor128() / 4294967296.0;
                 }
@@ -617,14 +617,11 @@ public:
                 }
             }
 
-
             unit_disk(0) *= bokeh_anamorphic;
-
 
 
             // aberration inputs
             float abb_field_curvature = 0.0;
-
 
 
             AtVector lens(unit_disk(0) * aperture_radius, unit_disk(1) * aperture_radius, 0.0);
@@ -684,27 +681,24 @@ public:
             origin = lens;
             dir = dir_from_lens;
 
+            // convert to cm 
             switch (unitModel){
-                case mm:
-                {
-                    origin *= 10.0; // reverse rays and convert to cm (from mm)
-                    dir *= 10.0; //reverse rays and convert to cm (from mm)
+                case mm: {
+                    origin *= 10.0;
+                    dir *= 10.0;
                 } break;
-                case cm:
-                { 
-                    origin *= 1.0; // reverse rays and convert to cm (from mm)
-                    dir *= 1.0; //reverse rays and convert to cm (from mm)
+                case cm: { 
+                    origin *= 1.0;
+                    dir *= 1.0;
                 } break;
-                case dm:
-                {
-                    origin *= 0.1; // reverse rays and convert to cm (from mm)
-                    dir *= 0.1; //reverse rays and convert to cm (from mm)
+                case dm: {
+                    origin *= 0.1;
+                    dir *= 0.1;
                 } break;
-                case m:
-                {
-                    origin *= 0.01; // reverse rays and convert to cm (from mm)
-                    dir *= 0.01; //reverse rays and convert to cm (from mm)
-                }
+                case m: {
+                    origin *= 0.01;
+                    dir *= 0.01;
+                } break;
             }
 
             dir = AiV3Normalize(dir);
