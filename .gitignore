@@ -7,6 +7,7 @@
 *.lib
 *.obj
 *.pdf
+*.tx
 
 *.so
 *.dll
