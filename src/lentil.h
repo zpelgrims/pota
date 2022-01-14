@@ -1070,8 +1070,6 @@ public:
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
 
-                
-
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
