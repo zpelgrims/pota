@@ -1053,7 +1053,9 @@ public:
                                         struct AtAOVSampleIterator* iterator,
                                         std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
 
-        float inv_filter_samples = (1.0 / filter_width_half) / 12.5555; // figure this out so it doesn't break when filter width is not 2
+
+        float inv_filter_samples = (1.0 / (AI_PI*std::pow(filter_width, 2))); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
+        
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
@@ -1073,7 +1075,7 @@ public:
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto){
-                        add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.to.aov_name_tok], filter_weight * inv_samples * inv_filter_samples * inv_density);
+                        add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.to.aov_name_tok], inv_samples * inv_filter_samples * inv_density);
                     } else {
                         add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
                                     inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator);
