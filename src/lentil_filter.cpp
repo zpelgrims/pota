@@ -70,16 +70,8 @@ filter_pixel
   AtNode *camera_node = AiUniverseGetCamera(universe);
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
-  // if (!AiNodeIs(camera_data->camera_node, AtString("lentil_camera"))) {
-  //   camera_data->redistribution = false;
-  //   AiMsgError("[LENTIL FILTER] Couldn't get correct camera. Please refresh the render.");
-  //   AiRenderAbort();
-  //   return;
-  // }
-
 
   bool skip_redistribution_local = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local to the filter.
-
 
 
   bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), "enable_adaptive_sampling"); 
@@ -97,7 +89,6 @@ filter_pixel
     }
   }
 
-  
 
   if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
   
