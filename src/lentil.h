@@ -872,15 +872,16 @@ public:
     }
 
 
-    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type){
+    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type, float inverse_sample_density, bool adaptive_sampling){
         float aweight = 0.0f;
         AtRGBA avalue = AI_RGBA_ZERO;
+        float inv_density = inverse_sample_density;
 
         while (AiAOVSampleIteratorGetNext(iterator))
         {
             // take into account adaptive sampling
-            // float inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
-            if (current_inv_density <= 0.f) continue;
+            if (adaptive_sampling) inv_density = AiAOVSampleIteratorGetInvDensity(iterator);
+            if (inv_density <= 0.f) continue;
 
             // determine distance to filter center
             const AtVector2& offset = AiAOVSampleIteratorGetOffset(iterator);
@@ -888,7 +889,7 @@ public:
             if (r > 1.0f) continue;
 
             // gaussian filter weight
-            const float weight = AiFastExp(2 * -r) * current_inv_density;
+            const float weight = AiFastExp(2 * -r) * inv_density;
 
             // accumulate weights and colors
             AtRGBA sample_energy = AI_RGBA_ZERO;

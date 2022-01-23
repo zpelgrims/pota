@@ -80,15 +80,23 @@ filter_pixel
 
   bool skip_redistribution_local = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local to the filter.
 
-  // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0
-  int samples_counter = 0;
-  while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
-  AiAOVSampleIteratorReset(iterator);
-  float AA_samples = std::sqrt(samples_counter) / 2.0;
-  camera_data->current_inv_density = 1.0/(AA_samples*AA_samples);
-  if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
-    camera_data->redistribution = false; // skip when aa samples are below final AA samples
+
+
+  bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), "enable_adaptive_sampling"); 
+  float inverse_sample_density = 0.0;
+  
+  // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0. It only works for adaptive sampling.
+  if (!adaptive_sampling) {
+    int samples_counter = 0;
+    while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
+    AiAOVSampleIteratorReset(iterator);
+    float AA_samples = std::sqrt(samples_counter) / 2.0;
+    inverse_sample_density = 1.0/(AA_samples*AA_samples);
+    if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
+      camera_data->redistribution = false; // skip when aa samples are below final AA samples
+    }
   }
+
   
 
   if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
@@ -109,6 +117,13 @@ filter_pixel
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
+
+      if (adaptive_sampling) {
+        inverse_sample_density = AiAOVSampleIteratorGetInvDensity(iterator);
+        
+        // skip AA < 3 (ipr passes, for example)
+        if (inverse_sample_density > 0.2) redistribute = false;
+      }
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
@@ -157,7 +172,7 @@ filter_pixel
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
       const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(camera_data->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
       if (circle_of_confusion < 0.5) redistribute = false; // don't redistribute under certain CoC size
-      int samples = std::ceil(coc_squared_pixels * camera_data->current_inv_density); // aa_sample independence
+      int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
       samples = clamp(samples, 5, 10000);
       float inv_samples = 1.0/static_cast<double>(samples);
 
@@ -206,7 +221,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inverse_sample_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -238,9 +253,9 @@ filter_pixel
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
-                                 inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+                                 inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                  transmitted_energy_in_sample, 1, iterator);
             }
           }
@@ -251,7 +266,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, camera_data->current_inv_density, depth, transmitted_energy_in_sample, 0,
+                                    1.0, inverse_sample_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -358,9 +373,9 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (camera_data->current_inv_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
-                                inv_samples, camera_data->current_inv_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+                                inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }
           }
@@ -374,12 +389,12 @@ filter_pixel
   AiAOVSampleIteratorReset(iterator);
   switch(data_type){
     case AI_TYPE_RGBA: {
-      AtRGBA value_out = camera_data->filter_gaussian_complete(iterator, data_type);
+      AtRGBA value_out = camera_data->filter_gaussian_complete(iterator, data_type, inverse_sample_density, adaptive_sampling);
       *((AtRGBA*)data_out) = value_out;
     } break;
 
     case AI_TYPE_RGB: {
-      AtRGBA filtered_value = camera_data->filter_gaussian_complete(iterator, data_type);
+      AtRGBA filtered_value = camera_data->filter_gaussian_complete(iterator, data_type, inverse_sample_density, adaptive_sampling);
       AtRGB rgb_energy {filtered_value.r, filtered_value.g, filtered_value.b};
       *((AtRGB*)data_out) = rgb_energy;
     } break;
