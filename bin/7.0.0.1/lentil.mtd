@@ -13,7 +13,7 @@
     houdini.optional        BOOL true
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;7;Bokeh;3;Bidirectional;4;Additional;2"
+    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;7;Bokeh;3;Bidirectional;4;Additional;3"
     
     [attr cameratype]
         desc                STRING  "Camera Type"
@@ -273,6 +273,17 @@
         
         houdini.label       STRING  "Vignetting Retries"
         houdini.help        STRING "Since we're modeling real lenses, it can be that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
+
+    [attr exposure]
+        min                 FLOAT   0.0
+        max                 FLOAT   5.0
+        default             FLOAT   1.0
+        desc                STRING  "Exposure multiplier"
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Exposure"
+        houdini.help        STRING "Exposure multiplier"
+
 
     [attr abb_coma]
         min                 FLOAT   -1.0

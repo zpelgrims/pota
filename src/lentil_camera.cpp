@@ -52,6 +52,7 @@ node_parameters {
 
   // advanced
   AiParameterInt("vignetting_retries", 15);
+  AiParameterFlt("exposure", 1.0);
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);
@@ -172,7 +173,7 @@ camera_create_ray {
   }
   
   
-  
+  output.weight *= camera_data->exposure;
 
   /* 
   NOT NEEDED FOR ARNOLD (convert rays from camera space to world space), GOOD INFO THOUGH FOR OTHER RENDER ENGINES

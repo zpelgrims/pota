@@ -267,6 +267,7 @@ struct Camera
     int bidir_sample_mult;
     float bidir_add_luminance;
     float bidir_add_luminance_transition;
+    float exposure;
 
     // parameters PO
     double lambda;
@@ -1393,6 +1394,7 @@ private:
         input_fstop = clamp_min(AiNodeGetFlt(camera_node, "fstop"), 0.01);
         focus_distance = AiNodeGetFlt(camera_node, "focus_dist"); //converting to mm
         bokeh_aperture_blades = AiNodeGetInt(camera_node, "bokeh_aperture_blades");
+        exposure = AiNodeGetFlt(camera_node, "exposure");
 
         // po-specific params
         lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
