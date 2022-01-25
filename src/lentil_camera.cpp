@@ -102,8 +102,8 @@ camera_create_ray {
       if (tries > 0){
         AtCameraInput input_dx = input;
         AtCameraInput input_dy = input;
-        AtCameraOutput output_dx = output;
-        AtCameraOutput output_dy = output;
+        AtCameraOutput output_dx = AtCameraOutput();
+        AtCameraOutput output_dy = AtCameraOutput();
 
         input_dx.sx += input.dsx * step;
         input_dy.sy += input.dsy * step;
@@ -150,8 +150,8 @@ camera_create_ray {
         
           AtCameraInput input_dx = input;
           AtCameraInput input_dy = input;
-          AtCameraOutput output_dx = output;
-          AtCameraOutput output_dy = output;
+          AtCameraOutput output_dx = AtCameraOutput();
+          AtCameraOutput output_dy = AtCameraOutput();
 
           input_dx.sx += input.dsx * step;
           input_dy.sy += input.dsy * step;
