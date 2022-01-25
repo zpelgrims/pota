@@ -84,7 +84,7 @@ filter_pixel
     AiAOVSampleIteratorReset(iterator);
     float AA_samples = std::sqrt(samples_counter) / 2.0;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
-    if (AA_samples != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
+    if (static_cast<int>(AA_samples) != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
       camera_data->redistribution = false; // skip when aa samples are below final AA samples
     }
   }
@@ -105,6 +105,7 @@ filter_pixel
     // py -= camera_data->region_min_y;
 
     AtShaderGlobals *sg = AiShaderGlobals();
+
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
       bool redistribute = true;
@@ -373,6 +374,8 @@ filter_pixel
         } break;
       }
     }
+
+    AiShaderGlobalsDestroy(sg);
   } 
   
 

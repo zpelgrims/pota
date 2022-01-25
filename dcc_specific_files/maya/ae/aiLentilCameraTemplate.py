@@ -73,7 +73,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
 
         self.beginLayout("Advanced options")
         self.addControl("vignettingRetries", label="Vignetting retries")
-        self.addControl("exposure", label="Exposure")
+        self.addControl("exp", label="Exposure")
         self.addControl("units", label="Units")
         self.endLayout()
 

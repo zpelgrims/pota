@@ -52,7 +52,7 @@ node_parameters {
 
   // advanced
   AiParameterInt("vignetting_retries", 15);
-  AiParameterFlt("exposure", 1.0);
+  AiParameterFlt("exp", 1.0);
 
   // experimental
   AiParameterFlt("abb_coma", 0.0);

@@ -274,7 +274,7 @@
         houdini.label       STRING  "Vignetting Retries"
         houdini.help        STRING "Since we're modeling real lenses, it can be that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
 
-    [attr exposure]
+    [attr exp]
         min                 FLOAT   0.0
         max                 FLOAT   5.0
         default             FLOAT   1.0

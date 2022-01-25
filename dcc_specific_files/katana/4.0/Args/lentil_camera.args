@@ -131,7 +131,7 @@
 <page name="Advanced" open="False">  
 	<param int="1" name="vignetting_retries" label="Vignetting retries" slider="True" slidermin="1" min="1" slidercenter = "15" slidermax="50"  max="50"/>
 	<param name="abb_coma" label="Aberration (coma)" slider="True" slidermin="-1.0" slidermax="1.0" max="1.0"/> 
-	<param name="exposure" label="Exposure" slider="True" slidermin="0.0" slidermax="5.0" max="10.0"/> 
+	<param name="exp" label="Exposure" slider="True" slidermin="0.0" slidermax="5.0" max="10.0"/> 
 	<param widget="mapper" name="units" label="Units">
 	<hintdict name="options">
 	<string value="mm"/>

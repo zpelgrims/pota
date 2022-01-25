@@ -1352,7 +1352,7 @@ private:
 
         // if progressive rendering is on, don't redistribute
         if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
-            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported.");
+            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
             AiRenderAbort();
             return false;
         }
@@ -1394,7 +1394,7 @@ private:
         input_fstop = clamp_min(AiNodeGetFlt(camera_node, "fstop"), 0.01);
         focus_distance = AiNodeGetFlt(camera_node, "focus_dist"); //converting to mm
         bokeh_aperture_blades = AiNodeGetInt(camera_node, "bokeh_aperture_blades");
-        exposure = AiNodeGetFlt(camera_node, "exposure");
+        exposure = AiNodeGetFlt(camera_node, "exp");
 
         // po-specific params
         lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
