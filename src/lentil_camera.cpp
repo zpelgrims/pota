@@ -102,20 +102,18 @@ camera_create_ray {
       if (tries > 0){
         AtCameraInput input_dx = input;
         AtCameraInput input_dy = input;
-        AtCameraOutput output_dx = AtCameraOutput();
-        AtCameraOutput output_dy = AtCameraOutput();
 
         input_dx.sx += input.dsx * step;
         input_dy.sy += input.dsy * step;
 
-        Eigen::Vector3d out_dx_weight(output_dx.weight[0], output_dx.weight[1], output_dx.weight[2]);
-        Eigen::Vector3d out_dx_origin(output_dx.origin[0], output_dx.origin[1], output_dx.origin[2]);
-        Eigen::Vector3d out_dx_dir(output_dx.dir[0], output_dx.dir[1], output_dx.dir[2]);
+        Eigen::Vector3d out_dx_weight(1, 1, 1);
+        Eigen::Vector3d out_dx_origin(0, 0, 0);
+        Eigen::Vector3d out_dx_dir(0, 0, 0);
         camera_data->trace_ray_fw_po(tries, input_dx.sx, input_dx.sy, r1, r2, out_dx_weight, out_dx_origin, out_dx_dir, true);
 
-        Eigen::Vector3d out_dy_weight(output_dy.weight[0], output_dy.weight[1], output_dy.weight[2]);
-        Eigen::Vector3d out_dy_origin(output_dy.origin[0], output_dy.origin[1], output_dy.origin[2]);
-        Eigen::Vector3d out_dy_dir(output_dy.dir[0], output_dy.dir[1], output_dy.dir[2]);
+        Eigen::Vector3d out_dy_weight(1, 1, 1);
+        Eigen::Vector3d out_dy_origin(0, 0, 0);
+        Eigen::Vector3d out_dy_dir(0, 0, 0);
         camera_data->trace_ray_fw_po(tries, input_dy.sx, input_dy.sy, r1, r2, out_dy_weight, out_dy_origin, out_dy_dir, true);
 
         Eigen::Vector3d out_d0dx = (out_dx_origin - origin) / step;
@@ -150,19 +148,25 @@ camera_create_ray {
         
           AtCameraInput input_dx = input;
           AtCameraInput input_dy = input;
-          AtCameraOutput output_dx = AtCameraOutput();
-          AtCameraOutput output_dy = AtCameraOutput();
+
+          AtVector output_dx_origin = AtVector(0,0,0);
+          AtVector output_dx_dir = AtVector(0,0,0);
+          AtRGB output_dx_weight = AI_RGB_WHITE;
+
+          AtVector output_dy_origin = AtVector(0,0,0);
+          AtVector output_dy_dir = AtVector(0,0,0);
+          AtRGB output_dy_weight = AI_RGB_WHITE;
 
           input_dx.sx += input.dsx * step;
           input_dy.sy += input.dsy * step;
           
-          camera_data->trace_ray_fw_thinlens(tries, input_dx.sx, input_dx.sy, output_dx.origin, output_dx.dir, output_dx.weight, r1, r2, true);
-          camera_data->trace_ray_fw_thinlens(tries, input_dy.sx, input_dy.sy, output_dy.origin, output_dy.dir, output_dy.weight, r1, r2, true);
+          camera_data->trace_ray_fw_thinlens(tries, input_dx.sx, input_dx.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
+          camera_data->trace_ray_fw_thinlens(tries, input_dy.sx, input_dy.sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
 
-          output.dOdx = (output_dx.origin - origin) / step;
-          output.dOdy = (output_dy.origin - origin) / step;
-          output.dDdx = (output_dx.dir - dir) / step;
-          output.dDdy = (output_dy.dir - dir) / step;
+          output.dOdx = (output_dx_origin - origin) / step;
+          output.dOdy = (output_dy_origin - origin) / step;
+          output.dDdx = (output_dx_dir - dir) / step;
+          output.dDdy = (output_dy_dir - dir) / step;
       }
 
 
