@@ -427,7 +427,7 @@ public:
     inline void trace_ray_fw_po(int &tries, 
                                 const double input_sx, const double input_sy,
                                 double &r1, double &r2, 
-                                Eigen::Vector3d &weight, Eigen::Vector3d &origin, Eigen::Vector3d &direction, bool deriv_ray)
+                               AtRGB &weight, AtVector &origin, AtVector &direction, bool deriv_ray)
     {
 
         tries = 0;
@@ -520,7 +520,7 @@ public:
             ray_succes = true;
         }
 
-        if (ray_succes == false) weight.setZero();
+        if (ray_succes == false) weight = AI_RGB_ZERO;
 
 
         // convert from sphere/sphere space to camera space
@@ -532,10 +532,8 @@ public:
         else if (lens_outer_pupil_geometry == "cyl-x") cylinderToCs(outpos, outdir, cs_origin, cs_direction, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius, false);
         else sphereToCs(outpos, outdir, cs_origin, cs_direction, -lens_outer_pupil_curvature_radius, lens_outer_pupil_curvature_radius);
         
-        origin = cs_origin;
-        direction = cs_direction;
-
-        //printf("[%f,%f,%f],", origin[0], origin[1], origin[2]);
+        origin = AtVector(cs_origin(0), cs_origin(1), cs_origin(2));
+        direction = AtVector(cs_direction(0), cs_direction(1), cs_direction(2));
 
 
         switch (unitModel){
@@ -561,13 +559,13 @@ public:
             }
         }
 
-        direction.normalize();
+        direction = AiV3Normalize(direction);
 
         // Nan bailout
-        if (origin(0) != origin(0) || origin(1) != origin(1) || origin(2) != origin(2) || 
-            direction(0) != direction(0) || direction(1) != direction(1) || direction(2) != direction(2))
+        if (origin[0] != origin[0] || origin[1] != origin[1] || origin[2] != origin[2] || 
+            direction[0] != direction[0] || direction[1] != direction[1] || direction[2] != direction[2])
         {
-            weight.setZero();
+            weight = AI_RGB_ZERO;
         }
 
     }
