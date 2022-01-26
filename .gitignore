@@ -21,6 +21,7 @@
 !/tests/aperture_sampling_debug
 !/tests/cuda
 !/tests/tl_redistribution_bug
+!/tests/293_aovIssue
 
 /htoa/backup/*
 
