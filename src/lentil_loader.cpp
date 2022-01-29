@@ -3,14 +3,16 @@
 
 typedef void (*NodeRegisterFunc)(AtNodeLib* node);
 
-void registerLentilCamera(AtNodeLib* node);
+void registerLentilCameraThinLens(AtNodeLib* node);
+void registerLentilCameraPolynomialOptics(AtNodeLib* node);
 // void registerLentilCameraDebug(AtNodeLib* node);
 void registerLentilFilter(AtNodeLib* node);
 void registerLentilImager(AtNodeLib* node);
 // void registerLentilOperator(AtNodeLib* node);
 
 static NodeRegisterFunc registry[] = {
-    &registerLentilCamera,
+    &registerLentilCameraThinLens,
+    &registerLentilCameraPolynomialOptics,
     // &registerLentilCameraDebug,
     &registerLentilFilter,
     &registerLentilImager

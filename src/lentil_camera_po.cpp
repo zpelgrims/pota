@@ -2,11 +2,11 @@
 #include "lentil.h"
 #include <vector>
 
-AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
+AI_CAMERA_NODE_EXPORT_METHODS(lentilPolynomialOpticsMethods)
 
 
 static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
-static const char* CameraTypes[] = {"ThinLens", "PolynomialOptics", NULL};
+// static const char* CameraTypes[] = {"ThinLens", "PolynomialOptics", NULL};
 
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] = {
@@ -17,7 +17,7 @@ static const char* LensModelNames[] = {
 
 node_parameters {
   // global
-  AiParameterEnum("cameratype", ThinLens, CameraTypes);
+  // AiParameterEnum("cameratype", ThinLens, CameraTypes);
   AiParameterEnum("units", cm, Units);
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterBool("enable_dof", true);
@@ -31,13 +31,13 @@ node_parameters {
   AiParameterFlt("extra_sensor_shift", 0.0);
 
   // tl specifics
-  AiParameterFlt("focal_length_lentil", 35.0); // in mm
-  AiParameterFlt("optical_vignetting_distance", 0.0);
-  AiParameterFlt("optical_vignetting_radius", 2.0);
-  AiParameterFlt("abb_spherical", 0.5);
-  AiParameterFlt("abb_distortion", 0.0);
-  AiParameterFlt("bokeh_circle_to_square", 0.0);
-  AiParameterFlt("bokeh_anamorphic", 1.0);
+  // AiParameterFlt("focal_length_lentil", 35.0); // in mm
+  // AiParameterFlt("optical_vignetting_distance", 0.0);
+  // AiParameterFlt("optical_vignetting_radius", 2.0);
+  // AiParameterFlt("abb_spherical", 0.5);
+  // AiParameterFlt("abb_distortion", 0.0);
+  // AiParameterFlt("bokeh_circle_to_square", 0.0);
+  // AiParameterFlt("bokeh_anamorphic", 1.0);
 
   // bokeh
   AiParameterInt("bokeh_aperture_blades", 0);
@@ -46,7 +46,7 @@ node_parameters {
 
   // bidir
   AiParameterFlt("bidir_min_luminance", 1.0);
-  AiParameterInt("bidir_sample_mult", 20);
+  AiParameterInt("bidir_sample_mult", 10);
   AiParameterFlt("bidir_add_luminance", 0.0);
   AiParameterFlt("bidir_add_luminance_transition", 1.0);
 
@@ -55,7 +55,7 @@ node_parameters {
   AiParameterFlt("exp", 1.0);
 
   // experimental
-  AiParameterFlt("abb_coma", 0.0);
+  // AiParameterFlt("abb_coma", 0.0);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }
@@ -93,13 +93,13 @@ camera_create_ray {
   AtVector direction(0,0,0);
   AtRGB weight(1,1,1);
 
-  if (camera_data->cameraType == ThinLens){
-    camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
-  } else if (camera_data->cameraType == PolynomialOptics){
+  // if (camera_data->cameraType == ThinLens){
+  //   camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
+  // } else if (camera_data->cameraType == PolynomialOptics){
     camera_data->trace_ray_fw_po(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
-  }
+  // }
 
-  // if (tries > 0){
+  if (tries > 0){
     float input_dx_sx = input.sx + (input.dsx * step);
     float input_dx_sy = input.sy + (input.dsy * step);
 
@@ -110,19 +110,19 @@ camera_create_ray {
     AtRGB output_dx_weight = AI_RGB_WHITE;
     AtRGB output_dy_weight = AI_RGB_WHITE;
     
-    if (camera_data->cameraType == ThinLens){
-        camera_data->trace_ray_fw_thinlens(tries, input_dx_sx, input.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
-        camera_data->trace_ray_fw_thinlens(tries, input.sx, input_dx_sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
-    } else if (camera_data->cameraType == PolynomialOptics){
+    // if (camera_data->cameraType == ThinLens){
+    //     camera_data->trace_ray_fw_thinlens(tries, input_dx_sx, input.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
+    //     camera_data->trace_ray_fw_thinlens(tries, input.sx, input_dx_sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
+    // } else if (camera_data->cameraType == PolynomialOptics){
         camera_data->trace_ray_fw_po(tries, input_dx_sx, input.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
         camera_data->trace_ray_fw_po(tries, input.sx, input_dx_sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
-    }
+    // }
 
     output.dOdx = (output_dx_origin - origin) / step;
     output.dOdy = (output_dy_origin - origin) / step;
     output.dDdx = (output_dx_dir - direction) / step;
     output.dDdy = (output_dy_dir - direction) / step;
-  // }
+  }
   
   
   output.origin = origin;
@@ -249,10 +249,10 @@ camera_reverse_ray {
 
 
 
-void registerLentilCamera(AtNodeLib* node) {
-    node->methods = (AtNodeMethods*) lentilMethods;
+void registerLentilCameraPolynomialOptics(AtNodeLib* node) {
+    node->methods = (AtNodeMethods*) lentilPolynomialOpticsMethods;
     node->output_type = AI_TYPE_UNDEFINED;
-    node->name = "lentil_camera";
+    node->name = "lentil_camera_po";
     node->node_type = AI_NODE_CAMERA;
     strcpy(node->version, AI_VERSION);
 }

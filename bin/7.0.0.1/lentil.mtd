@@ -1,25 +1,20 @@
-[node lentil_camera]
+[node lentil_camera_tl]
     desc STRING "Polynomial optics camera shader"
     maya.name               STRING  "camera"
     maya.id                 INT     0x00070507
-    maya.translator         STRING  "lentil_camera"
+    maya.translator         STRING  "lentil_camera_tl"
     maya.attr_prefix        STRING ""
 
     c4d.classification      STRING  "generic"
 
     houdini.icon            STRING  "SHOP_lens"
-    houdini.label           STRING  "lentil"
+    houdini.label           STRING  "lentil_thinlens"
     houdini.help_url        STRING  "http://www.lentil.xyz"
     houdini.optional        BOOL true
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;7;Bokeh;3;Bidirectional;4;Additional;3"
+    houdini.parm.folder.first STRING  "General;5;ThinLens;7;Bokeh;3;Bidirectional;4;Additional;3"
     
-    [attr cameratype]
-        desc                STRING  "Camera Type"
-        
-        houdini.label       STRING  "Camera Type"
-        houdini.help        STRING "Thinlens is super fast, Polynomial optics is super accurate."
     
     [attr units]
         desc                STRING  "Units"
@@ -68,37 +63,6 @@
         
         houdini.label       STRING  "Focus Distance (cm)"
         houdini.help        STRING "Distance between the lens and the focal plane in centimeter."
-
-
-
-
-    [attr lens_model]
-        desc                STRING  "Lens Model"
-
-        houdini.label       STRING  "Lens Model"
-        houdini.help        STRING "There's many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has it's own characteristics. See the online documentation for previews of all lens models."
-
-
-    [attr wavelength]
-        min                 FLOAT   390.0
-        max                 FLOAT   700.0
-        default             FLOAT   550.0
-        desc                STRING  "Wavelength in nanometers."
-        animatable          BOOL    true
-        
-        houdini.label       STRING  "Wavelength (nm)"
-        houdini.help        STRING ""
-
-    [attr extra_sensor_shift]
-        min                 FLOAT   -10.0
-        max                 FLOAT   10.0
-        default             FLOAT   0.0
-        desc                STRING  "Additional Sensor shift (mm)"
-        animatable          BOOL    true
-        
-        houdini.label       STRING  "Additional Sensor shift (mm)"
-        houdini.help        STRING "The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!)."
-
 
 
 
@@ -294,6 +258,208 @@
         
         houdini.label       STRING  "Aberration (coma) [experimental]"
         houdini.help        STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
+
+
+
+
+[node lentil_camera_po]
+    desc STRING "Polynomial optics camera shader"
+    maya.name               STRING  "camera"
+    maya.id                 INT     0x00070512
+    maya.translator         STRING  "lentil_camera_po"
+    maya.attr_prefix        STRING ""
+
+    c4d.classification      STRING  "generic"
+
+    houdini.icon            STRING  "SHOP_lens"
+    houdini.label           STRING  "lentil_po"
+    houdini.help_url        STRING  "http://www.lentil.xyz"
+    houdini.optional        BOOL true
+
+    houdini.order   STRING "first"
+    houdini.parm.folder.first STRING  "General;5;PolynomialOptics;3;Bokeh;3;Bidirectional;4;Additional;2"
+    
+    
+    [attr units]
+        desc                STRING  "Units"
+        
+        houdini.label       STRING  "Working unit"
+        houdini.help        STRING "Put to M for HtoA."
+
+    [attr sensor_width]
+        min                 FLOAT   0.1
+        max                 FLOAT   100
+        default             FLOAT   36
+        desc                STRING  "Width of the sensor in mm. Default value is the width of a full frame sensor."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Sensor Width (mm)"
+        houdini.help        STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
+
+
+    [attr enable_dof]
+        default             BOOL    true
+        desc                STRING  "Enable Depth of Field"
+
+        houdini.label       STRING  "Enable Depth of Field"
+        houdini.help        STRING "Disabling makes the aperture an infinitesimal point."
+
+
+    [attr fstop]
+        min                 FLOAT   0.0
+        max                 FLOAT   64.0
+        default             FLOAT   2.8
+        desc                STRING  "F-Stop"
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "F-stop"
+        houdini.help        STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
+
+
+    [attr focus_dist]
+        min                 FLOAT   0.0
+        max                 FLOAT   100000.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   2000.0
+        default             FLOAT   150.0
+        desc                STRING  "Focus distance in (cm)"
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Focus Distance (cm)"
+        houdini.help        STRING "Distance between the lens and the focal plane in centimeter."
+
+
+
+
+    [attr lens_model]
+        desc                STRING  "Lens Model"
+
+        houdini.label       STRING  "Lens Model"
+        houdini.help        STRING "There's many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has it's own characteristics. See the online documentation for previews of all lens models."
+
+
+    [attr wavelength]
+        min                 FLOAT   390.0
+        max                 FLOAT   700.0
+        default             FLOAT   550.0
+        desc                STRING  "Wavelength in nanometers."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Wavelength (nm)"
+        houdini.help        STRING ""
+
+    [attr extra_sensor_shift]
+        min                 FLOAT   -10.0
+        max                 FLOAT   10.0
+        default             FLOAT   0.0
+        desc                STRING  "Additional Sensor shift (mm)"
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Additional Sensor shift (mm)"
+        houdini.help        STRING "The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!)."
+
+
+
+    [attr bokeh_aperture_blades]
+        default             INT     0
+        min                 INT     0
+        max                 INT     8
+        desc                STRING  "Number of aperture blades. < 3 is perfectly circular."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Aperture Blades"
+        houdini.help        STRING "Amount of aperture blades. Lower than 3 means perfectly circular."
+
+
+    [attr bokeh_enable_image]
+        default             BOOL     false
+        desc                STRING  "Enable image based bokeh"
+
+        houdini.label       STRING  "Use Bokeh Image"
+        houdini.help        STRING "This option replaces the circular/polygonal aperture with a texture-based one."
+
+
+    [attr bokeh_image_path]
+        desc                STRING  "Path to image based bokeh"
+
+        houdini.label       STRING  "Image bokeh path"
+        houdini.help        STRING "Supply small-ish images. The visual quality won't increase much above 250x250, but the pre-computation time will."
+        houdini.type        STRING  "file:image"
+        c4d.gui_type        INT     3
+
+
+
+
+    [attr bidir_min_luminance]
+        min                 FLOAT   0.0
+        max                 FLOAT   100.0
+        default             FLOAT   1.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   5.0
+        desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Trigger threshold"
+        houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
+
+    
+    [attr bidir_sample_mult]
+        min                 INT    0
+        max                 INT    1000
+        default             INT    5
+        softmin             INT     0
+        softmax             INT     150
+        desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Samples Multiplier"
+        houdini.help        STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
+
+
+    [attr bidir_add_luminance]
+        desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
+        animatable          BOOL    true
+        default             FLOAT   0.0
+        min                 FLOAT    0.0
+        max                 FLOAT    100
+        softmin             FLOAT   0.0
+        softmax             FLOAT   20.0
+        
+        houdini.label       STRING  "Additional Luminance"
+        houdini.help        STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_min_luminance will be affected."
+
+
+    [attr bidir_add_luminance_transition]
+        desc                STRING  "Additional luminance transition"
+        animatable          BOOL    true
+        min                 FLOAT    0.0
+        max                 FLOAT    100.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   5.0
+        houdini.label       STRING  "Additional luminance transition"
+        houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
+
+
+    [attr vignetting_retries]
+        min                 INT    1
+        max                 INT    50
+        default             INT    15
+        desc                STRING  "Number of times a ray will be tried to be shot in a random direction, in case the previous iteration got vignetted."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Vignetting Retries"
+        houdini.help        STRING "Since we're modeling real lenses, it can be that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
+
+    [attr exp]
+        min                 FLOAT   0.0
+        max                 FLOAT   5.0
+        default             FLOAT   1.0
+        desc                STRING  "Exposure multiplier"
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Exposure"
+        houdini.help        STRING "Exposure multiplier"
+
 
 
 #[node lentil_operator]

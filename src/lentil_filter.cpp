@@ -205,9 +205,7 @@ filter_pixel
       }
 
 
-      switch (camera_data->cameraType){
-        case PolynomialOptics:
-        { 
+      if (!camera_data->thin_lens) {
           if (std::abs(camera_space_sample_position.z) < (camera_data->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
           // early out
@@ -251,10 +249,7 @@ filter_pixel
                                  transmitted_energy_in_sample, 1, iterator);
             }
           }
-        } break;
-
-        case ThinLens:
-        {
+        } else {
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
@@ -371,8 +366,8 @@ filter_pixel
                                 transmitted_energy_in_sample, 1, iterator);
             }
           }
-        } break;
-      }
+        }
+      
     }
 
     AiShaderGlobalsDestroy(sg);

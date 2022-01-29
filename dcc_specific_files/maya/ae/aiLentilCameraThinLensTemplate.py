@@ -4,7 +4,7 @@ import mtoa.ui.ae.utils as aeUtils
 # import maya.mel
 from mtoa.ui.ae.shaderTemplate import ShaderAETemplate
 
-class aiLentilCameraTemplate(templates.AttributeTemplate):
+class aiLentilCameraThinLensTemplate(templates.AttributeTemplate):
 
     def filenameEditBokehInput(self, mData) :
         attr = self.nodeAttr('bokehImagePath')
@@ -29,7 +29,7 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
     def setup(self):
 
         self.beginLayout("Global", collapse=False)
-        self.addControl("cameratype", label="Camera Type")
+        # self.addControl("cameratype", label="Camera Type")
         self.addControl("sensorWidth", label="Sensor Width (mm)")
         self.addControl("enableDof", label="Enable depth of field")
         self.addControl("fstop", label="F-stop", dynamic=True)
@@ -37,11 +37,11 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.endLayout()
 
         # po specific
-        self.beginLayout("Polynomial Optics", collapse=False)
-        self.addControl("lensModel", label="Lens Model")
-        self.addControl("wavelength", label="Wavelength (nm)")
-        self.addControl("extraSensorShift", label="Extra Sensor shift (mm)")
-        self.endLayout()
+        # self.beginLayout("Polynomial Optics", collapse=False)
+        # self.addControl("lensModel", label="Lens Model")
+        # self.addControl("wavelength", label="Wavelength (nm)")
+        # self.addControl("extraSensorShift", label="Extra Sensor shift (mm)")
+        # self.endLayout()
 
         # tl specific
         self.beginLayout("Thin Lens", collapse=False)
@@ -79,4 +79,4 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.endLayout()
 
 
-templates.registerTranslatorUI(aiLentilCameraTemplate, "camera", "lentil_camera")
+templates.registerTranslatorUI(aiLentilCameraThinLensTemplate, "camera", "lentil_camera_tl")

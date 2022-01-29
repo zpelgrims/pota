@@ -68,11 +68,11 @@ enum UnitModel{
     m
 };
 
-// enum to switch between units in interface dropdown
-enum CameraType{
-    ThinLens,
-    PolynomialOptics
-};
+// // enum to switch between units in interface dropdown
+// enum CameraType{
+//     ThinLens,
+//     PolynomialOptics
+// };
 
 
 
@@ -234,7 +234,7 @@ struct Camera
 {
 	LensModel lensModel;
     UnitModel unitModel;
-    CameraType cameraType;
+    // CameraType cameraType;
     imageData image;
 
     // lens constants PO
@@ -342,6 +342,8 @@ struct Camera
 
     bool crypto_in_same_queue = false;
 
+    bool thin_lens = true;
+
 
 
 public:
@@ -366,6 +368,11 @@ public:
 
         options_node = AiUniverseGetOptions(universe);
         camera_node = AiUniverseGetCamera(universe);
+
+        if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(camera_node)) == AtString("lentil_camera_po")) {
+            thin_lens = false;
+        }
+
         get_lentil_camera_params();
         camera_model_specific_setup();
 
@@ -813,15 +820,10 @@ public:
         // need to account for the differences in setup between the two methods, since the inputs are scaled differently in the camera shader
         float _focus_distance = focus_distance;
         float _aperture_radius = aperture_radius;
-        switch (cameraType){
-            case PolynomialOptics:
-            { 
-                _focus_distance /= 10.0;
-            } break;
-            case ThinLens:
-            {
-                _aperture_radius *= 10.0;
-            } break;
+        if (!thin_lens){
+            _focus_distance /= 10.0;
+        } else {
+            _aperture_radius *= 10.0;
         }
         
         const float image_dist_samplepos = (-focal_length * camera_space_sample_position.z) / (-focal_length + camera_space_sample_position.z);
@@ -1385,7 +1387,7 @@ private:
 
 
     void get_lentil_camera_params() {
-        cameraType = (CameraType) AiNodeGetInt(camera_node, "cameratype");
+        // cameraType = (CameraType) AiNodeGetInt(camera_node, "cameratype");
         unitModel = (UnitModel) AiNodeGetInt(camera_node, "units");
         sensor_width = AiNodeGetFlt(camera_node, "sensor_width");
         enable_dof = AiNodeGetBool(camera_node, "enable_dof");
@@ -1394,23 +1396,26 @@ private:
         bokeh_aperture_blades = AiNodeGetInt(camera_node, "bokeh_aperture_blades");
         exposure = AiNodeGetFlt(camera_node, "exp");
 
-        // po-specific params
-        lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
-        lambda = AiNodeGetFlt(camera_node, "wavelength") * 0.001;
-        extra_sensor_shift = AiNodeGetFlt(camera_node, "extra_sensor_shift");
-
-        // tl specific params
-        focal_length = clamp_min(AiNodeGetFlt(camera_node, "focal_length_lentil"), 0.01);
-        optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting_distance");
-        optical_vignetting_radius = AiNodeGetFlt(camera_node, "optical_vignetting_radius");
-        abb_spherical = AiNodeGetFlt(camera_node, "abb_spherical");
-        abb_spherical = clamp(abb_spherical, 0.001, 0.999);
-        abb_distortion = AiNodeGetFlt(camera_node, "abb_distortion");
-        abb_coma = AiNodeGetFlt(camera_node, "abb_coma");
-        circle_to_square = AiNodeGetFlt(camera_node, "bokeh_circle_to_square");
-        circle_to_square = clamp(circle_to_square, 0.01, 0.99);
-        bokeh_anamorphic = AiNodeGetFlt(camera_node, "bokeh_anamorphic");
-        bokeh_anamorphic = clamp(bokeh_anamorphic, 0.01, 99999.0);
+        if (thin_lens){
+             // tl specific params
+            focal_length = clamp_min(AiNodeGetFlt(camera_node, "focal_length_lentil"), 0.01);
+            optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting_distance");
+            optical_vignetting_radius = AiNodeGetFlt(camera_node, "optical_vignetting_radius");
+            abb_spherical = AiNodeGetFlt(camera_node, "abb_spherical");
+            abb_spherical = clamp(abb_spherical, 0.001, 0.999);
+            abb_distortion = AiNodeGetFlt(camera_node, "abb_distortion");
+            abb_coma = AiNodeGetFlt(camera_node, "abb_coma");
+            circle_to_square = AiNodeGetFlt(camera_node, "bokeh_circle_to_square");
+            circle_to_square = clamp(circle_to_square, 0.01, 0.99);
+            bokeh_anamorphic = AiNodeGetFlt(camera_node, "bokeh_anamorphic");
+            bokeh_anamorphic = clamp(bokeh_anamorphic, 0.01, 99999.0);
+        } else {
+            // po-specific params
+            lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
+            lambda = AiNodeGetFlt(camera_node, "wavelength") * 0.001;
+            extra_sensor_shift = AiNodeGetFlt(camera_node, "extra_sensor_shift");
+        }
+       
 
         // bidir params
         bidir_min_luminance = AiNodeGetFlt(camera_node, "bidir_min_luminance");
@@ -1756,9 +1761,7 @@ private:
 
     void camera_model_specific_setup () {
 
-        switch (cameraType){
-            case PolynomialOptics:
-            {
+        if (!thin_lens){
                 focus_distance *= 10.0;
                 
                 switch (lensModel){
@@ -1785,7 +1788,7 @@ private:
                 #endif
                 AiMsgInfo("[LENTIL CAMERA PO] --------------------------------------");
 
-
+                focal_length = lens_effective_focal_length;
                 
                 AiMsgInfo("[LENTIL CAMERA PO] wavelength: %f nm", lambda);
 
@@ -1848,14 +1851,12 @@ private:
 
                 AiMsgInfo("[LENTIL CAMERA PO] --------------------------------------");
 
-            } break;
-            case ThinLens:
-            {
+            } else {
                 fov = 2.0 * std::atan(sensor_width / (2.0*focal_length));
                 tan_fov = std::tan(fov/2.0);
                 aperture_radius = (focal_length / (2.0 * input_fstop)) / 10.0;
-            } break;
-        }
+            }
+        
     }
 
     
