@@ -93,48 +93,36 @@ camera_create_ray {
   AtVector direction(0,0,0);
   AtRGB weight(1,1,1);
 
-  switch (camera_data->cameraType){
-    case PolynomialOptics:
-    { 
-      camera_data->trace_ray_fw_po(tries, input.sx, input.sy, r1, r2, weight, origin, direction, false);
-    } break;
-    case ThinLens:
-    {
-      camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
-    } break;
+  if (camera_data->cameraType == ThinLens){
+    camera_data->trace_ray_fw_thinlens(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
+  } else if (camera_data->cameraType == PolynomialOptics){
+    camera_data->trace_ray_fw_po(tries, input.sx, input.sy, origin, direction, weight, r1, r2, false);
   }
 
-  if (tries > 0){
-
+  // if (tries > 0){
     float input_dx_sx = input.sx + (input.dsx * step);
     float input_dx_sy = input.sy + (input.dsy * step);
 
     AtVector output_dx_origin(0,0,0);
-    AtVector output_dx_dir(0,0,0);
-    AtRGB output_dx_weight = AI_RGB_WHITE;
-
     AtVector output_dy_origin(0,0,0);
+    AtVector output_dx_dir(0,0,0);
     AtVector output_dy_dir(0,0,0);
+    AtRGB output_dx_weight = AI_RGB_WHITE;
     AtRGB output_dy_weight = AI_RGB_WHITE;
     
-    switch (camera_data->cameraType){
-      case PolynomialOptics:
-      {
-        camera_data->trace_ray_fw_po(tries, input_dx_sx, input.sy, r1, r2, output_dx_weight, output_dx_origin, output_dx_dir, true);
-        camera_data->trace_ray_fw_po(tries, input.sx, input_dx_sy, r1, r2, output_dy_weight, output_dy_origin, output_dy_dir, true);
-      } break;
-      case ThinLens:
-      {
+    if (camera_data->cameraType == ThinLens){
         camera_data->trace_ray_fw_thinlens(tries, input_dx_sx, input.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
         camera_data->trace_ray_fw_thinlens(tries, input.sx, input_dx_sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
-      } break;
+    } else if (camera_data->cameraType == PolynomialOptics){
+        camera_data->trace_ray_fw_po(tries, input_dx_sx, input.sy, output_dx_origin, output_dx_dir, output_dx_weight, r1, r2, true);
+        camera_data->trace_ray_fw_po(tries, input.sx, input_dx_sy, output_dy_origin, output_dy_dir, output_dy_weight, r1, r2, true);
     }
 
-      output.dOdx = (output_dx_origin - origin) / step;
-      output.dOdy = (output_dy_origin - origin) / step;
-      output.dDdx = (output_dx_dir - direction) / step;
-      output.dDdy = (output_dy_dir - direction) / step;
-  }
+    output.dOdx = (output_dx_origin - origin) / step;
+    output.dOdy = (output_dy_origin - origin) / step;
+    output.dDdx = (output_dx_dir - direction) / step;
+    output.dDdy = (output_dy_dir - direction) / step;
+  // }
   
   
   output.origin = origin;

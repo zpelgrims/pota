@@ -425,9 +425,9 @@ public:
 
 
     inline void trace_ray_fw_po(int &tries, 
-                                const double input_sx, const double input_sy,
-                                double &r1, double &r2, 
-                               AtRGB &weight, AtVector &origin, AtVector &direction, bool deriv_ray)
+                                const double sx, const double sy,
+                                AtVector &origin, AtVector &direction, AtRGB &weight, 
+                                double &r1, double &r2, const bool deriv_ray)
     {
 
         tries = 0;
@@ -440,8 +440,8 @@ public:
         while(!ray_succes && tries <= vignetting_retries){
 
             // set sensor position coords
-            sensor(0) = input_sx * (sensor_width * 0.5);
-            sensor(1) = input_sy * (sensor_width * 0.5);
+            sensor(0) = sx * (sensor_width * 0.5);
+            sensor(1) = sy * (sensor_width * 0.5);
             sensor(2) = sensor(3) = 0.0;
             sensor(4) = lambda;
 
@@ -573,9 +573,9 @@ public:
 
 
     inline void trace_ray_fw_thinlens(int &tries, 
-                                    float sx, float sy,
+                                    const double sx, const double sy,
                                     AtVector &origin, AtVector &dir, AtRGB &weight,
-                                    double &r1, double &r2, bool deriv_ray){
+                                    double &r1, double &r2, const bool deriv_ray){
         tries = 0;
         bool ray_succes = false;
 
@@ -637,7 +637,7 @@ public:
             dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
 
 
-            if (optical_vignetting_distance > 0.0){
+            if (optical_vignetting_distance > 0.0 && !deriv_ray){
                 if (!empericalOpticalVignettingSquare(lens, dir_from_lens, aperture_radius, optical_vignetting_radius, optical_vignetting_distance, lerp_squircle_mapping(circle_to_square))){
                     ++tries;
                     continue;
@@ -706,12 +706,12 @@ public:
                 }
             }
 
-            dir = AiV3Normalize(dir);
+           
 
             // weight = AI_RGB_WHITE;
             ray_succes = true;
         }
-
+        dir = AiV3Normalize(dir);
         if (!ray_succes) weight = AI_RGB_BLACK;
     }
 

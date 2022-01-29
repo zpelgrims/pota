@@ -1,7 +1,8 @@
 import mtoa.ui.ae.templates as templates
-import pymel.core as pm
 import maya.cmds as cmds
 import mtoa.ui.ae.utils as aeUtils
+# import maya.mel
+from mtoa.ui.ae.shaderTemplate import ShaderAETemplate
 
 class aiLentilCameraTemplate(templates.AttributeTemplate):
 
