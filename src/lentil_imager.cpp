@@ -93,9 +93,9 @@ driver_process_bucket {
 
 
 
-  AtString aov_name;
+  AtString aov_name = AtString("");
   int aov_type = 0;
-  const void *bucket_data;
+  const void *bucket_data = nullptr;
 
   while (AiOutputIteratorGetNext(iterator, &aov_name, &aov_type, &bucket_data)){
     if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] Imager found AOV %s of type %s", aov_name.c_str(), AiParamGetTypeName(aov_type));

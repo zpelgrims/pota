@@ -337,8 +337,8 @@ struct Camera
     const AtString atstring_time = AtString("lentil_time");
     const AtString atstring_lentil_debug = AtString("lentil_debug");
 
-    bool cryptomatte_lentil;
-    bool imager_print_once_only;
+    bool cryptomatte_lentil = false;
+    bool imager_print_once_only = false;
 
     bool crypto_in_same_queue = false;
 
@@ -633,8 +633,8 @@ public:
             
 
             // perturb ray direction to simulate coma aberration
-            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
-            dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
+            // float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
+            // dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
 
 
             if (optical_vignetting_distance > 0.0 && !deriv_ray){
