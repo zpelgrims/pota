@@ -108,18 +108,18 @@ public:
         std::string c4 = "";
         std::string c5 = "";
         
-        if (tokens.size() == 4) {
+        if (tokens.size() >= 4) {
             c0 = tokens[0];
             c1 = tokens[1];
             c2 = tokens[2];
             c3 = tokens[3];
         }
         
-        if (tokens.size() == 5) {
+        if (tokens.size() >= 5) {
             c4 = tokens[4];
         }
 
-        if (tokens.size() == 6) {
+        if (tokens.size() >= 6) {
             c5 = tokens[5];
         }
 
