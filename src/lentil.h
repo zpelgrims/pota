@@ -1057,8 +1057,7 @@ public:
                                         std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
 
-        float inv_filter_samples = (1.0 / (AI_PI*std::pow(filter_width, 2))); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
-        
+        float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
@@ -1069,12 +1068,10 @@ public:
                 if (x < 0 || x >= xres) continue; // edge fix
 
                 const unsigned pixelnumber = static_cast<int>(xres * y + x);
-                
-               
+            
                 AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
                 float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
                 if (filter_weight == 0) continue;
-
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_samples * inv_filter_samples * inv_density);
@@ -1202,13 +1199,6 @@ public:
     // this only was picked up in the IPR. when doing a -dp render, it didn't. This would be too annoying.
     // try enabling this workflow again when this options node bug is solved!
     void setup_aovs(AtUniverse *universe) {
-
-        // // lentil aov setup
-        // const AtNodeEntry *crypto_ne = AiNodeEntryLookUp(AtString("cryptomatte"));
-        // if (AiNodeEntryGetCount(crypto_ne) == 0) {
-        //     operator_data->cook = true;
-        // }
-            
 
         filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
         if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
