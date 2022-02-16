@@ -92,7 +92,6 @@ filter_pixel
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
-      // AiMsgInfo ("time: %f", time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
       AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(camera_data->camera_node, time, world_to_camera_matrix);
       AtVector camera_space_sample_position = AiM4PointByMatrixMult(world_to_camera_matrix, sample_pos_ws);
@@ -144,32 +143,32 @@ filter_pixel
 
 
       // store all aov values
-      std::map<AtString, AtRGBA> aov_values;
+      std::vector<AtRGBA> aov_values(camera_data->aovs_upper_limit, AI_RGBA_ZERO);
       for (auto &aov : camera_data->aovs){
         if (aov.is_crypto) continue;
         if (aov.name == camera_data->atstring_lentil_debug){
-          aov_values[aov.name] = static_cast<float>(samples) * redistribute;
+          aov_values[aov.index] = static_cast<float>(samples) * redistribute;
           continue;
         }
 
         switch(aov.type){
           case AI_TYPE_RGBA: {
-            aov_values[aov.name] = AiAOVSampleIteratorGetAOVRGBA(iterator, aov.name);
+            aov_values[aov.index] = AiAOVSampleIteratorGetAOVRGBA(iterator, aov.name);
           } break;
 
           case AI_TYPE_RGB: {
             AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, aov.name);
-            aov_values[aov.name] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
+            aov_values[aov.index] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
           } break;
 
           case AI_TYPE_FLOAT: {
             float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, aov.name);
-            aov_values[aov.name] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
+            aov_values[aov.index] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
           } break;
 
           case AI_TYPE_VECTOR: {
             AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, aov.name);
-            aov_values[aov.name] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
+            aov_values[aov.index] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
           } break;
         }
       }
@@ -216,7 +215,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.name],
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
                                  inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                  transmitted_energy_in_sample, 1, iterator);
             }
@@ -337,7 +336,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.name],
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
                                 inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }

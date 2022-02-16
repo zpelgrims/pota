@@ -193,6 +193,7 @@ struct AOVData {
         std::vector<float> crypto_total_weight;
 
         bool is_duplicate = false;
+        int index = 0;
 
 
         AOVData(AtUniverse *universe, std::string output_string) {
@@ -326,6 +327,8 @@ struct Camera
     std::vector<float> zbuffer;
     std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
     std::vector<AOVData> aovs;
+
+    unsigned aovs_upper_limit;
 
     const AtString atstring_rgba = AtString("RGBA");
     const AtString atstring_p = AtString("P");
@@ -1051,7 +1054,7 @@ public:
                                         float inv_samples, float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
-                                        std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::map<AtString, AtRGBA> &aov_values){
+                                        std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
 
         float inv_filter_samples = (1.0 / (AI_PI*std::pow(filter_width, 2))); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
@@ -1075,10 +1078,7 @@ public:
 
                 for (auto &aov : aovs){
                     if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.name], inv_samples * inv_filter_samples * inv_density);
-                    else {
-                        add_to_buffer(aov, pixelnumber, aov_values[aov.name],
-                                    inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator);
-                    }
+                    else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
                 }
             }
         }
@@ -1219,6 +1219,8 @@ public:
         // bool lentil_time_found = false;
 
 
+
+
         for (int i=0; i<elements; i++) {
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
 
@@ -1277,9 +1279,11 @@ public:
         uint32_t i = 0;
         for (auto &output : aovs){
             AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
+            output.index = i;
             // AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
         }
         AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
+        aovs_upper_limit = aovs.size()+1;
 
 
         // remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
