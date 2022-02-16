@@ -6,27 +6,6 @@
 AI_FILTER_NODE_EXPORT_METHODS(LentilFilterDataMtd);
 
 
-
-
-
-inline float additional_luminance_soft_trans(float sample_luminance, float additional_luminance, float transition_width, float minimum_luminance){
-  // additional luminance with soft transition
-  if (sample_luminance > minimum_luminance && sample_luminance < minimum_luminance+transition_width){
-    float perc = (sample_luminance - minimum_luminance) / transition_width;
-    return additional_luminance * perc;          
-  } else if (sample_luminance > minimum_luminance+transition_width) {
-    return additional_luminance;
-  }
-
-  return 0.0;
-}
-
-
-
-
-
-
-
 node_parameters 
 {
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
@@ -71,14 +50,12 @@ filter_pixel
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
 
-  bool skip_redistribution_local = false; // camera_data->redistribution is a global switch, which also turns of the imager - this is local to the filter.
-
-
+  bool rgba_aov = (AiAOVSampleIteratorGetAOVName(iterator) == camera_data->atstring_rgba); // early out for non-primary AOV samples
   bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), "enable_adaptive_sampling"); 
   float inverse_sample_density = 0.0;
   
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0. It only works for adaptive sampling.
-  if (!adaptive_sampling) {
+  if (!adaptive_sampling && rgba_aov) {
     int samples_counter = 0;
     while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
     AiAOVSampleIteratorReset(iterator);
@@ -90,20 +67,13 @@ filter_pixel
   }
 
 
-  if (AiAOVSampleIteratorGetAOVName(iterator) != camera_data->atstring_rgba) skip_redistribution_local = true; // early out for non-primary AOV samples
-  
-
-  if (camera_data->redistribution && !skip_redistribution_local){
+  if (camera_data->redistribution && rgba_aov){
     const double xres = (double)camera_data->xres;
     const double yres = (double)camera_data->yres;
-    // const double frame_aspect_ratio = (double)camera_data->xres_without_region/(double)camera_data->yres_without_region;
     const double frame_aspect_ratio = xres/yres;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
-    // px -= camera_data->region_min_x;
-    // py -= camera_data->region_min_y;
-
     AtShaderGlobals *sg = AiShaderGlobals();
 
 
@@ -152,13 +122,13 @@ filter_pixel
       }
 
       // cryptomatte cache
-      std::map<std::string, std::map<float, float>> crypto_cache;
+      std::map<AtString, std::map<float, float>> crypto_cache;
       if (camera_data->cryptomatte_lentil) camera_data->cryptomatte_construct_cache(crypto_cache, iterator, sampleid);
 
 
       // additional luminance with soft transition
       float fitted_bidir_add_luminance = 0.0;
-      if (camera_data->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = additional_luminance_soft_trans(sample_luminance, camera_data->bidir_add_luminance, camera_data->bidir_add_luminance_transition, camera_data->bidir_min_luminance);
+      if (camera_data->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = camera_data->additional_luminance_soft_trans(sample_luminance);
 
 
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
@@ -174,32 +144,32 @@ filter_pixel
 
 
       // store all aov values
-      std::map<std::string, AtRGBA> aov_values;
+      std::map<AtString, AtRGBA> aov_values;
       for (auto &aov : camera_data->aovs){
         if (aov.is_crypto) continue;
-        if (aov.to.aov_name_tok == "lentil_debug"){
-          aov_values[aov.to.aov_name_tok] = static_cast<float>(samples) * redistribute;
+        if (aov.name == camera_data->atstring_lentil_debug){
+          aov_values[aov.name] = static_cast<float>(samples) * redistribute;
           continue;
         }
 
         switch(aov.type){
           case AI_TYPE_RGBA: {
-            aov_values[aov.to.aov_name_tok] = AiAOVSampleIteratorGetAOVRGBA(iterator, aov.name_as);
+            aov_values[aov.name] = AiAOVSampleIteratorGetAOVRGBA(iterator, aov.name);
           } break;
 
           case AI_TYPE_RGB: {
-            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, aov.name_as);
-            aov_values[aov.to.aov_name_tok] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
+            AtRGB value_rgb = AiAOVSampleIteratorGetAOVRGB(iterator, aov.name);
+            aov_values[aov.name] = AtRGBA(value_rgb.r, value_rgb.g, value_rgb.b, 1.0);
           } break;
 
           case AI_TYPE_FLOAT: {
-            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, aov.name_as);
-            aov_values[aov.to.aov_name_tok] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
+            float value_flt = AiAOVSampleIteratorGetAOVFlt(iterator, aov.name);
+            aov_values[aov.name] = AtRGBA(value_flt, value_flt, value_flt, 1.0);
           } break;
 
           case AI_TYPE_VECTOR: {
-            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, aov.name_as);
-            aov_values[aov.to.aov_name_tok] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
+            AtVector value_vec = AiAOVSampleIteratorGetAOVVec(iterator, aov.name);
+            aov_values[aov.name] = AtRGBA(value_vec.x, value_vec.y, value_vec.z, 1.0);
           } break;
         }
       }
@@ -245,8 +215,8 @@ filter_pixel
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.name],
                                  inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                  transmitted_energy_in_sample, 1, iterator);
             }
@@ -366,11 +336,13 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.to.aov_name_tok], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.name],
                                 inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }
+            
+            
           }
         } break;
       }

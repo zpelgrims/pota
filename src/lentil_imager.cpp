@@ -102,11 +102,11 @@ driver_process_bucket {
 
     AOVData *aov_current = nullptr;
     for (auto &aov : camera_data->aovs) {
-      if (aov.name_as == aov_name) aov_current = &aov;
+      if (aov.name == aov_name) aov_current = &aov;
     }
     if (!aov_current) continue;
 
-    if (aov_name == AtString("transmission") || aov_name == AtString("lentil_ignore") || aov_name == AtString("lentil_time")) continue;
+    if (aov_name == camera_data->atstring_transmission || aov_name == camera_data->atstring_lentil_ignore || aov_name == camera_data->atstring_time) continue;
     if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
     for (int j = 0; j < bucket_size_y; ++j) {

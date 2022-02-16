@@ -185,7 +185,7 @@ struct AOVData {
         std::vector<AtRGBA> buffer;
         TokenizedOutputLentil to;
 
-        AtString name_as = AtString("");
+        AtString name = AtString("");
         unsigned int type = 0;
 
         bool is_crypto = false;
@@ -197,7 +197,7 @@ struct AOVData {
 
         AOVData(AtUniverse *universe, std::string output_string) {
             to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
-            name_as = AtString(to.aov_name_tok.c_str());
+            name = AtString(to.aov_name_tok.c_str());
             type = string_to_arnold_type(to.aov_type_tok);
         }
 
@@ -871,7 +871,7 @@ public:
     }
 
 
-    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type, float inverse_sample_density, bool adaptive_sampling){
+    AtRGBA filter_gaussian_complete(AtAOVSampleIterator *iterator, const uint8_t aov_type, const float inverse_sample_density, const bool adaptive_sampling){
         float aweight = 0.0f;
         AtRGBA avalue = AI_RGBA_ZERO;
         float inv_density = inverse_sample_density;
@@ -915,7 +915,7 @@ public:
 
 
     // get all depth samples so i can re-use them
-    void cryptomatte_construct_cache(std::map<std::string, std::map<float, float>> &crypto_hashmap_cache,
+    void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
                                             struct AtAOVSampleIterator* sample_iterator, 
                                             const int sampleid) {
 
@@ -927,7 +927,7 @@ public:
 
                 while (AiAOVSampleIteratorGetNextDepth(sample_iterator)) {
                     const float sub_sample_opacity = AiColorToGrey(AiAOVSampleIteratorGetAOVRGB(sample_iterator, atstring_opacity));
-                    sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov.name_as);
+                    sample_value = AiAOVSampleIteratorGetAOVFlt(sample_iterator, aov.name);
                     const float sub_sample_weight = sub_sample_opacity * iterative_transparency_weight;
 
                     // so if the current sub sample is 80% opaque, it means 20% of the weight will remain for the next subsample
@@ -935,11 +935,11 @@ public:
 
                     quota -= sub_sample_weight;
 
-                    crypto_hashmap_cache[aov.to.aov_name_tok][sample_value] += sub_sample_weight;
+                    crypto_hashmap_cache[aov.name][sample_value] += sub_sample_weight;
                 }
 
                 // the remaining values gets allocated to the last sample
-                if (quota > 0.0) crypto_hashmap_cache[aov.to.aov_name_tok][sample_value] += quota;
+                if (quota > 0.0) crypto_hashmap_cache[aov.name][sample_value] += quota;
 
                 // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
                 // still need to use the iterator afterwards, so need to do a reset to the current sample id
@@ -996,7 +996,7 @@ public:
             }
 
             case AI_TYPE_FLOAT: {
-                if (aov.name_as != atstring_lentil_debug) {
+                if (aov.name != atstring_lentil_debug) {
                     if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
                         aov.buffer[px] = aov_value;
                         zbuffer[px] = std::abs(depth);
@@ -1051,7 +1051,7 @@ public:
                                         float inv_samples, float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
-                                        std::map<std::string, std::map<float, float>> &cryptomatte_cache, std::map<std::string, AtRGBA> &aov_values){
+                                        std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::map<AtString, AtRGBA> &aov_values){
 
 
         float inv_filter_samples = (1.0 / (AI_PI*std::pow(filter_width, 2))); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
@@ -1074,10 +1074,9 @@ public:
 
 
                 for (auto &aov : aovs){
-                    if (aov.is_crypto){
-                        add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.to.aov_name_tok], inv_samples * inv_filter_samples * inv_density);
-                    } else {
-                        add_to_buffer(aov, pixelnumber, aov_values[aov.to.aov_name_tok],
+                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.name], inv_samples * inv_filter_samples * inv_density);
+                    else {
+                        add_to_buffer(aov, pixelnumber, aov_values[aov.name],
                                     inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator);
                     }
                 }
@@ -1269,7 +1268,7 @@ public:
         aov_lentil_debug.to.aov_type_tok = "FLOAT";
         aov_lentil_debug.to.aov_name_tok = "lentil_debug";
         aov_lentil_debug.to = TokenizedOutputLentil(universe, AtString(aov_lentil_debug.to.rebuild_output().c_str()));
-        aov_lentil_debug.name_as = AtString("lentil_debug");
+        aov_lentil_debug.name = AtString("lentil_debug");
         aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
         aovs.push_back(aov_lentil_debug);
         
@@ -1323,6 +1322,18 @@ public:
         //     AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
         //     AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
         // }
+    }
+
+    inline float additional_luminance_soft_trans(const float sample_luminance){
+        // additional luminance with soft transition
+        if (sample_luminance > bidir_min_luminance && sample_luminance < bidir_min_luminance+bidir_add_luminance_transition){
+            float perc = (sample_luminance - bidir_min_luminance) / bidir_add_luminance_transition;
+            return bidir_add_luminance * perc;          
+        } else if (sample_luminance > bidir_min_luminance+bidir_add_luminance_transition) {
+            return bidir_add_luminance;
+        }
+
+        return 0.0;
     }
 
 
