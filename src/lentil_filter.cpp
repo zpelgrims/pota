@@ -102,9 +102,6 @@ filter_pixel
         case m:  { camera_space_sample_position *= 100.0;}
       }
       
-      const float filter_width_half = std::ceil(camera_data->filter_width * 0.5);
-
-
       const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->atstring_transmission);
       bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
@@ -121,7 +118,7 @@ filter_pixel
       }
 
       // cryptomatte cache
-      std::vector<std::map<float, float>> crypto_cache(camera_data->aovs_upper_limit);
+      std::vector<std::map<float, float>> crypto_cache(camera_data->aovcount);
       if (camera_data->cryptomatte_lentil) camera_data->cryptomatte_construct_cache(crypto_cache, iterator, sampleid);
 
 
@@ -135,7 +132,7 @@ filter_pixel
       if (circle_of_confusion < 0.5) redistribute = false; // don't redistribute under certain CoC size
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
       samples = clamp(samples, 5, 10000);
-      float inv_samples = 1.0/static_cast<double>(samples);
+      float inv_samples = 1.0/static_cast<float>(samples);
 
 
       unsigned int total_samples_taken = 0;
@@ -143,11 +140,11 @@ filter_pixel
 
 
       // store all aov values
-      std::vector<AtRGBA> aov_values(camera_data->aovs_upper_limit, AI_RGBA_ZERO);
+      std::vector<AtRGBA> aov_values(camera_data->aovcount, AI_RGBA_ZERO);
       for (auto &aov : camera_data->aovs){
         if (aov.is_crypto) continue;
         if (aov.name == camera_data->atstring_lentil_debug){
-          aov_values[aov.index] = static_cast<float>(samples) * redistribute;
+          aov_values[aov.index] = samples * redistribute;
           continue;
         }
 
@@ -181,8 +178,8 @@ filter_pixel
 
           // early out
           if (redistribute == false){
-            camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inverse_sample_density, depth, transmitted_energy_in_sample, 0,
+            camera_data->filter_and_add_to_buffer(px, py, 
+                                    inverse_sample_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -210,7 +207,6 @@ filter_pixel
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            // write sample to image
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
             for (auto &aov : camera_data->aovs){
@@ -226,8 +222,8 @@ filter_pixel
         {
           // early out
           if (redistribute == false){
-            camera_data->filter_and_add_to_buffer(px, py, filter_width_half, 
-                                    1.0, inverse_sample_density, depth, transmitted_energy_in_sample, 0,
+            camera_data->filter_and_add_to_buffer(px, py, 
+                                    inverse_sample_density, depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -245,10 +241,6 @@ filter_pixel
 
             unit_disk(0) *= camera_data->bokeh_anamorphic;
             AtVector lens(unit_disk(0) * camera_data->aperture_radius, unit_disk(1) * camera_data->aperture_radius, 0.0);
-
-
-            // aberration inputs
-            // float abb_field_curvature = 0.0;
 
 
             // ray through center of lens
@@ -314,23 +306,16 @@ filter_pixel
 
             // convert sensor position to pixel position
             Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            // const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres_without_region;
-            // const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region;
             const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres;
             const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres;
 
             // if outside of image
-            // if ((pixel_x >= xres) || (pixel_x < camera_data->region_min_x) || (pixel_y >= yres) || (pixel_y < camera_data->region_min_y)) {
             if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
               --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
               continue;
             }
 
-            // write sample to image
-            // unsigned pixelnumber = coords_to_linear_pixel_region(floor(pixel_x), floor(pixel_y), camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-            // if (!redistribute) pixelnumber = coords_to_linear_pixel_region(px, py, camera_data->xres, camera_data->region_min_x, camera_data->region_min_y);
-            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y));
-            if (!redistribute) pixelnumber = camera_data->coords_to_linear_pixel(px, py);
+            unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y)) : camera_data->coords_to_linear_pixel(px, py);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
@@ -340,8 +325,6 @@ filter_pixel
                                 inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }
-            
-            
           }
         } break;
       }

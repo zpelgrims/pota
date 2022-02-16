@@ -187,13 +187,14 @@ struct AOVData {
 
         AtString name = AtString("");
         unsigned int type = 0;
+        bool is_duplicate = false;
+        int index = 0;
 
+        // crypto
         bool is_crypto = false;
         std::vector<std::map<float, float>> crypto_hash_map;
         std::vector<float> crypto_total_weight;
 
-        bool is_duplicate = false;
-        int index = 0;
 
 
         AOVData(AtUniverse *universe, std::string output_string) {
@@ -328,7 +329,7 @@ struct Camera
     std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
     std::vector<AOVData> aovs;
 
-    unsigned aovs_upper_limit;
+    unsigned aovcount;
 
     const AtString atstring_rgba = AtString("RGBA");
     const AtString atstring_p = AtString("P");
@@ -1050,15 +1051,16 @@ public:
         }
     }
 
-    inline void filter_and_add_to_buffer(int px, int py, float filter_width_half, 
-                                        float inv_samples, float inv_density, float depth, 
+    inline void filter_and_add_to_buffer(int px, int py,
+                                        float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
 
-        float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
+        const float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+        const float filter_width_half = std::ceil(filter_width * 0.5);
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
         for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
@@ -1074,8 +1076,8 @@ public:
                 if (filter_weight == 0) continue;
 
                 for (auto &aov : aovs){
-                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_samples * inv_filter_samples * inv_density);
-                    else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
+                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_filter_samples * inv_density);
+                    else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
                 }
             }
         }
@@ -1273,7 +1275,7 @@ public:
             // AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
         }
         AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
-        aovs_upper_limit = aovs.size()+1;
+        aovcount = aovs.size()+1;
 
 
         // remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
