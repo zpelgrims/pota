@@ -183,6 +183,7 @@ struct AOVData {
 
     public:
         std::vector<AtRGBA> buffer;
+        std::vector<AtRGBA> buffer_noredist;
         TokenizedOutputLentil to;
 
         AtString name = AtString("");
@@ -207,6 +208,8 @@ struct AOVData {
         void allocate_regular_buffers(int xres, int yres) {
             buffer.clear();
             buffer.resize(xres*yres);
+            buffer_noredist.clear();
+            buffer_noredist.resize(xres*yres);
         }
 
         void allocate_cryptomatte_buffers(int xres, int yres) {
@@ -224,6 +227,7 @@ struct AOVData {
 
         void destroy_buffers() {
             buffer.clear();
+            buffer_noredist.clear()
             crypto_hash_map.clear();
             crypto_total_weight.clear();
         }
@@ -328,6 +332,7 @@ struct Camera
     std::vector<float> zbuffer;
     std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
     std::vector<AOVData> aovs;
+    std::vector<float> filter_weight_buffer;
 
     unsigned aovcount;
 
@@ -961,14 +966,11 @@ public:
     }
 
 
-    inline void add_to_buffer(AOVData &aov, int px, AtRGBA aov_value,
-                            float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
+    inline void add_to_buffer_noredist(AOVData &aov, int px, AtRGBA aov_value,
+                            float inv_samples, float filter_weight, float fitted_bidir_add_luminance, float depth,
                             bool transmitted_energy_in_sample, int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator) {
 
-
-        // const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
-        const float inv_aov_count = 1.0;
         
         switch(aov.type){
 
@@ -978,14 +980,14 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count;
-
+                aov.buffer_noredist[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight * inv_samples;
+                filter_weight_buffer[px] += filter_weight;
                 break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
                 const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+                aov.buffer_noredist[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight * inv_samples;
                 
                 break;
             }
@@ -1051,36 +1053,44 @@ public:
         }
     }
 
-    inline void filter_and_add_to_buffer(int px, int py,
+    inline void filter_and_add_to_buffer_noredist(int px, int py,
                                         float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
-
-        const float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
-        const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-        const float filter_width_half = std::ceil(filter_width * 0.5);
+        filter_width = 2.0;
+        // const float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
+        const AtVector2 &offset = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
+        const float filter_width_half = std::max(1.0, filter_width * 0.5);
 
         // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-        for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
-            for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
+        // for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
+        //     for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
 
-                if (y < 0 || y >= yres) continue; // edge fix
-                if (x < 0 || x >= xres) continue; // edge fix
+                // if (y < 0 || y >= yres) continue; // edge fix
+                // if (x < 0 || x >= xres) continue; // edge fix
 
-                const unsigned pixelnumber = static_cast<int>(xres * y + x);
+                const unsigned pixelnumber = static_cast<int>(xres * py + px);
             
-                AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-                float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
-                if (filter_weight == 0) continue;
+                // AtVector2 subpixel_pos_dist = AtVector2(offset.x) - x, (py+offset.y) - y);
+
+
+                // float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
+                const float r = AiSqr(2.0 / filter_width) * (AiSqr(offset.x) + AiSqr(offset.y));
+                if (r > 1.0f) return;
+
+                float weight = AiFastExp(2 * -r) * inv_density;
+
+
+
 
                 for (auto &aov : aovs){
-                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_filter_samples * inv_density);
-                    else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
+                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], 1.0 * weight);
+                    else add_to_buffer_noredist(aov, pixelnumber, aov_values[aov.index], 1.0, weight, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
                 }
-            }
-        }
+            // }
+        // }
     }
 
 
@@ -1156,10 +1166,10 @@ public:
         // xres = region_max_x - region_min_x;
         // yres = region_max_y - region_min_y;
 
-        if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
-            (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
-                AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
-        }
+        // if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
+        //     (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
+        //         AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
+        // }
 
         filter_width = 2.0;
         time_start = AiCameraGetShutterStart();
@@ -1170,6 +1180,7 @@ public:
 
         zbuffer.resize(xres * yres);
         zbuffer_debug.resize(xres * yres);
+        filter_weight_buffer.resize(xres * yres);
 
 
         // creates buffers for each AOV with lentil_filter (lentil_replaced_filter)
@@ -1340,6 +1351,7 @@ private:
         zbuffer.clear();
         zbuffer_debug.clear();
         aovs.clear();
+        filter_weight_buffer.clear();
     }
 
 

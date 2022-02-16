@@ -112,7 +112,7 @@ filter_pixel
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
       if (depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws) || 
-          sample_luminance < camera_data->bidir_min_luminance || 
+          // sample_luminance < camera_data->bidir_min_luminance || 
           AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
       }
@@ -126,12 +126,13 @@ filter_pixel
       float fitted_bidir_add_luminance = 0.0;
       if (camera_data->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = camera_data->additional_luminance_soft_trans(sample_luminance);
 
-
+      float y = std::max(0.0, std::pow(sample_luminance, 0.5) * camera_data->bidir_sample_mult);
+      // float sample_mult = camera_data->bidir_sample_mult
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
-      const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(camera_data->bidir_sample_mult,2) * 0.00001; // pixel area as baseline for sample count
-      if (circle_of_confusion < 0.5) redistribute = false; // don't redistribute under certain CoC size
+      const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(y,2) * 0.00001; // pixel area as baseline for sample count
+      if (circle_of_confusion < 0.7) redistribute = false; // don't redistribute under certain CoC size, emperically tested
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
-      samples = clamp(samples, 5, 10000);
+      samples = clamp(samples, 4, 10000);
       float inv_samples = 1.0/static_cast<float>(samples);
 
 
@@ -220,6 +221,7 @@ filter_pixel
 
         case ThinLens:
         {
+
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer(px, py, 
@@ -322,9 +324,10 @@ filter_pixel
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
-                                inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
+                                inv_samples, 1.0, fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
             }
+            
           }
         } break;
       }
