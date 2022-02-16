@@ -918,9 +918,9 @@ public:
 
 
     // get all depth samples so i can re-use them
-    void cryptomatte_construct_cache(std::map<AtString, std::map<float, float>> &crypto_hashmap_cache,
-                                            struct AtAOVSampleIterator* sample_iterator, 
-                                            const int sampleid) {
+    void cryptomatte_construct_cache(std::vector<std::map<float, float>> &crypto_hashmap_cache,
+                                    struct AtAOVSampleIterator* sample_iterator, 
+                                    const int sampleid) {
 
         for (auto &aov : aovs) {
             if (aov.is_crypto){
@@ -938,11 +938,11 @@ public:
 
                     quota -= sub_sample_weight;
 
-                    crypto_hashmap_cache[aov.name][sample_value] += sub_sample_weight;
+                    crypto_hashmap_cache[aov.index][sample_value] += sub_sample_weight;
                 }
 
                 // the remaining values gets allocated to the last sample
-                if (quota > 0.0) crypto_hashmap_cache[aov.name][sample_value] += quota;
+                if (quota > 0.0) crypto_hashmap_cache[aov.index][sample_value] += quota;
 
                 // reset is required because AiAOVSampleIteratorGetNextDepth() automatically moves to next sample after final depth sample
                 // still need to use the iterator afterwards, so need to do a reset to the current sample id
@@ -1054,7 +1054,7 @@ public:
                                         float inv_samples, float inv_density, float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
-                                        std::map<AtString, std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
+                                        std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
 
         float inv_filter_samples = (1.0 / (AI_PI*std::pow(filter_width, 2))); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
@@ -1077,7 +1077,7 @@ public:
 
 
                 for (auto &aov : aovs){
-                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.name], inv_samples * inv_filter_samples * inv_density);
+                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_samples * inv_filter_samples * inv_density);
                     else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_samples * inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
                 }
             }

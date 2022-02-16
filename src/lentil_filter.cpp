@@ -121,7 +121,7 @@ filter_pixel
       }
 
       // cryptomatte cache
-      std::map<AtString, std::map<float, float>> crypto_cache;
+      std::vector<std::map<float, float>> crypto_cache(camera_data->aovs_upper_limit);
       if (camera_data->cryptomatte_lentil) camera_data->cryptomatte_construct_cache(crypto_cache, iterator, sampleid);
 
 
@@ -214,7 +214,7 @@ filter_pixel
             unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
                                  inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                  transmitted_energy_in_sample, 1, iterator);
@@ -335,7 +335,7 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.name], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
                                 inv_samples, inverse_sample_density / std::pow(camera_data->filter_width,2), fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator);
