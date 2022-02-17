@@ -129,7 +129,7 @@ filter_pixel
 
       float luminance_mult = std::max(0.0, std::pow(sample_luminance, 0.5) * camera_data->bidir_sample_mult);
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
-      const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * luminance_mult * 0.00001; // pixel area as baseline for sample count
+      const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(luminance_mult, 2) * 0.00001; // pixel area as baseline for sample count
       if (circle_of_confusion < 0.6) redistribute = false; // don't redistribute under certain CoC size, emperically tested
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
       samples = clamp(samples, 6, 10000);
