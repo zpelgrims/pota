@@ -168,9 +168,15 @@ driver_process_bucket {
             // usualz
             else {
               AtRGBA image = aov_current->buffer[linear_pixel];
-              // if (((AtRGBA*)bucket_data)[in_idx].a >= 1.0) image /= (image.a == 0.0) ? 1.0 : image.a; // issue here
+              
 
-              if (camera_data->filter_weight_buffer[linear_pixel] != 0.0) image /= camera_data->filter_weight_buffer[linear_pixel];
+              if (aov_current->name != camera_data->atstring_lentil_debug) {
+                if ((camera_data->filter_weight_buffer[linear_pixel] != 0.0)){
+                  image /= camera_data->filter_weight_buffer[linear_pixel];
+                  
+                  if (((AtRGBA*)bucket_data)[in_idx].a <= 1.0) image *= (image.a == 0.0) ? 1.0 : image.a; // issue here
+                } 
+              }
 
               ((AtRGBA*)bucket_data)[in_idx] = image;
             }
