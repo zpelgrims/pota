@@ -1110,7 +1110,7 @@ public:
                 if (filter_weight == 0) return;
 
                 for (auto &aov : aovs){
-                    if (aov.is_crypto) continue; //add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_filter_samples * inv_density);
+                    if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
                     else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 1.0, 1.0, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight); 
                 }
             // }

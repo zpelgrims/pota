@@ -321,7 +321,7 @@ filter_pixel
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inv_samples);
               else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
                                 1.0, 1.0, fitted_bidir_add_luminance, depth,
                                 transmitted_energy_in_sample, 1, iterator, inv_samples);
