@@ -1091,7 +1091,7 @@ public:
                                         float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
-                                        std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
+                                        std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values, float inv_density){
 
 
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
@@ -1104,7 +1104,7 @@ public:
         float filter_weight = 1.0;
 
         for (auto &aov : aovs){
-            if (aov.is_crypto) continue; //add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
+            if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
             else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight); 
         }
     }
