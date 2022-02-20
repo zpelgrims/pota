@@ -963,14 +963,11 @@ public:
 
 
     inline void add_to_buffer(AOVData &aov, int px, AtRGBA aov_value,
-                            float inv_samples, float inv_density, float fitted_bidir_add_luminance, float depth,
+                            float fitted_bidir_add_luminance, float depth,
                             bool transmitted_energy_in_sample, int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator, float filter_weight) {
 
 
-        // const float inv_aov_count = 1.0/(double)aov_duplicates[aov_name];
-        const float inv_aov_count = 1.0;
-        
         switch(aov.type){
 
             case AI_TYPE_RGBA: {
@@ -979,14 +976,14 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples * inv_aov_count * filter_weight;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight;
                 filter_weight_buffer[px] += filter_weight;
                 break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
                 const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * inv_density * inv_samples;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight;
                 
                 break;
             }
@@ -1084,16 +1081,21 @@ public:
     //     }
     // }
 
+    inline float filter_weight_gaussian(AtVector2 p, float width) {
+        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+        if (r > 1.0f) return 0.0;
+        return AiFastExp(2 * -r);
+    }
 
     inline void filter_and_add_to_buffer_new(int px, int py,
-                                        float inv_density, float depth, 
+                                        float depth, 
                                         bool transmitted_energy_in_sample, int transmission_layer,
                                         struct AtAOVSampleIterator* iterator,
                                         std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
 
 
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-        const unsigned pixelnumber = static_cast<int>(xres * py + px);
+        const unsigned pixelnumber = xres * py + px;
     
         // AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
         // float filter_weight = filter_weight_gaussian(subpixel_position, filter_width);
@@ -1102,8 +1104,8 @@ public:
         float filter_weight = 1.0;
 
         for (auto &aov : aovs){
-            if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
-            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 1.0, 1.0, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight); 
+            if (aov.is_crypto) continue; //add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
+            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight); 
         }
     }
 
@@ -1185,7 +1187,7 @@ public:
         //         AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
         // }
 
-        filter_width = 2.0;
+        filter_width = 1.5;
         time_start = AiCameraGetShutterStart();
         time_end = AiCameraGetShutterEnd();
         imager_print_once_only = false;
@@ -1775,12 +1777,6 @@ private:
         } else {return 0.0;}
     }
 
-
-    inline float filter_weight_gaussian(AtVector2 p, float width) {
-        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
-        if (r > 1.0f) return 0.0;
-        return AiFastExp(2 * -r);
-    }
 
     
 

@@ -20,7 +20,7 @@ node_initialize
 
 node_update 
 {
-  AiFilterUpdate(node, 2.0);
+  AiFilterUpdate(node, 1.5);
 }
  
 filter_output_type
@@ -59,7 +59,7 @@ filter_pixel
     int samples_counter = 0;
     while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
     AiAOVSampleIteratorReset(iterator);
-    float AA_samples = std::sqrt(samples_counter) / 2.0;
+    float AA_samples = std::sqrt(samples_counter) / camera_data->filter_width;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
     if (static_cast<int>(AA_samples) != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
       camera_data->redistribution = false; // skip when aa samples are below final AA samples
@@ -173,58 +173,58 @@ filter_pixel
 
 
       switch (camera_data->cameraType){
-        case PolynomialOptics:
-        { 
-          if (std::abs(camera_space_sample_position.z) < (camera_data->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
+        // case PolynomialOptics:
+        // { 
+        //   if (std::abs(camera_space_sample_position.z) < (camera_data->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
-          // early out
-          if (redistribute == false){
-            camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    inverse_sample_density, depth, transmitted_energy_in_sample, 0,
-                                    iterator, crypto_cache, aov_values);
-            if (!transmitted_energy_in_sample) continue;
-          }
+        //   // early out
+        //   if (redistribute == false){
+        //     camera_data->filter_and_add_to_buffer_new(px, py, 
+        //                             inverse_sample_density, depth, transmitted_energy_in_sample, 0,
+        //                             iterator, crypto_cache, aov_values);
+        //     if (!transmitted_energy_in_sample) continue;
+        //   }
 
-          for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
+        //   for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
-            Eigen::Vector2d pixel;
-            Eigen::Vector2d sensor_position(0, 0);            
-            Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
+        //     Eigen::Vector2d pixel;
+        //     Eigen::Vector2d sensor_position(0, 0);            
+        //     Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
-              --count;
-              continue;
-            }
+        //     if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
+        //       --count;
+        //       continue;
+        //     }
 
-            pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
+        //     pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
 
-            // if outside of image
-            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
-                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-            {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame
-              continue;
-            }
+        //     // if outside of image
+        //     if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+        //         (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+        //     {
+        //       --count; // much room for improvement here, potentially many samples are wasted outside of frame
+        //       continue;
+        //     }
 
-            // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+        //     // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
 
-            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
+        //     unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
 
-            for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
-                                 1.0, 1.0, fitted_bidir_add_luminance, depth,
-                                 transmitted_energy_in_sample, 1, iterator, inv_samples);
-            }
-          }
-        } break;
+        //     for (auto &aov : camera_data->aovs){
+        //       if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], (inverse_sample_density/std::pow(camera_data->filter_width,2)) * inv_samples);
+        //       else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
+        //                          1.0, 1.0, fitted_bidir_add_luminance, depth,
+        //                          transmitted_energy_in_sample, 1, iterator, inv_samples);
+        //     }
+        //   }
+        // } break;
 
         case ThinLens:
         {
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    inverse_sample_density, depth, transmitted_energy_in_sample, 0,
+                                    depth, transmitted_energy_in_sample, 0,
                                     iterator, crypto_cache, aov_values);
             if (!transmitted_energy_in_sample) continue;
           }
@@ -322,11 +322,22 @@ filter_pixel
             AtVector2 offset_from_pixel_center(std::abs(0.5 - fmod(pixel_x, 1)), std::abs(0.5 - fmod(pixel_y, 1)));
 
 
+            // for (auto &aov : camera_data->aovs){
+            //   if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inv_samples);
+            //   else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
+            //                     fitted_bidir_add_luminance, depth,
+            //                     transmitted_energy_in_sample, 1, iterator, inv_samples);
+            // }
+
+          
+            // float filter_weight = camera_data->filter_weight_gaussian(offset_from_pixel_center, 2.0);
+            // if (filter_weight == 0) continue;
+
+            float filter_weight = 1.0;
+
             for (auto &aov : camera_data->aovs){
-              if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inv_samples);
-              else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index],
-                                1.0, 1.0, fitted_bidir_add_luminance, depth,
-                                transmitted_energy_in_sample, 1, iterator, inv_samples);
+                if (aov.is_crypto) continue; //add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples); 
             }
           }
         } break;
