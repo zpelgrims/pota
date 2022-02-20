@@ -114,7 +114,6 @@ driver_process_bucket {
         int y = j + bucket_yo;
         int x = i + bucket_xo;
         int in_idx = j * bucket_size_x + i;
-        // int linear_pixel = camera_data->coords_to_linear_pixel_region(x, y);
         int linear_pixel = camera_data->coords_to_linear_pixel(x, y);
 
         switch (aov_type){
@@ -172,8 +171,6 @@ driver_process_bucket {
               if (aov_current->name != camera_data->atstring_lentil_debug) {
                 if ((camera_data->filter_weight_buffer[linear_pixel] != 0.0)){
                   image /= camera_data->filter_weight_buffer[linear_pixel];
-                  
-                  // if (((AtRGBA*)bucket_data)[in_idx].a <= 1.0) image *= (image.a == 0.0) ? 1.0 : image.a; // issue here
                 } 
               }
 

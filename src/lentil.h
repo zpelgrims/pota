@@ -1049,37 +1049,6 @@ public:
         }
     }
 
-    // inline void filter_and_add_to_buffer(int px, int py,
-    //                                     float inv_density, float depth, 
-    //                                     bool transmitted_energy_in_sample, int transmission_layer,
-    //                                     struct AtAOVSampleIterator* iterator,
-    //                                     std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values){
-
-
-    //     const float inv_filter_samples = (1.0 / (AI_PI*filter_width*filter_width)); // filter_weight_gaussian returns 0 when samples fall outside of unit circle, account for this loss of energy
-    //     const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
-    //     const float filter_width_half = std::ceil(filter_width * 0.5);
-
-    //     // loop over all pixels in filter radius, then compute the filter weight based on the offset not to the original pixel (px, py), but the filter pixel (x, y)
-    //     for (unsigned y = py - filter_width_half; y <= py + filter_width_half; y++) {
-    //         for (unsigned x = px - filter_width_half; x <= px + filter_width_half; x++) {
-
-    //             if (y < 0 || y >= yres) continue; // edge fix
-    //             if (x < 0 || x >= xres) continue; // edge fix
-
-    //             const unsigned pixelnumber = static_cast<int>(xres * y + x);
-            
-    //             AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-    //             float filter_weight = filter_weight_gaussian(subpixel_pos_dist, filter_width);
-    //             if (filter_weight == 0) continue;
-
-    //             for (auto &aov : aovs){
-    //                 if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_filter_samples * inv_density);
-    //                 else add_to_buffer(aov, pixelnumber, aov_values[aov.index], inv_filter_samples, inv_density, 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator); 
-    //             }
-    //         }
-    //     }
-    // }
 
     inline float filter_weight_gaussian(AtVector2 p, float width) {
         const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
@@ -1096,11 +1065,9 @@ public:
 
         const AtVector2 &subpixel_position = AiAOVSampleIteratorGetOffset(iterator); // offset within original pixel
         const unsigned pixelnumber = xres * py + px;
-    
-        // AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
+        
         // float filter_weight = filter_weight_gaussian(subpixel_position, filter_width);
         // if (filter_weight == 0) return;
-
         float filter_weight = 1.0;
 
         for (auto &aov : aovs){
