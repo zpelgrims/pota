@@ -1096,8 +1096,10 @@ public:
         const unsigned pixelnumber = static_cast<int>(xres * py + px);
     
         // AtVector2 subpixel_pos_dist = AtVector2((px+subpixel_position.x) - x, (py+subpixel_position.y) - y);
-        float filter_weight = filter_weight_gaussian(subpixel_position, filter_width);
-        if (filter_weight == 0) return;
+        // float filter_weight = filter_weight_gaussian(subpixel_position, filter_width);
+        // if (filter_weight == 0) return;
+
+        float filter_weight = 1.0;
 
         for (auto &aov : aovs){
             if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);

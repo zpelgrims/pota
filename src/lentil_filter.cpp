@@ -319,6 +319,8 @@ filter_pixel
             unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y)) : camera_data->coords_to_linear_pixel(px, py);
 
             // >>>> currently i've decided not to filter the redistributed energy. If needed, there's an old prototype in github issue #230
+            AtVector2 offset_from_pixel_center(std::abs(0.5 - fmod(pixel_x, 1)), std::abs(0.5 - fmod(pixel_y, 1)));
+
 
             for (auto &aov : camera_data->aovs){
               if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inv_samples);
