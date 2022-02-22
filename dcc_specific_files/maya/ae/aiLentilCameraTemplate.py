@@ -59,10 +59,10 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
 
         # bidir
         self.beginLayout("Bidirectional")
-        self.addControl("bidirSampleMult", label="Samples")
-        self.addControl("bidirAddEnergyMinimumLuminance", label="Minimum luminance")
-        self.addControl("bidirAddEnergy", label="Additional Luminance")
-        self.addControl("bidirAddEnergyTransition", label="Add lum trans width")
+        self.addControl("bidirSampleMult", label="Sample Multiplier")
+        self.addControl("bidirAddEnergy", label="Additional Energy")
+        self.addControl("bidirAddEnergyMinimumLuminance", label="Additional Energy Minimum Treshold")
+        self.addControl("bidirAddEnergyTransition", label="Additional Energy Transition Width")
         self.endLayout()
 
         self.beginLayout("Bokeh Global")
