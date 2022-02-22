@@ -189,21 +189,22 @@ filter_pixel
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
+            // ca, works quite well
             AtRGB rgb_weight = AI_RGB_WHITE;
-            const int rand_ch = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-            const float weight = 0.1;
-            float lambda_per_sample = 0.0;
+            float lambda_per_sample = 0.55;
+            // const int rand_ch = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+            // const float weight = 0.1;
 
-            if (rand_ch == 0){
-              lambda_per_sample = linear_interpolate(1.0-weight, 0.35, 0.55);
-              rgb_weight *= AtRGB(3,0,0);
-            } else if (rand_ch == 1) {
-              lambda_per_sample = 0.55;
-              rgb_weight *= AtRGB(0,3,0);
-            } else if (rand_ch == 2) {
-              lambda_per_sample = linear_interpolate(weight, 0.55, 0.85);
-              rgb_weight *= AtRGB(0,0,3);
-            }
+            // if (rand_ch == 0){
+            //   lambda_per_sample = linear_interpolate(1.0-weight, 0.35, 0.55);
+            //   rgb_weight *= AtRGB(3,0,0);
+            // } else if (rand_ch == 1) {
+            //   lambda_per_sample = 0.55;
+            //   rgb_weight *= AtRGB(0,3,0);
+            // } else if (rand_ch == 2) {
+            //   lambda_per_sample = linear_interpolate(weight, 0.55, 0.85);
+            //   rgb_weight *= AtRGB(0,0,3);
+            // }
 
             if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg, lambda_per_sample)) {
               --count;
@@ -313,29 +314,29 @@ filter_pixel
               }
             }
 
-
+            // doesn't work yet, rethink the whole thing.. shouldn't i be 
+            AtRGB rgb_weight = AI_RGB_WHITE * 3;
             // AtVector2 lens_ca(lens.x, lens.y);
-            AtRGB rgb_weight = AI_RGB_WHITE;
-            // float emperical_ca_dist = 1.0;
+            // float emperical_ca_dist = 0.01;
             // if (emperical_ca_dist > 0.0){
             //     const AtVector2 p2(lens_ca.x, lens_ca.y);
             //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), sensor_position);
             //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
             //     AtVector2 aperture_0_center(0.0, 0.0);
-            //     AtVector2 aperture_1_center(- p2 * circle_of_confusion * distance_to_center * emperical_ca_dist);
-            //     AtVector2 aperture_2_center(p2 * circle_of_confusion * distance_to_center * emperical_ca_dist);
+            //     AtVector2 aperture_1_center(- lens_ca * circle_of_confusion * distance_to_center * emperical_ca_dist);
+            //     AtVector2 aperture_2_center(lens_ca * circle_of_confusion * distance_to_center * emperical_ca_dist);
                 
 
             //     if (random_aperture == 1)      lens_ca += aperture_1_center;
             //     else if (random_aperture == 2) lens_ca += aperture_2_center;
 
-            //     if (std::pow(lens_ca.x-aperture_1_center.x, 2) + std::pow(lens_ca.y - aperture_1_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //     if (std::pow(lens_ca.x-aperture_1_center.x, 2) + std::pow(lens_ca.y - aperture_1_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
             //         rgb_weight.r = 0.0;
             //     }
-            //     if (std::pow(lens_ca.x-aperture_0_center.x, 2) + std::pow(lens_ca.y - aperture_0_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //     if (std::pow(lens_ca.x-aperture_0_center.x, 2) + std::pow(lens_ca.y - aperture_0_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
             //         rgb_weight.b = 0.0;
             //     }
-            //     if (std::pow(lens_ca.x-aperture_2_center.x, 2) + std::pow(lens_ca.y - aperture_2_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //     if (std::pow(lens_ca.x-aperture_2_center.x, 2) + std::pow(lens_ca.y - aperture_2_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
             //         rgb_weight.g = 0.0;
             //     }
 
