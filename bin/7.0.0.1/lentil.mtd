@@ -214,19 +214,6 @@
 
 
 
-    [attr bidir_min_luminance]
-        min                 FLOAT   0.0
-        max                 FLOAT   100.0
-        default             FLOAT   1.0
-        softmin             FLOAT   0.0
-        softmax             FLOAT   5.0
-        desc                STRING  "Minimum threshold luminance for the bidirectional component to kick in."
-        animatable          BOOL    true
-        
-        houdini.label       STRING  "Trigger threshold"
-        houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
-
-    
     [attr bidir_sample_mult]
         min                 INT    0
         max                 INT    1000
@@ -240,7 +227,21 @@
         houdini.help        STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
 
 
-    [attr bidir_add_luminance]
+
+    [attr bidir_add_energy_minimum_luminance]
+        min                 FLOAT   0.0
+        max                 FLOAT   100.0
+        default             FLOAT   1.0
+        softmin             FLOAT   0.0
+        softmax             FLOAT   5.0
+        desc                STRING  "Minimum threshold luminance for the additional energy for out-of-focus regions."
+        animatable          BOOL    true
+        
+        houdini.label       STRING  "Additional Energy Minimum Treshold"
+        houdini.help        STRING "The minimum luminance a sample needs to have to trigger bidirectional redistribution. The luminance is equal to r*0*0.71 + b*0.072. The default of 1.0 is fine in most cases, although you might want to increase it when dealing with larger, high energy diffuse surfaces which won't contribute a whole lot to the bokeh."
+
+    
+    [attr bidir_add_energy]
         desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
         animatable          BOOL    true
         default             FLOAT   0.0
@@ -249,18 +250,18 @@
         softmin             FLOAT   0.0
         softmax             FLOAT   20.0
         
-        houdini.label       STRING  "Additional Luminance"
+        houdini.label       STRING  "Additional Energy"
         houdini.help        STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_min_luminance will be affected."
 
 
-    [attr bidir_add_luminance_transition]
+    [attr bidir_add_energy_transition]
         desc                STRING  "Additional luminance transition"
         animatable          BOOL    true
         min                 FLOAT    0.0
         max                 FLOAT    100.0
         softmin             FLOAT   0.0
         softmax             FLOAT   5.0
-        houdini.label       STRING  "Additional luminance transition"
+        houdini.label       STRING  "Additional Energy Transition"
         houdini.help        STRING "When boosting the bokeh, a transition zone is needed or you'll get annoying flickering. This transition zone is measured in linear energy."
 
 

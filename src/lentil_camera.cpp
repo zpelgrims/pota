@@ -45,10 +45,10 @@ node_parameters {
   AiParameterStr("bokeh_image_path", "");
 
   // bidir
-  AiParameterFlt("bidir_min_luminance", 1.0);
-  AiParameterInt("bidir_sample_mult", 20);
-  AiParameterFlt("bidir_add_luminance", 0.0);
-  AiParameterFlt("bidir_add_luminance_transition", 1.0);
+  AiParameterInt("bidir_sample_mult", 5);
+  AiParameterFlt("bidir_add_energy_minimum_luminance", 1.0);
+  AiParameterFlt("bidir_add_energy", 0.0);
+  AiParameterFlt("bidir_add_energy_transition", 1.0);
 
   // advanced
   AiParameterInt("vignetting_retries", 15);

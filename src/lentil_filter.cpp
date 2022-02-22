@@ -121,8 +121,8 @@ filter_pixel
 
 
       // additional luminance with soft transition
-      float fitted_bidir_add_luminance = 0.0;
-      if (camera_data->bidir_add_luminance > 0.0) fitted_bidir_add_luminance = camera_data->additional_luminance_soft_trans(sample_luminance);
+      float fitted_bidir_add_energy = 0.0;
+      if (camera_data->bidir_add_energy > 0.0) fitted_bidir_add_energy = camera_data->additional_luminance_soft_trans(sample_luminance);
 
 
       float luminance_mult = std::max(0.0, std::pow(sample_luminance, 0.5) * camera_data->bidir_sample_mult); // ^0.5 to slightly tweak the sample_luminance curve
@@ -228,7 +228,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;
@@ -315,7 +315,8 @@ filter_pixel
             }
 
             // doesn't work yet, rethink the whole thing.. shouldn't i be 
-            AtRGB rgb_weight = AI_RGB_WHITE * 3;
+            AtRGB rgb_weight = AI_RGB_WHITE;
+            // rgb_weight *= 3.0;
             // AtVector2 lens_ca(lens.x, lens.y);
             // float emperical_ca_dist = 0.01;
             // if (emperical_ca_dist > 0.0){
@@ -372,7 +373,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;

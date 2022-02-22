@@ -265,10 +265,10 @@ struct Camera
     int bokeh_aperture_blades;
     bool bokeh_enable_image;
     AtString bokeh_image_path;
-    double bidir_min_luminance;
     int bidir_sample_mult;
-    float bidir_add_luminance;
-    float bidir_add_luminance_transition;
+    double bidir_add_energy_minimum_luminance;
+    float bidir_add_energy;
+    float bidir_add_energy_transition;
     float exposure;
 
     // parameters PO
@@ -964,7 +964,7 @@ public:
 
 
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
-                            const float fitted_bidir_add_luminance, const float depth,
+                            const float fitted_bidir_add_energy, const float depth,
                             const bool transmitted_energy_in_sample, const int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
 
@@ -977,14 +977,14 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight * rgb_weight;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
                 filter_weight_buffer[px] += filter_weight;
                 break;
             }
 
             case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
                 const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight;
                 
                 break;
             }
@@ -1317,11 +1317,11 @@ public:
 
     inline float additional_luminance_soft_trans(const float sample_luminance){
         // additional luminance with soft transition
-        if (sample_luminance > bidir_min_luminance && sample_luminance < bidir_min_luminance+bidir_add_luminance_transition){
-            float perc = (sample_luminance - bidir_min_luminance) / bidir_add_luminance_transition;
-            return bidir_add_luminance * perc;          
-        } else if (sample_luminance > bidir_min_luminance+bidir_add_luminance_transition) {
-            return bidir_add_luminance;
+        if (sample_luminance > bidir_add_energy_minimum_luminance && sample_luminance < bidir_add_energy_minimum_luminance+bidir_add_energy_transition){
+            float perc = (sample_luminance - bidir_add_energy_minimum_luminance) / bidir_add_energy_transition;
+            return bidir_add_energy * perc;          
+        } else if (sample_luminance > bidir_add_energy_minimum_luminance+bidir_add_energy_transition) {
+            return bidir_add_energy;
         }
 
         return 0.0;
@@ -1416,12 +1416,12 @@ private:
         bokeh_anamorphic = clamp(bokeh_anamorphic, 0.01, 99999.0);
 
         // bidir params
-        bidir_min_luminance = AiNodeGetFlt(camera_node, "bidir_min_luminance");
         bokeh_enable_image = AiNodeGetBool(camera_node, "bokeh_enable_image");
         bokeh_image_path = AiNodeGetStr(camera_node, "bokeh_image_path");
         bidir_sample_mult = AiNodeGetInt(camera_node, "bidir_sample_mult");
-        bidir_add_luminance = AiNodeGetFlt(camera_node, "bidir_add_luminance");
-        bidir_add_luminance_transition = AiNodeGetFlt(camera_node, "bidir_add_luminance_transition");
+        bidir_add_energy_minimum_luminance = AiNodeGetFlt(camera_node, "bidir_add_energy_minimum_luminance");
+        bidir_add_energy = AiNodeGetFlt(camera_node, "bidir_add_energy");
+        bidir_add_energy_transition = AiNodeGetFlt(camera_node, "bidir_add_energy_transition");
         vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
     }
 
