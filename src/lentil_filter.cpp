@@ -61,7 +61,7 @@ filter_pixel
     AiAOVSampleIteratorReset(iterator);
     float AA_samples = std::sqrt(samples_counter) / camera_data->filter_width;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
-    if (static_cast<int>(AA_samples) != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
+    if (static_cast<int>(std::ceil(AA_samples)) != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
       camera_data->redistribution = false; // skip when aa samples are below final AA samples
     }
   }
@@ -191,7 +191,12 @@ filter_pixel
 
             if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
               --count;
-                  // if (((AtRGBA*)bucket_data)[in_idx].a <= 1.0) image *= (image.a == 0.0) ? 1.0 : image.a; // issue here
+              continue;
+            }
+
+            pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
+
+            // if outside of image
             if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
                 (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
             {
@@ -324,7 +329,6 @@ filter_pixel
         } break;
       }
     }
-
     AiShaderGlobalsDestroy(sg);
   } 
   
@@ -355,7 +359,6 @@ filter_pixel
       *((float*)data_out) = rgb_energy;
     } break;
   }
-  
 }
 
  
