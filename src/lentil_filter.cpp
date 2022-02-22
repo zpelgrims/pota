@@ -130,7 +130,7 @@ filter_pixel
       const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(luminance_mult, 2) * 0.00001; // pixel area as baseline for sample count
       if (circle_of_confusion < 0.4) redistribute = false; // don't redistribute under certain CoC size, emperically tested
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
-      samples = clamp(samples, 6, 10000);
+      samples = clamp(samples, 4, 10000);
       float inv_samples = 1.0/static_cast<float>(samples);
 
 
@@ -189,7 +189,23 @@ filter_pixel
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg)) {
+            AtRGB rgb_weight = AI_RGB_WHITE;
+            const int rand_ch = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+            const float weight = 0.1;
+            float lambda_per_sample = 0.0;
+
+            if (rand_ch == 0){
+              lambda_per_sample = linear_interpolate(1.0-weight, 0.35, 0.55);
+              rgb_weight *= AtRGB(3,0,0);
+            } else if (rand_ch == 1) {
+              lambda_per_sample = 0.55;
+              rgb_weight *= AtRGB(0,3,0);
+            } else if (rand_ch == 2) {
+              lambda_per_sample = linear_interpolate(weight, 0.55, 0.85);
+              rgb_weight *= AtRGB(0,0,3);
+            }
+
+            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg, lambda_per_sample)) {
               --count;
               continue;
             }
@@ -211,7 +227,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;
@@ -298,6 +314,38 @@ filter_pixel
             }
 
 
+            // AtVector2 lens_ca(lens.x, lens.y);
+            AtRGB rgb_weight = AI_RGB_WHITE;
+            // float emperical_ca_dist = 1.0;
+            // if (emperical_ca_dist > 0.0){
+            //     const AtVector2 p2(lens_ca.x, lens_ca.y);
+            //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), sensor_position);
+            //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
+            //     AtVector2 aperture_0_center(0.0, 0.0);
+            //     AtVector2 aperture_1_center(- p2 * circle_of_confusion * distance_to_center * emperical_ca_dist);
+            //     AtVector2 aperture_2_center(p2 * circle_of_confusion * distance_to_center * emperical_ca_dist);
+                
+
+            //     if (random_aperture == 1)      lens_ca += aperture_1_center;
+            //     else if (random_aperture == 2) lens_ca += aperture_2_center;
+
+            //     if (std::pow(lens_ca.x-aperture_1_center.x, 2) + std::pow(lens_ca.y - aperture_1_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //         rgb_weight.r = 0.0;
+            //     }
+            //     if (std::pow(lens_ca.x-aperture_0_center.x, 2) + std::pow(lens_ca.y - aperture_0_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //         rgb_weight.b = 0.0;
+            //     }
+            //     if (std::pow(lens_ca.x-aperture_2_center.x, 2) + std::pow(lens_ca.y - aperture_2_center.y, 2) > std::pow(camera_data->aperture_radius/camera_data->focus_distance, 2)) {
+            //         rgb_weight.g = 0.0;
+            //     }
+
+            //     if (rgb_weight == AI_RGB_ZERO){
+            //         --count;
+            //         continue;
+            //     }
+            // }
+
+
             // barrel distortion (inverse)
             if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
             
@@ -323,7 +371,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;

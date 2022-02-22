@@ -729,14 +729,15 @@ public:
                                 const int total_samples_taken,
                                 AtMatrix cam_to_world,
                                 AtVector sample_pos_ws,
-                                AtShaderGlobals *sg)
+                                AtShaderGlobals *sg, 
+                                float lambda_in)
     {
         int tries = 0;
         bool ray_succes = false;
 
         // initialize 5d light fields
-        Eigen::VectorXd sensor(5); sensor << 0,0,0,0, lambda;
-        Eigen::VectorXd out(5); out << 0,0,0,0, lambda;//out.setZero();
+        Eigen::VectorXd sensor(5); sensor << 0,0,0,0, lambda_in;
+        Eigen::VectorXd out(5); out << 0,0,0,0, lambda_in;//out.setZero();
         Eigen::Vector2d aperture(0,0);
         
         while(ray_succes == false && tries <= vignetting_retries){
@@ -777,7 +778,7 @@ public:
 
             sensor(0) = sensor(1) = 0.0;
 
-            float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda);
+            float transmittance = lens_lt_sample_aperture(target, aperture, sensor, out, lambda_in);
             if(transmittance <= 0) {
                 ++tries;
                 continue;
@@ -962,10 +963,10 @@ public:
     }
 
 
-    inline void add_to_buffer(AOVData &aov, int px, AtRGBA aov_value,
-                            float fitted_bidir_add_luminance, float depth,
-                            bool transmitted_energy_in_sample, int transmission_layer,
-                            struct AtAOVSampleIterator* sample_iterator, float filter_weight) {
+    inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
+                            const float fitted_bidir_add_luminance, const float depth,
+                            const bool transmitted_energy_in_sample, const int transmission_layer,
+                            struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
 
 
         switch(aov.type){
@@ -976,7 +977,7 @@ public:
                 if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
                 else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
 
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_luminance) * filter_weight * rgb_weight;
                 filter_weight_buffer[px] += filter_weight;
                 break;
             }
@@ -1072,7 +1073,7 @@ public:
 
         for (auto &aov : aovs){
             if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
-            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight); 
+            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight, AI_RGB_WHITE); 
         }
     }
 
