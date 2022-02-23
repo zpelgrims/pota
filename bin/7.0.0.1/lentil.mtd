@@ -215,11 +215,12 @@
 
 
     [attr bidir_sample_mult]
-        min                 INT    0
-        max                 INT    1000
-        default             INT    5
+        desc                STRING  "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
+        min                 INT     0
+        max                 INT     300
+        default             INT     5
         softmin             INT     0
-        softmax             INT     150
+        softmax             INT     50
         desc                STRING  "Multiplier on automatically determined bidirectional sampling count."
         animatable          BOOL    true
         
@@ -228,7 +229,7 @@
 
     
     [attr bidir_add_energy]
-        desc                STRING  "Add additional energy to bidirectionally sampled bokeh."
+        desc                STRING  "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit. Only pixels with energy abov param: bidir_add_energy_minimum_luminance will be affected."
         animatable          BOOL    true
         default             FLOAT   0.0
         min                 FLOAT   0.0
@@ -257,7 +258,7 @@
         desc                STRING  "Additional luminance transition"
         animatable          BOOL    true
         min                 FLOAT    0.0
-        max                 FLOAT    100.0
+        max                 FLOAT    10.0
         softmin             FLOAT   0.0
         softmax             FLOAT   5.0
         houdini.label       STRING  "Additional Energy Transition"
