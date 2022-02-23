@@ -33,7 +33,6 @@ node_initialize
  
 node_update {
     AtUniverse *universe = AiNodeGetUniverse(node);
-    AtRenderSession *render_session = AiUniverseGetRenderSession(universe);
     AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
     AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS    
 }
