@@ -28,3 +28,4 @@
 !bokeh_imgs/*.png
 
 /build/*
+/bin/*

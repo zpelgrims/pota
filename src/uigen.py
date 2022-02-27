@@ -233,23 +233,40 @@ class ShaderDef:
       return 'ShaderDef %s' % self.name
 
    def shader(self, d):
-      self.name = d['name']
-      self.intro = d['intro']
-      self.description = d['description']
-      self.output = d['output']
-      self.aov_shader = d.get('aov_shader')
-      self.c4d_classification = d.get('c4d_classification')
-      self.c4d_menu = d.get('c4d_menu')
-      self.c4d_command_id = d.get('c4d_command_id')
-      self.maya_name = d['maya_name']
-      self.maya_classification = d['maya_classification']
-      self.maya_id = d['maya_id']
-      self.maya_swatch = d['maya_swatch']
-      self.maya_bump = d['maya_bump']
-      self.maya_matte = d['maya_matte']
-      self.soft_name = d['soft_name']
-      self.soft_classification = d['soft_classification']
-      self.soft_version = d['soft_version']
+      if 'name' in d.keys():
+         self.name = d['name']
+      if 'intro' in d.keys():
+         self.intro = d['intro']
+      if 'description' in d.keys():
+         self.description = d['description']
+      if 'output' in d.keys():
+         self.output = d['output']
+      if 'aov_shader' in d.keys():
+         self.aov_shader = d.get('aov_shader')
+      if 'c4d_classification' in d.keys():
+         self.c4d_classification = d.get('c4d_classification')
+      if 'c4d_menu' in d.keys():
+         self.c4d_menu = d.get('c4d_menu')
+      if 'c4d_command_id' in d.keys():
+         self.c4d_command_id = d.get('c4d_command_id')
+      if 'maya_name' in d.keys():
+         self.maya_name = d['maya_name']
+      if 'maya_classification' in d.keys():
+         self.maya_classification = d['maya_classification']
+      if 'maya_id' in d.keys():
+         self.maya_id = d['maya_id']
+      if 'maya_swatch' in d.keys():
+         self.maya_swatch = d['maya_swatch']
+      if 'maya_bump' in d.keys():
+         self.maya_bump = d['maya_bump']
+      if 'maya_matte' in d.keys():
+         self.maya_matte = d['maya_matte']
+      if 'soft_name' in d.keys():
+         self.soft_name = d['soft_name']
+      if 'soft_classification' in d.keys():
+         self.soft_classification = d['soft_classification']
+      if 'soft_version' in d.keys():
+         self.soft_version = d['soft_version']
       if 'help_url' in d.keys():
          self.help_url = d['help_url']
       else:

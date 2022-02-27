@@ -17,24 +17,24 @@ def mkdir_p(path):
             pass
         else: raise
 
-MAJOR_VERSION = '1'
-MINOR_VERSION = '9'
+MAJOR_VERSION = '2'
+MINOR_VERSION = '1'
 PATCH_VERSION = '0'
 CM_VERSION = "%s.%s.%s" % (MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
-ARNOLD_VERSION = '7.0.0.0'
+ARNOLD_VERSION = '7.1.0.0'
 
 subdirs = [] 
 
 # pattern for files to include in the source distribution
-name_src = 'LentilArnold-src-%s.%s.%s' % (MAJOR_VERSION,MINOR_VERSION,PATCH_VERSION)
+name_src = 'lentil-src-%s.%s.%s' % (MAJOR_VERSION,MINOR_VERSION,PATCH_VERSION)
 ptrn_src = ['*.cpp', '*.h', '*.txt', '*.py', '*.ui', '*.cmake']
 
 # Binary distribution
 files_src = ['INSTALL', 'CMakeLists.txt', 'package.in.py', 'README', 'uigen.py']
 
-name_osx = 'LentilArnold-osx-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
-name_win = 'LentilArnold-win-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
-name_linux = 'LentilArnold-linux-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
+name_osx = 'lentil-osx-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
+name_win = 'lentil-win-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
+name_linux = 'lentil-linux-%s-ai%s' % (CM_VERSION, ARNOLD_VERSION)
 
 
 def copyPatternsToDistDir(subDirs, subDirPrefix, filePatterns, distDir):
@@ -100,3 +100,5 @@ elif platform.system() == "Linux":
     createBinaryDistribution(name_linux, droot)
 else:
     print 'Warning: unknown system "%s", not creating binary package' % platform.system()
+
+    
