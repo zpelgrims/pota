@@ -1412,8 +1412,8 @@ private:
         abb_coma = AiNodeGetFlt(camera_node, "abb_coma");
         circle_to_square = AiNodeGetFlt(camera_node, "bokeh_circle_to_square");
         circle_to_square = clamp(circle_to_square, 0.01, 0.99);
-        bokeh_anamorphic = AiNodeGetFlt(camera_node, "bokeh_anamorphic");
-        bokeh_anamorphic = clamp(bokeh_anamorphic, 0.01, 99999.0);
+        bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, "bokeh_anamorphic");
+        bokeh_anamorphic = clamp(bokeh_anamorphic, 0, 1.0);
 
         // bidir params
         bokeh_enable_image = AiNodeGetBool(camera_node, "bokeh_enable_image");
