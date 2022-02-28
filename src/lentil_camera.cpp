@@ -63,6 +63,7 @@ node_parameters {
 
 node_plugin_initialize {return lentil_crit_sec_init();}
 node_plugin_cleanup {lentil_crit_sec_close();}
+
 node_initialize {
   AiCameraInitialize(node);
   AiNodeSetLocalData(node, new Camera());

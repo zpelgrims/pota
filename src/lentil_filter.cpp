@@ -125,12 +125,12 @@ filter_pixel
       if (camera_data->bidir_add_energy > 0.0) fitted_bidir_add_energy = camera_data->additional_luminance_soft_trans(sample_luminance);
 
 
-      float luminance_mult = std::max(0.0, std::pow(sample_luminance, 0.5) * camera_data->bidir_sample_mult); // ^0.5 to slightly tweak the sample_luminance curve
+      float luminance_mult = std::max(0.0, std::pow(std::min(sample_luminance, 50.0f), 0.5) * camera_data->bidir_sample_mult); // ^0.5 to slightly tweak the sample_luminance curve, clamping at luminance 50
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
       const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(luminance_mult, 2) * 0.00001; // pixel area as baseline for sample count
       if (circle_of_confusion < 0.4) redistribute = false; // don't redistribute under certain CoC size, emperically tested
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
-      samples = clamp(samples, 4, 10000);
+      samples = clamp(samples, 4, 5000);
       float inv_samples = 1.0/static_cast<float>(samples);
 
 
