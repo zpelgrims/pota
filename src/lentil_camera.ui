@@ -5,7 +5,7 @@ ui.shader({
     'intro': 'http://www.lentil.xyz',
     'description': 'Advanced Camera Shader',
     'maya_name': 'lentil_camera',
-    'maya_classification': 'utility/aov',
+    'maya_classification': 'camera',
     'maya_id':'0x00070507',
     'c4d_classification': 'generic',
     'soft_name': 'Lentil Camera',
@@ -13,9 +13,9 @@ ui.shader({
     'houdini_icon': 'SHOP_lens',
 
     #  'houdini_label':'lentil',
-    #  'houdini_help_url':'http://www.lentil.xyz',
+     'help_url':'http://www.lentil.xyz',
     #  'houdini_optional':True,
-    #  'houdini_category':'AOV',
+     'houdini_category':'Lentil',
     #  'houdini_order':'first'
 
     # 'output': 'rgb',
@@ -110,6 +110,7 @@ with uigen.group(ui, 'Polynomial Optics', collapse=False):
             'cooke__speed_panchro__1920__100mm'
         ])
 
+
     with uigen.group(ui, 'Advanced', collapse=True):
       ui.parameter('wavelength', 'float', 550.0, label='Wavelength (nm)', 
           description='Wavelength in Nanometers. The Polynomial Optics model is spectral, but since Arnold is an RGB renderer, we leave trace every ray with the same wavelength.',
@@ -119,7 +120,7 @@ with uigen.group(ui, 'Polynomial Optics', collapse=False):
           mn=-10, mx=10, smn = -3, smx=3)
 
 
-with uigen.group(ui, 'Thin-Lens', collapse=False):
+with uigen.group(ui, 'ThinLens', collapse=False):
     ui.parameter('focal_length_lentil', 'float', 35, label='Focal Length (mm)', 
         description='Distance between the lens and the point at which the light converges in millimeters.',
         mn=0.01, mx=99999, smn=5, smx=500)

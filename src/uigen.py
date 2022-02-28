@@ -559,15 +559,15 @@ def WalkC4DtoAHeaderParameters(el, f, name):
 
 # Writes .h header file.
 def WriteC4DtoAHeaderFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "description", "ainode_%s.h" % name)
+   path = os.path.join(build_dir, "C4DtoA", "res", "description", "aitag_%s.h" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
       os.makedirs(os.path.dirname(path))
    f = open(path, 'w')
 
-   writei(f, '#ifndef _ainode_%s_h_' % name, 0)
-   writei(f, '#define _ainode_%s_h_' % name, 0) 
+   writei(f, '#ifndef _aitag_%s_h_' % name, 0)
+   writei(f, '#define _aitag_%s_h_' % name, 0) 
    writei(f, '', 0) 
    writei(f, 'enum', 0) 
    writei(f, '{', 0) 
@@ -623,16 +623,16 @@ def WalkC4DtoARes(el, f, name, d):
 
 # Writes .res resource file.
 def WriteC4DtoAResFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "description", "ainode_%s.res" % name)
+   path = os.path.join(build_dir, "C4DtoA", "res", "description", "aitag_%s.res" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
       os.makedirs(os.path.dirname(path))
    f = open(path, 'w')
 
-   writei(f, 'CONTAINER AINODE_%s' % name.upper(), 0)
+   writei(f, 'CONTAINER AITAG_%s' % name.upper(), 0)
    writei(f, '{', 0)
-   writei(f, 'NAME ainode_%s;' % name, 1)
+   writei(f, 'NAME aitag_%s;' % name, 1)
    writei(f, '', 0)
    writei(f, 'INCLUDE GVbase;', 1)
    writei(f, '', 0)
@@ -681,16 +681,16 @@ def WalkC4DtoAStringParameters(el, f, name):
 
 # Writes .str string file.
 def WriteC4DtoAStringFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "strings_us", "description", "ainode_%s.str" % name)
+   path = os.path.join(build_dir, "C4DtoA", "res", "strings_us", "description", "aitag_%s.str" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
       os.makedirs(os.path.dirname(path))
    f = open(path, 'w')
 
-   writei(f, 'STRINGTABLE ainode_%s' % name, 0)
+   writei(f, 'STRINGTABLE aitag_%s' % name, 0)
    writei(f, '{', 0)
-   writei(f, 'ainode_%s   "Arnold %s node";' % (name, name), 1) 
+   writei(f, 'aitag_%s   "Arnold %s node";' % (name, name), 1) 
    writei(f, '', 0)
    writei(f, 'C4DAI_%s_MAIN_GRP   "Main";' % (name.upper()), 1) 
 
@@ -826,6 +826,35 @@ def WriteHoudiniHeader(sd, f):
          folder_ROOT_list.append(new_folder)
       elif isinstance(el, Parameter):
          root_order_list.append(HoudiniEntry(el.name, 'param'))
+      
+
+   groupcounter = []
+   counter = 0
+   listening = False
+   for el in folder_ROOT_list:
+      # print el.name
+      listening = False
+      for el2 in el.group_list:
+         
+         if el2.etype == 'param':
+            if listening:
+               counter += 1
+         if el2.etype == 'group':
+            
+            if listening:
+               groupcounter.append(counter)
+               counter = 0
+
+            listening=True
+         # print ' ----- ', el2.name, ', ', el2.etype
+      
+      if counter > 0:
+         groupcounter.append(counter)
+      counter = 0
+            
+   # print groupcounter
+   
+
 
    # tell houdini how many groups we have and how big they are. in advance. because houdini can be dumb too sometimes
    if len(folder_ROOT_list):
@@ -836,22 +865,23 @@ def WriteHoudiniHeader(sd, f):
       writei(f, folder_ROOT_list_STR, 1)
 
    # now tell houdini about all the headings we have...
+
+
    heading_list = []
    heading_idx = 0
    for folder in folder_ROOT_list:
       for el in folder.group_list:
          if el.etype == 'group':
-            header_str = 'houdini.parm.heading.h%d STRING "%s"' % (heading_idx, el.name)
+            header_str = 'houdini.parm.collapsible.g%d STRING "%s;%d"' % (heading_idx, el.name, groupcounter[heading_idx])
             heading_idx += 1
             writei(f, header_str, 1)
 
    # write main houdini ordering
    order = 'houdini.order STRING "'
    for entry in root_order_list:
-      order += entry.name
-      order += ' '
+      order += entry.name + ' '
    if len(folder_ROOT_list):
-      order += ' ROOT"'
+      order += 'ROOT"'
    else:
       order += '"'
 
@@ -864,7 +894,7 @@ def WriteHoudiniHeader(sd, f):
       order_str = 'houdini.order%d STRING "' % order_idx
       for el in folder.group_list:
          if el.etype == 'group':
-            order_str = '%s h%d' % (order_str, heading_idx)
+            order_str = '%s g%d' % (order_str, heading_idx)
             heading_idx += 1
          else:
             order_str = '%s %s' % (order_str, el.name)
