@@ -638,8 +638,8 @@ public:
             
 
             // perturb ray direction to simulate coma aberration
-            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
-            dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
+            float abb_coma_multiplied = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
+            dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma_multiplied, false);
 
 
             if (optical_vignetting_distance > 0.0 && !deriv_ray){

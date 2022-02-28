@@ -50,11 +50,10 @@ class aiLentilCameraTemplate(templates.AttributeTemplate):
         self.addControl("opticalVignettingRadius", label="Optical Vignetting Radius")
         self.addControl("abbSpherical", label="Aberration (spherical)")
         self.addControl("abbDistortion", label="Aberration (distortion)")
+        self.addControl("abbComa", label="Aberration (coma)")
         self.addControl("bokehCircleToSquare", label="Circle to Square mapping")
         self.addControl("bokehAnamorphic", label="Anamorphic stretch")
-        self.beginLayout("Experimental", collapse=True)
-        self.addControl("abbComa", label="Aberration (coma)")
-        self.endLayout()
+
         self.endLayout()
 
         # bidir

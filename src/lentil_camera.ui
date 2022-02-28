@@ -135,18 +135,16 @@ with uigen.group(ui, 'ThinLens', collapse=False):
         ui.parameter('abb_distortion', 'float', 0, label='Aberration (distortion)', 
             description='Emperical distortion aberration. Note that lenses with a short focal length will generally exhibit greater amounts of distortion. We chose to not automatically model this, but rather keep it up to the user for greater artistic control.',
             mn=-50, mx=50, smn=-10, smx=10)
+        ui.parameter('abb_coma', 'float', 0, label='Aberration (coma)', 
+            description='Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results.',
+            mn=-1, mx=1)
         ui.parameter('bokeh_circle_to_square', 'float', 0, label='Square Bokeh', 
             description='Sometimes for artistic purposes you might want to make the bokeh a little more square. This can sometimes happen with anamorphic lenses. 0 is a perfectly circular highlight, 1 is perfectly square.',
             mn=0, mx=1, smn=0, smx=1)
         ui.parameter('bokeh_anamorphic', 'float', 1, label='Anamorphic Squeeze', 
             description='This scales the bokeh along the x-axis.',
             mn=0, mx=1, smn=0, smx=1)
-
-    with uigen.group(ui, 'Experimental', collapse=True ):
-        ui.parameter('abb_coma', 'float', 0, label='Aberration (coma)', 
-            description='Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results.',
-            mn=-1, mx=1)
-
+        
 
 with uigen.group(ui, 'Image-based Bokeh', collapse=True):
     ui.parameter('bokeh_enable_image', 'bool', False, label='Enable image-based bokeh', 

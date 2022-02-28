@@ -261,12 +261,13 @@ filter_pixel
             // ray through center of lens
             AtVector dir_from_center = AiV3Normalize(camera_space_sample_position);
             AtVector dir_lens_to_P = AiV3Normalize(camera_space_sample_position - lens);
+
             // perturb ray direction to simulate coma aberration
             // todo: the bidirectional case isn't entirely the same as the forward case.. fix!
             // current strategy is to perturb the initial sample position by doing the same ray perturbation i'm doing in the forward case
-            float abb_coma = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
-            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma, true);
-            // dir_lens_to_P = dir_from_center; // no coma
+            float abb_coma_multiplied = camera_data->abb_coma * abb_coma_multipliers(camera_data->sensor_width, camera_data->focal_length, dir_from_center, unit_disk);
+            dir_lens_to_P = abb_coma_perturb(dir_lens_to_P, dir_from_center, abb_coma_multiplied, true);
+
             AtVector camera_space_sample_position_perturbed = AiV3Length(camera_space_sample_position) * dir_lens_to_P;
             dir_from_center = AiV3Normalize(camera_space_sample_position_perturbed);
 
