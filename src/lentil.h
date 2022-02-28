@@ -638,8 +638,8 @@ public:
             
 
             // perturb ray direction to simulate coma aberration
-            // float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
-            // dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
+            float abb_coma = abb_coma * abb_coma_multipliers(sensor_width, focal_length, dir_from_center, unit_disk);
+            dir_from_lens = abb_coma_perturb(dir_from_lens, dir_from_lens, abb_coma, false);
 
 
             if (optical_vignetting_distance > 0.0 && !deriv_ray){
@@ -1404,8 +1404,8 @@ private:
 
         // tl specific params
         focal_length = clamp_min(AiNodeGetFlt(camera_node, "focal_length_lentil"), 0.01);
-        optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting_distance");
-        optical_vignetting_radius = AiNodeGetFlt(camera_node, "optical_vignetting_radius");
+        optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting");
+        optical_vignetting_radius = 1.0;//AiNodeGetFlt(camera_node, "optical_vignetting_radius");
         abb_spherical = AiNodeGetFlt(camera_node, "abb_spherical");
         abb_spherical = clamp(abb_spherical, 0.001, 0.999);
         abb_distortion = AiNodeGetFlt(camera_node, "abb_distortion");

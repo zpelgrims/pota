@@ -32,12 +32,12 @@ node_parameters {
 
   // tl specifics
   AiParameterFlt("focal_length_lentil", 35.0); // in mm
-  AiParameterFlt("optical_vignetting_distance", 0.0);
-  AiParameterFlt("optical_vignetting_radius", 2.0);
+  AiParameterFlt("optical_vignetting", 0.0);
+  // AiParameterFlt("optical_vignetting_radius", 1.0);
   AiParameterFlt("abb_spherical", 0.5);
   AiParameterFlt("abb_distortion", 0.0);
   AiParameterFlt("bokeh_circle_to_square", 0.0);
-  AiParameterFlt("bokeh_anamorphic", 1.0);
+  AiParameterFlt("bokeh_anamorphic", 0.0);
 
   // bokeh
   AiParameterInt("bokeh_aperture_blades", 0);

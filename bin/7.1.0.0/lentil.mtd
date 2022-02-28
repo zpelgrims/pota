@@ -13,7 +13,7 @@
     houdini.optional        BOOL true
 
     houdini.order   STRING "first"
-    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;7;Bokeh;3;Bidirectional;4;Additional;3"
+    houdini.parm.folder.first STRING  "General;6;PolynomialOptics;3;ThinLens;6;Bokeh;3;Bidirectional;4;Additional;3"
     
     [attr cameratype]
         desc                STRING  "Camera Type"
@@ -116,26 +116,15 @@
 
 
 
-    [attr optical_vignetting_distance]
+    [attr optical_vignetting]
         min                 FLOAT   0.0
         max                 FLOAT   20.0
         default             FLOAT   0.0
         desc                STRING  ""
         animatable          BOOL    true
         
-        houdini.label       STRING  "Optical Vignetting Distance"
+        houdini.label       STRING  "Optical Vignetting"
         houdini.help        STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor."
-
-
-    [attr optical_vignetting_radius]
-        min                 FLOAT   1.0
-        max                 FLOAT   5.0
-        default             FLOAT   1.0
-        desc                STRING  ""
-        animatable          BOOL    true
-        
-        houdini.label       STRING  "Optical Vignetting Radius"
-        houdini.help        STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The radius represents the radius of the housing."
 
 
     [attr abb_spherical]
@@ -174,7 +163,7 @@
     [attr bokeh_anamorphic]
         min                 FLOAT   0.0
         max                 FLOAT   1.0
-        default             FLOAT   1.0
+        default             FLOAT   0.0
         desc                STRING  "Squeeze the aperture in the y-axis."
         animatable          BOOL    true
         

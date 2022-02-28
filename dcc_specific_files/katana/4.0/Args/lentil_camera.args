@@ -108,8 +108,7 @@
 </page>
 <page name="Thin Lens" open="True"> 
 	<param name="focal_length_lentil" label="Focal Length (mm)" slider="True" slidermin="0.01" min="5.0" slidercenter = "35" slidermax="500"  max="9999.0"/>
-	<param name="optical_vignetting_distance" label="Optical Vignetting Distance" slider="True" slidermin="1" min="1" slidercenter = "15" slidermax="50" max="50"/>
-	<param name="optical_vignetting_radius" label="Optical Vignetting Radius" slider="True" slidermin="1" slidermax="5" max="5"/>
+	<param name="optical_vignetting" label="Optical Vignetting" slider="True" slidermin="0" min="0" slidercenter = "3" slidermax="10" max="50"/>
 	<param name="abb_spherical" label="Abberration (spherical)" slider="True" slidermin="0.0" slidercenter="0.5" slidermax="1" max="1"/>
 	<param name="abb_distortion" label="Abberration (distorsion)" slider="True" slidermin="-20.0" slidercenter="0.0" slidermax="20" max="20"/>
 	<param name="bokeh_circle_to_square" label="Circle to Square mapping" slider="True"/>
