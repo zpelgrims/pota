@@ -83,8 +83,9 @@ class Parameter(UiElement):
    mayane = False
    ui = ''
    houdini_disable_when = None
+   houdini_join_next = None
 
-   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None):
+   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None):
       self.name = name
       self.ptype = ptype
       self.default = default
@@ -93,6 +94,7 @@ class Parameter(UiElement):
       self.mayane = mayane
       self.ui = ui
       self.houdini_disable_when = houdini_disable_when
+      self.houdini_join_next = houdini_join_next
 
       if description is not None:
          if len(description) > 150:
@@ -211,8 +213,8 @@ class ShaderDef:
    def endGroup(self):
       self.current_parent = self.current_parent.parent
 
-   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None):
-      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when)
+   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None):
+      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next)
       if not self.current_parent.children:
          self.current_parent.children = [p]
       else:
@@ -973,6 +975,9 @@ def WriteMTD(sd, fn):
 
       if p.houdini_disable_when:
          WriteMTDParam(f, "houdini.disable_when", "string", p.houdini_disable_when, 2)
+
+      if p.houdini_join_next:
+         WriteMTDParam(f, "houdini.join_next", "bool", p.houdini_join_next, 2)
 
    for a in sd.aovs:
       writei(f, '[attr %s]' % a.name, 1)

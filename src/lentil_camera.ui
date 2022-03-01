@@ -117,6 +117,7 @@ with uigen.group(ui, 'Polynomial Optics', collapse=False):
         ])
 
 
+
     #with uigen.group(ui, 'advanced', collapse=True):
     ui.parameter('wavelength', 'float', 550.0, label='Wavelength (nm)', 
         description='Wavelength in Nanometers. The Polynomial Optics model is spectral, but since Arnold is an RGB renderer, we leave trace every ray with the same wavelength.',
@@ -152,8 +153,9 @@ with uigen.group(ui, 'Thin Lens', collapse=False):
         
 
 with uigen.group(ui, 'Bokeh Texture', collapse=True):
-    ui.parameter('bokeh_enable_image', 'bool', False, label='Enable image-based bokeh', 
-        description='This option replaces the circular/polygonal aperture with a texture-based one.')
+    ui.parameter('bokeh_enable_image', 'bool', False, label='Enable Texture', 
+        description='This option replaces the circular/polygonal aperture with a texture-based one.',
+        houdini_join_next=True)
     ui.parameter('bokeh_image_path', 'string', '', label='Filepath', 
         description='Supply small-ish images. The visual quality will not increase much above 250x250, but the pre-computation time will.',
         houdini_disable_when='{ bokeh_enable_image == 0 }{ enable_dof == 0 }')
