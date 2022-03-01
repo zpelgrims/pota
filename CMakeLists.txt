@@ -57,7 +57,7 @@ else()
 endif()
 
 # Set up installation paths
-set(DSO_INSTALL_DIR ${INSTALL_DIR})
+set(DSO_INSTALL_DIR ${INSTALL_DIR}/bin)
 set(MTD_INSTALL_DIR ${INSTALL_DIR}/bin)
 set(AE_INSTALL_DIR ${INSTALL_DIR}/ae)
 set(AEXML_INSTALL_DIR ${INSTALL_DIR}/aexml)

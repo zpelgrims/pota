@@ -82,8 +82,9 @@ class Parameter(UiElement):
    presets = None
    mayane = False
    ui = ''
+   houdini_disable_when = None
 
-   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui=''):
+   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None):
       self.name = name
       self.ptype = ptype
       self.default = default
@@ -91,6 +92,7 @@ class Parameter(UiElement):
       self.presets = presets
       self.mayane = mayane
       self.ui = ui
+      self.houdini_disable_when = houdini_disable_when
 
       if description is not None:
          if len(description) > 150:
@@ -209,8 +211,8 @@ class ShaderDef:
    def endGroup(self):
       self.current_parent = self.current_parent.parent
 
-   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui=''):
-      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui)
+   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None):
+      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when)
       if not self.current_parent.children:
          self.current_parent.children = [p]
       else:
@@ -857,12 +859,17 @@ def WriteHoudiniHeader(sd, f):
 
 
    # tell houdini how many groups we have and how big they are. in advance. because houdini can be dumb too sometimes
+   groups_list = []
    if len(folder_ROOT_list):
-      folder_ROOT_list_STR = 'houdini.parm.folder.ROOT STRING "'
+      idx = 0
       for folder in folder_ROOT_list:
-         folder_ROOT_list_STR += '%s;%d;' % (folder.name, len(folder.group_list))
-      folder_ROOT_list_STR += '"'
-      writei(f, folder_ROOT_list_STR, 1)
+         folder_ROOT_list_STR = 'houdini.parm.group.g%d STRING "' % idx
+         folder_ROOT_list_STR += '%s;%d' % (folder.name, len(folder.group_list))
+         folder_ROOT_list_STR += '"'
+         writei(f, folder_ROOT_list_STR, 1)
+         groups_list.append('g%d'%idx)
+         idx += 1
+         
 
    # now tell houdini about all the headings we have...
 
@@ -872,33 +879,28 @@ def WriteHoudiniHeader(sd, f):
    for folder in folder_ROOT_list:
       for el in folder.group_list:
          if el.etype == 'group':
-            header_str = 'houdini.parm.collapsible.g%d STRING "%s;%d"' % (heading_idx, el.name, groupcounter[heading_idx])
+            header_str = 'houdini.parm.group.c%d STRING "%s;%d"' % (heading_idx, el.name, groupcounter[heading_idx])
             heading_idx += 1
-            writei(f, header_str, 1)
+            #writei(f, header_str, 1)
 
-   # write main houdini ordering
-   order = 'houdini.order STRING "'
-   for entry in root_order_list:
-      order += entry.name + ' '
-   if len(folder_ROOT_list):
-      order += 'ROOT"'
-   else:
-      order += '"'
-
-   writei(f, order, 1)
 
    # now tell houdini what's actually in the damn groups
    order_idx = 2
    heading_idx = 0
+   folder_idx = 0
    for folder in folder_ROOT_list:
-      order_str = 'houdini.order%d STRING "' % order_idx
+      if folder_idx == 0:
+         order_str = 'houdini.order STRING "%s' % groups_list[folder_idx]
+      else:
+         order_str = '"%s' % groups_list[folder_idx]
+      folder_idx += 1
       for el in folder.group_list:
-         if el.etype == 'group':
-            order_str = '%s g%d' % (order_str, heading_idx)
-            heading_idx += 1
-         else:
+         # if el.etype == 'group':
+         #    order_str = '%s c%d' % (order_str, heading_idx)
+         #    heading_idx += 1
+         # else:
             order_str = '%s %s' % (order_str, el.name)
-      order_str += '"'
+      order_str += ' "'
       writei(f, order_str, 1)
       order_idx += 1
 
@@ -968,6 +970,9 @@ def WriteMTD(sd, fn):
       if p.ui == 'file':
          WriteMTDParam(f, "c4d.gui_type", "int", 3, 2)
          WriteMTDParam(f, "houdini.type", "string", "file:image", 2)
+
+      if p.houdini_disable_when:
+         WriteMTDParam(f, "houdini.disable_when", "string", p.houdini_disable_when, 2)
 
    for a in sd.aovs:
       writei(f, '[attr %s]' % a.name, 1)
