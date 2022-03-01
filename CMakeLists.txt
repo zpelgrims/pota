@@ -16,7 +16,6 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(CMAKE_CXX_STANDARD 17)
 
-set(INSTALL_ROOT ${CMAKE_SOURCE_DIR}/dist)
 
 
 # Compiler flags
@@ -43,9 +42,12 @@ find_package(Arnold REQUIRED)
 include_directories(${ARNOLD_INCLUDE_DIR})
 link_directories(${ARNOLD_LIBRARY_DIR})
 
+set(INSTALL_ROOT ${CMAKE_SOURCE_DIR}/dist/lentil${CM_MAJOR_VERSION}.${CM_MINOR_VERSION}.${CM_PATCH_VERSION}-${CMAKE_SYSTEM_NAME}-ai${ARNOLD_VERSION})
+
+
 if (NOT DEFINED INSTALL_DIR)
     if (DEFINED INSTALL_ROOT)
-        set(INSTALL_DIR "${INSTALL_ROOT}/${CM_VERSION}/${ARNOLD_VERSION}")
+        set(INSTALL_DIR "${INSTALL_ROOT}")
         message("INSTALL_ROOT defined. Adding versions automatically:\n\t${INSTALL_DIR}")
     else()
         set(INSTALL_DIR "${CMAKE_BINARY_DIR}/../bin/${ARNOLD_VERSION}")
@@ -64,7 +66,7 @@ set(NEXML_INSTALL_DIR ${INSTALL_DIR}/aexml)
 set(SPDL_INSTALL_DIR ${INSTALL_DIR}/spdl)
 set(ARGS_INSTALL_DIR ${INSTALL_DIR}/Args)
 
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/docs)
+# file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/docs)
 
 message("Shader binaries will be installed to:\n\t${DSO_INSTALL_DIR}")
 message("Shader MTD will be installed to: \n\t${MTD_INSTALL_DIR}")
