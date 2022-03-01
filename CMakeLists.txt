@@ -12,12 +12,11 @@ set(CM_VERSION "${CM_MAJOR_VERSION}.${CM_MINOR_VERSION}.${CM_PATCH_VERSION}")
 
 set(CMAKE_VERBOSE_MAKEFILE FALSE)
 set(CMAKE_SKIP_RPATH TRUE)
-
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-
 set(CMAKE_CXX_STANDARD 17)
+
+set(INSTALL_ROOT ${CMAKE_SOURCE_DIR}/dist)
 
 
 # Compiler flags
@@ -80,6 +79,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 # Set the list of subdirectories to recurse into to find stuff to build
 set(SUBDIRECTORIES 
+    common
     src
 )
 
