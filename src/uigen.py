@@ -344,7 +344,8 @@ def WalkAETemplate(el, f, d):
       writei(f, 'self.addControl("%s", label="%s", annotation="%s")' % (el.name, el.label, el.short_description), d)
    elif isinstance(el, Parameter):
       if el.ptype == 'float':
-         writei(f, 'self.addCustomFlt("%s")' % el.name, d)
+         #writei(f, 'self.addCustomFlt("%s")' % el.name, d)
+         writei(f, 'self.addControl("%s", label="%s", annotation="%s")' % (el.name, el.label, el.short_description), d)
       elif el.ptype == 'rgb':
          writei(f, 'self.addCustomRgb("%s")' % el.name, d)
       else:
@@ -361,25 +362,52 @@ def WalkAETemplateParams(el, f, d):
 
 def WriteAETemplate(sd, fn):
    f = open(fn, 'w')
-   writei(f, 'import pymel.core as pm', 0)
-   writei(f, 'from alShaders import *\n', 0)
+   writei(f, 'import mtoa.ui.ae.templates as templates', 0)
+   writei(f, 'import maya.cmds as cmds', 0)
+   writei(f, 'import mtoa.ui.ae.utils as aeUtils', 0)
+   writei(f, 'from mtoa.ui.ae.shaderTemplate import ShaderAETemplate', 0)
 
-   writei(f, 'class AE%sTemplate(alShadersTemplate):' % sd.maya_name, 0)
-   writei(f, 'controls = {}', 1)
-   writei(f, 'params = {}', 1)
+   writei(f, 'class AE%sTemplate(templates.AttributeTemplate):' % sd.maya_name, 0)
+   # writei(f, 'controls = {}', 1)
+   # writei(f, 'params = {}', 1)
+   writei(f, 'def filenameEditBokehInput(self, mData) :', 1)
+   writei(f, "attr = self.nodeAttr('bokehImagePath')", 2)
+   writei(f, "cmds.setAttr(attr,mData,type='string')", 2)
+   writei(f, '')
+
+   writei(f, 'def LoadFilenameButtonPushBokehInput(self, *args):', 1)
+   writei(f, "basicFilter = 'All Files (*.*)'", 2)
+   writei(f, "ret = cmds.fileDialog2(fileFilter=basicFilter, dialogStyle=2, cap='Select file location',fm=0)", 2)
+   writei(f, "if ret is not None and len(ret):", 2)
+   writei(f, "self.filenameEditBokehInput(ret[0])", 3)
+   writei(f, "cmds.textFieldButtonGrp('filenameBokehGrpInput', edit=True, text=ret[0])", 3)
+   writei(f, '')
+    
+        
+   writei(f, 'def filenameNewBokehInput(self, nodeName):', 1)
+   writei(f, "path = cmds.textFieldButtonGrp('filenameBokehGrpInput', label='Bokeh Image', changeCommand=self.filenameEditBokehInput, width=300)", 2)
+   writei(f, "cmds.textFieldButtonGrp(path, edit=True, text=cmds.getAttr(nodeName))", 2)
+   writei(f, "cmds.textFieldButtonGrp(path, edit=True, buttonLabel='...', buttonCommand=self.LoadFilenameButtonPushBokehInput)", 2)
+   writei(f, '')
+
+    
+   writei(f, 'def filenameReplaceBokehInput(self, nodeName):', 1)
+   writei(f, "cmds.textFieldButtonGrp('filenameBokehGrpInput', edit=True, text=cmds.getAttr(nodeName) )", 2)
+   writei(f, '')
+        
    
    writei(f, 'def setup(self):', 1)
 
-   writei(f, 'self.params.clear()', 2)
-   for e in sd.root.children:
-      WalkAETemplateParams(e, f, 2)
+   # writei(f, 'self.params.clear()', 2)
+   # for e in sd.root.children:
+   #    WalkAETemplateParams(e, f, 2)
    
    writei(f, '')
 
    if sd.maya_swatch:
       writei(f, 'self.addSwatch()', 2)
 
-   writei(f, 'self.beginScrollLayout()', 2) # begin main scrollLayout
+   # writei(f, 'self.beginScrollLayout()', 2) # begin main scrollLayout
    writei(f, '')
 
    for e in sd.root.children:
@@ -389,12 +417,16 @@ def WriteAETemplate(sd, fn):
       writei(f, 'self.addBumpLayout()', 2)      
 
    writei(f, '')
-   writei(f, 'pm.mel.AEdependNodeTemplate(self.nodeName)', 2)
+   # writei(f, 'pm.mel.AEdependNodeTemplate(self.nodeName)', 2)
 
-   writei(f, 'self.addExtraControls()', 2)
+   # writei(f, 'self.addExtraControls()', 2)
+
+   # writei(f, '')
+   # writei(f, 'self.endScrollLayout()', 2) #end main scrollLayout
 
    writei(f, '')
-   writei(f, 'self.endScrollLayout()', 2) #end main scrollLayout
+   writei(f, 'templates.registerTranslatorUI(AE{}Template, "camera", "{}")'.format(sd.maya_name, sd.maya_name), 0)
+   
 
    f.close()
 
