@@ -83,8 +83,9 @@ class Parameter(UiElement):
    ui = ''
    houdini_disable_when = None
    houdini_join_next = None
+   houdini_default = None
 
-   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None):
+   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None):
       self.name = name
       self.ptype = ptype
       self.default = default
@@ -94,6 +95,7 @@ class Parameter(UiElement):
       self.ui = ui
       self.houdini_disable_when = houdini_disable_when
       self.houdini_join_next = houdini_join_next
+      self.houdini_default = houdini_default
 
       if description is not None:
          if len(description) > 150:
@@ -212,8 +214,8 @@ class ShaderDef:
    def endGroup(self):
       self.current_parent = self.current_parent.parent
 
-   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None):
-      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next)
+   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None):
+      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next, houdini_default)
       if not self.current_parent.children:
          self.current_parent.children = [p]
       else:
@@ -992,13 +994,14 @@ def WriteMTD(sd, fn):
    writei(f, '')
 
    for p in sd.parameters:
-      writei(f, '[attr %s]' % p.name, 1)
+      writei(f, '\n[attr %s]' % p.name, 1)
       writei(f, 'houdini.label STRING "%s"' % p.label, 2)
       WriteMTDParam(f, "min", "float", p.mn, 2)
       WriteMTDParam(f, "max", "float", p.mx, 2)
       WriteMTDParam(f, "softmin", "float", p.smn, 2)
       WriteMTDParam(f, "softmax", "float", p.smx, 2)               
       WriteMTDParam(f, "desc", "string", p.description, 2)
+      WriteMTDParam(f, "houdini.help", "string", p.description, 2)
       WriteMTDParam(f, "linkable", "bool", p.connectible, 2)
       if p.ui == 'file':
          WriteMTDParam(f, "c4d.gui_type", "int", 3, 2)
@@ -1009,6 +1012,9 @@ def WriteMTD(sd, fn):
 
       if p.houdini_join_next:
          WriteMTDParam(f, "houdini.join_next", "bool", p.houdini_join_next, 2)
+      
+      if p.houdini_default:
+         WriteMTDParam(f, "houdini.default", "enum", p.houdini_default,2)
 
    for a in sd.aovs:
       writei(f, '[attr %s]' % a.name, 1)

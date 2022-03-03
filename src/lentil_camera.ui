@@ -4,7 +4,7 @@ ui.shader({
     'name': 'lentil_camera',
     'intro': 'http://www.lentil.xyz',
     'description': 'Advanced Camera Shader',
-    'maya_name': 'lentil_camera',
+    'maya_name': 'camera',
     'maya_classification': 'camera',
     'maya_id':'0x00070507',
     'c4d_classification': 'generic',
@@ -39,7 +39,7 @@ with uigen.group(ui, 'General', collapse=False):
 
     ui.parameter('units', 'enum', 'cm', label='Scene Units', 
       description='Use Centimeter in Maya, use Meter for Houdini (default universe scaling)',
-      enum_names=['mm', 'cm', 'm'])
+      enum_names=['mm', 'cm', 'm'], houdini_default='m')
 
     ui.parameter('sensor_width', 'float', 36, label='Sensor Width (mm)', 
       description='Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens.',
@@ -63,6 +63,7 @@ with uigen.group(ui, 'General', collapse=False):
     ui.parameter('exp', 'float', 150, label='Exposure', 
       description='Exposure Multiplier',
       mn=0, mx=99999, smn=0, smx=5)
+
 
 
 with uigen.group(ui, 'Polynomial Optics', collapse=False):
@@ -115,7 +116,6 @@ with uigen.group(ui, 'Polynomial Optics', collapse=False):
             'angenieux__double_gauss__1953__85mm',
             'cooke__speed_panchro__1920__100mm'
         ])
-
 
 
     #with uigen.group(ui, 'advanced', collapse=True):

@@ -33,8 +33,9 @@ node_initialize
  
 node_update {
     AtUniverse *universe = AiNodeGetUniverse(node);
-    AiRenderSetHintInt(render_session, AtString("imager_padding"), 0);
-    AiRenderSetHintInt(render_session, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS    
+    AtRenderSession *render_session_duplicate = AiUniverseGetRenderSession(universe);
+    AiRenderSetHintInt(render_session_duplicate, AtString("imager_padding"), 0);
+    AiRenderSetHintInt(render_session_duplicate, AtString("imager_schedule"), 0x02); // SEEMS TO CAUSE ISSUES WITH NEGATIVE RENDER REGIONS    
 }
  
 driver_supports_pixel_type 
