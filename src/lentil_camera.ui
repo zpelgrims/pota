@@ -159,7 +159,7 @@ with uigen.group(ui, 'Bokeh Texture', collapse=True):
         houdini_disable_when='{ bokeh_enable_image == 0 }{ enable_dof == 0 }')
 
 
-with uigen.group(ui, 'Bidirectional', collapse=False):
+with uigen.group(ui, 'Bidirectional', collapse=True):
     ui.parameter('vignettingRetries', 'int', 15, label='Vignetting Quality', 
         description='Since we are modeling real lenses, it is possible that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border.',
         mn=1, mx=500, smn=1, smx=50, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
