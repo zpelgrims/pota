@@ -1,11 +1,11 @@
 //Maya ASCII 2020 scene
 //Name: lentil_base_setup.ma
-//Last modified: Fri, Jan 14, 2022 02:14:53 PM
+//Last modified: Thu, Mar 03, 2022 09:48:14 PM
 //Codeset: 1252
 requires maya "2020";
 requires -nodeType "aiOptions" -nodeType "aiAOV" -nodeType "aiAOVDriver" -nodeType "aiAOVFilter"
 		 -nodeType "aiSkyDomeLight" -nodeType "aiStateFloat" -nodeType "aiImagerLentil" -nodeType "cryptomatte"
-		 "mtoa" "5.0.0.2";
+		 "mtoa" "5.1.1.beta37";
 requires "stereoCamera" "10.0";
 requires "stereoCamera" "10.0";
 currentUnit -l centimeter -a degree -t film;
@@ -14,18 +14,18 @@ fileInfo "product" "Maya 2020";
 fileInfo "version" "2020";
 fileInfo "cutIdentifier" "202002251615-329d215872";
 fileInfo "osv" "Microsoft Windows 10 Technical Preview  (Build 19042)\n";
-fileInfo "UUID" "EAA3BFD9-495F-A464-C648-70944A7843A9";
+fileInfo "UUID" "5365B98D-4BA2-AFA2-3A48-47BC7BED98C7";
 createNode transform -s -n "persp";
 	rename -uid "7979F7A5-43D1-557C-D606-22B293D46CA7";
 	setAttr ".v" no;
-	setAttr ".t" -type "double3" 4.3006228610144071 20.552536001743213 222.78833876869976 ;
+	setAttr ".t" -type "double3" 2.7062729569894937 23.673717745756772 288.02501002769878 ;
 	setAttr ".r" -type "double3" -2.7383527296039651 -1.4000000000002282 -6.2138757676485337e-18 ;
 createNode camera -s -n "perspShape" -p "persp";
 	rename -uid "823F5335-4F55-A022-B660-04A77F21778B";
 	setAttr -k off ".v" no;
 	setAttr ".ovr" 1.3;
 	setAttr ".fl" 40;
-	setAttr ".coi" 254.222958135353;
+	setAttr ".coi" 319.55370896565074;
 	setAttr ".imn" -type "string" "persp";
 	setAttr ".den" -type "string" "persp_depth";
 	setAttr ".man" -type "string" "persp_mask";
@@ -33,9 +33,9 @@ createNode camera -s -n "perspShape" -p "persp";
 	setAttr ".dr" yes;
 	setAttr ".ai_translator" -type "string" "lentil_camera";
 	setAttr ".fstop" 1.3999999761581421;
-	setAttr ".focus_dist" 40;
-	setAttr ".optical_vignetting_distance" 2;
-	setAttr ".bidir_sample_mult" 10;
+	setAttr ".focusDist" 30;
+	setAttr ".focalLengthLentil" 40;
+	setAttr ".opticalVignetting" 3;
 createNode transform -s -n "top";
 	rename -uid "9F6F2133-49A8-CA0A-727A-349A21BF4F2A";
 	setAttr ".v" no;
@@ -755,19 +755,19 @@ createNode aiSkyDomeLight -n "aiSkyDomeLightShape1" -p "aiSkyDomeLight1";
 	setAttr ".sc" -type "float3" 0.044 0.044 0.044 ;
 	setAttr ".aal" -type "attributeAlias" {"exposure","aiExposure"} ;
 createNode lightLinker -s -n "lightLinker1";
-	rename -uid "1F577730-43E0-2A92-7E89-8DBF2979584E";
+	rename -uid "D913E5C6-4CE8-08A5-2E33-AB816E30EAFC";
 	setAttr -s 2 ".lnk";
 	setAttr -s 2 ".slnk";
 createNode shapeEditorManager -n "shapeEditorManager";
-	rename -uid "725A8892-4CA0-E706-D6EA-C38355FAF247";
+	rename -uid "C10117F1-4E7F-643A-CFA9-11824DD83ED9";
 createNode poseInterpolatorManager -n "poseInterpolatorManager";
-	rename -uid "3F1888A3-45CD-15C5-DF69-DD9396CC923A";
+	rename -uid "5683A8B0-49AD-D0E8-1962-D585BA693CBF";
 createNode displayLayerManager -n "layerManager";
-	rename -uid "8F9235F1-45DA-01B9-2D9F-B0B835363103";
+	rename -uid "FA7E230D-4D4D-F1FC-5E56-1F953E38EDB7";
 createNode displayLayer -n "defaultLayer";
 	rename -uid "8B7D63FC-498A-FB4F-3BB9-B4A3BDEEAF8E";
 createNode renderLayerManager -n "renderLayerManager";
-	rename -uid "CD7BB422-41D2-FF66-5B02-5C99162F77A6";
+	rename -uid "49695441-4D21-BB26-CA41-A99FF69E14CA";
 createNode renderLayer -n "defaultRenderLayer";
 	rename -uid "6A5D892B-4486-1F7D-B835-D489702956C8";
 	setAttr ".g" yes;
@@ -959,8 +959,6 @@ select -ne :defaultLightSet;
 select -ne :hardwareRenderGlobals;
 	setAttr ".ctrs" 256;
 	setAttr ".btrs" 512;
-select -ne :ikSystem;
-	setAttr -s 4 ".sol";
 connectAttr "grp_lights_rotateY.o" "grp_lights.ry";
 relationship "link" ":lightLinker1" ":initialShadingGroup.message" ":defaultLightSet.message";
 relationship "link" ":lightLinker1" ":initialParticleSE.message" ":defaultLightSet.message";
