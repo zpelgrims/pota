@@ -165,6 +165,8 @@ class ShaderDef:
    c4d_command_id = None
    maya_name = None
    maya_classification = None
+   maya_translator = None
+   maya_attr_prefix = None
    maya_id = None
    maya_swatch = False
    maya_bump = False
@@ -258,6 +260,10 @@ class ShaderDef:
          self.maya_name = d['maya_name']
       if 'maya_classification' in d.keys():
          self.maya_classification = d['maya_classification']
+      if 'maya_translator' in d.keys():
+         self.maya_translator = d['maya_translator']
+      if 'maya_attr_prefix' in d.keys():
+         self.maya_attr_prefix = d['maya_attr_prefix']
       if 'maya_id' in d.keys():
          self.maya_id = d['maya_id']
       if 'maya_swatch' in d.keys():
@@ -369,7 +375,7 @@ def WriteAETemplate(sd, fn):
    writei(f, 'import mtoa.ui.ae.utils as aeUtils', 0)
    writei(f, 'from mtoa.ui.ae.shaderTemplate import ShaderAETemplate', 0)
 
-   writei(f, 'class AE%sTemplate(templates.AttributeTemplate):' % sd.maya_name, 0)
+   writei(f, 'class AE%sTemplate(templates.AttributeTemplate):' % sd.name, 0)
    # writei(f, 'controls = {}', 1)
    # writei(f, 'params = {}', 1)
    writei(f, 'def filenameEditBokehInput(self, mData) :', 1)
@@ -427,7 +433,7 @@ def WriteAETemplate(sd, fn):
    # writei(f, 'self.endScrollLayout()', 2) #end main scrollLayout
 
    writei(f, '')
-   writei(f, 'templates.registerTranslatorUI(AE{}Template, "camera", "{}")'.format(sd.maya_name, sd.maya_name), 0)
+   writei(f, 'templates.registerTranslatorUI(AE{}Template, "{}", "{}")'.format(sd.name, sd.maya_classification, sd.name), 0)
    
 
    f.close()
@@ -950,6 +956,10 @@ def WriteMDTHeader(sd, f):
    if sd.c4d_command_id: writei(f, 'c4d.command_id INT %s' % sd.c4d_command_id, 1)
    writei(f, 'maya.name STRING "%s"' % sd.maya_name, 1)
    writei(f, 'maya.classification STRING "%s"' % sd.maya_classification, 1)
+   if sd.maya_translator is not None:
+      writei(f, 'maya.translator STRING "%s"' % sd.maya_translator, 1)
+   # if sd.maya_attr_prefix is not None:
+   writei(f, 'maya.attr_prefix STRING ""', 1)
    writei(f, 'maya.id INT %s' % sd.maya_id, 1)
    #writei(f, 'houdini.label STRING "%s"' % sd.name, 1)
    if sd.houdini_icon is not None:
@@ -994,7 +1004,8 @@ def WriteMTD(sd, fn):
    writei(f, '')
 
    for p in sd.parameters:
-      writei(f, '\n[attr %s]' % p.name, 1)
+      writei(f, '', 1)
+      writei(f, '[attr %s]' % p.name, 1)
       writei(f, 'houdini.label STRING "%s"' % p.label, 2)
       WriteMTDParam(f, "min", "float", p.mn, 2)
       WriteMTDParam(f, "max", "float", p.mx, 2)

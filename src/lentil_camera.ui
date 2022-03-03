@@ -4,6 +4,8 @@ ui.shader({
     'name': 'lentil_camera',
     'intro': 'http://www.lentil.xyz',
     'description': 'Advanced Camera Shader',
+    'maya_translator': 'lentil_camera',
+    'attr_prefix': '',
     'maya_name': 'camera',
     'maya_classification': 'camera',
     'maya_id':'0x00070507',
@@ -11,13 +13,8 @@ ui.shader({
     'soft_name': 'Lentil Camera',
     'soft_classification': 'texture',
     'houdini_icon': 'SHOP_lens',
-
-    #  'houdini_label':'lentil',
-     'help_url':'http://www.lentil.xyz',
-    #  'houdini_optional':True,
-     'houdini_category':'Lentil',
-    #  'houdini_order':'first'
-
+    'help_url':'http://www.lentil.xyz',
+    'houdini_category':'Lentil',
     # 'output': 'rgb',
     # 'aov_shader': False,
     # 'maya_swatch': False,
@@ -28,12 +25,13 @@ ui.shader({
 })
 
 
+
 with uigen.group(ui, 'General', collapse=False):
-    ui.parameter('cameratype', 'enum', 'ThinLens', label='Camera Type', 
+    ui.parameter('cameraType', 'enum', 'ThinLens', label='Camera Type', 
       description='Thinlens is super fast, Polynomial optics is super accurate.',
       enum_names=['ThinLens', 'PolynomialOptics'])
 
-    ui.parameter('bidir_sample_mult', 'int', 3, label='Samples Multiplier', 
+    ui.parameter('bidirSampleMult', 'int', 3, label='Samples Multiplier', 
         description='A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)',
         mn=0, mx=300, smn=0, smx=10, houdini_disable_when='{ enable_dof == 0 }')
 
@@ -41,22 +39,22 @@ with uigen.group(ui, 'General', collapse=False):
       description='Use Centimeter in Maya, use Meter for Houdini (default universe scaling)',
       enum_names=['mm', 'cm', 'm'], houdini_default='m')
 
-    ui.parameter('sensor_width', 'float', 36, label='Sensor Width (mm)', 
+    ui.parameter('sensorWidth', 'float', 36, label='Sensor Width (mm)', 
       description='Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens.',
       mn=0.1, mx=100, smn=16, smx=70)
 
-    ui.parameter('enable_dof', 'bool', True, label='Enable Depth of Field', 
+    ui.parameter('enableDof', 'bool', True, label='Enable Depth of Field', 
       description='Disabling makes the aperture an infinitesimal point.')
 
     ui.parameter('fstop', 'float', 2.8, label='F-Stop', 
       description='The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture.',
       mn=0, mx=64, smn=0.7, smx=32, houdini_disable_when='{ enable_dof == 0 }')
 
-    ui.parameter('focus_dist', 'float', 150, label='Focus Distance (cm)', 
+    ui.parameter('focusDist', 'float', 150, label='Focus Distance (cm)', 
       description='Distance between the lens and the focal plane in centimeter.',
       mn=0, mx=100000, smn=0, smx=2000, houdini_disable_when='{ enable_dof == 0 }')
 
-    ui.parameter('bokeh_aperture_blades', 'int', 0, label='Aperture Blades', 
+    ui.parameter('apertureBlades', 'int', 0, label='Aperture Blades', 
       description='Number of aperture blades. < 3 is perfectly circular.',
       mn=0, mx=50, smn=0, smx=8, houdini_disable_when='{ enable_dof == 0 }')
 
@@ -67,7 +65,7 @@ with uigen.group(ui, 'General', collapse=False):
 
 
 with uigen.group(ui, 'Polynomial Optics', collapse=False):
-    ui.parameter('lens_model', 'enum', 'cooke__speed_panchro__1920__40mm', label='Lens Model', 
+    ui.parameter('lensModel', 'enum', 'cooke__speed_panchro__1920__40mm', label='Lens Model', 
         description='There are many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has its own characteristics. See the online documentation for previews of all lens models.',
         houdini_disable_when='{ cameratype == ThinLens }',
         enum_names=[
@@ -122,57 +120,57 @@ with uigen.group(ui, 'Polynomial Optics', collapse=False):
     ui.parameter('wavelength', 'float', 550.0, label='Wavelength (nm)', 
         description='Wavelength in Nanometers. The Polynomial Optics model is spectral, but since Arnold is an RGB renderer, we leave trace every ray with the same wavelength.',
         mn=390, mx=700, houdini_disable_when='{ cameratype == ThinLens }')
-    ui.parameter('extra_sensor_shift', 'float', 0, label='Additional Sensor shift (mm)', 
+    ui.parameter('extraSensorShift', 'float', 0, label='Additional Sensor shift (mm)', 
         description='The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!).',
         mn=-10, mx=10, smn = -3, smx=3, houdini_disable_when='{ cameratype == ThinLens }')
 
 with uigen.group(ui, 'Thin Lens', collapse=False):
-    ui.parameter('focal_length_lentil', 'float', 35, label='Focal Length (mm)', 
+    ui.parameter('focalLengthLentil', 'float', 35, label='Focal Length (mm)', 
         description='Distance between the lens and the point at which the light converges in millimeters.',
         mn=0.01, mx=99999, smn=5, smx=500, houdini_disable_when='{ cameratype == PolynomialOptics }')
   
     #with uigen.group(ui, 'Aberrations', collapse=False ):
-    ui.parameter('optical_vignetting', 'float', 0, label='Optical Vignetting', 
+    ui.parameter('opticalVignetting', 'float', 0, label='Optical Vignetting', 
         description='Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor.',
         mn=0, mx=20, smn=0, smx=5, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('abb_spherical', 'float', 0.5, label='Aberration (spherical)', 
+    ui.parameter('abbSpherical', 'float', 0.5, label='Aberration (spherical)', 
         description='Due to the spherical nature of lenses, light cannot be focused onto exactly a singular point. A value of 0.5 means no spherical aberration.',
         mn=0, mx=1, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('abb_distortion', 'float', 0, label='Aberration (distortion)', 
+    ui.parameter('abbDistortion', 'float', 0, label='Aberration (distortion)', 
         description='Emperical distortion aberration. Note that lenses with a short focal length will generally exhibit greater amounts of distortion. We chose to not automatically model this, but rather keep it up to the user for greater artistic control.',
         mn=-50, mx=50, smn=-10, smx=10, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('abb_coma', 'float', 0, label='Aberration (coma)', 
+    ui.parameter('abbComa', 'float', 0, label='Aberration (coma)', 
         description='Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results.',
         mn=-1, mx=1,  houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('bokeh_circle_to_square', 'float', 0, label='Square Bokeh', 
+    ui.parameter('bokehCircleToSquare', 'float', 0, label='Square Bokeh', 
         description='Sometimes for artistic purposes you might want to make the bokeh a little more square. This can sometimes happen with anamorphic lenses. 0 is a perfectly circular highlight, 1 is perfectly square.',
         mn=0, mx=1, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('bokeh_anamorphic', 'float', 1, label='Anamorphic Squeeze', 
+    ui.parameter('bokehAnamorphic', 'float', 1, label='Anamorphic Squeeze', 
         description='This scales the bokeh along the x-axis.',
         mn=0, mx=1, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
         
 
 with uigen.group(ui, 'Bokeh Texture', collapse=True):
-    ui.parameter('bokeh_enable_image', 'bool', False, label='Enable Texture', 
+    ui.parameter('bokehEnableImage', 'bool', False, label='Enable Texture', 
         description='This option replaces the circular/polygonal aperture with a texture-based one.',
         houdini_join_next=True)
-    ui.parameter('bokeh_image_path', 'string', '', label='Filepath', 
+    ui.parameter('bokehImagePath', 'string', '', label='Filepath', 
         description='Supply small-ish images. The visual quality will not increase much above 250x250, but the pre-computation time will.',
         houdini_disable_when='{ bokeh_enable_image == 0 }{ enable_dof == 0 }')
 
 
 with uigen.group(ui, 'Bidirectional', collapse=False):
-    ui.parameter('vignetting_retries', 'int', 15, label='Vignetting Quality', 
+    ui.parameter('vignettingRetries', 'int', 15, label='Vignetting Quality', 
         description='Since we are modeling real lenses, it is possible that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border.',
         mn=1, mx=500, smn=1, smx=50, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
 
     #with uigen.group(ui, 'additional_energy', collapse=True ):
-    ui.parameter('bidir_add_energy', 'float', 0, label='Additional Energy', 
+    ui.parameter('bidirAddEnergy', 'float', 0, label='Additional Energy', 
         description='Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit.',
         mn=0, mx=100, smn=0, smx=10, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
-    ui.parameter('bidir_add_energy_minimum_luminance', 'float', 2, label='Additional Energy Treshold', 
+    ui.parameter('bidirAddEnergyMinimumLuminance', 'float', 2, label='Additional Energy Treshold', 
         description='Only samples with a value above this parameter will be considered.',
         mn=0, mx=100, smn=0, smx=5, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
-    ui.parameter('bidir_add_energy_transition', 'float', 1, label='Additional Energy Treshold Transition', 
+    ui.parameter('bidirAddEnergyTransition', 'float', 1, label='Additional Energy Treshold Transition', 
         description='This allows for a smooth transition, so that the additional energy does not flicker when the treshold is reached.',
         mn=0, mx=10, smn=0, smx=5, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
