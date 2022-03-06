@@ -174,3 +174,6 @@ with uigen.group(ui, 'Bidirectional', collapse=True):
     ui.parameter('bidir_add_energy_transition', 'float', 1, label='Additional Energy Treshold Transition', 
         description='This allows for a smooth transition, so that the additional energy does not flicker when the treshold is reached.',
         mn=0, mx=10, smn=0, smx=5, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
+    ui.parameter('enable_bidir_transmission', 'bool', False, label='Enable for transmitted surfaces', 
+        description='WARNING: this should not be used, unless in very specific circumstances. For example, when you might be rendering a set of led lights which are behind a transmissive surface, but where the depth information is practically the same. Or when you are inside the transmissive medium, such as underwater. In any other case, this option should be avoided.',
+        houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')

@@ -42,6 +42,7 @@ node_parameters {
   AiParameterFlt("bidir_add_energy", 0.0);
   AiParameterFlt("bidir_add_energy_minimum_luminance", 2.0);
   AiParameterFlt("bidir_add_energy_transition", 1.0);
+  AiParameterBool("enable_bidir_transmission", false)
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }

@@ -84,8 +84,9 @@ class Parameter(UiElement):
    houdini_disable_when = None
    houdini_join_next = None
    houdini_default = None
+   maya_hide = None
 
-   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None):
+   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None):
       self.name = name
       self.ptype = ptype
       self.default = default
@@ -96,6 +97,7 @@ class Parameter(UiElement):
       self.houdini_disable_when = houdini_disable_when
       self.houdini_join_next = houdini_join_next
       self.houdini_default = houdini_default
+      self.maya_hide = maya_hide
 
       if description is not None:
          if len(description) > 150:
@@ -216,8 +218,8 @@ class ShaderDef:
    def endGroup(self):
       self.current_parent = self.current_parent.parent
 
-   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None):
-      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next, houdini_default)
+   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None):
+      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next, houdini_default, maya_hide)
       if not self.current_parent.children:
          self.current_parent.children = [p]
       else:
@@ -1026,6 +1028,9 @@ def WriteMTD(sd, fn):
       
       if p.houdini_default:
          WriteMTDParam(f, "houdini.default", "enum", p.houdini_default,2)
+      
+      if p.maya_hide:
+         WriteMTDParam(f, "maya.hide", "bool", p.maya_hide, 2)
 
    for a in sd.aovs:
       writei(f, '[attr %s]' % a.name, 1)

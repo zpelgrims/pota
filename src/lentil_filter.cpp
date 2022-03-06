@@ -103,7 +103,7 @@ filter_pixel
       }
       
       const AtRGBA sample_transmission = AiAOVSampleIteratorGetAOVRGBA(iterator, camera_data->atstring_transmission);
-      bool transmitted_energy_in_sample = (AiColorMaxRGB(sample_transmission) > 0.0);
+      bool transmitted_energy_in_sample = camera_data->enable_bidir_transmission ? false : (AiColorMaxRGB(sample_transmission) > 0.0);
       if (transmitted_energy_in_sample){
         sample.r -= sample_transmission.r;
         sample.g -= sample_transmission.g;

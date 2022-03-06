@@ -269,6 +269,7 @@ struct Camera
     double bidir_add_energy_minimum_luminance;
     float bidir_add_energy;
     float bidir_add_energy_transition;
+    bool enable_bidir_transmission;
     float exposure;
 
     // parameters PO
@@ -1423,6 +1424,7 @@ private:
         bidir_add_energy = AiNodeGetFlt(camera_node, "bidir_add_energy");
         bidir_add_energy_transition = AiNodeGetFlt(camera_node, "bidir_add_energy_transition");
         vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
+        enable_bidir_transmission = AiNodeGetBool(camera_node, "enable_bidir_transmission");
     }
 
 
