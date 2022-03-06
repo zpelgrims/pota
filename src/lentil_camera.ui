@@ -37,7 +37,7 @@ with uigen.group(ui, 'General', collapse=False):
 
     ui.parameter('units', 'enum', 'cm', label='Scene Units', 
       description='Use Centimeter in Maya, use Meter for Houdini (default universe scaling)',
-      enum_names=['mm', 'cm', 'm'], houdini_default='m')
+      enum_names=['mm', 'dm', 'cm', 'm'], houdini_default='m')
 
     ui.parameter('sensor_width', 'float', 36, label='Sensor Width (mm)', 
       description='Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens.',
