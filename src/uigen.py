@@ -1080,201 +1080,6 @@ def WriteArgs(sd, fn):
 
    writei(f, '</args>', 0)
 
-def getSPDLTypeName(t):
-   if t == 'bool':
-      return 'boolean'
-   elif t == 'int':
-      return 'integer'
-   elif t == 'float':
-      return 'scalar'
-   elif t == 'rgb':
-      return 'color'
-   elif t == 'enum':
-      return 'string'
-   else:
-      return t
-
-def WriteSPDLParameter(f, p):
-   writei(f, 'Parameter "%s" input' % p.name, 1)
-   writei(f, '{', 1)
-   writei(f, 'GUID = "{%s}";' % uuid.uuid4(), 2)
-   if isinstance(p, AOV):
-      writei(f, 'Type = string;', 2)
-      si_aov_name = p.name.replace('aov_', 'arnold_').title()
-      writei(f, 'Value = "%s";' % si_aov_name, 2)
-   else:
-      writei(f, 'Type = %s;' % getSPDLTypeName(p.ptype), 2)
-      if p.connectible:
-         writei(f, 'Texturable = on;', 2)
-      else:
-         writei(f, 'Texturable = off;', 2)
-
-      if p.ptype == 'bool':
-         writei(f, 'Value = %s;' % str(p.default).lower(), 2)
-      elif p.ptype == 'int':
-         writei(f, 'Value = %d;' % p.default, 2)
-      elif p.ptype == 'float':
-         writei(f, 'Value = %f;' % p.default, 2)
-      elif p.ptype == 'rgb' or p.ptype == 'vector':
-         writei(f, 'Value = %f %f %f;' % p.default, 2)
-      elif p.ptype == 'string':
-         writei(f, 'Value = "%s";' % p.default, 2)
-      elif p.ptype == 'enum':
-         writei(f, 'Value = "%s";' % p.default, 2)
-
-      if p.mn is not None:
-         writei(f, 'Value Minimum = %f;' % p.mn, 2)
-
-      if p.mx is not None:
-         writei(f, 'Value Maximum = %f;' % p.mx, 2)
-
-   writei(f, '}', 1)
-
-def WriteSPDLPropertySet(f, sd):
-   writei(f, 'PropertySet "%s_pset"' % sd.name)
-   writei(f, '{')
-
-
-   writei(f, 'Parameter "out" output', 1)
-   writei(f, '{', 1)
-   writei(f, 'GUID = "{%s}";' % uuid.uuid4(), 2)
-   writei(f, 'Type = %s;' % getSPDLTypeName(sd.output), 2)
-   writei(f, '}', 1)
-
-   for p in sd.parameters:
-      WriteSPDLParameter(f, p)
-
-   for a in sd.aovs:
-      WriteSPDLParameter(f, a)
-
-   writei(f, '}')
-
-def writeSPDLDefault(f, p, i):
-   writei(f, '%s' % p.name, 1)
-   writei(f, '{', 1)
-
-   writei(f, 'Name = "%s";' % p.label, 2)
-   if p.ptype == 'rgb':
-      writei(f, 'UIType = "rgb";', 2)
-   elif p.ptype=='enum':
-      writei(f, 'UIType = "Combo";', 2)
-      writei(f, 'Items', 2)
-      writei(f, '{', 2)
-      for ev in p.enum_names:
-         writei(f, '"%s" = "%s";' % (ev, ev), 3)
-      writei(f, '}', 2)
-   elif p.smn and p.smx:
-      writei(f, 'UIRange = %f To %f;' % (p.smn, p.smx), 2)
-
-
-   if p.connectible:
-      writei(f, 'Commands = "{F5C75F11-2F05-11D3-AA95-00AA0068D2C0}";', 2)
-
-   writei(f, '}', 1)
-
-def WalkSPDLDefault(f, el, d):
-
-   if isinstance(el, Group):
-      if isinstance(el, Tab):
-         writei(f, 'Tab "%s"' % el.name, d)
-      else:
-         writei(f, 'Group "%s"' % el.name, d)
-      writei(f, '{', d)
-      if el.children:
-         for e in el.children:
-            WalkSPDLDefault(f, e, d+1)
-      writei(f, '}', d)
-
-   elif isinstance(el, Parameter):
-      writei(f, '%s;' % el.name, d)
-
-def WalkSPDLTestChildren(el):
-   childrenHaveMembers = False
-   if el.children:
-      for e in el.children:
-         if isinstance(e, Group):
-            childrenHaveMembers = childrenHaveMembers or WalkSPDLTestChildren(e)
-         elif isinstance(e, Parameter):
-            childrenHaveMembers = childrenHaveMembers or e.connectible
-   return childrenHaveMembers
-
-def WalkSPDLRender(f, el, d):
-   if isinstance(el, Group) and WalkSPDLTestChildren(el):
-      writei(f, 'Group "%s"' % el.name, d)
-      writei(f, '{', d)
-      if el.children:
-         for e in el.children:
-            WalkSPDLRender(f, e, d+1)
-      writei(f, '}', d)
-
-   elif isinstance(el, Parameter) and el.connectible:
-      writei(f, '%s;' % el.name, d)
-      
-
-def WriteSPDL(sd, fn):
-   f = open(fn, 'w')
-   writei(f, 'SPDL')
-   writei(f, 'Version = "2.0.0.0";')
-   writei(f, 'Reference = "{%s}";' % uuid.uuid4())
-
-   WriteSPDLPropertySet(f, sd)
-
-   writei(f, 'MetaShader "%s_meta"' % sd.name)
-   writei(f, '{')
-   writei(f, 'Name = "%s";' % sd.soft_name, 1)
-   writei(f, 'Type = %s;' % sd.soft_classification, 1)
-   writei(f, 'Renderer "mental ray"', 1)
-   writei(f, '{', 1)
-   writei(f, 'Name = "%s";' % sd.soft_name, 2)
-   writei(f, 'Filename = "%s";' % sd.name, 2)
-   writei(f, 'Options', 2)
-   writei(f, '{', 2)
-   writei(f, '"version" = 1;', 3)
-   writei(f, '}', 2)
-   writei(f, '}', 1)
-   writei(f, '}')
-
-   # Begin Defaults
-   writei(f, 'Defaults')
-   writei(f, '{')
-
-   cmd = uuid.uuid4()
-
-   for p in sd.parameters:
-      writeSPDLDefault(f, p, cmd)
-
-   for a in sd.aovs:
-      writei(f, '%s' % a.name, 1)
-      writei(f, '{', 1)
-      writei(f, 'Name = "%s";' % a.name, 2)
-      writei(f, '}', 1)
-
-   writei(f, '}')
-   # End Defaults
-
-   #Begin Layout
-   writei(f, 'Layout "Default"')
-   writei(f, '{')
-   
-   for el in sd.root.children:
-      WalkSPDLDefault(f, el, 1)
-
-   writei(f, '}')
-   writei(f, 'Layout "RenderTree"')
-   writei(f, '{')
-   
-   for el in sd.root.children:
-      WalkSPDLRender(f, el, 1)
-
-   writei(f, '}')
-   # End Layout
-
-   writei(f, 'Plugin = Shader')
-   writei(f, '{')
-   writei(f, 'Filename = "%s";' % sd.name, 1)
-   writei(f, '}')
-
-   f.close()
 
 def remapControls(sd):
    with group(sd, 'Remap', collapse=True, description='These controls allow you to remap the shader result.'):
@@ -1298,9 +1103,10 @@ def remapControls(sd):
          sd.parameter('RMPclampMin', 'float', 0.0, label='Min', description='Minimum value to clamp to.')
          sd.parameter('RMPclampMax', 'float', 1.0, label='Max', description='Maximum value to clamp to.')
 
+
 # Main. Load the UI file and build UI templates from the returned structure
 if __name__ == '__main__':
-   if len(sys.argv) < 7:
+   if len(sys.argv) < 4:
       print('ERROR: must supply exactly ui source input and mtd, ae, spdl and args outputs')
       sys.exit(1)
 
@@ -1316,10 +1122,10 @@ if __name__ == '__main__':
 
    WriteMTD(ui, sys.argv[2])  
    WriteAETemplate(ui, sys.argv[3])
-   WriteAEXML(ui, sys.argv[4])
-   WriteNEXML(ui, sys.argv[5])
-   WriteSPDL(ui, sys.argv[6])
-   WriteArgs(ui, sys.argv[7])
+   #WriteAEXML(ui, sys.argv[4])
+   #WriteNEXML(ui, sys.argv[5])
+   #WriteSPDL(ui, sys.argv[6])
+   WriteArgs(ui, sys.argv[4])
 
    # C4DtoA resource files
    name = os.path.basename(os.path.splitext(sys.argv[1])[0])

@@ -16,32 +16,32 @@ static const char* LensModelNames[] = {
 
 
 node_parameters {
-  AiParameterEnum("cameraType", ThinLens, CameraTypes);
-  AiParameterInt("bidirSampleMult", 5);
+  AiParameterEnum("camera_type", ThinLens, CameraTypes);
+  AiParameterInt("bidir_sample_mult", 5);
   AiParameterEnum("units", cm, Units);
-  AiParameterFlt("sensorWidth", 36.0); // 35mm film
-  AiParameterBool("enableDof", true);
+  AiParameterFlt("sensor_width", 36.0); // 35mm film
+  AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
-  AiParameterFlt("focusDist", 150.0); // in cm to be consistent with arnold core
-  AiParameterInt("apertureBlades", 0);
+  AiParameterFlt("focus_dist", 150.0); // in cm to be consistent with arnold core
+  AiParameterInt("aperture_blades", 0);
   AiParameterFlt("exp", 1.0);
-  AiParameterEnum("lensModel", cooke__speed_panchro__1920__40mm, LensModelNames);
+  AiParameterEnum("lens_model", cooke__speed_panchro__1920__40mm, LensModelNames);
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
-  AiParameterFlt("extraSensorShift", 0.0);
-  AiParameterFlt("focalLengthLentil", 35.0); // in mm
-  AiParameterFlt("opticalVignetting", 0.0);
+  AiParameterFlt("extra_sensor_shift", 0.0);
+  AiParameterFlt("focal_length_lentil", 35.0); // in mm
+  AiParameterFlt("optical_vignetting", 0.0);
   // AiParameterFlt("optical_vignetting_radius", 1.0);
-  AiParameterFlt("abbSpherical", 0.5);
-  AiParameterFlt("abbDistortion", 0.0);
-  AiParameterFlt("abbComa", 0.0);
-  AiParameterFlt("bokehCircleToSquare", 0.0);
-  AiParameterFlt("bokehAnamorphic", 0.0);
-  AiParameterBool("bokehEnableImage", false);
-  AiParameterStr("bokehImagePath", "");
-  AiParameterInt("vignettingRetries", 15);
-  AiParameterFlt("bidirAddEnergy", 0.0);
-  AiParameterFlt("bidirAddEnergyMinimumLuminance", 2.0);
-  AiParameterFlt("bidirAddEnergyTransition", 1.0);
+  AiParameterFlt("abb_spherical", 0.5);
+  AiParameterFlt("abb_distortion", 0.0);
+  AiParameterFlt("abb_coma", 0.0);
+  AiParameterFlt("bokeh_circle_to_square", 0.0);
+  AiParameterFlt("bokeh_anamorphic", 0.0);
+  AiParameterBool("bokeh_enable_image", false);
+  AiParameterStr("bokeh_image_path", "");
+  AiParameterInt("vignetting_retries", 15);
+  AiParameterFlt("bidir_add_energy", 0.0);
+  AiParameterFlt("bidir_add_energy_minimum_luminance", 2.0);
+  AiParameterFlt("bidir_add_energy_transition", 1.0);
 
   AiMetaDataSetBool(nentry, nullptr, "force_update", true);
 }

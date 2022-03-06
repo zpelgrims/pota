@@ -1,6 +1,6 @@
 //Maya ASCII 2020 scene
 //Name: lentil_base_setup.ma
-//Last modified: Thu, Mar 03, 2022 09:48:14 PM
+//Last modified: Sun, Mar 06, 2022 04:11:54 PM
 //Codeset: 1252
 requires maya "2020";
 requires -nodeType "aiOptions" -nodeType "aiAOV" -nodeType "aiAOVDriver" -nodeType "aiAOVFilter"
@@ -14,7 +14,7 @@ fileInfo "product" "Maya 2020";
 fileInfo "version" "2020";
 fileInfo "cutIdentifier" "202002251615-329d215872";
 fileInfo "osv" "Microsoft Windows 10 Technical Preview  (Build 19042)\n";
-fileInfo "UUID" "5365B98D-4BA2-AFA2-3A48-47BC7BED98C7";
+fileInfo "UUID" "9C44153A-449D-851B-0D92-DB9F8BC8E4C1";
 createNode transform -s -n "persp";
 	rename -uid "7979F7A5-43D1-557C-D606-22B293D46CA7";
 	setAttr ".v" no;
@@ -33,9 +33,9 @@ createNode camera -s -n "perspShape" -p "persp";
 	setAttr ".dr" yes;
 	setAttr ".ai_translator" -type "string" "lentil_camera";
 	setAttr ".fstop" 1.3999999761581421;
-	setAttr ".focusDist" 30;
-	setAttr ".focalLengthLentil" 40;
-	setAttr ".opticalVignetting" 3;
+	setAttr ".focus_dist" 30;
+	setAttr ".focal_length_lentil" 40;
+	setAttr ".optical_vignetting" 3;
 createNode transform -s -n "top";
 	rename -uid "9F6F2133-49A8-CA0A-727A-349A21BF4F2A";
 	setAttr ".v" no;
@@ -755,19 +755,19 @@ createNode aiSkyDomeLight -n "aiSkyDomeLightShape1" -p "aiSkyDomeLight1";
 	setAttr ".sc" -type "float3" 0.044 0.044 0.044 ;
 	setAttr ".aal" -type "attributeAlias" {"exposure","aiExposure"} ;
 createNode lightLinker -s -n "lightLinker1";
-	rename -uid "D913E5C6-4CE8-08A5-2E33-AB816E30EAFC";
+	rename -uid "7761FA48-49BC-CE60-F35D-E98B9CF7C73A";
 	setAttr -s 2 ".lnk";
 	setAttr -s 2 ".slnk";
 createNode shapeEditorManager -n "shapeEditorManager";
-	rename -uid "C10117F1-4E7F-643A-CFA9-11824DD83ED9";
+	rename -uid "68421340-4B48-537D-BC14-67BB1D0C92E7";
 createNode poseInterpolatorManager -n "poseInterpolatorManager";
-	rename -uid "5683A8B0-49AD-D0E8-1962-D585BA693CBF";
+	rename -uid "9CBE1E5F-40F8-0ED8-02CD-749F627E0190";
 createNode displayLayerManager -n "layerManager";
-	rename -uid "FA7E230D-4D4D-F1FC-5E56-1F953E38EDB7";
+	rename -uid "43F09EC8-498B-B556-191F-EDA330A7A6F5";
 createNode displayLayer -n "defaultLayer";
 	rename -uid "8B7D63FC-498A-FB4F-3BB9-B4A3BDEEAF8E";
 createNode renderLayerManager -n "renderLayerManager";
-	rename -uid "49695441-4D21-BB26-CA41-A99FF69E14CA";
+	rename -uid "4314473D-43B7-ADA7-90E6-0385E303B352";
 createNode renderLayer -n "defaultRenderLayer";
 	rename -uid "6A5D892B-4486-1F7D-B835-D489702956C8";
 	setAttr ".g" yes;

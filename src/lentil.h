@@ -1388,41 +1388,41 @@ private:
 
 
     void get_lentil_camera_params() {
-        cameraType = (CameraType) AiNodeGetInt(camera_node, "cameraType");
+        cameraType = (CameraType) AiNodeGetInt(camera_node, "camera_type");
         unitModel = (UnitModel) AiNodeGetInt(camera_node, "units");
-        sensor_width = AiNodeGetFlt(camera_node, "sensorWidth");
-        enable_dof = AiNodeGetBool(camera_node, "enableDof");
+        sensor_width = AiNodeGetFlt(camera_node, "sensor_width");
+        enable_dof = AiNodeGetBool(camera_node, "enable_dof");
         input_fstop = clamp_min(AiNodeGetFlt(camera_node, "fstop"), 0.01);
-        focus_distance = AiNodeGetFlt(camera_node, "focusDist"); //converting to mm
-        bokeh_aperture_blades = AiNodeGetInt(camera_node, "apertureBlades");
+        focus_distance = AiNodeGetFlt(camera_node, "focus_dist"); //converting to mm
+        bokeh_aperture_blades = AiNodeGetInt(camera_node, "aperture_blades");
         exposure = AiNodeGetFlt(camera_node, "exp");
 
         // po-specific params
-        lensModel = (LensModel) AiNodeGetInt(camera_node, "lensModel");
+        lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
         lambda = AiNodeGetFlt(camera_node, "wavelength") * 0.001;
-        extra_sensor_shift = AiNodeGetFlt(camera_node, "extraSensorShift");
+        extra_sensor_shift = AiNodeGetFlt(camera_node, "extra_sensor_shift");
 
         // tl specific params
-        focal_length = clamp_min(AiNodeGetFlt(camera_node, "focalLengthLentil"), 0.01);
-        optical_vignetting_distance = AiNodeGetFlt(camera_node, "opticalVignetting");
+        focal_length = clamp_min(AiNodeGetFlt(camera_node, "focal_length_lentil"), 0.01);
+        optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting");
         optical_vignetting_radius = 1.0;//AiNodeGetFlt(camera_node, "optical_vignetting_radius");
-        abb_spherical = AiNodeGetFlt(camera_node, "abbSpherical");
+        abb_spherical = AiNodeGetFlt(camera_node, "abb_spherical");
         abb_spherical = clamp(abb_spherical, 0.001, 0.999);
-        abb_distortion = AiNodeGetFlt(camera_node, "abbDistortion");
-        abb_coma = AiNodeGetFlt(camera_node, "abbComa");
-        circle_to_square = AiNodeGetFlt(camera_node, "bokehCircleToSquare");
+        abb_distortion = AiNodeGetFlt(camera_node, "abb_distortion");
+        abb_coma = AiNodeGetFlt(camera_node, "abb_coma");
+        circle_to_square = AiNodeGetFlt(camera_node, "bokeh_circle_to_square");
         circle_to_square = clamp(circle_to_square, 0.01, 0.99);
-        bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, "bokehAnamorphic");
+        bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, "bokeh_anamorphic");
         bokeh_anamorphic = clamp(bokeh_anamorphic, 0, 1.0);
 
         // bidir params
-        bokeh_enable_image = AiNodeGetBool(camera_node, "bokehEnableImage");
-        bokeh_image_path = AiNodeGetStr(camera_node, "bokehImagePath");
-        bidir_sample_mult = AiNodeGetInt(camera_node, "bidirSampleMult");
-        bidir_add_energy_minimum_luminance = AiNodeGetFlt(camera_node, "bidirAddEnergyMinimumLuminance");
-        bidir_add_energy = AiNodeGetFlt(camera_node, "bidirAddEnergy");
-        bidir_add_energy_transition = AiNodeGetFlt(camera_node, "bidirAddEnergyTransition");
-        vignetting_retries = AiNodeGetInt(camera_node, "vignettingRetries");
+        bokeh_enable_image = AiNodeGetBool(camera_node, "bokeh_enable_image");
+        bokeh_image_path = AiNodeGetStr(camera_node, "bokeh_image_path");
+        bidir_sample_mult = AiNodeGetInt(camera_node, "bidir_sample_mult");
+        bidir_add_energy_minimum_luminance = AiNodeGetFlt(camera_node, "bidir_add_energy_minimum_luminance");
+        bidir_add_energy = AiNodeGetFlt(camera_node, "bidir_add_energy");
+        bidir_add_energy_transition = AiNodeGetFlt(camera_node, "bidir_add_energy_transition");
+        vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
     }
 
 
