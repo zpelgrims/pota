@@ -23,7 +23,7 @@ node_parameters {
   AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
   AiParameterFlt("focus_dist", 150.0); // in cm to be consistent with arnold core
-  AiParameterInt("aperture_blades", 0);
+  AiParameterInt("aperture_blades_lentil", 0);
   AiParameterFlt("exp", 1.0);
   AiParameterEnum("lens_model", cooke__speed_panchro__1920__40mm, LensModelNames);
   AiParameterFlt("wavelength", 550.0); // wavelength in nm
