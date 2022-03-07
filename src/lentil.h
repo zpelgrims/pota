@@ -963,6 +963,7 @@ public:
         }
     }
 
+    
 
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
                             const float fitted_bidir_add_energy, const float depth,
@@ -1395,7 +1396,7 @@ private:
         enable_dof = AiNodeGetBool(camera_node, "enable_dof");
         input_fstop = clamp_min(AiNodeGetFlt(camera_node, "fstop"), 0.01);
         focus_distance = AiNodeGetFlt(camera_node, "focus_dist"); //converting to mm
-        bokeh_aperture_blades = AiNodeGetInt(camera_node, "aperture_blades");
+        bokeh_aperture_blades = AiNodeGetInt(camera_node, "aperture_blades_lentil");
         exposure = AiNodeGetFlt(camera_node, "exp");
 
         // po-specific params

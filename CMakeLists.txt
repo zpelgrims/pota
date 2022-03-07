@@ -65,6 +65,7 @@ set(AEXML_INSTALL_DIR ${INSTALL_DIR}/aexml)
 set(NEXML_INSTALL_DIR ${INSTALL_DIR}/aexml)
 set(SPDL_INSTALL_DIR ${INSTALL_DIR}/spdl)
 set(ARGS_INSTALL_DIR ${INSTALL_DIR}/Args)
+set(SCENES_INSTALL_DIR ${INSTALL_DIR})
 
 # file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/docs)
 
@@ -88,5 +89,7 @@ foreach(SUBDIR ${SUBDIRECTORIES})
     add_subdirectory(${SUBDIR})
 endforeach()
 
+
 # add top-level files
 INSTALL(FILES DESTINATION ${INSTALL_DIR})
+

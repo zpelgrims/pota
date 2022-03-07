@@ -1,0 +1,158 @@
+<!-- args file created by: elrachyd@gmail.com, zenopelgrims -->
+
+<args format="1.0">
+
+<page name="Common Attributes" open="False"> 
+	<param name="exposure" label="Exposure" slider="True" slidermin="-100.0" min="0.0 "slidermax="100.0" max="100.0"/>
+	<param name="rolling_shutter_duration" label="Rolling Shutter" slider="True"/>
+	<param name="filtermap" label="Filtermap"/>
+	<param widget="checkBox" name="projective"/>
+	<param int="1" name="aperture_blades" label="Aperture Blades" slider="True" slidermin="0" slidermax="40"/>
+	<param name="aperture_rotation" label="Aperture Rotation" slider="True" slidermin="0.0" min="0.0" slidermax="50.0" max="360.0"/>
+	<param name="aperture_blade_curvature" label="Aperture Blade Curvature" slider="True" slidermin="-20.0" min="-20.0" slidermax="20.0" max="20.0"/>
+	<param name="aperture_aspect_ratio" label="Aperture Aspect Ratio" slider="True"/>
+	<param widget="mapper" name="handedness">
+		<hintdict name="options">
+		<string value="right"/>
+		<string value="left"/>
+		</hintdict>
+		</param>
+	<param name="near_clip"/>
+	<param name="far_clip"/>
+	<param name="shutter_start" label="Shutter Start" slider="True"/>
+	<param name="shutter_end" label="Shutter End" slider="True"/>
+	<param name="motion_start" label="Motion Start" slider="True"/>
+	<param name="motion_end" label="Motion End" slider="True"/>
+	<param widget="mapper" name="shutter_type">
+		<hintdict name="options">
+		<string value="box"/>
+		<string value="curve"/>
+		<string value="triangle"/>
+		</hintdict>
+		</param>
+	<param widget="mapper" name="rolling_shutter" label="Rolling Shutter">
+		<hintdict name="options">
+		<string value="top"/>
+		<string value="left"/>
+		<string value="off"/>
+		<string value="right"/>
+		<string value="bottom"/>
+		</hintdict>
+		</param>
+</page>
+
+<page name="General" open="True">
+	<param widget="mapper" name="cameratype" label="Camera Type">
+		<hintdict name="options">
+		<string value="ThinLens"/>
+		<string value="PolynomialOptics"/>
+		</hintdict>
+	</param>
+		<param name="sensor_width" label="Sensor Width (mm)" slider="True" sensitivity="0.01" slidermin="0.1" slidermax="100.0" slidercenter="36.0" max="100.0"/>
+		<param name="focus_dist" label="Focus distance (cm)" slider="True" slidermin="0.0" slidercenter ="150.0" slidermax="1000000.0"  max="1000000.0"/>
+		<param name="fstop" label="F-stop" slider="True" slidermin="0.0" slidercenter="2.8" slidermax="64.0" max="64.0"/>
+		<param widget="checkBox" name="enable_dof" label="Enable DOF"/>
+</page>
+<page name="Polynomial Optics" open="True"> 
+	<param widget="mapper" name="lens_model" label="Lens Model">
+		<hintdict name="options">
+		<string value="canon__retrofocus_wideangle__1982__22mm"/>
+		<string value="angenieux__double_gauss__1953__55mm"/>
+		<string value="minolta__fisheye__1978__28mm"/>
+		<string value="kodak__petzval__1948__65mm"/>
+		<string value="cooke__speed_panchro__1920__75mm"/>
+		<string value="unknown__petzval__1900__65mm"/>
+		<string value="kodak__petzval__1948__85mm"/>
+		<string value="meyer_optik_goerlitz__primoplan__1936__75mm"/>
+		<string value="minolta__fisheye__1978__22mm"/>
+		<string value="cooke__speed_panchro__1920__50mm"/>
+		<string value="nikon__retrofocus_wideangle__1971__28mm"/>
+		<string value="angenieux__double_gauss__1953__105mm"/>
+		<string value="nikon__retrofocus_wideangle__1971__35mm"/>
+		<string value="zeiss__biotar__1927__65mm"/>
+		<string value="angenieux__double_gauss__1953__49mm"/>
+		<string value="asahi__takumar__1969__65mm"/>
+		<string value="zeiss__biotar__1927__85mm"/>
+		<string value="asahi__takumar__1969__45mm"/>
+		<string value="zeiss__biotar__1927__45mm"/>
+		<string value="asahi__takumar__1970__28mm"/>
+		<string value="kodak__petzval__1948__105mm"/>
+		<string value="kodak__petzval__1948__150mm"/>
+		<string value="asahi__takumar__1970__50mm"/>
+		<string value="nikon__unknown__2014__50mm"/>
+		<string value="unknown__petzval__1900__75mm"/>
+		<string value="unknown__petzval__1900__100mm"/>
+		<string value="canon__unknown__1956__52mm"/>
+		<string value="canon__unknown__1956__35mm"/>
+		<string value="unknown__petzval__1900__85mm"/>
+		<string value="asahi__takumar__1969__50mm"/>
+		<string value="nikon__unknown__2014__40mm"/>
+		<string value="asahi__takumar__1969__75mm"/>
+		<string value="nikon__unknown__2014__65mm"/>
+		<string value="kodak__petzval__1948__75mm"/>
+		<string value="minolta__fisheye__1978__16mm"/>
+		<string value="asahi__takumar__1969__85mm"/>
+		<string value="asahi__takumar__1970__35mm"/>
+		<string value="zeiss__biotar__1927__58mm"/>
+		<string value="cooke__speed_panchro__1920__40mm"/>
+		<string value="asahi__takumar__1969__58mm"/>
+		<string value="kodak__petzval__1948__58mm"/>
+		<string value="meyer_optik_goerlitz__primoplan__1936__58mm"/>
+		<string value="angenieux__double_gauss__1953__85mm"/>
+		<string value="cooke__speed_panchro__1920__100mm"/>
+		</hintdict>
+	</param>
+	<param name="wavelength" label="Wavelength" slider="True" sensitivity="0.01" slidermin="390.0" slidermax="700.0" slidercenter="550.0" max="700.0"/>
+	<param name="extra_sensor_shift" slider="True" slidermin="-10.0" slidermax="10.0" label="Extra Sensor shift (mm)"/>
+
+</page>
+<page name="Thin Lens" open="True"> 
+	<param name="focal_length_lentil" label="Focal Length (mm)" slider="True" slidermin="0.01" min="5.0" slidercenter = "35" slidermax="500"  max="9999.0"/>
+	<param name="optical_vignetting" label="Optical Vignetting" slider="True" slidermin="0" min="0" slidercenter = "3" slidermax="10" max="50"/>
+	<param name="abb_spherical" label="Abberration (spherical)" slider="True" slidermin="0.0" slidercenter="0.5" slidermax="1" max="1"/>
+	<param name="abb_distortion" label="Abberration (distorsion)" slider="True" slidermin="-20.0" slidercenter="0.0" slidermax="20" max="20"/>
+	<param name="abb_coma" label="Aberration (coma)" slider="True" slidermin="-1.0" slidermax="1.0" max="1.0"/> 
+	<param name="bokeh_circle_to_square" label="Circle to Square mapping" slider="True"/>
+	<param name="bokeh_anamorphic" label="Anamorphic strech" slider="True"/>
+</page>
+<page name="Bidirectional" open="True"> 
+	<param int="1" name="bidir_sample_mult" label="Samples" slider="True" slidermin="0.0" min="0" slidercenter="5" slidermax="50"  max="300"/>
+	<param name="bidir_add_energy" label="Additional Luminance" slider="True"/>	
+	<param name="bidir_add_energy_minimum_luminance" label="Minimum Luminance" slider="True" slidermin="0.0" min="0.0" slidercenter = "1.0" slidermax="10.0"  max="10000.0"/>
+	<param name="bidir_add_energy_transition" label="Add Lum trans Width" slider="True"/>
+</page>
+
+<page name="Bokeh Image" open="True"> 
+	<param int="1" name="bokeh_aperture_blades" slider="True" slidermin="0" sliderdefault="0" slidermax="8"  max="8" label="Aperture blades"/>
+	<param widget="checkBox" name="bokeh_enable_image" label="Use Bokeh image"/>
+	<param name="bokeh_image_path" widget="fileInput" label="Bokeh image"/>
+</page>
+
+<page name="Advanced" open="False">  
+	<param int="1" name="vignetting_retries" label="Vignetting retries" slider="True" slidermin="1" min="1" slidercenter = "15" slidermax="50"  max="50"/>
+	<param name="exp" label="Exposure" slider="True" slidermin="0.0" slidermax="5.0" max="10.0"/> 
+	<param widget="mapper" name="units" label="Units">
+	<hintdict name="options">
+	<string value="mm"/>
+	<string value="dm"/>
+	<string value="m"/>
+	<string value="cm"/>
+	</hintdict>
+	</param>	
+</page>
+
+<page name="Dynamic Array Attributes" open="False"> 
+	<param widget="sortableArray" isDynamicArray="1" name="horizontal_fov"/>
+	<param widget="sortableArray" isDynamicArray="1" name="vertical_fov"/>
+	<param widget="sortableArray" isDynamicArray="1" name="screen_window_min"/>
+	<param widget="sortableArray" isDynamicArray="1" name="screen_window_max"/>	
+	<param widget="dynamicArray" isDynamicArray="1" name="shutter_curve"/>	
+</page>	
+
+<page name="Extra Attributes" open="False"> 
+	<param widget="dynamicArray" isDynamicArray="1" name="position"/>
+	<param widget="dynamicArray" isDynamicArray="1" name="look_at"/>
+	<param widget="dynamicArray" isDynamicArray="1" name="up"/>
+	<param tupleGroupSize="4" widget="dynamicArray" isDynamicArray="1" name="matrix"/>
+</page> 
+</args>

@@ -25,7 +25,6 @@ ui.shader({
 })
 
 
-
 with uigen.group(ui, 'General', collapse=False):
     ui.parameter('camera_type', 'enum', 'ThinLens', label='Camera Type', 
       description='Thinlens is super fast, Polynomial optics is super accurate.',
@@ -54,7 +53,7 @@ with uigen.group(ui, 'General', collapse=False):
       description='Distance between the lens and the focal plane in centimeter.',
       mn=0, mx=100000, smn=0, smx=2000, houdini_disable_when='{ enable_dof == 0 }')
 
-    ui.parameter('aperture_blades', 'int', 0, label='Aperture Blades', 
+    ui.parameter('aperture_blades_lentil', 'int', 0, label='Aperture Blades', 
       description='Number of aperture blades. < 3 is perfectly circular.',
       mn=0, mx=50, smn=0, smx=8, houdini_disable_when='{ enable_dof == 0 }')
 

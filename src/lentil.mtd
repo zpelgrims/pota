@@ -1,3 +1,275 @@
+[node lentil_camera]
+	desc STRING "Advanced Camera Shader"
+	c4d.classification STRING "generic"
+	maya.name STRING "camera"
+	maya.classification STRING "camera"
+	maya.translator STRING "lentil_camera"
+	maya.attr_prefix STRING ""
+	maya.id INT 0x00070507
+	houdini.icon STRING "SHOP_lens"
+	houdini.category STRING "Lentil"
+	houdini.help_url STRING "http://www.lentil.xyz"
+	houdini.parm.group.g0 STRING "General;9"
+	houdini.parm.group.g1 STRING "Polynomial Optics;3"
+	houdini.parm.group.g2 STRING "Thin Lens;7"
+	houdini.parm.group.g3 STRING "Bokeh Texture;2"
+	houdini.parm.group.g4 STRING "Bidirectional;5"
+	houdini.order STRING "g0 camera_type bidir_sample_mult units sensor_width enable_dof fstop focus_dist aperture_blades_lentil exp "
+	"g1 lens_model wavelength extra_sensor_shift "
+	"g2 focal_length_lentil optical_vignetting abb_spherical abb_distortion abb_coma bokeh_circle_to_square bokeh_anamorphic "
+	"g3 bokeh_enable_image bokeh_image_path "
+	"g4 vignetting_retries bidir_add_energy bidir_add_energy_minimum_luminance bidir_add_energy_transition enable_bidir_transmission "
+
+	
+	[attr camera_type]
+		houdini.label STRING "Camera Type"
+		desc STRING "Thinlens is super fast, Polynomial optics is super accurate."
+		houdini.help STRING "Thinlens is super fast, Polynomial optics is super accurate."
+		linkable BOOL FALSE
+	
+	[attr bidir_sample_mult]
+		houdini.label STRING "Samples Multiplier"
+		min FLOAT 0
+		max FLOAT 300
+		softmin FLOAT 0
+		softmax FLOAT 10
+		desc STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
+		houdini.help STRING "A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)"
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ enable_dof == 0 }"
+	
+	[attr units]
+		houdini.label STRING "Scene Units"
+		desc STRING "Use Centimeter in Maya, use Meter for Houdini (default universe scaling)"
+		houdini.help STRING "Use Centimeter in Maya, use Meter for Houdini (default universe scaling)"
+		linkable BOOL FALSE
+	
+	[attr sensor_width]
+		houdini.label STRING "Sensor Width (mm)"
+		min FLOAT 0.1
+		max FLOAT 100
+		softmin FLOAT 16
+		softmax FLOAT 70
+		desc STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
+		houdini.help STRING "Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens."
+		linkable BOOL TRUE
+	
+	[attr enable_dof]
+		houdini.label STRING "Enable Depth of Field"
+		desc STRING "Disabling makes the aperture an infinitesimal point."
+		houdini.help STRING "Disabling makes the aperture an infinitesimal point."
+		linkable BOOL FALSE
+	
+	[attr fstop]
+		houdini.label STRING "F-Stop"
+		min FLOAT 0
+		max FLOAT 64
+		softmin FLOAT 0.7
+		softmax FLOAT 32
+		desc STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
+		houdini.help STRING "The f-stop is a dimensionless number that is a quantitative measure of lens speed. Practically, it is the ratio of the distance from the lens to the point where the focused light converges (the focal length) over the diameter of the aperture."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ enable_dof == 0 }"
+	
+	[attr focus_dist]
+		houdini.label STRING "Focus Distance (cm)"
+		min FLOAT 0
+		max FLOAT 100000
+		softmin FLOAT 0
+		softmax FLOAT 2000
+		desc STRING "Distance between the lens and the focal plane in centimeter."
+		houdini.help STRING "Distance between the lens and the focal plane in centimeter."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ enable_dof == 0 }"
+	
+	[attr aperture_blades_lentil]
+		houdini.label STRING "Aperture Blades"
+		min FLOAT 0
+		max FLOAT 50
+		softmin FLOAT 0
+		softmax FLOAT 8
+		desc STRING "Number of aperture blades. < 3 is perfectly circular."
+		houdini.help STRING "Number of aperture blades. < 3 is perfectly circular."
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ enable_dof == 0 }"
+	
+	[attr exp]
+		houdini.label STRING "Exposure"
+		min FLOAT 0
+		max FLOAT 99999
+		softmin FLOAT 0
+		softmax FLOAT 5
+		desc STRING "Exposure Multiplier"
+		houdini.help STRING "Exposure Multiplier"
+		linkable BOOL TRUE
+	
+	[attr lens_model]
+		houdini.label STRING "Lens Model"
+		desc STRING "There are many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has its own characteristics. See the online documentation for previews of all lens models."
+		houdini.help STRING "There are many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has its own characteristics. See the online documentation for previews of all lens models."
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ cameratype == ThinLens }"
+	
+	[attr wavelength]
+		houdini.label STRING "Wavelength (nm)"
+		min FLOAT 390
+		max FLOAT 700
+		desc STRING "Wavelength in Nanometers. The Polynomial Optics model is spectral, but since Arnold is an RGB renderer, we leave trace every ray with the same wavelength."
+		houdini.help STRING "Wavelength in Nanometers. The Polynomial Optics model is spectral, but since Arnold is an RGB renderer, we leave trace every ray with the same wavelength."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == ThinLens }"
+	
+	[attr extra_sensor_shift]
+		houdini.label STRING "Additional Sensor shift (mm)"
+		min FLOAT -10
+		max FLOAT 10
+		softmin FLOAT -3
+		softmax FLOAT 3
+		desc STRING "The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!)."
+		houdini.help STRING "The autofocus system is more complicated for polynomial optics than for the thinlens model. This option allows you to slightly push the sensor forward and backward to fine-tune the focus (if needed!)."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == ThinLens }"
+	
+	[attr focal_length_lentil]
+		houdini.label STRING "Focal Length (mm)"
+		min FLOAT 0.01
+		max FLOAT 99999
+		softmin FLOAT 5
+		softmax FLOAT 500
+		desc STRING "Distance between the lens and the point at which the light converges in millimeters."
+		houdini.help STRING "Distance between the lens and the point at which the light converges in millimeters."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }"
+	
+	[attr optical_vignetting]
+		houdini.label STRING "Optical Vignetting"
+		min FLOAT 0
+		max FLOAT 20
+		softmin FLOAT 0
+		softmax FLOAT 5
+		desc STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor."
+		houdini.help STRING "Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr abb_spherical]
+		houdini.label STRING "Aberration (spherical)"
+		min FLOAT 0
+		max FLOAT 1
+		softmin FLOAT 0
+		softmax FLOAT 1
+		desc STRING "Due to the spherical nature of lenses, light cannot be focused onto exactly a singular point. A value of 0.5 means no spherical aberration."
+		houdini.help STRING "Due to the spherical nature of lenses, light cannot be focused onto exactly a singular point. A value of 0.5 means no spherical aberration."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr abb_distortion]
+		houdini.label STRING "Aberration (distortion)"
+		min FLOAT -50
+		max FLOAT 50
+		softmin FLOAT -10
+		softmax FLOAT 10
+		desc STRING "Emperical distortion aberration. Note that lenses with a short focal length will generally exhibit greater amounts of distortion. We chose to not automatically model this, but rather keep it up to the user for greater artistic control."
+		houdini.help STRING "Emperical distortion aberration. Note that lenses with a short focal length will generally exhibit greater amounts of distortion. We chose to not automatically model this, but rather keep it up to the user for greater artistic control."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr abb_coma]
+		houdini.label STRING "Aberration (coma)"
+		min FLOAT -1
+		max FLOAT 1
+		desc STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
+		houdini.help STRING "Emperical coma aberration. There may be slight discrepancies between forward and bidirectional results."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr bokeh_circle_to_square]
+		houdini.label STRING "Square Bokeh"
+		min FLOAT 0
+		max FLOAT 1
+		softmin FLOAT 0
+		softmax FLOAT 1
+		desc STRING "Sometimes for artistic purposes you might want to make the bokeh a little more square. This can sometimes happen with anamorphic lenses. 0 is a perfectly circular highlight, 1 is perfectly square."
+		houdini.help STRING "Sometimes for artistic purposes you might want to make the bokeh a little more square. This can sometimes happen with anamorphic lenses. 0 is a perfectly circular highlight, 1 is perfectly square."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr bokeh_anamorphic]
+		houdini.label STRING "Anamorphic Squeeze"
+		min FLOAT 0
+		max FLOAT 1
+		softmin FLOAT 0
+		softmax FLOAT 1
+		desc STRING "This scales the bokeh along the x-axis."
+		houdini.help STRING "This scales the bokeh along the x-axis."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ cameratype == PolynomialOptics }{ enable_dof == 0 }"
+	
+	[attr bokeh_enable_image]
+		houdini.label STRING "Enable Texture"
+		desc STRING "This option replaces the circular/polygonal aperture with a texture-based one."
+		houdini.help STRING "This option replaces the circular/polygonal aperture with a texture-based one."
+		linkable BOOL FALSE
+		houdini.join_next BOOL TRUE
+	
+	[attr bokeh_image_path]
+		houdini.label STRING "Filepath"
+		desc STRING "Supply small-ish images. The visual quality will not increase much above 250x250, but the pre-computation time will."
+		houdini.help STRING "Supply small-ish images. The visual quality will not increase much above 250x250, but the pre-computation time will."
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ bokeh_enable_image == 0 }{ enable_dof == 0 }"
+	
+	[attr vignetting_retries]
+		houdini.label STRING "Vignetting Quality"
+		min FLOAT 1
+		max FLOAT 500
+		softmin FLOAT 1
+		softmax FLOAT 50
+		desc STRING "Since we are modeling real lenses, it is possible that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
+		houdini.help STRING "Since we are modeling real lenses, it is possible that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border."
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ bidir_sample_mult == 0 }{ enable_dof == 0 }"
+	
+	[attr bidir_add_energy]
+		houdini.label STRING "Additional Energy"
+		min FLOAT 0
+		max FLOAT 100
+		softmin FLOAT 0
+		softmax FLOAT 10
+		desc STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit."
+		houdini.help STRING "Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ bidir_sample_mult == 0 }{ enable_dof == 0 }"
+	
+	[attr bidir_add_energy_minimum_luminance]
+		houdini.label STRING "Additional Energy Treshold"
+		min FLOAT 0
+		max FLOAT 100
+		softmin FLOAT 0
+		softmax FLOAT 5
+		desc STRING "Only samples with a value above this parameter will be considered."
+		houdini.help STRING "Only samples with a value above this parameter will be considered."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ bidir_sample_mult == 0 }{ enable_dof == 0 }"
+	
+	[attr bidir_add_energy_transition]
+		houdini.label STRING "Additional Energy Treshold Transition"
+		min FLOAT 0
+		max FLOAT 10
+		softmin FLOAT 0
+		softmax FLOAT 5
+		desc STRING "This allows for a smooth transition, so that the additional energy does not flicker when the treshold is reached."
+		houdini.help STRING "This allows for a smooth transition, so that the additional energy does not flicker when the treshold is reached."
+		linkable BOOL TRUE
+		houdini.disable_when STRING "{ bidir_sample_mult == 0 }{ enable_dof == 0 }"
+	
+	[attr enable_bidir_transmission]
+		houdini.label STRING "Enable for transmitted surfaces"
+		desc STRING "WARNING: this should not be used, unless in very specific circumstances. For example, when you might be rendering a set of led lights which are behind a transmissive surface, but where the depth information is practically the same. Or when you are inside the transmissive medium, such as underwater. In any other case, this option should be avoided."
+		houdini.help STRING "WARNING: this should not be used, unless in very specific circumstances. For example, when you might be rendering a set of led lights which are behind a transmissive surface, but where the depth information is practically the same. Or when you are inside the transmissive medium, such as underwater. In any other case, this option should be avoided."
+		linkable BOOL FALSE
+		houdini.disable_when STRING "{ bidir_sample_mult == 0 }{ enable_dof == 0 }"
+
 [node imager_lentil]
     maya.name               STRING "imager_lentil"
     maya.classification     STRING  "imager"
