@@ -38,7 +38,7 @@ install(DIRECTORY ${PRESET_SCENES} DESTINATION ${SCENES_INSTALL_DIR})
 
 
 # concat mtd files
-set(MTD_FILES ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd ${CMAKE_CURRENT_SOURCE_DIR}/lentil_extra.mtd)
+set(MTD_FILES ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd ${CMAKE_CURRENT_SOURCE_DIR}/lentil_hardcode.mtd)
 
 function(cat IN_FILE OUT_FILE)
   file(READ ${IN_FILE} CONTENTS)
