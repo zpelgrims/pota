@@ -258,7 +258,6 @@ struct Camera
     std::string lens_inner_pupil_geometry;
     std::string lens_outer_pupil_geometry;
 
-    // parameters global
     double focus_distance;
 	double sensor_width;
 	double input_fstop;
@@ -273,12 +272,8 @@ struct Camera
     float bidir_add_energy_transition;
     bool enable_bidir_transmission;
     float exposure;
-
-    // parameters PO
     double lambda;
     float extra_sensor_shift;
-
-    // parameters TL
     float focal_length;
     float optical_vignetting_distance;
     float optical_vignetting_radius;
@@ -287,24 +282,16 @@ struct Camera
     float abb_distortion;
     float circle_to_square;
     float bokeh_anamorphic;
-
-
-    // data TL
     float fov;
     double tan_fov;
-
-    // data PO
     double max_fstop;
-
 	double aperture_radius;
 	double sensor_shift;
     
-
     AtNode *filter_node;
     AtNode *camera_node;
     AtNode *imager_node;
     AtNode *options_node;
-
 
     // filter/imager data
     unsigned xres;
@@ -323,7 +310,6 @@ struct Camera
     float filter_width;
     float time_start;
     float time_end;
-
 
     unsigned aovcount;
 
