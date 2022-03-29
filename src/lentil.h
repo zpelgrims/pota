@@ -180,55 +180,52 @@ public:
 
 
 struct AOVData {
+public:
+    std::vector<AtRGBA> buffer;
+    TokenizedOutputLentil to;
 
-    public:
-        std::vector<AtRGBA> buffer;
-        TokenizedOutputLentil to;
+    AtString name = AtString("");
+    unsigned int type = 0;
+    bool is_duplicate = false;
+    int index = 0;
 
-        AtString name = AtString("");
-        unsigned int type = 0;
-        bool is_duplicate = false;
-        int index = 0;
-
-        // crypto
-        bool is_crypto = false;
-        std::vector<std::map<float, float>> crypto_hash_map;
-        std::vector<float> crypto_total_weight;
-
+    // crypto
+    bool is_crypto = false;
+    std::vector<std::map<float, float>> crypto_hash_map;
+    std::vector<float> crypto_total_weight;
 
 
-        AOVData(AtUniverse *universe, std::string output_string) {
-            to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
-            name = AtString(to.aov_name_tok.c_str());
-            type = string_to_arnold_type(to.aov_type_tok);
-        }
+
+    AOVData(AtUniverse *universe, std::string output_string) {
+        to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
+        name = AtString(to.aov_name_tok.c_str());
+        type = string_to_arnold_type(to.aov_type_tok);
+    }
 
 
-        void allocate_regular_buffers(int xres, int yres) {
-            buffer.clear();
-            buffer.resize(xres*yres);
-        }
+    void allocate_regular_buffers(int xres, int yres) {
+        buffer.clear();
+        buffer.resize(xres*yres);
+    }
 
-        void allocate_cryptomatte_buffers(int xres, int yres) {
-            crypto_hash_map.clear();
-            crypto_hash_map.resize(xres*yres);
-            crypto_total_weight.clear();
-            crypto_total_weight.resize(xres*yres);
-        }
+    void allocate_cryptomatte_buffers(int xres, int yres) {
+        crypto_hash_map.clear();
+        crypto_hash_map.resize(xres*yres);
+        crypto_total_weight.clear();
+        crypto_total_weight.resize(xres*yres);
+    }
 
-        ~AOVData() {
-            destroy_buffers();
-        }
+    ~AOVData() {
+        destroy_buffers();
+    }
 
-    private:
+private:
 
-        void destroy_buffers() {
-            buffer.clear();
-            crypto_hash_map.clear();
-            crypto_total_weight.clear();
-        }
-
-        
+    void destroy_buffers() {
+        buffer.clear();
+        crypto_hash_map.clear();
+        crypto_total_weight.clear();
+    }
 };
 
 
@@ -238,6 +235,11 @@ struct Camera
     UnitModel unitModel;
     CameraType cameraType;
     imageData image;
+
+    std::vector<float> zbuffer;
+    std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
+    std::vector<AOVData> aovs;
+    std::vector<float> filter_weight_buffer;
 
     // lens constants PO
     const char* lens_name;
@@ -297,14 +299,11 @@ struct Camera
 	double aperture_radius;
 	double sensor_shift;
     
-    double random1;
-    double random2;
 
     AtNode *filter_node;
     AtNode *camera_node;
     AtNode *imager_node;
     AtNode *options_node;
-
 
 
     // filter/imager data
@@ -325,11 +324,6 @@ struct Camera
     float time_start;
     float time_end;
 
-    
-    std::vector<float> zbuffer;
-    std::vector<float> zbuffer_debug; // separate zbuffer for the debug AOV, which only tracks redistributed depth values
-    std::vector<AOVData> aovs;
-    std::vector<float> filter_weight_buffer;
 
     unsigned aovcount;
 
@@ -345,16 +339,13 @@ struct Camera
 
     bool cryptomatte_lentil = false;
     bool imager_print_once_only = false;
-
     bool crypto_in_same_queue = false;
-
 
 
 public:
 
     Camera() {
-        if (!l_critsec_active)
-            AiMsgError("[Lentil] Critical section was not initialized. ");
+        if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
     }
 
     ~Camera() {
@@ -363,9 +354,7 @@ public:
     }
 
 
-
     void setup_all (AtUniverse *universe) {
-
         lentil_crit_sec_enter();
 
         destroy_buffers();
@@ -386,13 +375,12 @@ public:
         get_arnold_options();
         
 
-
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
             
             crypto_in_same_queue = false;
 
-            // cryptomatte
+            // get cryptomatte node
             AtNode *crypto_node = nullptr;
             AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
             for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
@@ -403,6 +391,7 @@ public:
             }
 
             // POTENTIAL BUG: what if lentil updates on the same thread as cryptomatte, and is in the queue before crypto? That would be a deadlock.
+            // this is an ugly solution, continually checking if cryptomatte already did the setup.
             if (crypto_node){
                 CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
                 int time_cnt = 0;
@@ -626,10 +615,8 @@ public:
             unit_disk(0) *= bokeh_anamorphic;
 
 
-
             // aberration inputs
             float abb_field_curvature = 0.0;
-
 
 
             AtVector lens(unit_disk(0) * aperture_radius, unit_disk(1) * aperture_radius, 0.0);
@@ -713,7 +700,6 @@ public:
             }
 
            
-
             // weight = AI_RGB_WHITE;
             ray_succes = true;
         }
@@ -969,8 +955,6 @@ public:
                             const float fitted_bidir_add_energy, const float depth,
                             const bool transmitted_energy_in_sample, const int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
-
-
         switch(aov.type){
 
             case AI_TYPE_RGBA: {
@@ -1053,11 +1037,11 @@ public:
     }
 
 
-    inline float filter_weight_gaussian(AtVector2 p, float width) {
-        const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
-        if (r > 1.0f) return 0.0;
-        return AiFastExp(2 * -r);
-    }
+    // inline float filter_weight_gaussian(AtVector2 p, float width) {
+    //     const float r = std::pow(2.0 / width, 2.0) * (std::pow(p.x, 2) + std::pow(p.y, 2));
+    //     if (r > 1.0f) return 0.0;
+    //     return AiFastExp(2 * -r);
+    // }
 
     inline void filter_and_add_to_buffer_new(int px, int py,
                                         float depth, 
@@ -1107,8 +1091,7 @@ public:
     }
 
 
-    inline void lens_sample_triangular_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades)
-    {
+    inline void lens_sample_triangular_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades){
         const int tri = (int)(r1*blades);
 
         // rescale:
@@ -1130,7 +1113,6 @@ public:
 
     
     void setup_filter(AtUniverse *universe) {
-
         // xres_without_region = AiNodeGetInt(options_node, "xres");
         // yres_without_region = AiNodeGetInt(options_node, "yres");
         region_min_x = AiNodeGetInt(options_node, "region_min_x");
@@ -1193,14 +1175,7 @@ public:
     }
 
 
-    // NOTE: I commented out some code that would add the lentil_time aov shader automatically
-    // for unknown reason (I think it's related to the Arnold 7.0 bug of the duplicate options node),
-    // this only was picked up in the IPR. when doing a -dp render, it didn't. This would be too annoying.
-    // try enabling this workflow again when this options node bug is solved!
     void setup_aovs(AtUniverse *universe) {
-
-        
-
         filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
         if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
 
@@ -1332,16 +1307,12 @@ public:
 
 private:
 
-    
     void destroy_buffers() {
         zbuffer.clear();
         zbuffer_debug.clear();
         aovs.clear();
         filter_weight_buffer.clear();
     }
-
-
-    
 
 
      bool get_bidirectional_status(AtUniverse *universe) {
@@ -1375,7 +1346,6 @@ private:
         return true;
     }
 
-    
 
 
     inline void reset_iterator_to_id(AtAOVSampleIterator* iterator, int id){
@@ -1751,9 +1721,6 @@ private:
 
     
 
-
-
-
     void camera_model_specific_setup () {
 
         switch (cameraType){
@@ -1857,44 +1824,4 @@ private:
             } break;
         }
     }
-
-    
-
-    
-    // bool bokehChanged(const Camera &rhs){
-    //     return (useImage != rhs.useImage ||
-    //             (useImage && bokehPath != rhs.bokehPath));
-    // }
-
-
-    // AtNode* get_lentil_imager(AtUniverse *uni) {
-    //     AtNode* options = AiUniverseGetOptions(uni);
-    //     AtArray* outputs = AiNodeGetArray(options, "outputs");
-    //     std::string output_string = AiArrayGetStr(outputs, 0).c_str(); // only considering first output string, should be the same for all of them
-    //     std::string driver = split_str(output_string, std::string(" ")).back();
-    //     AtString driver_as = AtString(driver.c_str());
-    //     AtNode *driver_node = AiNodeLookUpByName(uni, driver_as);
-    //     AtNode *imager_node = (AtNode*)AiNodeGetPtr(driver_node, "input");
-        
-        
-    //     if (imager_node == nullptr){
-    //         AiMsgError("[LENTIL FILTER] Couldn't find imager input. Is your imager connected?");
-    //         return nullptr;
-    //     }
-        
-    //     for (int i=0; i<16; i++){ // test, only considering depth of 16 for now, ideally should be arbitrary
-    //         const AtNodeEntry* imager_ne = AiNodeGetNodeEntry(imager_node);
-    //         if ( AiNodeEntryGetNameAtString(imager_ne) == AtString("imager_lentil")) {
-    //             return imager_node;
-    //         } else {
-    //             imager_node = (AtNode*)AiNodeGetPtr(imager_node, "input");
-    //         }
-    //     }
-
-    //     AiMsgError("[LENTIL FILTER] Couldn't find lentil_imager in the imager chain. Is your imager connected?");
-    //     AiRenderAbort();
-    //     return nullptr;
-    // }
-
-
 };
