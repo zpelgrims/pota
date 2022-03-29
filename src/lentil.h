@@ -1199,15 +1199,15 @@ public:
     // try enabling this workflow again when this options node bug is solved!
     void setup_aovs(AtUniverse *universe) {
 
+        
+
         filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
         if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
 
         AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), "outputs");
         const int elements = AiArrayGetNumElements(outputs);
         std::vector<std::string> output_strings;
-        // bool lentil_time_found = false;
-
-
+        bool lentil_time_found = false;
 
 
         for (int i=0; i<elements; i++) {
@@ -1235,12 +1235,14 @@ public:
                 aov.is_crypto = true;
             }
 
-
             if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
                 aov.to.filter_tok = "lentil_replaced_filter";
             }
 
-            
+            if (aov.to.aov_name_tok == "lentil_time"){
+                lentil_time_found = true;
+            }
+
             // identify as duplicate
             for (auto &element : aovs) {
                 if (aov.to.aov_name_tok == element.to.aov_name_tok) {
@@ -1262,7 +1264,16 @@ public:
         aov_lentil_debug.name = AtString("lentil_debug");
         aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
         aovs.push_back(aov_lentil_debug);
-        
+
+        if (!lentil_time_found) {
+            AOVData aov_lentil_time = aovs[0];
+            aov_lentil_time.to.aov_type_tok = "FLOAT";
+            aov_lentil_time.to.aov_name_tok = "lentil_time";
+            aov_lentil_time.to = TokenizedOutputLentil(universe, AtString(aov_lentil_time.to.rebuild_output().c_str()));
+            aov_lentil_time.name = AtString("lentil_time");
+            aov_lentil_time.type = string_to_arnold_type(aov_lentil_time.to.aov_type_tok);
+            aovs.push_back(aov_lentil_time);
+        }
         
         AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
         uint32_t i = 0;
@@ -1284,38 +1295,27 @@ public:
             else ++it;
         }
 
-        // see comment above function ^
-        // if (!lentil_time_found) {
-        //     std::string tmp_first_aov = output_strings[0];
-        //     auto [filter_index, output_string_split] = find_filter_index_in_aov_string(tmp_first_aov, universe);
-        //     std::string type = output_string_split[filter_index-1];
-        //     std::string name = output_string_split[filter_index-2];
-        //     tmp_first_aov.replace(tmp_first_aov.find(name), name.length(), "lentil_time");
-        //     tmp_first_aov.replace(tmp_first_aov.find(type), type.length(), "FLOAT");
-        //     output_strings.push_back(tmp_first_aov);
-        // }
 
+        // need to add an entry to the aov_shaders (NODE)
+        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
+        int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
 
+        if (!lentil_time_found){
+            AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
+            AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
 
-        // see comment above function ^
-        // // need to add an entry to the aov_shaders (NODE)
-        // AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
-        // int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
+            // set time node params/linking
+            AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
+            AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
+            AiNodeLink(time_read, "aov_input", time_write);
 
-        // if (!lentil_filter_found){
-        //     AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
-        //     AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
-
-        //     // set time node params/linking
-        //     AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
-        //     AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
-        //     AiNodeLink(time_read, "aov_input", time_write);
-
-        //     AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
-        //     AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
-        //     AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
-        // }
+            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
+            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
+            AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
+        }
     }
+
+
 
     inline float additional_luminance_soft_trans(const float sample_luminance){
         // additional luminance with soft transition
