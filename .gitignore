@@ -23,7 +23,7 @@
 !/tests/tl_redistribution_bug
 !/tests/293_aovIssue
 
-/htoa/backup/*
+/preset_scenes/backup/*
 
 !bokeh_imgs/*.png
 !bokeh_imgs/*.jpg
