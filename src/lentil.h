@@ -332,6 +332,7 @@ public:
 
     Camera() {
         if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
+        crypto_in_same_queue = false;
     }
 
     ~Camera() {
@@ -385,8 +386,9 @@ public:
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     ++time_cnt;
 
-                    if (time_cnt == 200) { // guess that crypto is in the same queue, behind lentil
+                    if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
                         crypto_in_same_queue = true;
+                        AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
                         break;
                     }
                 }
