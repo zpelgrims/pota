@@ -38,17 +38,17 @@ install(DIRECTORY ${PRESET_SCENES} DESTINATION ${SCENES_INSTALL_DIR})
 
 
 # concat mtd files
-set(MTD_FILES ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd ${CMAKE_CURRENT_SOURCE_DIR}/lentil_hardcode.mtd)
+# set(MTD_FILES ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd ${CMAKE_CURRENT_SOURCE_DIR}/lentil_hardcode.mtd)
 
-function(cat IN_FILE OUT_FILE)
-  file(READ ${IN_FILE} CONTENTS)
-  file(APPEND ${OUT_FILE} "${CONTENTS}")
-endfunction()
+# function(cat IN_FILE OUT_FILE)
+#   file(READ ${IN_FILE} CONTENTS)
+#   file(APPEND ${OUT_FILE} "${CONTENTS}")
+# endfunction()
 
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd "")
-foreach(MTD_FILE ${MTD_FILES})
-  cat(${MTD_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd)
-endforeach()
+# file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd "")
+# foreach(MTD_FILE ${MTD_FILES})
+#   cat(${MTD_FILE} ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd)
+# endforeach()
 
-set(MTD_LENTIL ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd)
-install(FILES ${MTD_LENTIL} DESTINATION ${MTD_INSTALL_DIR})
+# set(MTD_LENTIL ${CMAKE_CURRENT_SOURCE_DIR}/lentil.mtd)
+# install(FILES ${MTD_LENTIL} DESTINATION ${MTD_INSTALL_DIR})
