@@ -49,7 +49,7 @@ filter_pixel
   AtNode *camera_node = AiUniverseGetCamera(universe);
   Camera *camera_data = (Camera*)AiNodeGetLocalData(camera_node);
 
-
+  int aa_samples_set_by_user = AiNodeGetInt(AiUniverseGetOptions(universe), AtString("AA_samples"));
   bool rgba_aov = (AiAOVSampleIteratorGetAOVName(iterator) == camera_data->atstring_rgba); // early out for non-primary AOV samples
   bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_adaptive_sampling")); 
   float inverse_sample_density = 0.0;
@@ -61,8 +61,7 @@ filter_pixel
     AiAOVSampleIteratorReset(iterator);
     float AA_samples = std::sqrt(samples_counter) / camera_data->filter_width;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
-    AiMsgInfo("aa samples: %f", AA_samples);
-    if (static_cast<int>(std::round(AA_samples)) != AiNodeGetInt(AiUniverseGetOptions(universe), AtString("AA_samples"))){
+    if (static_cast<int>(std::round(AA_samples)) != aa_samples_set_by_user || (aa_samples_set_by_user < 3)){
       camera_data->redistribution = false; // skip when aa samples are below final AA samples
     }
   }
