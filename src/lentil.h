@@ -744,8 +744,8 @@ public:
                 case m:  { lens_correct_scaled /= 100.0;}
             }
             AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
-            AtVector ws_direction = cam_pos_ws - sample_pos_ws;
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
+            AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
+            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), sg);
             if (AiTraceProbe(ray, sg)){
                 ++tries;
                 continue;
