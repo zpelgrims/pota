@@ -51,18 +51,18 @@ filter_pixel
 
 
   bool rgba_aov = (AiAOVSampleIteratorGetAOVName(iterator) == camera_data->atstring_rgba); // early out for non-primary AOV samples
-  bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), "enable_adaptive_sampling"); 
+  bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_adaptive_sampling")); 
   float inverse_sample_density = 0.0;
   
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0. It only works for adaptive sampling.
   if (!adaptive_sampling && rgba_aov) {
     int samples_counter = 0;
     while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
-    // AiMsgInfo("counted %d samples", samples_counter);
     AiAOVSampleIteratorReset(iterator);
     float AA_samples = std::sqrt(samples_counter) / camera_data->filter_width;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
-    if (static_cast<int>(std::ceil(AA_samples)) != AiNodeGetInt(AiUniverseGetOptions(universe), "AA_samples")){
+    AiMsgInfo("aa samples: %f", AA_samples);
+    if (static_cast<int>(std::round(AA_samples)) != AiNodeGetInt(AiUniverseGetOptions(universe), AtString("AA_samples"))){
       camera_data->redistribution = false; // skip when aa samples are below final AA samples
     }
   }
