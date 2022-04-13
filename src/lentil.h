@@ -1102,26 +1102,27 @@ public:
 
     
     void setup_filter(AtUniverse *universe) {
-        // xres_without_region = AiNodeGetInt(options_node, "xres");
-        // yres_without_region = AiNodeGetInt(options_node, "yres");
+        xres_without_region = AiNodeGetInt(options_node, "xres");
+        yres_without_region = AiNodeGetInt(options_node, "yres");
         region_min_x = AiNodeGetInt(options_node, "region_min_x");
         region_min_y = AiNodeGetInt(options_node, "region_min_y");
-        // region_max_x = AiNodeGetInt(options_node, "region_max_x");
-        // region_max_y = AiNodeGetInt(options_node, "region_max_y");
+        region_max_x = AiNodeGetInt(options_node, "region_max_x");
+        region_max_y = AiNodeGetInt(options_node, "region_max_y");
 
-        // // need to check if the render region option is used, if not, set it to default
-        // if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
-        //     region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
-        //     region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
-        //     region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
-        //       region_min_x = 0;
-        //       region_min_y = 0;
-        //       region_max_x = xres_without_region;
-        //       region_max_y = yres_without_region;
-        // }
+        // need to check if the render region option is used, if not, set it to default
+        if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
+            region_max_x == INT32_MIN || region_max_x == INT32_MAX ||
+            region_min_y == INT32_MIN || region_min_y == INT32_MAX ||
+            region_max_y == INT32_MIN || region_max_y == INT32_MAX ) {
+              region_min_x = 0;
+              region_min_y = 0;
+              region_max_x = xres_without_region;
+              region_max_y = yres_without_region;
+        }
 
-        // xres = region_max_x - region_min_x;
-        // yres = region_max_y - region_min_y;
+        xres = region_max_x - region_min_x;
+        yres = region_max_y - region_min_y;
+        
 
         // if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
         //     (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
@@ -1172,7 +1173,7 @@ public:
         const int elements = AiArrayGetNumElements(outputs);
         std::vector<std::string> output_strings;
         bool lentil_time_found = false;
-
+        bool lentil_debug_found = false;
 
         for (int i=0; i<elements; i++) {
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
@@ -1207,6 +1208,10 @@ public:
                 lentil_time_found = true;
             }
 
+            if (aov.to.aov_name_tok == "lentil_debug"){
+                lentil_debug_found = true;
+            }
+
             // identify as duplicate
             for (auto &element : aovs) {
                 if (aov.to.aov_name_tok == element.to.aov_name_tok) {
@@ -1221,14 +1226,16 @@ public:
         // make a copy of RGBA aov and use it as the basis for the lentil_debug AOV
         // doing this to make sure the whole AOV string is correct, including all the options
         // because some stuff happens in the constructor and we're skipping that here, we need to set these manually
-        AOVData aov_lentil_debug = aovs[0];
-        aov_lentil_debug.to.aov_type_tok = "FLOAT";
-        aov_lentil_debug.to.aov_name_tok = "lentil_debug";
-        aov_lentil_debug.to = TokenizedOutputLentil(universe, AtString(aov_lentil_debug.to.rebuild_output().c_str()));
-        aov_lentil_debug.name = AtString("lentil_debug");
-        aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
-        aovs.push_back(aov_lentil_debug);
-
+        if (!lentil_debug_found){
+            AOVData aov_lentil_debug = aovs[0];
+            aov_lentil_debug.to.aov_type_tok = "FLOAT";
+            aov_lentil_debug.to.aov_name_tok = "lentil_debug";
+            aov_lentil_debug.to = TokenizedOutputLentil(universe, AtString(aov_lentil_debug.to.rebuild_output().c_str()));
+            aov_lentil_debug.name = AtString("lentil_debug");
+            aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
+            aovs.push_back(aov_lentil_debug);
+        }
+        
         if (!lentil_time_found) {
             AOVData aov_lentil_time = aovs[0];
             aov_lentil_time.to.aov_type_tok = "FLOAT";

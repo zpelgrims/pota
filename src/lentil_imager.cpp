@@ -114,8 +114,8 @@ driver_process_bucket {
         int y = j + bucket_yo;
         int x = i + bucket_xo;
         int in_idx = j * bucket_size_x + i;
-        int linear_pixel = camera_data->coords_to_linear_pixel(x, y);
-
+        int linear_pixel = camera_data->coords_to_linear_pixel(x-camera_data->region_min_x, y-camera_data->region_min_y);
+        
         switch (aov_type){
           case AI_TYPE_RGBA: {
 

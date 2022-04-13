@@ -70,10 +70,13 @@ filter_pixel
   if (camera_data->redistribution && rgba_aov){
     const double xres = (double)camera_data->xres;
     const double yres = (double)camera_data->yres;
-    const double frame_aspect_ratio = xres/yres;
+    const double frame_aspect_ratio = (xres)/yres;
+    const double frame_aspect_ratio_without_region = (double)camera_data->xres_without_region/(double)camera_data->yres_without_region;
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
+    px -= camera_data->region_min_x;
+    py -= camera_data->region_min_y;
     AtShaderGlobals *shaderglobals = AiShaderGlobals();
 
 
@@ -364,9 +367,9 @@ filter_pixel
             
 
             // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio);
-            const float pixel_x = (( s(0) + 1.0) / 2.0) * camera_data->xres;
-            const float pixel_y = ((-s(1) + 1.0) / 2.0) * camera_data->yres;
+            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio_without_region);
+            const float pixel_x = ((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x;
+            const float pixel_y = (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y;
 
             // if outside of image
             if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
