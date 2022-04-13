@@ -1056,27 +1056,6 @@ public:
         return x + (y * xres);
     }
 
-    inline int coords_to_linear_pixel_region(const int x, const int y) {
-        return (x-region_min_x) + ((y-region_min_y) * xres);
-    }
-
-    // inline void linear_pixel_to_coords(const int linear_pixel, int &x, int &y, const int xres) {
-    //   x = linear_pixel % xres;
-    //   y = (int)(linear_pixel / xres);
-    // }
-
-    // inline void linear_pixel_region_to_coords(const int linear_pixel, int &x, int &y, const int xres, const int region_min_x, const int region_min_y) {
-    //   x = (linear_pixel % xres) + region_min_x;
-    //   y = (int)(linear_pixel / xres) + region_min_y;
-    // }
-
-    inline Eigen::Vector2d sensor_to_pixel_position(const Eigen::Vector2d sensor_position, const float frame_aspect_ratio){
-        // convert sensor position to pixel position
-        const Eigen::Vector2d s(sensor_position(0) / (sensor_width * 0.5), sensor_position(1) / (sensor_width * 0.5) * frame_aspect_ratio);
-        const Eigen::Vector2d pixel((( s(0) + 1.0) / 2.0) * xres, 
-                                    ((-s(1) + 1.0) / 2.0) * yres);
-        return pixel;
-    }
 
 
     inline void lens_sample_triangular_aperture(double &x, double &y, double r1, double r2, const double radius, const int blades){

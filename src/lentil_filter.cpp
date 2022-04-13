@@ -188,7 +188,6 @@ filter_pixel
 
           for(int count=0; count<samples && total_samples_taken < max_total_samples; ++count, ++total_samples_taken) {
             
-            Eigen::Vector2d pixel;
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
@@ -214,7 +213,10 @@ filter_pixel
               continue;
             }
 
-            pixel = camera_data->sensor_to_pixel_position(sensor_position, frame_aspect_ratio);
+            const Eigen::Vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio_without_region);
+            const Eigen::Vector2d pixel(((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x, 
+                                        (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y);
+        
 
             // if outside of image
             if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
@@ -224,7 +226,8 @@ filter_pixel
               continue;
             }
 
-            unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
+            // unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
+            unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1))) : camera_data->coords_to_linear_pixel(px, py);
 
             // box filtering, see thin-lens
             float filter_weight = 1.0;
