@@ -74,7 +74,7 @@ filter_pixel
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
-    AtShaderGlobals *sg = AiShaderGlobals();
+    AtShaderGlobals *shaderglobals = AiShaderGlobals();
 
 
     for (int sampleid=0; AiAOVSampleIteratorGetNext(iterator)==true; sampleid++) {
@@ -206,7 +206,7 @@ filter_pixel
             //   rgb_weight *= AtRGB(0,0,3);
             // }
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, sg, lambda_per_sample)) {
+            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample)) {
               --count;
               continue;
             }
@@ -292,11 +292,21 @@ filter_pixel
             }
             AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
             AtVector ws_direction = cam_pos_ws - sample_pos_ws;
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, sg);
-            if (AiTraceProbe(ray, sg)){
+            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, shaderglobals);
+            if (AiTraceProbe(ray, shaderglobals)){
               --count;
               continue;
             }
+            // AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AI_BIG, shaderglobals);
+            // AtScrSample hit = AtScrSample();
+            // if (AiTrace(ray, AI_RGB_WHITE, hit)){
+            //   // if (hit.point.x != 0.0) AiMsgInfo("hit.point: %f %f %f", hit.point.x, hit.point.y, hit.point.z);
+            //   if (hit.opacity != AI_RGB_WHITE) AiMsgInfo("hit.opacity: %f %f %f", hit.opacity.r, hit.opacity.g, hit.opacity.b);
+            //   //   AiMsgInfo("uhoh");
+            //   // }
+            //   --count;
+            //   continue;
+            // }
 
             // bring back to (x, y, 1)
             AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
@@ -380,7 +390,7 @@ filter_pixel
         } break;
       }
     }
-    AiShaderGlobalsDestroy(sg);
+    AiShaderGlobalsDestroy(shaderglobals);
   } 
   
 

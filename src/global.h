@@ -1,15 +1,9 @@
 #pragma once
 
-#include <map>
-#include <vector>
-#include <atomic>
-#include <memory>
-
-
-
 inline float linear_interpolate(float perc, float a, float b){
     return a + perc * (b - a);
 }
+
 
 inline float clamp(float in, const float min, const float max) {
     if (in < min) in = min;
@@ -17,10 +11,12 @@ inline float clamp(float in, const float min, const float max) {
     return in;
 }
 
+
 inline float clamp_min(float in, const float min) {
     if (in < min) in = min;
     return in;
 }
+
 
 // xorshift fast random number generator
 inline uint32_t xor128(void){
@@ -29,6 +25,7 @@ inline uint32_t xor128(void){
   x = y; y = z; z = w;
   return w = (w ^ (w >> 19) ^ t ^ (t >> 8));
 }
+
 
 // https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_06/shaders/random_number_generators.h
 // Tiny Encryption Algorithm (TEA) to calculate a the seed per launch index and iteration.
@@ -58,7 +55,6 @@ inline float rng(unsigned int& previous)
   return float(previous & 0X00FFFFFF) / float(0x01000000u); // Use the lower 24 bits.
   // return float(previous >> 8) / float(0x01000000u);      // Use the upper 24 bits
 }
-
 
 
 inline unsigned int string_to_arnold_type(std::string str){
