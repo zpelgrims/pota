@@ -1108,6 +1108,7 @@ public:
         //         AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
         // }
 
+
         filter_width = 1.5;
         time_start = AiCameraGetShutterStart();
         time_end = AiCameraGetShutterEnd();
@@ -1230,7 +1231,10 @@ public:
         for (auto &output : aovs){
             AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
             output.index = i;
-            AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
+
+            if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug") {
+                AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug)?
+            }
         }
         AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
         aovcount = aovs.size()+1;

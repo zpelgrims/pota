@@ -13,8 +13,8 @@ node_parameters
  
 node_initialize
 {
-  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "FLOAT lentil_time", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
-  AiFilterInitialize(node, true, required_aovs);
+  static const char *required_aovs[] = {"RGBA RGBA", "VECTOR P", "FLOAT Z", "FLOAT lentil_time", "FLOAT lentil_debug", "RGB opacity", "RGBA transmission", "FLOAT lentil_bidir_ignore", NULL};
+  AiFilterInitialize(node, false, required_aovs);
 }
 
 
