@@ -1099,8 +1099,8 @@ public:
               region_max_y = yres_without_region;
         }
 
-        xres = region_max_x - region_min_x;
-        yres = region_max_y - region_min_y;
+        xres = region_max_x - region_min_x + 1;
+        yres = region_max_y - region_min_y + 1;
         
 
         // if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
