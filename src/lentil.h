@@ -369,7 +369,7 @@ public:
 
             // get cryptomatte node
             AtNode *crypto_node = nullptr;
-            AtArray* aov_shaders_array = AiNodeGetArray(options_node, "aov_shaders");
+            AtArray* aov_shaders_array = AiNodeGetArray(options_node, AtString("aov_shaders"));
             for (size_t i=0; i<AiArrayGetNumElements(aov_shaders_array); ++i) {
                 AtNode* aov_node = static_cast<AtNode*>(AiArrayGetPtr(aov_shaders_array, i));
                 if (AiNodeEntryGetNameAtString(AiNodeGetNodeEntry(aov_node)) == AtString("cryptomatte")) {
@@ -1102,12 +1102,12 @@ public:
 
     
     void setup_filter(AtUniverse *universe) {
-        xres_without_region = AiNodeGetInt(options_node, "xres");
-        yres_without_region = AiNodeGetInt(options_node, "yres");
-        region_min_x = AiNodeGetInt(options_node, "region_min_x");
-        region_min_y = AiNodeGetInt(options_node, "region_min_y");
-        region_max_x = AiNodeGetInt(options_node, "region_max_x");
-        region_max_y = AiNodeGetInt(options_node, "region_max_y");
+        xres_without_region = AiNodeGetInt(options_node, AtString("xres"));
+        yres_without_region = AiNodeGetInt(options_node, AtString("yres"));
+        region_min_x = AiNodeGetInt(options_node, AtString("region_min_x"));
+        region_min_y = AiNodeGetInt(options_node, AtString("region_min_y"));
+        region_max_x = AiNodeGetInt(options_node, AtString("region_max_x"));
+        region_max_y = AiNodeGetInt(options_node, AtString("region_max_y"));
 
         // need to check if the render region option is used, if not, set it to default
         if (region_min_x == INT32_MIN || region_min_x == INT32_MAX ||
@@ -1167,9 +1167,9 @@ public:
 
     void setup_aovs(AtUniverse *universe) {
         filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
-        if (!filter_node) filter_node = AiNode(universe, "lentil_filter", AtString("lentil_replaced_filter"));
+        if (!filter_node) filter_node = AiNode(universe, AtString("lentil_filter"), AtString("lentil_replaced_filter"));
 
-        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), "outputs");
+        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("outputs"));
         const int elements = AiArrayGetNumElements(outputs);
         std::vector<std::string> output_strings;
         bool lentil_time_found = false;
@@ -1251,9 +1251,9 @@ public:
         for (auto &output : aovs){
             AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
             output.index = i;
-            // AiAOVRegister(output.c_str(), string_to_arnold_type(type), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
+            AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); //think i should only do this for the new layer (lentil_time)
         }
-        AiNodeSetArray(AiUniverseGetOptions(universe), "outputs", final_outputs);
+        AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
         aovcount = aovs.size()+1;
 
 
@@ -1268,21 +1268,21 @@ public:
 
 
         // need to add an entry to the aov_shaders (NODE)
-        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), "aov_shaders");
+        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"));
         int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
 
         if (!lentil_time_found){
-            AtNode *time_write = AiNode(universe, "aov_write_float", AtString("lentil_time_write"));
-            AtNode *time_read = AiNode(universe, "state_float", AtString("lentil_time_read"));
+            AtNode *time_write = AiNode(universe, AtString("aov_write_float"), AtString("lentil_time_write"));
+            AtNode *time_read = AiNode(universe, AtString("state_float"), AtString("lentil_time_read"));
 
             // set time node params/linking
             AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
             AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
-            AiNodeLink(time_read, "aov_input", time_write);
+            AiNodeLink(time_read, AtString("aov_input"), time_write);
 
             AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
             AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
-            AiNodeSetArray(AiUniverseGetOptions(universe), "aov_shaders", aov_shaders_array);
+            AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
         }
     }
 
@@ -1321,7 +1321,7 @@ private:
         // }
 
         // if progressive rendering is on, don't redistribute
-        if (AiNodeGetBool(AiUniverseGetOptions(universe), "enable_progressive_render")) {
+        if (AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
             AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
             AiRenderAbort();
             return false;
@@ -1356,48 +1356,48 @@ private:
 
 
     void get_lentil_camera_params() {
-        cameraType = (CameraType) AiNodeGetInt(camera_node, "camera_type");
-        unitModel = (UnitModel) AiNodeGetInt(camera_node, "units");
-        sensor_width = AiNodeGetFlt(camera_node, "sensor_width");
-        enable_dof = AiNodeGetBool(camera_node, "enable_dof");
-        input_fstop = clamp_min(AiNodeGetFlt(camera_node, "fstop"), 0.01);
-        focus_distance = AiNodeGetFlt(camera_node, "focus_dist"); //converting to mm
-        bokeh_aperture_blades = AiNodeGetInt(camera_node, "aperture_blades_lentil");
-        exposure = AiNodeGetFlt(camera_node, "exp");
+        cameraType = (CameraType) AiNodeGetInt(camera_node, AtString("camera_type"));
+        unitModel = (UnitModel) AiNodeGetInt(camera_node, AtString("units"));
+        sensor_width = AiNodeGetFlt(camera_node, AtString("sensor_width"));
+        enable_dof = AiNodeGetBool(camera_node, AtString("enable_dof"));
+        input_fstop = clamp_min(AiNodeGetFlt(camera_node, AtString("fstop")), 0.01);
+        focus_distance = AiNodeGetFlt(camera_node, AtString("focus_dist")); //converting to mm
+        bokeh_aperture_blades = AiNodeGetInt(camera_node, AtString("aperture_blades_lentil"));
+        exposure = AiNodeGetFlt(camera_node, AtString("exp"));
 
         // po-specific params
-        lensModel = (LensModel) AiNodeGetInt(camera_node, "lens_model");
-        lambda = AiNodeGetFlt(camera_node, "wavelength") * 0.001;
-        extra_sensor_shift = AiNodeGetFlt(camera_node, "extra_sensor_shift");
+        lensModel = (LensModel) AiNodeGetInt(camera_node, AtString("lens_model"));
+        lambda = AiNodeGetFlt(camera_node, AtString("wavelength")) * 0.001;
+        extra_sensor_shift = AiNodeGetFlt(camera_node, AtString("extra_sensor_shift"));
 
         // tl specific params
-        focal_length = clamp_min(AiNodeGetFlt(camera_node, "focal_length_lentil"), 0.01);
-        optical_vignetting_distance = AiNodeGetFlt(camera_node, "optical_vignetting");
-        optical_vignetting_radius = 1.0;//AiNodeGetFlt(camera_node, "optical_vignetting_radius");
-        abb_spherical = AiNodeGetFlt(camera_node, "abb_spherical");
+        focal_length = clamp_min(AiNodeGetFlt(camera_node, AtString("focal_length_lentil")), 0.01);
+        optical_vignetting_distance = AiNodeGetFlt(camera_node, AtString("optical_vignetting"));
+        optical_vignetting_radius = 1.0;//AiNodeGetFlt(camera_node, AtString("optical_vignetting_radius"));
+        abb_spherical = AiNodeGetFlt(camera_node, AtString("abb_spherical"));
         abb_spherical = clamp(abb_spherical, 0.001, 0.999);
-        abb_distortion = AiNodeGetFlt(camera_node, "abb_distortion");
-        abb_coma = AiNodeGetFlt(camera_node, "abb_coma");
-        circle_to_square = AiNodeGetFlt(camera_node, "bokeh_circle_to_square");
+        abb_distortion = AiNodeGetFlt(camera_node, AtString("abb_distortion"));
+        abb_coma = AiNodeGetFlt(camera_node, AtString("abb_coma"));
+        circle_to_square = AiNodeGetFlt(camera_node, AtString("bokeh_circle_to_square"));
         circle_to_square = clamp(circle_to_square, 0.01, 0.99);
-        bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, "bokeh_anamorphic");
+        bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, AtString("bokeh_anamorphic"));
         bokeh_anamorphic = clamp(bokeh_anamorphic, 0, 1.0);
 
         // bidir params
-        bokeh_enable_image = AiNodeGetBool(camera_node, "bokeh_enable_image");
-        bokeh_image_path = AiNodeGetStr(camera_node, "bokeh_image_path");
-        bidir_sample_mult = AiNodeGetInt(camera_node, "bidir_sample_mult");
-        bidir_add_energy_minimum_luminance = AiNodeGetFlt(camera_node, "bidir_add_energy_minimum_luminance");
-        bidir_add_energy = AiNodeGetFlt(camera_node, "bidir_add_energy");
-        bidir_add_energy_transition = AiNodeGetFlt(camera_node, "bidir_add_energy_transition");
-        vignetting_retries = AiNodeGetInt(camera_node, "vignetting_retries");
-        enable_bidir_transmission = AiNodeGetBool(camera_node, "enable_bidir_transmission");
+        bokeh_enable_image = AiNodeGetBool(camera_node, AtString("bokeh_enable_image"));
+        bokeh_image_path = AiNodeGetStr(camera_node, AtString("bokeh_image_path"));
+        bidir_sample_mult = AiNodeGetInt(camera_node, AtString("bidir_sample_mult"));
+        bidir_add_energy_minimum_luminance = AiNodeGetFlt(camera_node, AtString("bidir_add_energy_minimum_luminance"));
+        bidir_add_energy = AiNodeGetFlt(camera_node, AtString("bidir_add_energy"));
+        bidir_add_energy_transition = AiNodeGetFlt(camera_node, AtString("bidir_add_energy_transition"));
+        vignetting_retries = AiNodeGetInt(camera_node, AtString("vignetting_retries"));
+        enable_bidir_transmission = AiNodeGetBool(camera_node, AtString("enable_bidir_transmission"));
     }
 
 
     void get_arnold_options() {
-        xres = AiNodeGetInt(options_node, "xres");
-        yres = AiNodeGetInt(options_node, "yres");
+        xres = AiNodeGetInt(options_node, AtString("xres"));
+        yres = AiNodeGetInt(options_node, AtString("yres"));
     }
 
 

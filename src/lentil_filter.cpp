@@ -58,6 +58,7 @@ filter_pixel
   if (!adaptive_sampling && rgba_aov) {
     int samples_counter = 0;
     while (AiAOVSampleIteratorGetNext(iterator)) ++samples_counter;
+    // AiMsgInfo("counted %d samples", samples_counter);
     AiAOVSampleIteratorReset(iterator);
     float AA_samples = std::sqrt(samples_counter) / camera_data->filter_width;
     inverse_sample_density = 1.0/(AA_samples*AA_samples);
