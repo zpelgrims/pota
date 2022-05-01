@@ -149,7 +149,6 @@ with uigen.group(ui, 'Thin Lens', collapse=False):
     ui.parameter('bokeh_anamorphic', 'float', 1, label='Anamorphic Squeeze', 
         description='This scales the bokeh along the x-axis.',
         mn=0, mx=1, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-        
 
 with uigen.group(ui, 'Bokeh Texture', collapse=True):
     ui.parameter('bokeh_enable_image', 'bool', False, label='Enable Texture', 
@@ -157,7 +156,7 @@ with uigen.group(ui, 'Bokeh Texture', collapse=True):
         houdini_join_next=True)
     ui.parameter('bokeh_image_path', 'string', '', label='Filepath', 
         description='Supply small-ish images. The visual quality will not increase much above 250x250, but the pre-computation time will.',
-        houdini_disable_when='{ bokeh_enable_image == 0 }{ enable_dof == 0 }')
+        houdini_disable_when='{ bokeh_enable_image == 0 }{ enable_dof == 0 }', filePathBrowse=True)
 
 
 with uigen.group(ui, 'Bidirectional', collapse=True):

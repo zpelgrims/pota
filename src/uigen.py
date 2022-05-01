@@ -85,8 +85,9 @@ class Parameter(UiElement):
    houdini_join_next = None
    houdini_default = None
    maya_hide = None
+   filePathBrowse = None
 
-   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None):
+   def __init__(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc=None, presets={}, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None, filePathBrowse=None):
       self.name = name
       self.ptype = ptype
       self.default = default
@@ -98,6 +99,7 @@ class Parameter(UiElement):
       self.houdini_join_next = houdini_join_next
       self.houdini_default = houdini_default
       self.maya_hide = maya_hide
+      self.filePathBrowse = filePathBrowse
 
       if description is not None:
          if len(description) > 150:
@@ -218,8 +220,8 @@ class ShaderDef:
    def endGroup(self):
       self.current_parent = self.current_parent.parent
 
-   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None):
-      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next, houdini_default, maya_hide)
+   def parameter(self, name, ptype, default, label=None, description=None, mn=None, mx=None, smn=None, smx=None, connectible=True, enum_names=None, fig=None, figc = None, presets=None, mayane=False, ui='', houdini_disable_when=None, houdini_join_next=None, houdini_default=None, maya_hide=None, filePathBrowse=None):
+      p = Parameter(name, ptype, default, label, description, mn, mx, smn, smx, connectible, enum_names, fig, figc, presets, mayane, ui, houdini_disable_when, houdini_join_next, houdini_default, maya_hide, filePathBrowse)
       if not self.current_parent.children:
          self.current_parent.children = [p]
       else:
@@ -1031,6 +1033,14 @@ def WriteMTD(sd, fn):
       
       if p.maya_hide:
          WriteMTDParam(f, "maya.hide", "bool", p.maya_hide, 2)
+
+      if p.filePathBrowse:
+         WriteMTDParam(f, "c4d.gui_type", "int", 3, 2)
+         WriteMTDParam(f, "c4d.label", "string", "File Path", 2)
+         WriteMTDParam(f, "maya.usedAsFilename", "bool", True, 2)
+         WriteMTDParam(f, "c4d.gui_type", "int", 3, 2)
+         WriteMTDParam(f, "houdini.type", "string", "file:image", 2)
+         WriteMTDParam(f, "houdini.callback", "string", "python:import htoa.texture; htoa.texture.imageFilenameCallback()", 2)
 
    for a in sd.aovs:
       writei(f, '[attr %s]' % a.name, 1)
