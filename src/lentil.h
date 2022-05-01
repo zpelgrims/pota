@@ -360,6 +360,11 @@ public:
         }
 
         get_arnold_options();
+
+        #ifdef CM_VERSION
+            AiMsgInfo("[LENTIL] Version: %s", CM_VERSION);
+        #endif
+        
         
 
         redistribution = get_bidirectional_status(universe); // this should include AA level test
