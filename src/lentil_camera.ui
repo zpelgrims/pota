@@ -35,10 +35,6 @@ with uigen.group(ui, 'General', collapse=False):
         description='A multiplier on the bidirectional sample count. The actual sample count is adaptive over the image (modulated by screenspace area of the bokeh, etc)',
         mn=0, mx=300, smn=0, smx=10, houdini_disable_when='{ enable_dof == 0 }')
 
-    ui.parameter('units', 'enum', 'cm', label='Scene Units', 
-      description='Use Centimeter in Maya, use Meter for Houdini (default universe scaling)',
-      enum_names=['mm', 'dm', 'cm', 'm'], houdini_default='m')
-
     ui.parameter('sensor_width', 'float', 36, label='Sensor Width (mm)', 
       description='Default is the width of a full frame sensor [36 mm]. Adjustments to the sensor size result in different effective focal lengths of the lens.',
       mn=0.1, mx=100, smn=16, smx=70)

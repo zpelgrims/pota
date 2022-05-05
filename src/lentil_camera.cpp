@@ -18,7 +18,7 @@ static const char* LensModelNames[] = {
 node_parameters {
   AiParameterEnum("camera_type", ThinLens, CameraTypes);
   AiParameterInt("bidir_sample_mult", 5);
-  AiParameterEnum("units", cm, Units);
+  // AiParameterEnum("units", cm, Units);
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
