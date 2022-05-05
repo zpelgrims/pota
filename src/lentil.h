@@ -1356,7 +1356,10 @@ private:
         else if (meters_per_unit == 0.001) unitModel = static_cast<UnitModel>(0);
         
         sensor_width = AiNodeGetFlt(camera_node, AtString("sensor_width"));
+        
         enable_dof = AiNodeGetBool(camera_node, AtString("enable_dof"));
+        if (AiNodeGetBool(options_node, AtString("ignore_dof"))) enable_dof = false;
+
         input_fstop = clamp_min(AiNodeGetFlt(camera_node, AtString("fstop")), 0.01);
         focus_distance = AiNodeGetFlt(camera_node, AtString("focus_dist")); //converting to mm
         bokeh_aperture_blades = AiNodeGetInt(camera_node, AtString("aperture_blades_lentil"));
