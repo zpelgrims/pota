@@ -1172,10 +1172,6 @@ public:
                 replace_filter = false;
             }
 
-            // if (aov.to.aov_name_tok == "transmission") {
-            //     replace_filter = false;
-            // }
-
             // never attach filter to the unranked crypto AOVs, they're just for display purposes.
             // ranked aov's are e.g: crypto_material00, crypto_material01, ...
             if (aov.to.aov_name_tok == "crypto_material" || 
@@ -1302,13 +1298,6 @@ private:
 
      bool get_bidirectional_status(AtUniverse *universe) {
 
-        // // disable for non-lentil cameras
-        // if (!AiNodeIs(camera_node, AtString("lentil_camera"))) {
-        //     AiMsgError("[LENTIL FILTER] Camera is not of type lentil. A full scene update is required.");
-        //     AiRenderAbort();
-        //     return false;
-        // }
-
         // if progressive rendering is on, don't redistribute
         if (AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
             AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
@@ -1326,7 +1315,7 @@ private:
             return false;
         }
 
-        // should include an AA sample level test, if not final sample level, skip!
+        // should include an AA sample level test, if not final sample level, skip! currently i have to do ugly counting inside the filter to get the current AA level.
 
         return true;
     }
@@ -1347,9 +1336,7 @@ private:
     void get_lentil_camera_params() {
         cameraType = (CameraType) AiNodeGetInt(camera_node, AtString("camera_type"));
 
-        // unitModel = (UnitModel) AiNodeGetInt(camera_node, AtString("units"));
         const float meters_per_unit = AiNodeGetFlt(options_node, AtString("meters_per_unit"));
-        AiMsgInfo("[LENTIL]: meters_per_unit: %f", meters_per_unit);
         if (meters_per_unit == 1.0) unitModel = static_cast<UnitModel>(3);
         else if (meters_per_unit == 0.1) unitModel = static_cast<UnitModel>(2);
         else if (meters_per_unit == 0.01) unitModel = static_cast<UnitModel>(1);
