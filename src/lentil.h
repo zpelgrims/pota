@@ -1049,7 +1049,7 @@ public:
 
         for (auto &aov : aovs){
             if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
-            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, iterator, filter_weight, AI_RGB_WHITE); 
+            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, iterator, filter_weight * inv_density, AI_RGB_WHITE); 
         }
     }
 
