@@ -53,6 +53,7 @@ filter_pixel
   bool rgba_aov = (AiAOVSampleIteratorGetAOVName(iterator) == camera_data->atstring_rgba); // early out for non-primary AOV samples
   bool adaptive_sampling = AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_adaptive_sampling")); 
   float inverse_sample_density = 0.0;
+
   
   // count samples because I cannot rely on AiAOVSampleIteratorGetInvDensity() any longer since 7.0.0.0. It only works for adaptive sampling.
   if (!adaptive_sampling && rgba_aov) {
@@ -75,6 +76,7 @@ filter_pixel
 
     int px, py;
     AiAOVSampleIteratorGetPixel(iterator, px, py);
+    
     px -= camera_data->region_min_x;
     py -= camera_data->region_min_y;
     AtShaderGlobals *shaderglobals = AiShaderGlobals();
@@ -112,6 +114,7 @@ filter_pixel
         sample.g -= sample_transmission.g;
         sample.b -= sample_transmission.b;
       }
+      if (transmitted_energy_in_sample) redistribute = false;
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
       if (depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws) || AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
@@ -181,8 +184,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, transmitted_energy_in_sample, 0,
-                                    iterator, crypto_cache, aov_values, inverse_sample_density);
+                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density);
             if (!transmitted_energy_in_sample) continue;
           }
 
@@ -234,7 +236,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;
@@ -244,9 +246,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, transmitted_energy_in_sample, 0,
-                                    iterator, crypto_cache, aov_values, inverse_sample_density);
-            if (!transmitted_energy_in_sample) continue;
+                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density);
           }
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
@@ -385,7 +385,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, transmitted_energy_in_sample, 1, iterator, filter_weight * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inv_samples, rgb_weight); 
             }
           }
         } break;

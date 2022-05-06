@@ -947,24 +947,21 @@ public:
 
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
                             const float fitted_bidir_add_energy, const float depth,
-                            const bool transmitted_energy_in_sample, const int transmission_layer,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
         switch(aov.type){
 
             case AI_TYPE_RGBA: {
-                // RGBA is the only aov with transmission component in, account for that (prob skip something)
                 AtRGBA rgba_energy = aov_value;
-                if (transmitted_energy_in_sample && transmission_layer == 0) rgba_energy = AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
-                else if (transmitted_energy_in_sample && transmission_layer == 1) rgba_energy -= AiAOVSampleIteratorGetAOVRGBA(sample_iterator, atstring_transmission);
-
                 aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
-                filter_weight_buffer[px] += filter_weight;
+                
+                if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
+
                 break;
             }
 
-            case AI_TYPE_RGB: { // could be buggy due to discrepancy between this and RGBA above??? test!
+            case AI_TYPE_RGB: {
                 const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight;
+                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
                 
                 break;
             }
@@ -1038,8 +1035,7 @@ public:
     // }
 
     inline void filter_and_add_to_buffer_new(int px, int py,
-                                        float depth, 
-                                        bool transmitted_energy_in_sample, int transmission_layer,
+                                        float depth,
                                         struct AtAOVSampleIterator* iterator,
                                         std::vector<std::map<float, float>> &cryptomatte_cache, std::vector<AtRGBA> &aov_values, float inv_density){
 
@@ -1053,7 +1049,7 @@ public:
 
         for (auto &aov : aovs){
             if (aov.is_crypto) add_to_buffer_cryptomatte(aov, pixelnumber, cryptomatte_cache[aov.index], inv_density);
-            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, transmitted_energy_in_sample, transmission_layer, iterator, filter_weight, AI_RGB_WHITE); 
+            else add_to_buffer(aov, pixelnumber, aov_values[aov.index], 0.0, depth, iterator, filter_weight, AI_RGB_WHITE); 
         }
     }
 
@@ -1175,6 +1171,10 @@ public:
                 aov.to.aov_type_tok != "VECTOR") {
                 replace_filter = false;
             }
+
+            // if (aov.to.aov_name_tok == "transmission") {
+            //     replace_filter = false;
+            // }
 
             // never attach filter to the unranked crypto AOVs, they're just for display purposes.
             // ranked aov's are e.g: crypto_material00, crypto_material01, ...

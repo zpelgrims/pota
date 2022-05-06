@@ -106,7 +106,7 @@ driver_process_bucket {
     }
     if (!aov_current) continue;
 
-    if (aov_name == camera_data->atstring_transmission || aov_name == camera_data->atstring_lentil_ignore || aov_name == camera_data->atstring_time) continue;
+    if (aov_name == camera_data->atstring_lentil_ignore || aov_name == camera_data->atstring_time) continue;
     if (!camera_data->imager_print_once_only) AiMsgInfo("[LENTIL IMAGER] '%s' writing to: %s", AiNodeGetName(node), aov_name.c_str());
 
     for (int j = 0; j < bucket_size_y; ++j) {
@@ -181,7 +181,9 @@ driver_process_bucket {
 
           case AI_TYPE_RGB: {
             AtRGBA image = aov_current->buffer[linear_pixel];
-            image /= (image.a == 0.0) ? 1.0 : image.a;
+            if ((camera_data->filter_weight_buffer[linear_pixel] != 0.0)){
+              image /= camera_data->filter_weight_buffer[linear_pixel];
+            }
 
             AtRGB final_value = AtRGB(image.r, image.g, image.b);
             ((AtRGB*)bucket_data)[in_idx] = final_value;
