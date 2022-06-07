@@ -95,6 +95,21 @@ filter_pixel
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
+      
+      // skydome doesn't come with position data, so we have to construct this ourselves (raydir*large constant)
+      AtVector ray_direction_aov = AiAOVSampleIteratorGetAOVVec(iterator, AtString("ray_direction"));
+      if ((depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws)) && camera_data->enable_skydome) {
+        if (ray_direction_aov == AtVector(0,0,0)) {
+          redistribute = false;
+        } else {
+          sample_pos_ws = ray_direction_aov * 99999999.0;
+          depth = 99999999.0;
+        }
+      }
+
+      if ((depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws)) && !camera_data->enable_skydome) {
+        redistribute = false;
+      }
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
@@ -117,9 +132,10 @@ filter_pixel
       if (transmitted_energy_in_sample) redistribute = false;
 
       const float sample_luminance = (sample.r + sample.g + sample.b)/3.0;
-      if (depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws) || AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
+      if (AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_lentil_ignore) > 0.0) {
         redistribute = false;
       }
+
 
       // cryptomatte cache
       std::vector<std::map<float, float>> crypto_cache(camera_data->aovcount);

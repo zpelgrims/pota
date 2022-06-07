@@ -62,7 +62,6 @@ with uigen.group(ui, 'General', collapse=False):
       mn=0, mx=99999, smn=0, smx=5)
 
 
-
 with uigen.group(ui, 'Polynomial Optics', collapse=False):
     ui.parameter('lens_model', 'enum', 'cooke__speed_panchro__1920__40mm', label='Lens Model', 
         description='There are many different lenses to choose from, each with multiple focal lengths pre-computed. Each lens has its own characteristics. See the online documentation for previews of all lens models.',
@@ -176,3 +175,5 @@ with uigen.group(ui, 'Bidirectional', collapse=True):
     ui.parameter('enable_bidir_transmission', 'bool', False, label='Enable for transmitted surfaces', 
         description='WARNING: this should not be used, unless in very specific circumstances. For example, when you might be rendering a set of led lights which are behind a transmissive surface, but where the depth information is practically the same. Or when you are inside the transmissive medium, such as underwater. In any other case, this option should be avoided.',
         houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
+    ui.parameter('enable_skydome', 'bool', False, label='Enable Skydome Redistribution', 
+      description='Enables redistribution for the skydome. Due to the usual high-brightness of HDRIs it might be desirable to disable this parameter.')

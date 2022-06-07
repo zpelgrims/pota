@@ -271,6 +271,7 @@ struct Camera
     float bidir_add_energy;
     float bidir_add_energy_transition;
     bool enable_bidir_transmission;
+    bool enable_skydome;
     float exposure;
     double lambda;
     float extra_sensor_shift;
@@ -1382,6 +1383,7 @@ private:
         bidir_add_energy_transition = AiNodeGetFlt(camera_node, AtString("bidir_add_energy_transition"));
         vignetting_retries = AiNodeGetInt(camera_node, AtString("vignetting_retries"));
         enable_bidir_transmission = AiNodeGetBool(camera_node, AtString("enable_bidir_transmission"));
+        enable_skydome = AiNodeGetBool(camera_node, AtString("enable_skydome"));
 
         
     }
