@@ -1336,12 +1336,15 @@ private:
     void get_lentil_camera_params() {
         cameraType = (CameraType) AiNodeGetInt(camera_node, AtString("camera_type"));
 
-        const float meters_per_unit = AiNodeGetFlt(options_node, AtString("meters_per_unit"));
-        if (meters_per_unit == 1.0) unitModel = static_cast<UnitModel>(3);
-        else if (meters_per_unit == 0.1) unitModel = static_cast<UnitModel>(2);
-        else if (meters_per_unit == 0.01) unitModel = static_cast<UnitModel>(1);
-        else if (meters_per_unit == 0.001) unitModel = static_cast<UnitModel>(0);
-        
+        unitModel = (UnitModel) AiNodeGetInt(camera_node, AtString("units"));
+        if (unitModel == static_cast<UnitModel>(4)) { // "disable"
+            const float meters_per_unit = AiNodeGetFlt(options_node, AtString("meters_per_unit"));
+            if (meters_per_unit == 1.0) unitModel = static_cast<UnitModel>(3);
+            else if (meters_per_unit == 0.1) unitModel = static_cast<UnitModel>(2);
+            else if (meters_per_unit == 0.01) unitModel = static_cast<UnitModel>(1);
+            else if (meters_per_unit == 0.001) unitModel = static_cast<UnitModel>(0);
+        }
+
         sensor_width = AiNodeGetFlt(camera_node, AtString("sensor_width"));
         
         enable_dof = AiNodeGetBool(camera_node, AtString("enable_dof"));
@@ -1379,6 +1382,8 @@ private:
         bidir_add_energy_transition = AiNodeGetFlt(camera_node, AtString("bidir_add_energy_transition"));
         vignetting_retries = AiNodeGetInt(camera_node, AtString("vignetting_retries"));
         enable_bidir_transmission = AiNodeGetBool(camera_node, AtString("enable_bidir_transmission"));
+
+        
     }
 
 

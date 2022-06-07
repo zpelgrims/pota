@@ -5,7 +5,7 @@
 AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 
-static const char* Units[] = {"mm", "cm", "dm", "m", NULL};
+static const char* Units[] = {"mm", "cm", "dm", "m", "automatic", NULL};
 static const char* CameraTypes[] = {"ThinLens", "PolynomialOptics", NULL};
 
 // to switch between lens models in interface dropdown
@@ -18,7 +18,7 @@ static const char* LensModelNames[] = {
 node_parameters {
   AiParameterEnum("camera_type", ThinLens, CameraTypes);
   AiParameterInt("bidir_sample_mult", 5);
-  // AiParameterEnum("units", cm, Units);
+  AiParameterEnum("units", cm, Units);
   AiParameterFlt("sensor_width", 36.0); // 35mm film
   AiParameterBool("enable_dof", true);
   AiParameterFlt("fstop", 0.0);
