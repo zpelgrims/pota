@@ -106,7 +106,6 @@ filter_pixel
           depth = 99999999.0;
         }
       }
-
       if ((depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws)) && !camera_data->enable_skydome) {
         redistribute = false;
       }
@@ -150,7 +149,15 @@ filter_pixel
       float luminance_mult = std::max(0.0, std::pow(std::min(sample_luminance, 20.0f), 0.5) * camera_data->bidir_sample_mult); // ^0.5 to slightly tweak the sample_luminance curve, clamping at luminance 50
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
       const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(luminance_mult, 2) * 0.00001; // pixel area as baseline for sample count
-      if (circle_of_confusion < 0.4) redistribute = false; // don't redistribute under certain CoC size, emperically tested
+
+      float mix = 1.0;
+      const float coc_treshold = 0.4;
+      if (circle_of_confusion < coc_treshold){
+        // redistribute = false; // don't redistribute under certain CoC size, emperically tested
+        mix = circle_of_confusion * 2.5; // hardcoded to 0.4, change!
+      }
+
+
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
       samples = clamp(samples, 4, 5000);
       float inv_samples = 1.0/static_cast<float>(samples);
@@ -198,9 +205,9 @@ filter_pixel
           if (std::abs(camera_space_sample_position.z) < (camera_data->lens_length*0.1)) redistribute = false; // sample can't be inside of lens
 
           // early out
-          if (redistribute == false){
+          if (redistribute == false || mix != 1.0){
             camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density);
+                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
             if (!transmitted_energy_in_sample) continue;
           }
 
@@ -252,7 +259,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
             }
           }
         } break;
@@ -260,9 +267,9 @@ filter_pixel
         case ThinLens:
         {
           // early out
-          if (redistribute == false){
+          if (redistribute == false || mix != 1.0){
             camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density);
+                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
           }
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
@@ -401,7 +408,7 @@ filter_pixel
 
             for (auto &aov : camera_data->aovs){
                 if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples, rgb_weight); 
+                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
             }
           }
         } break;
