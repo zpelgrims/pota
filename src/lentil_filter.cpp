@@ -97,7 +97,8 @@ filter_pixel
       float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
       
       // skydome doesn't come with position data, so we have to construct this ourselves (raydir*large constant)
-      AtVector ray_direction_aov = AiAOVSampleIteratorGetAOVVec(iterator, AtString("ray_direction"));
+      bool sample_is_from_skydome = false;
+      AtVector ray_direction_aov = AiAOVSampleIteratorGetAOVVec(iterator, AtString("lentil_raydir"));
       if ((depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws)) && camera_data->enable_skydome) {
         if (ray_direction_aov == AtVector(0,0,0)) {
           redistribute = false;
@@ -105,9 +106,11 @@ filter_pixel
           sample_pos_ws = ray_direction_aov * 99999999.0;
           depth = 99999999.0;
         }
+        sample_is_from_skydome = true;
       }
       if ((depth == AI_INFINITE || AiV3IsSmall(sample_pos_ws)) && !camera_data->enable_skydome) {
         redistribute = false;
+        sample_is_from_skydome = true;
       }
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
@@ -150,11 +153,17 @@ filter_pixel
       float circle_of_confusion = camera_data->get_coc_thinlens(camera_space_sample_position);
       const float coc_squared_pixels = std::pow(circle_of_confusion * camera_data->yres, 2) * std::pow(luminance_mult, 2) * 0.00001; // pixel area as baseline for sample count
 
+      // blend samples with linear interpolation based on Coc radius, when it is under a certain size treshold
       float mix = 1.0;
       const float coc_treshold = 0.4;
       if (circle_of_confusion < coc_treshold){
         // redistribute = false; // don't redistribute under certain CoC size, emperically tested
         mix = circle_of_confusion * 2.5; // hardcoded to 0.4, change!
+      }
+      
+      // disable mixing when necessary
+      if (sample_is_from_skydome && !camera_data->enable_skydome) {
+        mix = 0.0;
       }
 
 
@@ -306,7 +315,7 @@ filter_pixel
 
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
-
+            
             float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
             AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 

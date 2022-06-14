@@ -1157,6 +1157,7 @@ public:
         std::vector<std::string> output_strings;
         bool lentil_time_found = false;
         bool lentil_debug_found = false;
+        bool lentil_raydir_found = false;
 
         for (int i=0; i<elements; i++) {
             std::string output_string = AiArrayGetStr(outputs, i).c_str();
@@ -1195,6 +1196,10 @@ public:
                 lentil_debug_found = true;
             }
 
+            if (aov.to.aov_name_tok == "lentil_raydir"){
+                lentil_raydir_found = true;
+            }
+
             // identify as duplicate
             for (auto &element : aovs) {
                 if (aov.to.aov_name_tok == element.to.aov_name_tok) {
@@ -1227,6 +1232,16 @@ public:
             aov_lentil_time.name = AtString("lentil_time");
             aov_lentil_time.type = string_to_arnold_type(aov_lentil_time.to.aov_type_tok);
             aovs.push_back(aov_lentil_time);
+        }
+
+        if (!lentil_raydir_found) {
+            AOVData aov_lentil_raydir = aovs[0];
+            aov_lentil_raydir.to.aov_type_tok = "RGB";
+            aov_lentil_raydir.to.aov_name_tok = "lentil_raydir";
+            aov_lentil_raydir.to = TokenizedOutputLentil(universe, AtString(aov_lentil_raydir.to.rebuild_output().c_str()));
+            aov_lentil_raydir.name = AtString("lentil_raydir");
+            aov_lentil_raydir.type = string_to_arnold_type(aov_lentil_raydir.to.aov_type_tok);
+            aovs.push_back(aov_lentil_raydir);
         }
         
         AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
@@ -1268,6 +1283,20 @@ public:
 
             AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
             AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
+            AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
+        }
+
+        if (!lentil_raydir_found){
+            AtNode *raydir_write = AiNode(universe, AtString("aov_write_rgb"), AtString("lentil_raydir_write"));
+            AtNode *raydir_read = AiNode(universe, AtString("state_vector"), AtString("lentil_raydir_read"));
+
+            // set time node params/linking
+            AiNodeSetStr(raydir_read, AtString("variable"), AtString("Rd"));
+            AiNodeSetStr(raydir_write, AtString("aov_name"), AtString("lentil_raydir"));
+            AiNodeLink(raydir_read, AtString("aov_input"), raydir_write);
+
+            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
+            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)raydir_write);
             AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
         }
     }
