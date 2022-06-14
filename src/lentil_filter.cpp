@@ -316,109 +316,87 @@ filter_pixel
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
             
-            float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
-            AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
+            float abb_chromatic = 1;
+            for (int channel = -1; channel <= 1; channel++) {
+              AtRGB rgb_weight = AI_RGB_WHITE;
+              if (channel == -1) rgb_weight = AtRGB(3,0,0);
+              else if (channel == 0) rgb_weight = AtRGB(0,3,0);
+              else if (channel == 1) rgb_weight = AtRGB(0,0,3);
 
 
-            // raytrace for scene/geometrical occlusions along the ray
-            AtVector lens_correct_scaled = lens;
-            switch (camera_data->unitModel){
-              case mm: { lens_correct_scaled /= 0.1; } break;
-              case cm: { lens_correct_scaled /= 1.0; } break;
-              case dm: { lens_correct_scaled /= 10.0;} break;
-              case m:  { lens_correct_scaled /= 100.0;}
-            }
-            AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
-            AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
-            AtScrSample hit = AtScrSample();
-            if (AiTrace(ray, AI_RGB_WHITE, hit)){
-              // if (hit.point.x != 0.0) AiMsgInfo("hit.point: %f %f %f", hit.point.x, hit.point.y, hit.point.z);
-              // if (hit.opacity != AI_RGB_WHITE) AiMsgInfo("hit.opacity: %f %f %f", hit.opacity.r, hit.opacity.g, hit.opacity.b);
-              //   AiMsgInfo("uhoh");
-              // }
-              --count;
-              continue;
-            }
-
-            // bring back to (x, y, 1)
-            AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
-                                      focusdist_image_point.y / focusdist_image_point.z);
-            // transform to screenspace coordinate mapping
-            sensor_position /= (camera_data->sensor_width*0.5)/-camera_data->focal_length;
+              float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens_abberated(channel*abb_chromatic)/dir_from_lens_to_image_sample.z);
+              AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
 
-            // optical vignetting
-            dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
-            if (camera_data->optical_vignetting_distance > 0.0){
-              // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
-              if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, camera_data->aperture_radius, camera_data->optical_vignetting_radius, camera_data->optical_vignetting_distance, lerp_squircle_mapping(camera_data->circle_to_square))){
-                  --count;
-                  continue;
+              // raytrace for scene/geometrical occlusions along the ray
+              AtVector lens_correct_scaled = lens;
+              switch (camera_data->unitModel){
+                case mm: { lens_correct_scaled /= 0.1; } break;
+                case cm: { lens_correct_scaled /= 1.0; } break;
+                case dm: { lens_correct_scaled /= 10.0;} break;
+                case m:  { lens_correct_scaled /= 100.0;}
+              }
+              AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
+              AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
+              AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
+              AtScrSample hit = AtScrSample();
+              if (AiTrace(ray, AI_RGB_WHITE, hit)){
+                // if (hit.point.x != 0.0) AiMsgInfo("hit.point: %f %f %f", hit.point.x, hit.point.y, hit.point.z);
+                // if (hit.opacity != AI_RGB_WHITE) AiMsgInfo("hit.opacity: %f %f %f", hit.opacity.r, hit.opacity.g, hit.opacity.b);
+                //   AiMsgInfo("uhoh");
+                // }
+                --count;
+                goto parent_loop;
+              }
+
+              // bring back to (x, y, 1)
+              AtVector2 sensor_position(focusdist_image_point.x / focusdist_image_point.z,
+                                        focusdist_image_point.y / focusdist_image_point.z);
+              // transform to screenspace coordinate mapping
+              sensor_position /= (camera_data->sensor_width*0.5)/-camera_data->focal_length;
+
+
+              // optical vignetting
+              dir_lens_to_P = AiV3Normalize(camera_space_sample_position_perturbed - lens);
+              if (camera_data->optical_vignetting_distance > 0.0){
+                // if (image_dist_samplepos<image_dist_focusdist) lens *= -1.0; // this really shouldn't be the case.... also no way i can do that in forward tracing?
+                if (!empericalOpticalVignettingSquare(lens, dir_lens_to_P, camera_data->aperture_radius, camera_data->optical_vignetting_radius, camera_data->optical_vignetting_distance, lerp_squircle_mapping(camera_data->circle_to_square))){
+                    --count;
+                    goto parent_loop;
+                }
+              }
+
+
+              // barrel distortion (inverse)
+              if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
+              
+
+              // convert sensor position to pixel position
+              Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio_without_region);
+              const float pixel_x = ((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x;
+              const float pixel_y = (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y;
+
+              // if outside of image
+              if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
+                --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
+                goto parent_loop;
+              }
+
+              unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y)) : camera_data->coords_to_linear_pixel(px, py);
+
+              // couldn't get gaussian filtering to work yet... so box filtering for now.
+              // AtVector2 offset_from_pixel_center(std::abs(0.5 - fmod(pixel_x, 1)), std::abs(0.5 - fmod(pixel_y, 1)));
+              // float filter_weight = camera_data->filter_weight_gaussian(offset_from_pixel_center, 2.0);
+              // if (filter_weight == 0) continue;
+              float filter_weight = 1.0;
+
+              for (auto &aov : camera_data->aovs){
+                  if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
+                  else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
               }
             }
 
-            // doesn't work yet, rethink the whole thing.. shouldn't i be 
-            AtRGB rgb_weight = AI_RGB_WHITE;
-            // rgb_weight *= 3.0;
-            // AtVector2 lens_ca(lens.x, lens.y);
-            // float emperical_ca_dist = 0.01;
-            // if (emperical_ca_dist > 0.0){
-            //     const AtVector2 p2(lens_ca.x, lens_ca.y);
-            //     const float distance_to_center = AiV2Dist(AtVector2(0.0, 0.0), sensor_position);
-            //     const int random_aperture = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-            //     AtVector2 aperture_0_center(0.0, 0.0);
-            //     AtVector2 aperture_1_center(- lens_ca * circle_of_confusion * distance_to_center * emperical_ca_dist);
-            //     AtVector2 aperture_2_center(lens_ca * circle_of_confusion * distance_to_center * emperical_ca_dist);
-                
-
-            //     if (random_aperture == 1)      lens_ca += aperture_1_center;
-            //     else if (random_aperture == 2) lens_ca += aperture_2_center;
-
-            //     if (std::pow(lens_ca.x-aperture_1_center.x, 2) + std::pow(lens_ca.y - aperture_1_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
-            //         rgb_weight.r = 0.0;
-            //     }
-            //     if (std::pow(lens_ca.x-aperture_0_center.x, 2) + std::pow(lens_ca.y - aperture_0_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
-            //         rgb_weight.b = 0.0;
-            //     }
-            //     if (std::pow(lens_ca.x-aperture_2_center.x, 2) + std::pow(lens_ca.y - aperture_2_center.y, 2) > std::pow((camera_data->aperture_radius*10.0)/camera_data->focus_distance, 2)) {
-            //         rgb_weight.g = 0.0;
-            //     }
-
-            //     if (rgb_weight == AI_RGB_ZERO){
-            //         --count;
-            //         continue;
-            //     }
-            // }
-
-
-            // barrel distortion (inverse)
-            if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
-            
-
-            // convert sensor position to pixel position
-            Eigen::Vector2d s(sensor_position.x, sensor_position.y * frame_aspect_ratio_without_region);
-            const float pixel_x = ((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x;
-            const float pixel_y = (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y;
-
-            // if outside of image
-            if ((pixel_x >= xres) || (pixel_x < 0) || (pixel_y >= yres) || (pixel_y < 0)) {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame, could keep track of a bbox
-              continue;
-            }
-
-            unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel_x), floor(pixel_y)) : camera_data->coords_to_linear_pixel(px, py);
-
-            // couldn't get gaussian filtering to work yet... so box filtering for now.
-            // AtVector2 offset_from_pixel_center(std::abs(0.5 - fmod(pixel_x, 1)), std::abs(0.5 - fmod(pixel_y, 1)));
-            // float filter_weight = camera_data->filter_weight_gaussian(offset_from_pixel_center, 2.0);
-            // if (filter_weight == 0) continue;
-            float filter_weight = 1.0;
-
-            for (auto &aov : camera_data->aovs){
-                if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
-            }
+            parent_loop:;
           }
         } break;
       }

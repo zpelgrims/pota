@@ -796,6 +796,10 @@ public:
         return (-focal_length * -focus_distance) / (-focal_length + -focus_distance);
     }
 
+    inline float get_image_dist_focusdist_thinlens_abberated(const float shift){
+        return (-focal_length * -(focus_distance+shift)) / (-focal_length + -(focus_distance+shift));
+    }
+
 
     inline float get_coc_thinlens(AtVector camera_space_sample_position){
         // need to account for the differences in setup between the two methods, since the inputs are scaled differently in the camera shader
