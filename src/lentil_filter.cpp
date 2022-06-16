@@ -316,15 +316,26 @@ filter_pixel
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
             
-            float abb_chromatic = 1;
+            
+            float abb_chromatic_lateral = 3.0;
             for (int channel = -1; channel <= 1; channel++) {
               AtRGB rgb_weight = AI_RGB_WHITE;
               if (channel == -1) rgb_weight = AtRGB(3,0,0);
               else if (channel == 0) rgb_weight = AtRGB(0,3,0);
               else if (channel == 1) rgb_weight = AtRGB(0,0,3);
 
-
-              float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens_abberated(channel*abb_chromatic)/dir_from_lens_to_image_sample.z);
+              // calculate sensor point of unperturbed ray for multiplying the chromatic abberation (less in center, more at edges)
+              float focusdist_intersection_unperturbed = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
+              AtVector focusdist_image_point_uperturbed = lens + dir_from_lens_to_image_sample*focusdist_intersection_unperturbed;
+              AtVector2 sensor_position_unperturbed(focusdist_image_point_uperturbed.x / focusdist_image_point_uperturbed.z,
+                                                    focusdist_image_point_uperturbed.y / focusdist_image_point_uperturbed.z);
+              const AtVector2 p2(lens.x, lens.y);
+              const float distance_to_center_unperturbed = AiV2Dist(AtVector2(0.0, 0.0), sensor_position_unperturbed);
+              
+              // add some shifting to the focus distance
+              // abs(channel) -> green/magenta shift, channel -> red/cyan shift
+              if (camera_data->abb_chromatic_type == green_magenta) channel = std::abs(channel);
+              float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens_abberated(channel*camera_data->abb_chromatic*abb_chromatic_lateral*distance_to_center_unperturbed)/dir_from_lens_to_image_sample.z);
               AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
 
@@ -366,7 +377,6 @@ filter_pixel
                 }
               }
 
-
               // barrel distortion (inverse)
               if (camera_data->abb_distortion > 0.0) sensor_position = inverseBarrelDistortion(AtVector2(sensor_position.x, sensor_position.y), camera_data->abb_distortion);
               
@@ -396,6 +406,7 @@ filter_pixel
               }
             }
 
+            // mechanism to break out of the nested loop
             parent_loop:;
           }
         } break;

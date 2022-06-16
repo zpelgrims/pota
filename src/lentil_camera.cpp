@@ -7,6 +7,7 @@ AI_CAMERA_NODE_EXPORT_METHODS(lentilMethods)
 
 static const char* Units[] = {"mm", "cm", "dm", "m", "automatic", NULL};
 static const char* CameraTypes[] = {"ThinLens", "PolynomialOptics", NULL};
+static const char* ChromaticTypes[] = {"green_magenta", "red_cyan", NULL};
 
 // to switch between lens models in interface dropdown
 static const char* LensModelNames[] = {
@@ -34,6 +35,8 @@ node_parameters {
   AiParameterFlt("abb_spherical", 0.5);
   AiParameterFlt("abb_distortion", 0.0);
   AiParameterFlt("abb_coma", 0.0);
+  AiParameterFlt("abb_chromatic", 0.0);
+  AiParameterEnum("abb_chromatic_type", green_magenta, ChromaticTypes);
   AiParameterFlt("bokeh_circle_to_square", 0.0);
   AiParameterFlt("bokeh_anamorphic", 0.0);
   AiParameterBool("bokeh_enable_image", false);

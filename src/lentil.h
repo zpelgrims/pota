@@ -74,6 +74,12 @@ enum CameraType{
     PolynomialOptics
 };
 
+// enum to switch between units in interface dropdown
+enum ChromaticType{
+    green_magenta,
+    red_cyan
+};
+
 
 
 // kindly borrowed from cryptomatte, thanks you honeyboo
@@ -234,6 +240,7 @@ struct Camera
 	LensModel lensModel;
     UnitModel unitModel;
     CameraType cameraType;
+    ChromaticType abb_chromatic_type;
     imageData image;
 
     std::vector<float> zbuffer;
@@ -281,6 +288,7 @@ struct Camera
     float abb_spherical;
     float abb_coma;
     float abb_distortion;
+    float abb_chromatic;
     float circle_to_square;
     float bokeh_anamorphic;
     float fov;
@@ -1402,6 +1410,8 @@ private:
         abb_spherical = clamp(abb_spherical, 0.001, 0.999);
         abb_distortion = AiNodeGetFlt(camera_node, AtString("abb_distortion"));
         abb_coma = AiNodeGetFlt(camera_node, AtString("abb_coma"));
+        abb_chromatic = AiNodeGetFlt(camera_node, AtString("abb_chromatic"));
+        abb_chromatic_type = (ChromaticType) AiNodeGetInt(camera_node, AtString("abb_chromatic_type"));
         circle_to_square = AiNodeGetFlt(camera_node, AtString("bokeh_circle_to_square"));
         circle_to_square = clamp(circle_to_square, 0.01, 0.99);
         bokeh_anamorphic = 1.0 - AiNodeGetFlt(camera_node, AtString("bokeh_anamorphic"));
