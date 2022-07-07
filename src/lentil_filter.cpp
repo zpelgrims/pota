@@ -113,6 +113,12 @@ filter_pixel
         sample_is_from_skydome = true;
       }
 
+      AtRGB sample_volume = AiAOVSampleIteratorGetAOVRGB(iterator, AtString("volume"));
+      bool volume_in_sample = AiColorMaxRGB(sample_volume) > 0.0;
+      float sample_volume_z = AiAOVSampleIteratorGetAOVFlt(iterator, AtString("volume_Z"));
+      if (volume_in_sample) redistribute = false;
+      // if (volume_in_sample) depth = sample_volume_z;
+
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
       AtMatrix cam_to_world; AiCameraToWorldMatrix(camera_data->camera_node, time, cam_to_world);
       AtMatrix world_to_camera_matrix; AiWorldToCameraMatrix(camera_data->camera_node, time, world_to_camera_matrix);
@@ -165,6 +171,8 @@ filter_pixel
       if (sample_is_from_skydome && !camera_data->enable_skydome) {
         mix = 0.0;
       }
+
+      if (volume_in_sample) mix = 0.0;
 
 
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
