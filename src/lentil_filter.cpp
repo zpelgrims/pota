@@ -103,8 +103,8 @@ filter_pixel
         if (ray_direction_aov == AtVector(0,0,0)) {
           redistribute = false;
         } else {
-          sample_pos_ws = ray_direction_aov * 99999999.0;
-          depth = 99999999.0;
+          sample_pos_ws = ray_direction_aov * 999999.0;
+          depth = 999999.0;
         }
         sample_is_from_skydome = true;
       }
