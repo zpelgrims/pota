@@ -132,12 +132,6 @@ with uigen.group(ui, 'Thin Lens', collapse=False):
     ui.parameter('optical_vignetting', 'float', 0, label='Optical Vignetting', 
         description='Sometimes referred to as the cat-eye effect, this is a lens imperfection that is not caused by the glass but by the outer edge of the lens housing, also known as the exit aperture. When the main aperture is fully open, light coming into the camera from steep angles will be blocked partially by the edge of the lens. This creates cat-eye like bokeh shapes near the edges of an image. It should be noted that this lens effect is purely mechanical and can not be confused with lens distortion. The distance represents the distance of the housing to the sensor.',
         mn=0, mx=20, smn=0, smx=5, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
-    ui.parameter('abb_chromatic', 'float', 0, label='Aberration (chromatic)', 
-        description='Different wavelengths focus at different distances. This aberration only applies to bidirectional-enabled renders.',
-        mn=0, mx=3, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }{ bidir_sample_mult == 0 }')
-    ui.parameter('abb_chromatic_type', 'enum', 'green_magenta', label='Chromatic shift', 
-      description='Choose between colour fringes.',
-      enum_names=['green_magenta', 'red_cyan'])
     ui.parameter('abb_spherical', 'float', 0.5, label='Aberration (spherical)', 
         description='Due to the spherical nature of lenses, light cannot be focused onto exactly a singular point. A value of 0.5 means no spherical aberration.',
         mn=0, mx=1, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }')
@@ -168,6 +162,13 @@ with uigen.group(ui, 'Bidirectional', collapse=True):
         description='Since we are modeling real lenses, it is possible that the light ray hits the housing of the lens. If this happens, a new light ray is sent out in a different direction. This parameter is the number of times that this is allowed to happen. Practically, the higher this number, the more true to real-life vignetting. But this comes combined with higher computation times around the vignetting border.',
         mn=1, mx=500, smn=1, smx=50, houdini_disable_when='{ bidir_sample_mult == 0 }{ enable_dof == 0 }')
 
+    ui.parameter('abb_chromatic', 'float', 0, label='Aberration (chromatic)', 
+        description='Different wavelengths focus at different distances. This aberration only applies to bidirectional-enabled renders.',
+        mn=0, mx=3, smn=0, smx=1, houdini_disable_when='{ cameratype == PolynomialOptics }{ enable_dof == 0 }{ bidir_sample_mult == 0 }')
+    ui.parameter('abb_chromatic_type', 'enum', 'green_magenta', label='Chromatic shift', 
+      description='Choose between colour fringes.',
+      enum_names=['green_magenta', 'red_cyan'])
+      
     #with uigen.group(ui, 'additional_energy', collapse=True ):
     ui.parameter('bidir_add_energy', 'float', 0, label='Additional Energy', 
         description='Sometimes for artistic reasons, you might want to boost the intensity of the bokeh a bit.',

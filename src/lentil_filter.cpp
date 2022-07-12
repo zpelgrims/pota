@@ -103,7 +103,7 @@ filter_pixel
         if (ray_direction_aov == AtVector(0,0,0)) {
           redistribute = false;
         } else {
-          sample_pos_ws = ray_direction_aov * 99999999.0; // TODO: 999999 gives correct result in one scene, 999999999 in another... 
+          sample_pos_ws = ray_direction_aov * 99999999.0;
           depth = AI_ALMOST_ONE;
         }
         sample_is_from_skydome = true;
@@ -223,8 +223,7 @@ filter_pixel
 
           // early out
           if (redistribute == false || mix != 1.0){
-            camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
+            camera_data->filter_and_add_to_buffer_new(px, py, depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
             if (!transmitted_energy_in_sample) continue;
           }
 
@@ -237,18 +236,19 @@ filter_pixel
             float lambda_per_sample = 0.55;
             for (int channel = -1; channel <= 1; channel++) {
               AtRGB rgb_weight = AI_RGB_WHITE;
-              if (channel == -1){
-                rgb_weight = AtRGB(3,0,0);
-                lambda_per_sample = linear_interpolate(1.0-camera_data->abb_chromatic, 0.35, 0.55);
-              }
-              else if (channel == 0) {
-                rgb_weight = AtRGB(0,3,0);
-                lambda_per_sample = 0.55;
-              }
-              else if (channel == 1) {
-                rgb_weight = AtRGB(0,0,3);
-                lambda_per_sample = linear_interpolate(camera_data->abb_chromatic, 0.55, 0.85);
-              }
+              if (camera_data->abb_chromatic > 0.0) {
+                if (channel == -1){
+                  rgb_weight = AtRGB(3,0,0);
+                  lambda_per_sample = linear_interpolate(1.0-camera_data->abb_chromatic, 0.35, 0.55);
+                } else if (channel == 0) {
+                  rgb_weight = AtRGB(0,3,0);
+                  lambda_per_sample = 0.55;
+                } else if (channel == 1) {
+                  rgb_weight = AtRGB(0,0,3);
+                  lambda_per_sample = linear_interpolate(camera_data->abb_chromatic, 0.55, 0.85);
+                }
+              } else if (camera_data->abb_chromatic == 0.0 && channel > -1) continue; // skip when no CA is used
+              
 
               if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample, sample_is_from_skydome)) {
                 --count;
@@ -278,9 +278,7 @@ filter_pixel
                   if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
                   else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
               }
-
             }
-            
           }
         } break;
 
@@ -288,8 +286,7 @@ filter_pixel
         {
           // early out
           if (redistribute == false || mix != 1.0){
-            camera_data->filter_and_add_to_buffer_new(px, py, 
-                                    depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
+            camera_data->filter_and_add_to_buffer_new(px, py, depth, iterator, crypto_cache, aov_values, inverse_sample_density * (1.0-mix));
           }
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
@@ -327,13 +324,16 @@ filter_pixel
             // depth of field
             AtVector dir_from_lens_to_image_sample = AiV3Normalize(samplepos_image_point - lens);
             
-            
-            float abb_chromatic_lateral = 3.0;
+
+            float abb_chromatic_lateral = 5.0;
             for (int channel = -1; channel <= 1; channel++) {
               AtRGB rgb_weight = AI_RGB_WHITE;
-              if (channel == -1) rgb_weight = AtRGB(3,0,0);
-              else if (channel == 0) rgb_weight = AtRGB(0,3,0);
-              else if (channel == 1) rgb_weight = AtRGB(0,0,3);
+              if (camera_data->abb_chromatic > 0.0) {
+                if (channel == -1) rgb_weight = AtRGB(3,0,0);
+                else if (channel == 0) rgb_weight = AtRGB(0,3,0);
+                else if (channel == 1) rgb_weight = AtRGB(0,0,3);
+              } else if (camera_data->abb_chromatic == 0.0 && channel > -1) continue; // skip when no CA is used
+              
 
               // calculate sensor point of unperturbed ray for multiplying the chromatic abberation (less in center, more at edges)
               float focusdist_intersection_unperturbed = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
@@ -346,7 +346,7 @@ filter_pixel
               // add some shifting to the focus distance
               // abs(channel) -> green/magenta shift, channel -> red/cyan shift
               float direction_shift = 1;
-              if (camera_data->abb_chromatic_type == green_magenta) direction_shift = std::abs(channel);
+              if (camera_data->abb_chromatic_type == green_magenta) direction_shift = std::abs(channel); // TODO: possible optimization when using green/magenta, since two channels are a copy of each other
               float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens_abberated(direction_shift*camera_data->abb_chromatic*abb_chromatic_lateral*distance_to_center_unperturbed)/dir_from_lens_to_image_sample.z);
               AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
