@@ -719,7 +719,8 @@ public:
                                 AtMatrix cam_to_world,
                                 AtVector sample_pos_ws,
                                 AtShaderGlobals *sg, 
-                                float lambda_in)
+                                float lambda_in,
+                                bool sample_is_from_skydome)
     {
         int tries = 0;
         bool ray_succes = false;
@@ -761,7 +762,7 @@ public:
             AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
             AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), sg);
             AtScrSample hit = AtScrSample();
-            if (AiTrace(ray, AI_RGB_WHITE, hit)){
+            if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
                 ++tries;
                 continue;
             }

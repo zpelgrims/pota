@@ -94,7 +94,7 @@ filter_pixel
 
       AtRGBA sample = AiAOVSampleIteratorGetRGBA(iterator);
       AtVector sample_pos_ws = AiAOVSampleIteratorGetAOVVec(iterator, camera_data->atstring_p);
-      float depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
+      double depth = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_z); // what to do when values are INF?
       
       // skydome doesn't come with position data, so we have to construct this ourselves (raydir*large constant)
       bool sample_is_from_skydome = false;
@@ -103,8 +103,8 @@ filter_pixel
         if (ray_direction_aov == AtVector(0,0,0)) {
           redistribute = false;
         } else {
-          sample_pos_ws = ray_direction_aov * 999999.0;
-          depth = 999999.0;
+          sample_pos_ws = ray_direction_aov * 99999999.0; // TODO: 999999 gives correct result in one scene, 999999999 in another... 
+          depth = AI_ALMOST_ONE;
         }
         sample_is_from_skydome = true;
       }
@@ -115,8 +115,8 @@ filter_pixel
 
       AtRGB sample_volume = AiAOVSampleIteratorGetAOVRGB(iterator, AtString("volume"));
       bool volume_in_sample = AiColorMaxRGB(sample_volume) > 0.0;
-      float sample_volume_z = AiAOVSampleIteratorGetAOVFlt(iterator, AtString("volume_Z"));
       if (volume_in_sample) redistribute = false;
+      // float sample_volume_z = AiAOVSampleIteratorGetAOVFlt(iterator, AtString("volume_Z"));
       // if (volume_in_sample) depth = sample_volume_z;
 
       float time = AiAOVSampleIteratorGetAOVFlt(iterator, camera_data->atstring_time);
@@ -250,7 +250,7 @@ filter_pixel
             //   rgb_weight *= AtRGB(0,0,3);
             // }
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample)) {
+            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample, sample_is_from_skydome)) {
               --count;
               continue;
             }
@@ -360,7 +360,7 @@ filter_pixel
               AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
               AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
               AtScrSample hit = AtScrSample();
-              if (AiTrace(ray, AI_RGB_WHITE, hit)){
+              if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
                 // if (hit.point.x != 0.0) AiMsgInfo("hit.point: %f %f %f", hit.point.x, hit.point.y, hit.point.z);
                 // if (hit.opacity != AI_RGB_WHITE) AiMsgInfo("hit.opacity: %f %f %f", hit.opacity.r, hit.opacity.g, hit.opacity.b);
                 //   AiMsgInfo("uhoh");
