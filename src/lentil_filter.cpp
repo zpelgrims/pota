@@ -233,51 +233,54 @@ filter_pixel
             Eigen::Vector2d sensor_position(0, 0);            
             Eigen::Vector3d camera_space_sample_position_eigen(camera_space_sample_position.x, camera_space_sample_position.y, camera_space_sample_position.z);
 
-            // ca, works quite well
             AtRGB rgb_weight = AI_RGB_WHITE;
             float lambda_per_sample = 0.55;
-            // const int rand_ch = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0));
-            // const float weight = 0.1;
+            for (int channel = -1; channel <= 1; channel++) {
+              AtRGB rgb_weight = AI_RGB_WHITE;
+              if (channel == -1){
+                rgb_weight = AtRGB(3,0,0);
+                lambda_per_sample = linear_interpolate(1.0-camera_data->abb_chromatic, 0.35, 0.55);
+              }
+              else if (channel == 0) {
+                rgb_weight = AtRGB(0,3,0);
+                lambda_per_sample = 0.55;
+              }
+              else if (channel == 1) {
+                rgb_weight = AtRGB(0,0,3);
+                lambda_per_sample = linear_interpolate(camera_data->abb_chromatic, 0.55, 0.85);
+              }
 
-            // if (rand_ch == 0){
-            //   lambda_per_sample = linear_interpolate(1.0-weight, 0.35, 0.55);
-            //   rgb_weight *= AtRGB(3,0,0);
-            // } else if (rand_ch == 1) {
-            //   lambda_per_sample = 0.55;
-            //   rgb_weight *= AtRGB(0,3,0);
-            // } else if (rand_ch == 2) {
-            //   lambda_per_sample = linear_interpolate(weight, 0.55, 0.85);
-            //   rgb_weight *= AtRGB(0,0,3);
-            // }
+              if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample, sample_is_from_skydome)) {
+                --count;
+                continue;
+              }
 
-            if(!camera_data->trace_ray_bw_po(-camera_space_sample_position_eigen*10.0, sensor_position, px, py, total_samples_taken, cam_to_world, sample_pos_ws, shaderglobals, lambda_per_sample, sample_is_from_skydome)) {
-              --count;
-              continue;
+              const Eigen::Vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio_without_region);
+              const Eigen::Vector2d pixel(((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x, 
+                                          (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y);
+          
+
+              // if outside of image
+              if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
+                  (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
+              {
+                --count; // much room for improvement here, potentially many samples are wasted outside of frame
+                continue;
+              }
+
+              // unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
+              unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1))) : camera_data->coords_to_linear_pixel(px, py);
+
+              // box filtering, see thin-lens
+              float filter_weight = 1.0;
+
+              for (auto &aov : camera_data->aovs){
+                  if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
+                  else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
+              }
+
             }
-
-            const Eigen::Vector2d s(sensor_position(0) / (camera_data->sensor_width * 0.5), sensor_position(1) / (camera_data->sensor_width * 0.5) * frame_aspect_ratio_without_region);
-            const Eigen::Vector2d pixel(((( s(0) + 1.0) / 2.0) * camera_data->xres_without_region) - camera_data->region_min_x, 
-                                        (((-s(1) + 1.0) / 2.0) * camera_data->yres_without_region) - camera_data->region_min_y);
-        
-
-            // if outside of image
-            if ((pixel(0) >= xres) || (pixel(0) < 0) || (pixel(1) >= yres) || (pixel(1) < 0) ||
-                (pixel(0) != pixel(0)) || (pixel(1) != pixel(1))) // nan checking
-            {
-              --count; // much room for improvement here, potentially many samples are wasted outside of frame
-              continue;
-            }
-
-            // unsigned pixelnumber = camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1)));
-            unsigned pixelnumber = redistribute ? camera_data->coords_to_linear_pixel(floor(pixel(0)), floor(pixel(1))) : camera_data->coords_to_linear_pixel(px, py);
-
-            // box filtering, see thin-lens
-            float filter_weight = 1.0;
-
-            for (auto &aov : camera_data->aovs){
-                if (aov.is_crypto) camera_data->add_to_buffer_cryptomatte(aov, pixelnumber, crypto_cache[aov.index], inverse_sample_density * inv_samples);
-                else camera_data->add_to_buffer(aov, pixelnumber, aov_values[aov.index], fitted_bidir_add_energy, depth, iterator, filter_weight * inverse_sample_density * inv_samples * mix, rgb_weight); 
-            }
+            
           }
         } break;
 
