@@ -45,6 +45,10 @@ function(cat IN_FILE OUT_FILE)
   file(APPEND ${OUT_FILE} "${CONTENTS}")
 endfunction()
 
+# honestly not sure why these files need to be deleted otherwise they don't update .. weird
+file (REMOVE ${MTD_INSTALL_DIR}/lentil.mtd)
+file (REMOVE ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd)
+
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd "")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd "")
 foreach(MTD_FILE ${MTD_FILES})
