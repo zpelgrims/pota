@@ -345,8 +345,7 @@ filter_pixel
               
               // add some shifting to the focus distance
               // abs(channel) -> green/magenta shift, channel -> red/cyan shift
-              float direction_shift = 1;
-              if (camera_data->abb_chromatic_type == green_magenta) direction_shift = std::abs(channel); // TODO: possible optimization when using green/magenta, since two channels are a copy of each other
+              float direction_shift = camera_data->abb_chromatic_type == green_magenta ? std::abs(channel) : channel; // TODO: possible optimization when using green/magenta, since two channels are a copy of each other
               float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens_abberated(direction_shift*camera_data->abb_chromatic*abb_chromatic_lateral*distance_to_center_unperturbed)/dir_from_lens_to_image_sample.z);
               AtVector focusdist_image_point = lens + dir_from_lens_to_image_sample*focusdist_intersection;
 
