@@ -969,8 +969,7 @@ public:
             case AI_TYPE_RGBA: {
                 if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
 
-                AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
+                aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
                 
                 break;
             }
