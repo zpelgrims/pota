@@ -1263,8 +1263,8 @@ public:
             AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
             output.index = i;
 
-            if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug") {
-                AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug)?
+            if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug" || output.to.aov_name_tok == "lentil_raydir") {
+                AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug, lentil_raydir)?
             }
         }
         AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
@@ -1297,6 +1297,8 @@ public:
             AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
             AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
             AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
+
+            aov_shader_array_size += 1;
         }
 
         if (!lentil_raydir_found){
