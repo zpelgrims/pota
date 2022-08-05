@@ -343,7 +343,7 @@ filter_pixel
             }
             AtVector cam_pos_ws = AiM4PointByMatrixMult(cam_to_world, lens_correct_scaled);
             AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
-            AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
+            AtRay ray = AiMakeRay(AI_RAY_UNDEFINED, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
             AtScrSample hit = AtScrSample();
             // if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
             if (AiTraceProbe(ray, shaderglobals) && !sample_is_from_skydome){
