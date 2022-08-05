@@ -762,7 +762,9 @@ public:
             AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
             AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), sg);
             AtScrSample hit = AtScrSample();
-            if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
+            
+            if (AiTraceProbe(ray, sg) && !sample_is_from_skydome){
+            // if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
                 ++tries;
                 continue;
             }

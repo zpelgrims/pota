@@ -362,7 +362,8 @@ filter_pixel
               AtVector ws_direction = AiV3Normalize(cam_pos_ws - sample_pos_ws);
               AtRay ray = AiMakeRay(AI_RAY_SHADOW, sample_pos_ws, &ws_direction, AiV3Dist(cam_pos_ws, sample_pos_ws), shaderglobals);
               AtScrSample hit = AtScrSample();
-              if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
+              // if (AiTrace(ray, AI_RGB_WHITE, hit) && !sample_is_from_skydome){
+              if (AiTraceProbe(ray, shaderglobals) && !sample_is_from_skydome){
                 // if (hit.point.x != 0.0) AiMsgInfo("hit.point: %f %f %f", hit.point.x, hit.point.y, hit.point.z);
                 // if (hit.opacity != AI_RGB_WHITE) AiMsgInfo("hit.opacity: %f %f %f", hit.opacity.r, hit.opacity.g, hit.opacity.b);
                 //   AiMsgInfo("uhoh");
