@@ -371,8 +371,8 @@ filter_pixel
 
 
             // chromatic abb
-            int channel = (total_samples_taken % 3) - 1;
-            float abb_chromatic_lateral = 5.0;
+            const int channel = static_cast<int>(rng(seed)*3) - 1;
+            const float abb_chromatic_lateral = 5.0;
             AtRGB rgb_weight = AI_RGB_WHITE;
             if (camera_data->abb_chromatic > 0.0) {
               if (channel == -1) rgb_weight = AtRGB(3,0,0);
