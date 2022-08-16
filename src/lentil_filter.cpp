@@ -288,6 +288,7 @@ filter_pixel
           // early out
           if (redistribute == false){
             camera_data->filter_and_add_to_buffer_new(px, py, depth, iterator, crypto_cache, aov_values, inverse_sample_density);
+            if (!transmitted_energy_in_sample) continue;
           }
 
           for(int count=0; count<samples && total_samples_taken<max_total_samples; ++count, ++total_samples_taken) {
