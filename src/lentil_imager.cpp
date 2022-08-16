@@ -116,7 +116,7 @@ driver_process_bucket {
         int in_idx = j * bucket_size_x + i;
         int linear_pixel = camera_data->coords_to_linear_pixel(x-camera_data->region_min_x, y-camera_data->region_min_y);
         
-        switch (aov_type){
+        switch (aov_current->type){
           case AI_TYPE_RGBA: {
 
             std::string aov_name_string = aov_name.c_str();
@@ -185,21 +185,25 @@ driver_process_bucket {
               image /= camera_data->filter_weight_buffer[linear_pixel];
             }
 
-            AtRGB final_value = AtRGB(image.r, image.g, image.b);
-            ((AtRGB*)bucket_data)[in_idx] = final_value;
+            AtRGBA final_value = AtRGBA(image.r, image.g, image.b, 0.0);
+            ((AtRGBA*)bucket_data)[in_idx] = final_value;
             break;
           }
 
           case AI_TYPE_FLOAT: {
-            ((float*)bucket_data)[in_idx] = aov_current->buffer[linear_pixel].r;
+            ((AtRGBA*)bucket_data)[in_idx] = AtRGBA(aov_current->buffer[linear_pixel].r, 
+                                                    aov_current->buffer[linear_pixel].r, 
+                                                    aov_current->buffer[linear_pixel].r, 
+                                                    1.0);
             break;
           }
 
           case AI_TYPE_VECTOR: {
-            AtVector final_value (aov_current->buffer[linear_pixel].r, 
+            AtRGBA final_value (aov_current->buffer[linear_pixel].r, 
                                   aov_current->buffer[linear_pixel].g,
-                                  aov_current->buffer[linear_pixel].b);
-            ((AtVector*)bucket_data)[in_idx] = final_value;
+                                  aov_current->buffer[linear_pixel].b, 
+                                  1.0);
+            ((AtRGBA*)bucket_data)[in_idx] = final_value;
             break;
           }
 

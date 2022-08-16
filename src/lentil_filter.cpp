@@ -30,13 +30,14 @@ filter_output_type
       case AI_TYPE_RGBA:
          return AI_TYPE_RGBA;
       case AI_TYPE_RGB:
-         return AI_TYPE_RGB;
+         return AI_TYPE_RGBA;
       case AI_TYPE_VECTOR:
-        return AI_TYPE_VECTOR;
+        return AI_TYPE_RGBA;
       case AI_TYPE_FLOAT:
         // for some reason float->rgba is required by cryptomatte to output the suffixed aov's (correct). if float->float it only does "display" layers (incorrect)
-        // does this affect any of my own work? not sure. I should test e.g depth aov.
-        return AI_TYPE_RGBA; 
+        // this does break the depth aov (float aov's) at this moment ...
+        return AI_TYPE_RGBA;
+        // return AI_TYPE_FLOAT; 
       default:
          return AI_TYPE_NONE;
    }
