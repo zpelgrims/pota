@@ -1344,12 +1344,6 @@ private:
 
      bool get_bidirectional_status(AtUniverse *universe) {
 
-        // if progressive rendering is on, don't redistribute
-        if (AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
-            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
-            AiRenderAbort();
-            return false;
-        }
 
         if (!enable_dof) {
             AiMsgWarning("[LENTIL BIDIRECTIONAL] Depth of field is disabled, therefore disabling bidirectional sampling.");
@@ -1358,6 +1352,13 @@ private:
 
         if (bidir_sample_mult == 0){
             AiMsgWarning("[LENTIL BIDIRECTIONAL] Bidirectional samples are set to 0, filter will not execute.");
+            return false;
+        }
+
+        // if progressive rendering is on, don't redistribute
+        if (!enable_dof && bidir_sample_mult == 0 && AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
+            AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
+            AiRenderAbort();
             return false;
         }
 
