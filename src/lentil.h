@@ -1356,7 +1356,7 @@ private:
         }
 
         // if progressive rendering is on, don't redistribute
-        if (!enable_dof && bidir_sample_mult == 0 && AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
+        if (enable_dof && bidir_sample_mult != 0 && AiNodeGetBool(AiUniverseGetOptions(universe), AtString("enable_progressive_render"))) {
             AiMsgError("[LENTIL BIDIRECTIONAL] Progressive rendering is not supported. Arnold does not yet provide enough API functionality for this to be implemented as it should.");
             AiRenderAbort();
             return false;
