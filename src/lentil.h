@@ -1198,10 +1198,6 @@ public:
                 aov.is_crypto = true;
             }
 
-            if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
-                aov.to.filter_tok = "lentil_replaced_filter";
-            }
-
             if (aov.to.aov_name_tok == "lentil_time"){
                 lentil_time_found = true;
             }
@@ -1212,6 +1208,10 @@ public:
 
             if (aov.to.aov_name_tok == "lentil_raydir"){
                 lentil_raydir_found = true;
+            }
+
+            if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
+                aov.to.filter_tok = "lentil_replaced_filter";
             }
 
             // identify as duplicate
@@ -1294,12 +1294,12 @@ public:
             AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
             AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
             AiNodeLink(time_read, AtString("aov_input"), time_write);
-
-            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
-            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)time_write);
+            
+            aov_shader_array_size += 1;
+            AiArrayResize(aov_shaders_array, aov_shader_array_size, 1);
+            AiArraySetPtr(aov_shaders_array, aov_shader_array_size-1, (void*)time_write);
             AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
 
-            aov_shader_array_size += 1;
         }
 
         if (!lentil_raydir_found){
@@ -1311,8 +1311,9 @@ public:
             AiNodeSetStr(raydir_write, AtString("aov_name"), AtString("lentil_raydir"));
             AiNodeLink(raydir_read, AtString("aov_input"), raydir_write);
 
-            AiArrayResize(aov_shaders_array, aov_shader_array_size+1, 1);
-            AiArraySetPtr(aov_shaders_array, aov_shader_array_size, (void*)raydir_write);
+            aov_shader_array_size += 1;
+            AiArrayResize(aov_shaders_array, aov_shader_array_size, 1);
+            AiArraySetPtr(aov_shaders_array, aov_shader_array_size-1, (void*)raydir_write);
             AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
         }
     }
