@@ -116,56 +116,56 @@ driver_process_bucket {
         int in_idx = j * bucket_size_x + i;
         int linear_pixel = camera_data->coords_to_linear_pixel(x-camera_data->region_min_x, y-camera_data->region_min_y);
         
+        std::string aov_name_string = aov_name.c_str();
+
+        // CRYPTOMATTE
+        if (aov_name_string.find("crypto") != std::string::npos) {
+
+          int rank = 0;
+          // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
+          if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
+          else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
+          
+          // crypto ranking
+          AtRGBA out = AI_RGBA_ZERO;
+          // rank 0 means if vals.size() does not contain 0, we can stop
+          // rank 2 means if vals.size() does not contain 2, we can stop
+          if (aov_current->crypto_hash_map[linear_pixel].size() <= rank) {
+            break;
+          }
+
+          std::map<float, float>::iterator vals_iter;
+          std::vector<std::pair<float, float>> all_vals;
+          std::vector<std::pair<float, float>>::iterator all_vals_iter;
+
+          all_vals.reserve(aov_current->crypto_hash_map[linear_pixel].size());
+          for (vals_iter = aov_current->crypto_hash_map[linear_pixel].begin(); vals_iter != aov_current->crypto_hash_map[linear_pixel].end(); ++vals_iter){
+              all_vals.push_back(*vals_iter);
+          }
+
+          std::sort(all_vals.begin(), all_vals.end(), compareTail());
+
+          int iter = 0;
+          
+          for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
+              if (iter == rank) {
+                  out.r = all_vals_iter->first;
+                  out.g = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
+              } else if (iter == rank + 1) {
+                  out.b = all_vals_iter->first;
+                  out.a = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
+              }
+              iter++;
+          }
+          
+          ((AtRGBA*)bucket_data)[in_idx] = out;
+        } 
+        
+        else {
+        
         switch (aov_current->type){
           case AI_TYPE_RGBA: {
 
-            std::string aov_name_string = aov_name.c_str();
-
-            // CRYPTOMATTE
-            if (aov_name_string.find("crypto") != std::string::npos) {
-
-              int rank = 0;
-              // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
-              if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
-              else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
-              
-              // crypto ranking
-              AtRGBA out = AI_RGBA_ZERO;
-              // rank 0 means if vals.size() does not contain 0, we can stop
-              // rank 2 means if vals.size() does not contain 2, we can stop
-              if (aov_current->crypto_hash_map[linear_pixel].size() <= rank) {
-                break;
-              }
-
-              std::map<float, float>::iterator vals_iter;
-              std::vector<std::pair<float, float>> all_vals;
-              std::vector<std::pair<float, float>>::iterator all_vals_iter;
-
-              all_vals.reserve(aov_current->crypto_hash_map[linear_pixel].size());
-              for (vals_iter = aov_current->crypto_hash_map[linear_pixel].begin(); vals_iter != aov_current->crypto_hash_map[linear_pixel].end(); ++vals_iter){
-                  all_vals.push_back(*vals_iter);
-              }
-
-              std::sort(all_vals.begin(), all_vals.end(), compareTail());
-
-              int iter = 0;
-              
-              for (all_vals_iter = all_vals.begin(); all_vals_iter != all_vals.end(); ++all_vals_iter) {
-                  if (iter == rank) {
-                      out.r = all_vals_iter->first;
-                      out.g = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
-                  } else if (iter == rank + 1) {
-                      out.b = all_vals_iter->first;
-                      out.a = (all_vals_iter->second / aov_current->crypto_total_weight[linear_pixel]);
-                  }
-                  iter++;
-              }
-              
-              ((AtRGBA*)bucket_data)[in_idx] = out;
-            }
-
-            // usualz
-            else {
               AtRGBA image = aov_current->buffer[linear_pixel];
               
               if (aov_current->name != camera_data->atstring_lentil_debug) {
@@ -175,7 +175,7 @@ driver_process_bucket {
               }
 
               ((AtRGBA*)bucket_data)[in_idx] = image;
-            }
+            
             break;
           }
 
@@ -216,6 +216,7 @@ driver_process_bucket {
           //   ((unsigned int*)bucket_data)[in_idx] = std::abs(aov_current->buffer[linear_pixel].r);
           //   break;
           // }
+        }
         }
       }
     }
