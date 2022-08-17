@@ -64,7 +64,7 @@ node_update {
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
   AtUniverse *universe = AiNodeGetUniverse(node);
   camera_data->setup_all(universe);
-  AiCameraUpdate(node, false);
+  AiCameraUpdate(node, true);
 }
 
 node_finish {

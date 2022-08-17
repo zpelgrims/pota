@@ -194,6 +194,7 @@ public:
     unsigned int type = 0;
     bool is_duplicate = false;
     int index = 0;
+    AtString original_filter = AtString("");
 
     // crypto
     bool is_crypto = false;
@@ -206,6 +207,7 @@ public:
         to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
         name = AtString(to.aov_name_tok.c_str());
         type = string_to_arnold_type(to.aov_type_tok);
+        original_filter = AtString(to.filter_tok.c_str());
     }
 
 
@@ -331,6 +333,10 @@ struct Camera
     const AtString atstring_motionvector = AtString("lentil_object_motion_vector");
     const AtString atstring_time = AtString("lentil_time");
     const AtString atstring_lentil_debug = AtString("lentil_debug");
+
+    const AtString atstring_filter_gaussian = AtString("gaussian_filter");
+    const AtString atstring_filter_closest = AtString("closest_filter");
+    const AtString atstring_filter_variance = AtString("variance_filter");
 
     bool cryptomatte_lentil = false;
     bool imager_print_once_only = false;
@@ -964,81 +970,32 @@ public:
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
                             const float fitted_bidir_add_energy, const float depth,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
-        switch(aov.type){
-
-            case AI_TYPE_RGBA: {
-                if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
-
-                aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
-                
-                break;
-            }
-
-            case AI_TYPE_RGB: {
-                const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
-                
-                break;
-            }
-
-            case AI_TYPE_VECTOR: {
+        if (aov.original_filter == atstring_filter_gaussian){
+            if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
+            aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
+        
+        }
+        
+        else if (aov.original_filter == atstring_filter_closest){
+            if (aov.name != atstring_lentil_debug) {
                 if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
                     aov.buffer[px] = aov_value;
                     zbuffer[px] = std::abs(depth);
-                }
-
-                break;
-            }
-
-            case AI_TYPE_FLOAT: {
-                if (aov.name != atstring_lentil_debug) {
-                    if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+                } 
+            } else {
+                if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
+                    if (aov_value.r != 0.0){
                         aov.buffer[px] = aov_value;
-                        zbuffer[px] = std::abs(depth);
-                    } 
-                } else {
-                    if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
-                        if (aov_value.r != 0.0){
-                            aov.buffer[px] = aov_value;
-                            zbuffer_debug[px] = std::abs(depth);
-                        }
+                        zbuffer_debug[px] = std::abs(depth);
                     }
                 }
-
-                break;
             }
 
-            // case AI_TYPE_INT: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
-            //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            //     aov.buffer[px] = rgba_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
+        }
+        
+        else if (aov.original_filter == atstring_filter_variance){
 
-            //   break;
-            // }
-
-            // case AI_TYPE_UINT: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
-            //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
-            //     aov.buffer[px] = rgba_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
-
-            //   break;
-            // }
-
-            // case AI_TYPE_POINTER: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const void *ptr_energy = AiAOVSampleIteratorGetAOVPtr(sample_iterator, aov_name);
-            //     image_ptr_types[aov_name][px] = ptr_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
-
-            //   break;
-            // }
+            // TODO: implement variance online filter (https://gist.github.com/musically-ut/1502045/106af3cf8bd4db0c8581218759040b058da778d3)
         }
     }
 
@@ -1197,6 +1154,24 @@ public:
             } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
                 aov.is_crypto = true;
             }
+
+            // this only works on the first pass (eg AA -3).
+            // TODO: make data structure that keeps track of these along the lifetime, but isn't updated beyond the initial
+            AiMsgInfo("original-filter: %s", aov.to.filter_tok.c_str());
+            AtNode *original_filter_node = AiNodeLookUpByName(universe, AtString(aov.to.filter_tok.c_str()));
+            const AtNodeEntry *original_filter_ne = AiNodeGetNodeEntry(original_filter_node);
+            const AtString original_filter_ne_name = AiNodeEntryGetNameAtString(original_filter_ne);
+            AiMsgInfo("original-filter_name: %s", original_filter_ne_name.c_str());
+
+            if (original_filter_ne_name != atstring_filter_gaussian && 
+                original_filter_ne_name != atstring_filter_closest && 
+                original_filter_ne_name != atstring_filter_variance) {
+                    AiMsgWarning("[LENTIL] Specified AOV filter (%s) is incompatible with Lentil. Defaulting to gaussian_filter.", original_filter_ne_name.c_str());
+                    aov.original_filter = atstring_filter_gaussian;
+            } else {
+                aov.original_filter = original_filter_ne_name;
+            }
+            
 
             if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
                 aov.to.filter_tok = "lentil_replaced_filter";
