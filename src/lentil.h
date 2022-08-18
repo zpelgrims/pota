@@ -256,8 +256,6 @@ public:
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                     ++time_cnt;
 
-                    AiMsgInfo("crypto setup not yet completed");
-
                     if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
                         crypto_in_same_queue = true;
                         AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
@@ -982,8 +980,6 @@ public:
         
         aovs.insert(aovs.end(), operator_data->aovs.begin(), operator_data->aovs.end());
         aovcount += operator_data->aovcount;
-
-        AiMsgInfo("setup_lentil_aovs completed");
     }
 
 

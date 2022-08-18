@@ -49,9 +49,6 @@ operator_cook
     for (int i=0; i<elements; i++) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
 
-
-        AiMsgInfo("unfiltered operator strings: %s", output_string.c_str());
-
         AOVData aov(universe, output_string);
 
         bool replace_filter = true;
