@@ -189,7 +189,6 @@ operator_post_cook
 
 operator_cleanup
 {
-    AiMsgWarning("CLOSING OPERATOR NOW");
     OperatorData* operator_data = (OperatorData*)AiNodeGetLocalData(op);
     delete operator_data;
     return true;

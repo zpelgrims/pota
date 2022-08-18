@@ -122,7 +122,6 @@ driver_process_bucket {
         if (aov_name_string.find("crypto") != std::string::npos) {
 
           int rank = 0;
-          // if (aov_name == crypto_material00 || aov_name == crypto_asset00 || aov_name == crypto_object00) rank = 0;
           if (aov_name == crypto_material01 || aov_name == crypto_asset01 || aov_name == crypto_object01) rank = 2;
           else if (aov_name == crypto_material02 || aov_name == crypto_asset02 || aov_name == crypto_object02) rank = 4;
           

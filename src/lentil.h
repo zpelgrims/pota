@@ -974,8 +974,10 @@ public:
         }
         AiNodeIteratorDestroy(iter);
 
-        if (!lentil_operator_node) AiMsgError("[LENTIL] Since Lentil 2.5, lentil requires an operator (lentil_operator) to function. Please insert this operator.");
-
+        if (!lentil_operator_node) {
+            AiMsgError("[LENTIL] Since Lentil 2.5, lentil requires an operator (lentil_operator) to function. Please insert this operator.");
+        }
+        
         OperatorData *operator_data = (OperatorData*)AiNodeGetLocalData(lentil_operator_node);
         
         aovs.insert(aovs.end(), operator_data->aovs.begin(), operator_data->aovs.end());
