@@ -49,6 +49,9 @@ operator_cook
     for (int i=0; i<elements; i++) {
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
 
+
+        AiMsgInfo("unfiltered operator strings: %s", output_string.c_str());
+
         AOVData aov(universe, output_string);
 
         bool replace_filter = true;
@@ -68,7 +71,8 @@ operator_cook
             aov.to.aov_name_tok == "crypto_object"){
             replace_filter = false;
         } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
-            aov.is_crypto = true;
+            // aov.is_crypto = true;
+            continue; // don't think this should happen anyway
         }
 
         if (aov.to.aov_name_tok == "lentil_time"){
@@ -131,29 +135,8 @@ operator_cook
         operator_data->aovs.push_back(aov_lentil_raydir);
     }
 
-    AtArray *final_outputs = AiArrayAllocate(operator_data->aovs.size(), 1, AI_TYPE_STRING);
-    uint32_t i = 0;
-    for (auto &output : operator_data->aovs){
-        AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
-        output.index = i;
 
-        if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug" || output.to.aov_name_tok == "lentil_raydir") {
-            AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug, lentil_raydir)?
-        }
-    }
-    AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
-    operator_data->aovcount = operator_data->aovs.size()+1;
-
-
-    // remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
-    std::vector<AOVData>::iterator it = operator_data->aovs.begin();
-    while(it != operator_data->aovs.end()) {
-        if(it->is_duplicate || it->to.filter_tok != "lentil_replaced_filter") {
-            it = operator_data->aovs.erase(it);
-        }
-        else ++it;
-    }
-
+    rebuild_arnold_outputs_from_list(universe, operator_data->aovs);
 
 
     // need to add an entry to the aov_shaders (NODE)
@@ -195,7 +178,6 @@ operator_cook
     // to debug what the operator did
     // AiASSWrite(uni, "/home/cactus/lentil/pota/tests/ilyas_motion_blur_bug/everything.ass", AI_NODE_ALL, 1, 0); 
 
-    // AiNodeSetLocalData(op, operator_data);
     return true;
 }
 

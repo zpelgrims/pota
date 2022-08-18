@@ -11,16 +11,16 @@
 #include "lens.h"
 #include "global.h"
 
-// #include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
-// #include <chrono>
-// #include <thread>
+#include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
+#include <chrono>
+#include <thread>
 #include <regex>
 
 #include "aov_data.h"
 #include "operator_data.h"
 
-// extern AtCritSec l_critsec;
-// extern bool l_critsec_active;
+extern AtCritSec l_critsec;
+extern bool l_critsec_active;
 
 
 ///////////////////////////////////////////////
@@ -29,32 +29,32 @@
 //
 ///////////////////////////////////////////////
 
-// inline bool lentil_crit_sec_init() {
-//     // Called in node_plugin_initialize. Returns true as a convenience.
-//     l_critsec_active = true;
-//     AiCritSecInit(&l_critsec);
-//     return true;
-// }
+inline bool lentil_crit_sec_init() {
+    // Called in node_plugin_initialize. Returns true as a convenience.
+    l_critsec_active = true;
+    AiCritSecInit(&l_critsec);
+    return true;
+}
 
-// inline void lentil_crit_sec_close() {
-//     // Called in node_plugin_cleanup
-//     l_critsec_active = false;
-//     AiCritSecClose(&l_critsec);
-// }
+inline void lentil_crit_sec_close() {
+    // Called in node_plugin_cleanup
+    l_critsec_active = false;
+    AiCritSecClose(&l_critsec);
+}
 
-// inline void lentil_crit_sec_enter() {
-//     // If the crit sec has not been inited since last close, we simply do not enter.
-//     // (Used by Cryptomatte filter.)
-//     if (l_critsec_active)
-//         AiCritSecEnter(&l_critsec);
-// }
+inline void lentil_crit_sec_enter() {
+    // If the crit sec has not been inited since last close, we simply do not enter.
+    // (Used by Cryptomatte filter.)
+    if (l_critsec_active)
+        AiCritSecEnter(&l_critsec);
+}
 
-// inline void lentil_crit_sec_leave() {
-//     // If the crit sec has not been inited since last close, we simply do not enter.
-//     // (Used by Cryptomatte filter.)
-//     if (l_critsec_active)
-//         AiCritSecLeave(&l_critsec);
-// }
+inline void lentil_crit_sec_leave() {
+    // If the crit sec has not been inited since last close, we simply do not enter.
+    // (Used by Cryptomatte filter.)
+    if (l_critsec_active)
+        AiCritSecLeave(&l_critsec);
+}
 
 
 
@@ -194,7 +194,7 @@ struct Camera
 public:
 
     Camera() {
-        // if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
+        if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
         crypto_in_same_queue = false;
     }
 
@@ -205,7 +205,7 @@ public:
     
 
     void setup_camera (AtUniverse *universe) {
-        // lentil_crit_sec_enter();
+        lentil_crit_sec_enter();
 
         destroy_buffers();
 
@@ -228,14 +228,14 @@ public:
             AiMsgInfo("[LENTIL] Version: %s", CM_VERSION);
         #endif
 
-        // lentil_crit_sec_leave();
+        lentil_crit_sec_leave();
 
 
 
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
             
-            // crypto_in_same_queue = false;
+            crypto_in_same_queue = false;
 
             // get cryptomatte node
             AtNode *crypto_node = nullptr;
@@ -250,27 +250,30 @@ public:
             // POTENTIAL BUG: what if lentil updates on the same thread as cryptomatte, and is in the queue before crypto? That would be a deadlock.
             // this is an ugly solution, continually checking if cryptomatte already did the setup.
             if (crypto_node){
-                // CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
-                // int time_cnt = 0;
-                // while (!crypto_data->is_setup_completed) {
-                //     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                //     ++time_cnt;
+                CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
+                int time_cnt = 0;
+                while (!crypto_data->is_setup_completed) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    ++time_cnt;
 
-                //     if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
-                //         crypto_in_same_queue = true;
-                //         AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
-                //         break;
-                //     }
-                // }
+                    AiMsgInfo("crypto setup not yet completed");
+
+                    if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
+                        crypto_in_same_queue = true;
+                        AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
+                        break;
+                    }
+                }
                 cryptomatte_lentil = true;
             }
 
 
             // once crypto has been setup I can do my own setup
-            // if (!crypto_in_same_queue){
-                setup_aovs(universe);
+            if (!crypto_in_same_queue){
+                setup_lentil_aovs(universe);
+                setup_crypto_aovs(universe);
                 setup_filter(universe);
-            // }
+            }
         }
     }
 
@@ -818,6 +821,8 @@ public:
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
                             const float fitted_bidir_add_energy, const float depth,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
+        // AiMsgInfo("add to buffer aov: %s", aov.name.c_str());
+        
         switch(aov.type){
 
             case AI_TYPE_RGBA: {
@@ -952,6 +957,9 @@ public:
 
     
     void setup_filter(AtUniverse *universe) {
+        aovcount = aovs.size();
+        sanitize_aov_list(aovs);
+
         xres_without_region = AiNodeGetInt(options_node, AtString("xres"));
         yres_without_region = AiNodeGetInt(options_node, AtString("yres"));
         region_min_x = AiNodeGetInt(options_node, AtString("region_min_x"));
@@ -973,12 +981,6 @@ public:
         xres = region_max_x - region_min_x + 1;
         yres = region_max_y - region_min_y + 1;
         
-
-        // if ((region_min_x != INT32_MIN && region_min_x != INT32_MAX && region_min_x != 0) || 
-        //     (region_min_y != INT32_MIN && region_min_y != INT32_MAX && region_min_y != 0)) {
-        //         AiMsgError("[ARNOLD BUG] 0x02-type Imagers currently do not work when region_min_x/y is set. Erroring out to avoid crash.(ARNOLD-11835, filed 2021/11/16).");
-        // }
-
 
         filter_width = 1.5;
         time_start = AiCameraGetShutterStart();
@@ -1019,7 +1021,7 @@ public:
     // the AOV setup is done inside of the operator, which is guaranteed to be
     // initialized before any other node. Only one lentil_operator is allowed in the scene.
     // here we just copy some of the data constructed there.
-    void setup_aovs(AtUniverse *universe) {
+    void setup_lentil_aovs(AtUniverse *universe) {
         AtNode *lentil_operator_node = nullptr;
 
         AtNodeIterator *iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL);
@@ -1038,8 +1040,56 @@ public:
         if (!lentil_operator_node) AiMsgError("[LENTIL] operator not found. Please insert an operator.");
 
         OperatorData *operator_data = (OperatorData*)AiNodeGetLocalData(lentil_operator_node);
-        aovs = operator_data->aovs;
-        aovcount = operator_data->aovcount;
+        
+        aovs.insert(aovs.end(), operator_data->aovs.begin(), operator_data->aovs.end());
+        aovcount += operator_data->aovcount;
+
+        AiMsgInfo("setup_lentil_aovs completed");
+    }
+
+
+    void setup_crypto_aovs(AtUniverse *universe) {
+        std::vector<AOVData> crypto_aovs;
+
+        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("outputs"));
+        const int elements = AiArrayGetNumElements(outputs);
+
+        for (int i=0; i<elements; i++) {
+            std::string output_string = AiArrayGetStr(outputs, i).c_str();
+
+            AOVData aov(universe, output_string);
+
+            AiMsgInfo("crypto start: %s", output_string.c_str());
+
+
+            bool replace_filter = true;
+            bool cryptomatte_aov = false;
+
+            
+            // never attach filter to the unranked crypto AOVs, they're just for display purposes.
+            // ranked aov's are e.g: crypto_material00, crypto_material01, ...
+            if (aov.to.aov_name_tok == "crypto_material" || 
+                aov.to.aov_name_tok == "crypto_asset" || 
+                aov.to.aov_name_tok == "crypto_object"){
+                replace_filter = false;
+                cryptomatte_aov = true;
+            } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
+                aov.is_crypto = true; // one of the ones that does lentil needs to care about, anyway
+                cryptomatte_aov = true;
+            }
+
+            if (cryptomatte_aov) {
+                if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
+                    aov.to.filter_tok = "lentil_replaced_filter";
+                }
+
+                crypto_aovs.push_back(aov);
+            }
+        }
+        
+        aovs.insert(aovs.end(), crypto_aovs.begin(), crypto_aovs.end());
+
+        rebuild_arnold_outputs_from_list(universe, aovs);
     }
 
 

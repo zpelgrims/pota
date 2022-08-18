@@ -147,6 +147,7 @@ public:
         crypto_total_weight.resize(xres*yres);
     }
 
+
     ~AOVData() {
         destroy_buffers();
     }
@@ -159,3 +160,29 @@ private:
         crypto_total_weight.clear();
     }
 };
+
+
+// remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
+inline void sanitize_aov_list(std::vector<AOVData> &aovs) {    
+    std::vector<AOVData>::iterator it = aovs.begin();
+    while(it != aovs.end()) {
+        if(it->is_duplicate || it->to.filter_tok != "lentil_replaced_filter") {
+            it = aovs.erase(it);
+        }
+        else ++it;
+    }
+}
+
+inline void rebuild_arnold_outputs_from_list(AtUniverse *universe, std::vector<AOVData> &aovs){
+    AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
+    uint32_t i = 0;
+    for (auto &output : aovs){
+        output.index = i;
+        AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
+
+        if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug" || output.to.aov_name_tok == "lentil_raydir") {
+            AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug, lentil_raydir)?
+        }
+    }
+    AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
+}
