@@ -7,7 +7,9 @@
 
 AI_OPERATOR_NODE_EXPORT_METHODS(LentilOperatorMtd);
 
-
+const AtString atstring_filter_gaussian = AtString("gaussian_filter");
+const AtString atstring_filter_closest = AtString("closest_filter");
+const AtString atstring_filter_variance = AtString("variance_filter");
 
 node_parameters 
 {
@@ -50,6 +52,19 @@ operator_cook
         std::string output_string = AiArrayGetStr(outputs, i).c_str();
 
         AOVData aov(universe, output_string);
+
+        AtNode *original_filter_node = AiNodeLookUpByName(universe, AtString(aov.to.filter_tok.c_str()));
+        const AtNodeEntry *original_filter_ne = AiNodeGetNodeEntry(original_filter_node);
+        const AtString original_filter_ne_name = AiNodeEntryGetNameAtString(original_filter_ne);
+
+        if (original_filter_ne_name != atstring_filter_gaussian && 
+            original_filter_ne_name != atstring_filter_closest && 
+            original_filter_ne_name != atstring_filter_variance) {
+                AiMsgWarning("[LENTIL] Specified AOV filter (%s) is incompatible with Lentil. Defaulting to gaussian_filter.", original_filter_ne_name.c_str());
+                aov.original_filter = atstring_filter_gaussian;
+        } else {
+            aov.original_filter = original_filter_ne_name;
+        }
 
         bool replace_filter = true;
 

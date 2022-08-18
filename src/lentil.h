@@ -186,6 +186,10 @@ struct Camera
     const AtString atstring_time = AtString("lentil_time");
     const AtString atstring_lentil_debug = AtString("lentil_debug");
 
+    const AtString atstring_filter_gaussian = AtString("gaussian_filter");
+    const AtString atstring_filter_closest = AtString("closest_filter");
+    const AtString atstring_filter_variance = AtString("variance_filter");
+
     bool cryptomatte_lentil = false;
     bool imager_print_once_only = false;
     bool crypto_in_same_queue = false;
@@ -817,86 +821,111 @@ public:
     
 
     inline void add_to_buffer(AOVData &aov, const int px, const AtRGBA aov_value,
-                            const float fitted_bidir_add_energy, const float depth,
+                            const float fitted_bidir_add_energy, float depth,
                             struct AtAOVSampleIterator* sample_iterator, const float filter_weight, const AtRGB rgb_weight) {
-        // AiMsgInfo("add to buffer aov: %s", aov.name.c_str());
+
+        if (aov.original_filter == atstring_filter_gaussian){
+            if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
+            aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
+        }
         
-        switch(aov.type){
-
-            case AI_TYPE_RGBA: {
-                if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
-
-                aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
-                
-                break;
-            }
-
-            case AI_TYPE_RGB: {
-                const AtRGBA rgba_energy = aov_value;
-                aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
-                
-                break;
-            }
-
-            case AI_TYPE_VECTOR: {
+        else if (aov.original_filter == atstring_filter_closest){
+            if (aov.name != atstring_lentil_debug) {
                 if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
                     aov.buffer[px] = aov_value;
                     zbuffer[px] = std::abs(depth);
-                }
-
-                break;
-            }
-
-            case AI_TYPE_FLOAT: {
-                if (aov.name != atstring_lentil_debug) {
-                    if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+                } 
+            } else {
+                if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
+                    if (aov_value.r != 0.0){
                         aov.buffer[px] = aov_value;
-                        zbuffer[px] = std::abs(depth);
-                    } 
-                } else {
-                    if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
-                        if (aov_value.r != 0.0){
-                            aov.buffer[px] = aov_value;
-                            zbuffer_debug[px] = std::abs(depth);
+                        zbuffer_debug[px] = std::abs(depth);
                         }
-                    }
                 }
-
-                break;
             }
-
-            // case AI_TYPE_INT: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
-            //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
-            //     aov.buffer[px] = rgba_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
-
-            //   break;
-            // }
-
-            // case AI_TYPE_UINT: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
-            //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
-            //     aov.buffer[px] = rgba_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
-
-            //   break;
-            // }
-
-            // case AI_TYPE_POINTER: {
-            //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
-            //     const void *ptr_energy = AiAOVSampleIteratorGetAOVPtr(sample_iterator, aov_name);
-            //     image_ptr_types[aov_name][px] = ptr_energy;
-            //     zbuffer[px] = std::abs(depth);
-            //   }
-
-            //   break;
-            // }
         }
+        
+        else if (aov.original_filter == atstring_filter_variance){
+            // TODO: implement variance online filter (https://gist.github.com/musically-ut/1502045/106af3cf8bd4db0c8581218759040b058da778d3)
+        }
+    // }
+        
+    //     switch(aov.type){
+
+    //         case AI_TYPE_RGBA: {
+    //             if (aov.name == atstring_rgba) filter_weight_buffer[px] += filter_weight;
+
+    //             aov.buffer[px] += (aov_value+fitted_bidir_add_energy) * filter_weight * rgb_weight;
+                
+    //             break;
+    //         }
+
+    //         case AI_TYPE_RGB: {
+    //             const AtRGBA rgba_energy = aov_value;
+    //             aov.buffer[px] += (rgba_energy+fitted_bidir_add_energy) * filter_weight * rgb_weight;
+                
+    //             break;
+    //         }
+
+    //         case AI_TYPE_VECTOR: {
+    //             if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+    //                 aov.buffer[px] = aov_value;
+    //                 zbuffer[px] = std::abs(depth);
+    //             }
+
+    //             break;
+    //         }
+
+    //         case AI_TYPE_FLOAT: {
+    //             if (aov.name != atstring_lentil_debug) {
+    //                 if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+    //                     aov.buffer[px] = aov_value;
+    //                     zbuffer[px] = std::abs(depth);
+    //                 } 
+    //             } else {
+    //                 if ((std::abs(depth) <= zbuffer_debug[px]) || zbuffer_debug[px] == 0.0){
+    //                     if (aov_value.r != 0.0){
+    //                         aov.buffer[px] = aov_value;
+    //                         zbuffer_debug[px] = std::abs(depth);
+    //                     }
+    //                 }
+    //             }
+
+    //             break;
+    //         }
+
+    //         // case AI_TYPE_INT: {
+    //         //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+    //         //     const int int_energy = AiAOVSampleIteratorGetAOVInt(sample_iterator, aov_name);
+    //         //     const AtRGBA rgba_energy = AtRGBA(int_energy, int_energy, int_energy, 1.0);
+    //         //     aov.buffer[px] = rgba_energy;
+    //         //     zbuffer[px] = std::abs(depth);
+    //         //   }
+
+    //         //   break;
+    //         // }
+
+    //         // case AI_TYPE_UINT: {
+    //         //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+    //         //     const unsigned uint_energy = AiAOVSampleIteratorGetAOVUInt(sample_iterator, aov_name);
+    //         //     const AtRGBA rgba_energy = AtRGBA(uint_energy, uint_energy, uint_energy, 1.0);
+    //         //     aov.buffer[px] = rgba_energy;
+    //         //     zbuffer[px] = std::abs(depth);
+    //         //   }
+
+    //         //   break;
+    //         // }
+
+    //         // case AI_TYPE_POINTER: {
+    //         //   if ((std::abs(depth) <= zbuffer[px]) || zbuffer[px] == 0.0){
+    //         //     const void *ptr_energy = AiAOVSampleIteratorGetAOVPtr(sample_iterator, aov_name);
+    //         //     image_ptr_types[aov_name][px] = ptr_energy;
+    //         //     zbuffer[px] = std::abs(depth);
+    //         //   }
+
+    //         //   break;
+    //         // }
+    //     }
     }
 
 
@@ -1020,6 +1049,7 @@ public:
         
         aovs.insert(aovs.end(), crypto_aovs.begin(), crypto_aovs.end());
         rebuild_arnold_outputs_from_list(universe, aovs);
+        
     }
 
 

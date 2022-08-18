@@ -117,7 +117,6 @@ filter_pixel
           redistribute = false;
         } else {
           sample_pos_ws = ray_direction_aov * 99999999.0;
-          depth = AI_ALMOST_ONE;
         }
         sample_is_from_skydome = true;
       }

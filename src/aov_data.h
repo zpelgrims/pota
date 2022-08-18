@@ -117,6 +117,7 @@ public:
     TokenizedOutputLentil to;
 
     AtString name = AtString("");
+    AtString original_filter = AtString("");
     unsigned int type = 0;
     bool is_duplicate = false;
     int index = 0;
@@ -132,6 +133,7 @@ public:
         to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
         name = AtString(to.aov_name_tok.c_str());
         type = string_to_arnold_type(to.aov_type_tok);
+        original_filter = AtString(to.filter_tok.c_str());
     }
 
 

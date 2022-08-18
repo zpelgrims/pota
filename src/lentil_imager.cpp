@@ -185,7 +185,7 @@ driver_process_bucket {
                 image /= camera_data->filter_weight_buffer[linear_pixel];
               }
 
-              AtRGBA final_value = AtRGBA(image.r, image.g, image.b, 0.0);
+              AtRGBA final_value = AtRGBA(image.r, image.g, image.b, 1.0);
               ((AtRGBA*)bucket_data)[in_idx] = final_value;
               break;
             }
