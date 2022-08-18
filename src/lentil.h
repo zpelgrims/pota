@@ -955,6 +955,76 @@ public:
     }
 
 
+    // the AOV setup is done inside of the operator, which is guaranteed to be
+    // initialized before any other node. Only one lentil_operator is allowed in the scene.
+    // here we just copy some of the data constructed there.
+    void setup_lentil_aovs(AtUniverse *universe) {
+        AtNode *lentil_operator_node = nullptr;
+
+        AtNodeIterator *iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL);
+        while (!AiNodeIteratorFinished(iter))
+        {
+            AtNode *node = AiNodeIteratorGetNext(iter);
+            const AtNodeEntry *ne = AiNodeGetNodeEntry(node);
+            AtString ne_name = AiNodeEntryGetNameAtString(ne);
+            if (ne_name == AtString("lentil_operator")){
+                lentil_operator_node = node;
+                break;
+            }
+        }
+        AiNodeIteratorDestroy(iter);
+
+        if (!lentil_operator_node) AiMsgError("[LENTIL] operator not found. Please insert an operator.");
+
+        OperatorData *operator_data = (OperatorData*)AiNodeGetLocalData(lentil_operator_node);
+        
+        aovs.insert(aovs.end(), operator_data->aovs.begin(), operator_data->aovs.end());
+        aovcount += operator_data->aovcount;
+
+        AiMsgInfo("setup_lentil_aovs completed");
+    }
+
+
+    void setup_crypto_aovs(AtUniverse *universe) {
+        std::vector<AOVData> crypto_aovs;
+
+        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("outputs"));
+        const int elements = AiArrayGetNumElements(outputs);
+
+        for (int i=0; i<elements; i++) {
+            std::string output_string = AiArrayGetStr(outputs, i).c_str();
+
+            AOVData aov(universe, output_string);
+
+            bool replace_filter = true;
+            bool cryptomatte_aov = false;
+            
+            // never attach filter to the unranked crypto AOVs, they're just for display purposes.
+            // ranked aov's are e.g: crypto_material00, crypto_material01, ...
+            if (aov.to.aov_name_tok == "crypto_material" || 
+                aov.to.aov_name_tok == "crypto_asset" || 
+                aov.to.aov_name_tok == "crypto_object"){
+                replace_filter = false;
+                cryptomatte_aov = true;
+            } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
+                aov.is_crypto = true; // one of the ones that does lentil needs to care about, anyway
+                cryptomatte_aov = true;
+            }
+
+            if (cryptomatte_aov) {
+                if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
+                    aov.to.filter_tok = "lentil_replaced_filter";
+                }
+
+                crypto_aovs.push_back(aov);
+            }
+        }
+        
+        aovs.insert(aovs.end(), crypto_aovs.begin(), crypto_aovs.end());
+        rebuild_arnold_outputs_from_list(universe, aovs);
+    }
+
+
     
     void setup_filter(AtUniverse *universe) {
         aovcount = aovs.size();
@@ -1018,79 +1088,6 @@ public:
     }
 
 
-    // the AOV setup is done inside of the operator, which is guaranteed to be
-    // initialized before any other node. Only one lentil_operator is allowed in the scene.
-    // here we just copy some of the data constructed there.
-    void setup_lentil_aovs(AtUniverse *universe) {
-        AtNode *lentil_operator_node = nullptr;
-
-        AtNodeIterator *iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL);
-        while (!AiNodeIteratorFinished(iter))
-        {
-            AtNode *node = AiNodeIteratorGetNext(iter);
-            const AtNodeEntry *ne = AiNodeGetNodeEntry(node);
-            AtString ne_name = AiNodeEntryGetNameAtString(ne);
-            if (ne_name == AtString("lentil_operator")){
-                lentil_operator_node = node;
-                break;
-            }
-        }
-        AiNodeIteratorDestroy(iter);
-
-        if (!lentil_operator_node) AiMsgError("[LENTIL] operator not found. Please insert an operator.");
-
-        OperatorData *operator_data = (OperatorData*)AiNodeGetLocalData(lentil_operator_node);
-        
-        aovs.insert(aovs.end(), operator_data->aovs.begin(), operator_data->aovs.end());
-        aovcount += operator_data->aovcount;
-
-        AiMsgInfo("setup_lentil_aovs completed");
-    }
-
-
-    void setup_crypto_aovs(AtUniverse *universe) {
-        std::vector<AOVData> crypto_aovs;
-
-        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("outputs"));
-        const int elements = AiArrayGetNumElements(outputs);
-
-        for (int i=0; i<elements; i++) {
-            std::string output_string = AiArrayGetStr(outputs, i).c_str();
-
-            AOVData aov(universe, output_string);
-
-            AiMsgInfo("crypto start: %s", output_string.c_str());
-
-
-            bool replace_filter = true;
-            bool cryptomatte_aov = false;
-
-            
-            // never attach filter to the unranked crypto AOVs, they're just for display purposes.
-            // ranked aov's are e.g: crypto_material00, crypto_material01, ...
-            if (aov.to.aov_name_tok == "crypto_material" || 
-                aov.to.aov_name_tok == "crypto_asset" || 
-                aov.to.aov_name_tok == "crypto_object"){
-                replace_filter = false;
-                cryptomatte_aov = true;
-            } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
-                aov.is_crypto = true; // one of the ones that does lentil needs to care about, anyway
-                cryptomatte_aov = true;
-            }
-
-            if (cryptomatte_aov) {
-                if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
-                    aov.to.filter_tok = "lentil_replaced_filter";
-                }
-
-                crypto_aovs.push_back(aov);
-            }
-        }
-        
-        aovs.insert(aovs.end(), crypto_aovs.begin(), crypto_aovs.end());
-
-        rebuild_arnold_outputs_from_list(universe, aovs);
-    }
 
 
 

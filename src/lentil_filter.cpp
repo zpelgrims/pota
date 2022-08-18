@@ -384,12 +384,12 @@ filter_pixel
             float focusdist_intersection = std::abs(camera_data->get_image_dist_focusdist_thinlens()/dir_from_lens_to_image_sample.z);
 
 
-            // chromatic abb
-            // const int channel = static_cast<int>(rng(seed)*3) - 1; // seems to have correlation issues here, what am i doing wrong? visible with low coc radii... This rng is much faster, and has a significant impact on rendertime.. see how i can re-introduce this?
-            const int channel = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0)) - 1;
-            const float abb_chromatic_lateral = 5.0;
             AtRGB rgb_weight = AI_RGB_WHITE;
             if (camera_data->abb_chromatic > 0.0) {
+              const float abb_chromatic_lateral = 5.0;
+
+              // const int channel = static_cast<int>(rng(seed)*3) - 1; // seems to have correlation issues here, what am i doing wrong? visible with low coc radii... This rng is much faster, and has a significant impact on rendertime.. see how i can re-introduce this?
+              const int channel = static_cast<int>(std::floor((xor128() / 4294967296.0) * 3.0)) - 1;
               if (channel == -1) rgb_weight = AtRGB(3,0,0);
               else if (channel == 0) rgb_weight = AtRGB(0,3,0);
               else if (channel == 1) rgb_weight = AtRGB(0,0,3);

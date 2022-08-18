@@ -136,7 +136,8 @@ operator_cook
     }
 
 
-    rebuild_arnold_outputs_from_list(universe, operator_data->aovs);
+    // rebuild_arnold_outputs_from_list(universe, operator_data->aovs);
+
 
 
     // need to add an entry to the aov_shaders (NODE)
