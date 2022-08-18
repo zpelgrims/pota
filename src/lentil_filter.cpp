@@ -31,7 +31,10 @@ node_update
 {
   AiFilterUpdate(node, 1.5);
 }
- 
+
+
+// decided it was easier to handle if all types converted to RGBA.
+// this is mainly due to the cryptomatte crap below.
 filter_output_type
 {
    switch (input_type)

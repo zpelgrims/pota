@@ -52,8 +52,8 @@ node_parameters {
 }
 
 
-node_plugin_initialize {return lentil_crit_sec_init();}
-node_plugin_cleanup {lentil_crit_sec_close();}
+// node_plugin_initialize {return lentil_crit_sec_init();}
+// node_plugin_cleanup {lentil_crit_sec_close();}
 
 node_initialize {
   AiCameraInitialize(node);
@@ -63,13 +63,15 @@ node_initialize {
 node_update { 
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
   AtUniverse *universe = AiNodeGetUniverse(node);
-  camera_data->setup_all(universe);
+  camera_data->setup_camera(universe);
   AiCameraUpdate(node, false);
 }
 
 node_finish {
   Camera* camera_data = (Camera*)AiNodeGetLocalData(node);
   delete camera_data;
+
+  
 }
 
 

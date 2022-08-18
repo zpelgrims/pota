@@ -6,13 +6,13 @@ typedef void (*NodeRegisterFunc)(AtNodeLib* node);
 void registerLentilCamera(AtNodeLib* node);
 void registerLentilFilter(AtNodeLib* node);
 void registerLentilImager(AtNodeLib* node);
-// void registerLentilOperator(AtNodeLib* node);
+void registerLentilOperator(AtNodeLib* node);
 
 static NodeRegisterFunc registry[] = {
     &registerLentilCamera,
     &registerLentilFilter,
     &registerLentilImager,
-    // &registerLentilOperator
+    &registerLentilOperator
 };
 
 static const int num_nodes = sizeof(registry) / sizeof(NodeRegisterFunc);

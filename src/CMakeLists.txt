@@ -1,4 +1,4 @@
-set(SRC lentil.cpp lentil_loader.cpp lentil_camera.cpp lentil_filter.cpp lentil_imager.cpp)
+set(SRC lentil.cpp lentil_loader.cpp lentil_operator.cpp lentil_camera.cpp lentil_filter.cpp lentil_imager.cpp)
 set(SHADER lentil)
 set(UI ${CMAKE_CURRENT_SOURCE_DIR}/lentil_camera.ui)
 set(MTD ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd)

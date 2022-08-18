@@ -11,13 +11,16 @@
 #include "lens.h"
 #include "global.h"
 
-#include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
-#include <chrono>
-#include <thread>
+// #include "../CryptomatteArnold/cryptomatte/cryptomatte.h"
+// #include <chrono>
+// #include <thread>
 #include <regex>
 
-extern AtCritSec l_critsec;
-extern bool l_critsec_active;
+#include "aov_data.h"
+#include "operator_data.h"
+
+// extern AtCritSec l_critsec;
+// extern bool l_critsec_active;
 
 
 ///////////////////////////////////////////////
@@ -26,32 +29,32 @@ extern bool l_critsec_active;
 //
 ///////////////////////////////////////////////
 
-inline bool lentil_crit_sec_init() {
-    // Called in node_plugin_initialize. Returns true as a convenience.
-    l_critsec_active = true;
-    AiCritSecInit(&l_critsec);
-    return true;
-}
+// inline bool lentil_crit_sec_init() {
+//     // Called in node_plugin_initialize. Returns true as a convenience.
+//     l_critsec_active = true;
+//     AiCritSecInit(&l_critsec);
+//     return true;
+// }
 
-inline void lentil_crit_sec_close() {
-    // Called in node_plugin_cleanup
-    l_critsec_active = false;
-    AiCritSecClose(&l_critsec);
-}
+// inline void lentil_crit_sec_close() {
+//     // Called in node_plugin_cleanup
+//     l_critsec_active = false;
+//     AiCritSecClose(&l_critsec);
+// }
 
-inline void lentil_crit_sec_enter() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (l_critsec_active)
-        AiCritSecEnter(&l_critsec);
-}
+// inline void lentil_crit_sec_enter() {
+//     // If the crit sec has not been inited since last close, we simply do not enter.
+//     // (Used by Cryptomatte filter.)
+//     if (l_critsec_active)
+//         AiCritSecEnter(&l_critsec);
+// }
 
-inline void lentil_crit_sec_leave() {
-    // If the crit sec has not been inited since last close, we simply do not enter.
-    // (Used by Cryptomatte filter.)
-    if (l_critsec_active)
-        AiCritSecLeave(&l_critsec);
-}
+// inline void lentil_crit_sec_leave() {
+//     // If the crit sec has not been inited since last close, we simply do not enter.
+//     // (Used by Cryptomatte filter.)
+//     if (l_critsec_active)
+//         AiCritSecLeave(&l_critsec);
+// }
 
 
 
@@ -82,157 +85,8 @@ enum ChromaticType{
 
 
 
-// kindly borrowed from cryptomatte, thanks you honeyboo
-struct TokenizedOutputLentil {
-    std::string camera_tok = "";
-    std::string aov_name_tok = "";
-    std::string aov_type_tok = "";
-    std::string filter_tok = "";
-    std::string driver_tok = "";
-    bool half_flag = false;
-    AtNode* raw_driver = nullptr;
-    AtUniverse *universe = nullptr;
-
-private:
-    AtNode* driver = nullptr;
-
-public:
-    TokenizedOutputLentil() {}
-
-    TokenizedOutputLentil(AtUniverse *universe_in, AtNode* raw_driver_in) { universe = universe_in; raw_driver = raw_driver_in; }
-
-    TokenizedOutputLentil(AtUniverse *universe_in, AtString output_string) {
-        universe = universe_in;
-        std::string temp_string = output_string.c_str();
-        std::string regex_string = " ";
-        auto tokens = split(temp_string, regex_string);
-
-        std::string c0 = "";
-        std::string c1 = "";
-        std::string c2 = "";
-        std::string c3 = "";
-        std::string c4 = "";
-        std::string c5 = "";
-        
-        if (tokens.size() >= 4) {
-            c0 = tokens[0];
-            c1 = tokens[1];
-            c2 = tokens[2];
-            c3 = tokens[3];
-        }
-        
-        if (tokens.size() >= 5) {
-            c4 = tokens[4];
-        }
-
-        if (tokens.size() >= 6) {
-            c5 = tokens[5];
-        }
-
-        const bool no_camera = c4.empty() || c4 == std::string("HALF");
-
-        half_flag = (no_camera ? c4 : c5) == std::string("HALF");
-
-        camera_tok = no_camera ? "" : c0;
-        aov_name_tok = no_camera ? c0 : c1;
-        aov_type_tok = no_camera ? c1 : c2;
-        filter_tok = no_camera ? c2 : c3;
-        driver_tok = no_camera ? c3 : c4;
-
-        driver = AiNodeLookUpByName(universe, driver_tok.c_str());
-    }
-
-    std::string rebuild_output() const {
-        if (raw_driver)
-            return std::string(AiNodeGetName(raw_driver));
-
-        std::string output_str("");
-        if (!camera_tok.empty()) {
-            output_str.append(camera_tok);
-            output_str.append(" ");
-        }
-        output_str.append(aov_name_tok);
-        output_str.append(" ");
-        output_str.append(aov_type_tok);
-        output_str.append(" ");
-        output_str.append(filter_tok);
-        output_str.append(" ");
-        output_str.append(driver_tok);
-        if (half_flag) // output was already flagged half
-            output_str.append(" HALF");
-        return output_str;
-    }
-
-    AtNode* get_driver() const {
-        if (driver && driver_tok == std::string(AiNodeGetName(driver)))
-            return driver;
-        else if (!driver_tok.empty())
-            return AiNodeLookUpByName(universe, driver_tok.c_str());
-        else
-            return nullptr;
-    }
-
-    bool aov_matches(const char* str) const { return aov_name_tok == std::string(str); }
-
-    std::vector<std::string> split(const std::string str, const std::string regex_str)
-    {
-        std::regex regexz(regex_str);
-        std::vector<std::string> list(std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
-                                    std::sregex_token_iterator());
-        return list;
-    }
-};
 
 
-
-struct AOVData {
-public:
-    std::vector<AtRGBA> buffer;
-    TokenizedOutputLentil to;
-
-    AtString name = AtString("");
-    unsigned int type = 0;
-    bool is_duplicate = false;
-    int index = 0;
-
-    // crypto
-    bool is_crypto = false;
-    std::vector<std::map<float, float>> crypto_hash_map;
-    std::vector<float> crypto_total_weight;
-
-
-
-    AOVData(AtUniverse *universe, std::string output_string) {
-        to = TokenizedOutputLentil(universe, AtString(output_string.c_str()));
-        name = AtString(to.aov_name_tok.c_str());
-        type = string_to_arnold_type(to.aov_type_tok);
-    }
-
-
-    void allocate_regular_buffers(int xres, int yres) {
-        buffer.clear();
-        buffer.resize(xres*yres);
-    }
-
-    void allocate_cryptomatte_buffers(int xres, int yres) {
-        crypto_hash_map.clear();
-        crypto_hash_map.resize(xres*yres);
-        crypto_total_weight.clear();
-        crypto_total_weight.resize(xres*yres);
-    }
-
-    ~AOVData() {
-        destroy_buffers();
-    }
-
-private:
-
-    void destroy_buffers() {
-        buffer.clear();
-        crypto_hash_map.clear();
-        crypto_total_weight.clear();
-    }
-};
 
 
 struct Camera
@@ -340,7 +194,7 @@ struct Camera
 public:
 
     Camera() {
-        if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
+        // if (!l_critsec_active) AiMsgError("[Lentil] Critical section was not initialized. ");
         crypto_in_same_queue = false;
     }
 
@@ -348,15 +202,16 @@ public:
         image.invalidate();
         destroy_buffers();
     }
+    
 
-
-    void setup_all (AtUniverse *universe) {
-        lentil_crit_sec_enter();
+    void setup_camera (AtUniverse *universe) {
+        // lentil_crit_sec_enter();
 
         destroy_buffers();
 
         options_node = AiUniverseGetOptions(universe);
         camera_node = AiUniverseGetCamera(universe);
+        get_arnold_options();
         get_lentil_camera_params();
         camera_model_specific_setup();
 
@@ -368,18 +223,19 @@ public:
             AiRenderAbort();
         }
 
-        get_arnold_options();
 
         #ifdef CM_VERSION
             AiMsgInfo("[LENTIL] Version: %s", CM_VERSION);
         #endif
-        
-        
+
+        // lentil_crit_sec_leave();
+
+
 
         redistribution = get_bidirectional_status(universe); // this should include AA level test
         if (redistribution) {
             
-            crypto_in_same_queue = false;
+            // crypto_in_same_queue = false;
 
             // get cryptomatte node
             AtNode *crypto_node = nullptr;
@@ -394,30 +250,28 @@ public:
             // POTENTIAL BUG: what if lentil updates on the same thread as cryptomatte, and is in the queue before crypto? That would be a deadlock.
             // this is an ugly solution, continually checking if cryptomatte already did the setup.
             if (crypto_node){
-                CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
-                int time_cnt = 0;
-                while (!crypto_data->is_setup_completed) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    ++time_cnt;
+                // CryptomatteData* crypto_data = reinterpret_cast<CryptomatteData*>(AiNodeGetLocalData(crypto_node));
+                // int time_cnt = 0;
+                // while (!crypto_data->is_setup_completed) {
+                //     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                //     ++time_cnt;
 
-                    if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
-                        crypto_in_same_queue = true;
-                        AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
-                        break;
-                    }
-                }
+                //     if (time_cnt == 500) { // guess that crypto is in the same queue, behind lentil
+                //         crypto_in_same_queue = true;
+                //         AiMsgInfo("[LENTIL] Waiting for Cryptomatte setup reached time-out.");
+                //         break;
+                //     }
+                // }
                 cryptomatte_lentil = true;
             }
 
 
             // once crypto has been setup I can do my own setup
-            if (!crypto_in_same_queue){
+            // if (!crypto_in_same_queue){
                 setup_aovs(universe);
                 setup_filter(universe);
-            }
+            // }
         }
-
-        lentil_crit_sec_leave();
     }
 
 
@@ -1162,160 +1016,30 @@ public:
     }
 
 
+    // the AOV setup is done inside of the operator, which is guaranteed to be
+    // initialized before any other node. Only one lentil_operator is allowed in the scene.
+    // here we just copy some of the data constructed there.
     void setup_aovs(AtUniverse *universe) {
-        filter_node = AiNodeLookUpByName(universe, AtString("lentil_replaced_filter"));
-        if (!filter_node) filter_node = AiNode(universe, AtString("lentil_filter"), AtString("lentil_replaced_filter"));
+        AtNode *lentil_operator_node = nullptr;
 
-        AtArray* outputs = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("outputs"));
-        const int elements = AiArrayGetNumElements(outputs);
-        std::vector<std::string> output_strings;
-        bool lentil_time_found = false;
-        bool lentil_debug_found = false;
-        bool lentil_raydir_found = false;
-
-        for (int i=0; i<elements; i++) {
-            std::string output_string = AiArrayGetStr(outputs, i).c_str();
-
-            AOVData aov(universe, output_string);
-
-            bool replace_filter = true;
-
-            // lentil unsupported
-            if (aov.to.aov_type_tok != "RGBA" && 
-                aov.to.aov_type_tok != "RGB" && 
-                aov.to.aov_type_tok != "FLOAT" && 
-                aov.to.aov_type_tok != "VECTOR") {
-                replace_filter = false;
-            }
-
-            // never attach filter to the unranked crypto AOVs, they're just for display purposes.
-            // ranked aov's are e.g: crypto_material00, crypto_material01, ...
-            if (aov.to.aov_name_tok == "crypto_material" || 
-                aov.to.aov_name_tok == "crypto_asset" || 
-                aov.to.aov_name_tok == "crypto_object"){
-                replace_filter = false;
-            } else if (aov.to.aov_name_tok.find("crypto_") != std::string::npos){
-                aov.is_crypto = true;
-            }
-
-            if (aov.to.aov_name_tok == "lentil_time"){
-                lentil_time_found = true;
-            }
-
-            if (aov.to.aov_name_tok == "lentil_debug"){
-                lentil_debug_found = true;
-            }
-
-            if (aov.to.aov_name_tok == "lentil_raydir"){
-                lentil_raydir_found = true;
-            }
-
-            if (replace_filter && aov.to.aov_name_tok != "lentil_replaced_filter"){
-                aov.to.filter_tok = "lentil_replaced_filter";
-            }
-
-            // identify as duplicate
-            for (auto &element : aovs) {
-                if (aov.to.aov_name_tok == element.to.aov_name_tok) {
-                    aov.is_duplicate = true;
-                }
-            }
-            
-            aovs.push_back(aov);
-        }
-
-
-        // make a copy of RGBA aov and use it as the basis for the lentil_debug AOV
-        // doing this to make sure the whole AOV string is correct, including all the options
-        // because some stuff happens in the constructor and we're skipping that here, we need to set these manually
-        if (!lentil_debug_found){
-            AOVData aov_lentil_debug = aovs[0];
-            aov_lentil_debug.to.aov_type_tok = "FLOAT";
-            aov_lentil_debug.to.aov_name_tok = "lentil_debug";
-            aov_lentil_debug.to = TokenizedOutputLentil(universe, AtString(aov_lentil_debug.to.rebuild_output().c_str()));
-            aov_lentil_debug.name = AtString("lentil_debug");
-            aov_lentil_debug.type = string_to_arnold_type(aov_lentil_debug.to.aov_type_tok);
-            aovs.push_back(aov_lentil_debug);
-        }
-        
-        if (!lentil_time_found) {
-            AOVData aov_lentil_time = aovs[0];
-            aov_lentil_time.to.aov_type_tok = "FLOAT";
-            aov_lentil_time.to.aov_name_tok = "lentil_time";
-            aov_lentil_time.to = TokenizedOutputLentil(universe, AtString(aov_lentil_time.to.rebuild_output().c_str()));
-            aov_lentil_time.name = AtString("lentil_time");
-            aov_lentil_time.type = string_to_arnold_type(aov_lentil_time.to.aov_type_tok);
-            aovs.push_back(aov_lentil_time);
-        }
-
-        if (!lentil_raydir_found) {
-            AOVData aov_lentil_raydir = aovs[0];
-            aov_lentil_raydir.to.aov_type_tok = "RGB";
-            aov_lentil_raydir.to.aov_name_tok = "lentil_raydir";
-            aov_lentil_raydir.to = TokenizedOutputLentil(universe, AtString(aov_lentil_raydir.to.rebuild_output().c_str()));
-            aov_lentil_raydir.name = AtString("lentil_raydir");
-            aov_lentil_raydir.type = string_to_arnold_type(aov_lentil_raydir.to.aov_type_tok);
-            aovs.push_back(aov_lentil_raydir);
-        }
-        
-        AtArray *final_outputs = AiArrayAllocate(aovs.size(), 1, AI_TYPE_STRING);
-        uint32_t i = 0;
-        for (auto &output : aovs){
-            AiArraySetStr(final_outputs, i++, output.to.rebuild_output().c_str());
-            output.index = i;
-
-            if (output.to.aov_name_tok == "lentil_time" || output.to.aov_name_tok == "lentil_debug" || output.to.aov_name_tok == "lentil_raydir") {
-                AiAOVRegister(output.to.aov_name_tok.c_str(), string_to_arnold_type(output.to.aov_type_tok), AI_AOV_BLEND_NONE); // think i should only do this for the new layer (lentil_time, lentil_debug, lentil_raydir)?
+        AtNodeIterator *iter = AiUniverseGetNodeIterator(universe, AI_NODE_ALL);
+        while (!AiNodeIteratorFinished(iter))
+        {
+            AtNode *node = AiNodeIteratorGetNext(iter);
+            const AtNodeEntry *ne = AiNodeGetNodeEntry(node);
+            AtString ne_name = AiNodeEntryGetNameAtString(ne);
+            if (ne_name == AtString("lentil_operator")){
+                lentil_operator_node = node;
+                break;
             }
         }
-        AiNodeSetArray(AiUniverseGetOptions(universe), AtString("outputs"), final_outputs);
-        aovcount = aovs.size()+1;
+        AiNodeIteratorDestroy(iter);
 
+        if (!lentil_operator_node) AiMsgError("[LENTIL] operator not found. Please insert an operator.");
 
-        // remove duplicate aov's by name, also remove aovs that aren't filtered by lentil
-        std::vector<AOVData>::iterator it = aovs.begin();
-        while(it != aovs.end()) {
-            if(it->is_duplicate || it->to.filter_tok != "lentil_replaced_filter") {
-                it = aovs.erase(it);
-            }
-            else ++it;
-        }
-
-
-        // need to add an entry to the aov_shaders (NODE)
-        AtArray* aov_shaders_array = AiNodeGetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"));
-        int aov_shader_array_size = AiArrayGetNumElements(aov_shaders_array);
-
-        if (!lentil_time_found){
-            AtNode *time_write = AiNode(universe, AtString("aov_write_float"), AtString("lentil_time_write"));
-            AtNode *time_read = AiNode(universe, AtString("state_float"), AtString("lentil_time_read"));
-
-            // set time node params/linking
-            AiNodeSetStr(time_read, AtString("variable"), AtString("time"));
-            AiNodeSetStr(time_write, AtString("aov_name"), AtString("lentil_time"));
-            AiNodeLink(time_read, AtString("aov_input"), time_write);
-            
-            aov_shader_array_size += 1;
-            AiArrayResize(aov_shaders_array, aov_shader_array_size, 1);
-            AiArraySetPtr(aov_shaders_array, aov_shader_array_size-1, (void*)time_write);
-            AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
-
-        }
-
-        if (!lentil_raydir_found){
-            AtNode *raydir_write = AiNode(universe, AtString("aov_write_rgb"), AtString("lentil_raydir_write"));
-            AtNode *raydir_read = AiNode(universe, AtString("state_vector"), AtString("lentil_raydir_read"));
-
-            // set time node params/linking
-            AiNodeSetStr(raydir_read, AtString("variable"), AtString("Rd"));
-            AiNodeSetStr(raydir_write, AtString("aov_name"), AtString("lentil_raydir"));
-            AiNodeLink(raydir_read, AtString("aov_input"), raydir_write);
-
-            aov_shader_array_size += 1;
-            AiArrayResize(aov_shaders_array, aov_shader_array_size, 1);
-            AiArraySetPtr(aov_shaders_array, aov_shader_array_size-1, (void*)raydir_write);
-            AiNodeSetArray(AiUniverseGetOptions(universe), AtString("aov_shaders"), aov_shaders_array);
-        }
+        OperatorData *operator_data = (OperatorData*)AiNodeGetLocalData(lentil_operator_node);
+        aovs = operator_data->aovs;
+        aovcount = operator_data->aovcount;
     }
 
 
