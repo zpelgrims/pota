@@ -162,10 +162,11 @@ driver_process_bucket {
         
         // all other AOVS
         else {
-          // note, converting all to AtRGBA because the lentil_filter converts any type to AtRGBA.
-          switch (aov_current->type){
-            case AI_TYPE_RGBA: {
 
+          // note, converting all to AtRGBA because the lentil_filter converts any type to AtRGBA.
+          // switch (aov_current->type){
+          //   case AI_TYPE_RGBA: {
+            if (aov_current->original_filter == camera_data->atstring_filter_gaussian){
                 AtRGBA image = aov_current->buffer[linear_pixel];
                 
                 if (aov_current->name != camera_data->atstring_lentil_debug) {
@@ -175,48 +176,14 @@ driver_process_bucket {
                 }
 
                 ((AtRGBA*)bucket_data)[in_idx] = image;
-              
-              break;
             }
 
-            case AI_TYPE_RGB: {
-              AtRGBA image = aov_current->buffer[linear_pixel];
-              if ((camera_data->filter_weight_buffer[linear_pixel] != 0.0)){
-                image /= camera_data->filter_weight_buffer[linear_pixel];
-              }
-
-              AtRGBA final_value = AtRGBA(image.r, image.g, image.b, 1.0);
-              ((AtRGBA*)bucket_data)[in_idx] = final_value;
-              break;
-            }
-
-            case AI_TYPE_FLOAT: {
+            else if (aov_current->original_filter == camera_data->atstring_filter_closest){
               ((AtRGBA*)bucket_data)[in_idx] = AtRGBA(aov_current->buffer[linear_pixel].r, 
-                                                      aov_current->buffer[linear_pixel].r, 
-                                                      aov_current->buffer[linear_pixel].r, 
+                                                      aov_current->buffer[linear_pixel].g, 
+                                                      aov_current->buffer[linear_pixel].b, 
                                                       1.0);
-              break;
             }
-
-            case AI_TYPE_VECTOR: {
-              AtRGBA final_value (aov_current->buffer[linear_pixel].r, 
-                                    aov_current->buffer[linear_pixel].g,
-                                    aov_current->buffer[linear_pixel].b, 
-                                    1.0);
-              ((AtRGBA*)bucket_data)[in_idx] = final_value;
-              break;
-            }
-
-            // case AI_TYPE_INT: {
-            //   ((int*)bucket_data)[in_idx] = aov_current->buffer[linear_pixel].r;
-            //   break;
-            // }
-
-            // case AI_TYPE_UINT: {
-            //   ((unsigned int*)bucket_data)[in_idx] = std::abs(aov_current->buffer[linear_pixel].r);
-            //   break;
-            // }
-          }
         }
       }
     }
