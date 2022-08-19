@@ -162,7 +162,7 @@ driver_process_bucket {
         
         // all other AOVS
         else {
-        
+          // note, converting all to AtRGBA because the lentil_filter converts any type to AtRGBA.
           switch (aov_current->type){
             case AI_TYPE_RGBA: {
 
