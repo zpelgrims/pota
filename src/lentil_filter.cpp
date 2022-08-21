@@ -29,7 +29,14 @@ node_initialize
 
 node_update 
 {
-  AiFilterUpdate(node, 1.5);
+
+  const AtNodeEntry *oidn_ne = AiNodeEntryLookUp(AtString("imager_denoiser_oidn"));
+  if (AiNodeEntryGetCount(oidn_ne) != 0){
+    AiFilterUpdate(node, 1.0);
+  } else {
+    AiFilterUpdate(node, 1.5);
+  }
+  
 }
 
 
@@ -188,9 +195,8 @@ filter_pixel
 
 
       int samples = std::ceil(coc_squared_pixels * inverse_sample_density); // aa_sample independence
-      samples = clamp(samples, 4, 5000);
+      samples = clamp(samples, 4, 2000);
       float inv_samples = 1.0/static_cast<float>(samples);
-
 
       unsigned int total_samples_taken = 0;
       unsigned int max_total_samples = samples*5;

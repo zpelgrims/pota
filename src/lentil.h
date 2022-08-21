@@ -1080,7 +1080,13 @@ public:
         yres = region_max_y - region_min_y + 1;
         
 
-        filter_width = 1.5;
+        const AtNodeEntry *oidn_ne = AiNodeEntryLookUp(AtString("imager_denoiser_oidn"));
+        if (AiNodeEntryGetCount(oidn_ne) != 0){
+            filter_width = 1.0;
+        } else {
+            filter_width = 1.5;
+        }
+        
         time_start = AiCameraGetShutterStart();
         time_end = AiCameraGetShutterEnd();
         imager_print_once_only = false;
