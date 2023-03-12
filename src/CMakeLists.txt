@@ -17,7 +17,6 @@ add_library(${SHADER} SHARED ${SRC})
 target_link_libraries(${SHADER} ai)
 set_target_properties(${SHADER} PROPERTIES PREFIX "")
 
-MESSAGE(CODE "python3 ${CMAKE_SOURCE_DIR}/src/uigen.py ${UI} ${MTD} ${AE} ${KARGS} ${CMAKE_CURRENT_BINARY_DIR} ${HTML})")
 execute_process(COMMAND 
     python3 ${CMAKE_SOURCE_DIR}/src/uigen.py
     --ui_file ${UI} 
