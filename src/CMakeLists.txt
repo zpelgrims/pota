@@ -17,7 +17,15 @@ add_library(${SHADER} SHARED ${SRC})
 target_link_libraries(${SHADER} ai)
 set_target_properties(${SHADER} PROPERTIES PREFIX "")
 
-execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/src/uigen.py ${UI} ${MTD} ${AE} ${KARGS} ${CMAKE_CURRENT_BINARY_DIR} ${HTML})
+execute_process(COMMAND 
+    python3 ${CMAKE_SOURCE_DIR}/src/uigen.py
+    --ui_file ${UI} 
+    --mtd_output ${MTD} 
+    --ae_template_output ${AE} 
+    --args_output ${KARGS} 
+    --c4d_output ${C4DRES}
+    #${HTML}
+)
 
 install(TARGETS ${SHADER} DESTINATION ${DSO_INSTALL_DIR})
 # install(FILES ${MTD} DESTINATION ${MTD_INSTALL_DIR})
