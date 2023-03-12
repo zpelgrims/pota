@@ -4,6 +4,8 @@
 import os
 import sys
 import uuid
+import argparse
+
 from math import pow
 
 def enum(*sequential, **named):
@@ -606,7 +608,7 @@ def WalkC4DtoAHeaderParameters(el, f, name):
 
 # Writes .h header file.
 def WriteC4DtoAHeaderFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "description", "aitag_%s.h" % name)
+   path = os.path.join(build_dir, "res", "description", "aitag_%s.h" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
@@ -670,7 +672,7 @@ def WalkC4DtoARes(el, f, name, d):
 
 # Writes .res resource file.
 def WriteC4DtoAResFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "description", "aitag_%s.res" % name)
+   path = os.path.join(build_dir, "res", "description", "aitag_%s.res" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
@@ -728,7 +730,7 @@ def WalkC4DtoAStringParameters(el, f, name):
 
 # Writes .str string file.
 def WriteC4DtoAStringFile(sd, name, build_dir):
-   path = os.path.join(build_dir, "C4DtoA", "res", "strings_us", "description", "aitag_%s.str" % name)
+   path = os.path.join(build_dir, "res", "strings_us", "description", "aitag_%s.str" % name)
    if os.path.exists(path):
       os.remove(path)
    if not os.path.exists(os.path.dirname(path)):
@@ -1178,28 +1180,36 @@ def remapControls(sd):
 
 # Main. Load the UI file and build UI templates from the returned structure
 if __name__ == '__main__':
-   if len(sys.argv) < 4:
-      print('ERROR: must supply exactly ui source input and mtd, ae, spdl and args outputs')
-      sys.exit(1)
+    parser = argparse.ArgumentParser(prog=__file__, description="build UI templates")
+    parser.add_argument("--ui_file", required=True)
+    parser.add_argument("--mtd_output", required=True)
+    parser.add_argument("--ae_template_output", required=True)
+    parser.add_argument("--args_output", required=True)
+    parser.add_argument("--c4d_output", required=True)
 
-   ui = ShaderDef()
-   globals_dict = {'ui':ui}
-   with open(sys.argv[1]) as f:
-    code = compile(f.read(), sys.argv[1], 'exec')
-    exec(code,  globals_dict)
+    args = parser.parse_args()
 
-   if not isinstance(ui, ShaderDef):
-      print('ERROR: ui object is not a ShaderDef. Did you assign something else to it by mistake?')
-      sys.exit(2)
+    if len(sys.argv) < 4:
+        print('ERROR: must supply exactly ui source input and mtd, ae, spdl and args outputs')
+        sys.exit(1)
 
-   WriteMTD(ui, sys.argv[2])  
-   WriteAETemplate(ui, sys.argv[3])
-   #WriteAEXML(ui, sys.argv[4])
-   #WriteNEXML(ui, sys.argv[5])
-   #WriteSPDL(ui, sys.argv[6])
-   WriteArgs(ui, sys.argv[4])
+    ui = ShaderDef()
+    globals_dict = {'ui':ui}
+    with open(args.ui_file) as f:
+       code = compile(f.read(), args.ui_file, 'exec')
+       exec(code,  globals_dict)
 
-   # C4DtoA resource files
-   name = os.path.basename(os.path.splitext(sys.argv[1])[0])
-   build_dir = sys.argv[8] if len(sys.argv) > 6 else os.path.abspath("")
-   WriteC4DtoAResourceFiles(ui, name, build_dir)
+    if not isinstance(ui, ShaderDef):
+        print('ERROR: ui object is not a ShaderDef. Did you assign something else to it by mistake?')
+        sys.exit(2)
+
+    WriteMTD(ui, args.mtd_output)
+    WriteAETemplate(ui, args.ae_template_output)
+    #WriteAEXML(ui, sys.argv[4])
+    #WriteNEXML(ui, sys.argv[5])
+    #WriteSPDL(ui, sys.argv[6])
+    WriteArgs(ui, args.args_output)
+
+    # C4DtoA resource files
+    name = os.path.basename(os.path.splitext(args.ui_file)[0])
+    WriteC4DtoAResourceFiles(ui, name, args.c4d_output)
