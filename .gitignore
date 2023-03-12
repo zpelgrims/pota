@@ -31,3 +31,4 @@
 /build/*
 /bin/*
 /dist/*
+/src/deprecated/*
