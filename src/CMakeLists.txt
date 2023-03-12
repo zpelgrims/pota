@@ -17,8 +17,7 @@ add_library(${SHADER} SHARED ${SRC})
 target_link_libraries(${SHADER} ai)
 set_target_properties(${SHADER} PROPERTIES PREFIX "")
 
-add_custom_command(OUTPUT ${MTD} COMMAND python3 -B ARGS ${CMAKE_SOURCE_DIR}/src/uigen.py ${UI} ${MTD} ${AE} ${KARGS} ${CMAKE_CURRENT_BINARY_DIR} ${HTML} DEPENDS ${UI})
-add_custom_target(${SHADER}UI ALL DEPENDS ${MTD})
+execute_process(COMMAND python3 ${CMAKE_SOURCE_DIR}/src/uigen.py ${UI} ${MTD} ${AE} ${KARGS} ${CMAKE_CURRENT_BINARY_DIR} ${HTML})
 
 install(TARGETS ${SHADER} DESTINATION ${DSO_INSTALL_DIR})
 # install(FILES ${MTD} DESTINATION ${MTD_INSTALL_DIR})
@@ -49,6 +48,7 @@ endfunction()
 file (REMOVE ${MTD_INSTALL_DIR}/lentil.mtd)
 file (REMOVE ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd)
 
+# file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/lentil_camera.mtd "")
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd "")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/lentil.mtd "")
 foreach(MTD_FILE ${MTD_FILES})
